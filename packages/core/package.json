@@ -1,0 +1,16 @@
+{
+  "name": "@spawnforge/core",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Blueprint schema, module registry, seeded RNG, compile pipeline, motion controller and analysis. No DOM or renderer.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "zod": "catalog:"
+  }
+}

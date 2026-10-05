@@ -1,0 +1,23 @@
+{
+  "name": "@spawnforge/sandbox",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Sandbox editor: live 3D view, sliders, JSON panel, terrain test course and gallery.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@spawnforge/core": "workspace:*",
+    "@spawnforge/modules": "workspace:*",
+    "@spawnforge/three": "workspace:*",
+    "three": "catalog:"
+  },
+  "devDependencies": {
+    "@types/three": "catalog:",
+    "vite": "catalog:"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.base.json",
+  // No "dom" lib and no "node" types: this package must run unchanged in browsers, workers and Node.
+  "compilerOptions": {
+    "lib": ["es2023"],
+    "types": []
+  },
+  "include": ["src"]
+}
