@@ -1,0 +1,16 @@
+{
+  "name": "@spawnforge/mcp",
+  "version": "0.0.0",
+  "private": true,
+  "description": "MCP server exposing the Spawnforge CLI commands as tools.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@spawnforge/cli": "workspace:*"
+  }
+}

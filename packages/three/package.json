@@ -1,0 +1,20 @@
+{
+  "name": "@spawnforge/three",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Three.js runtime: skinned mesh assembly, TSL materials, pose sync and export.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@spawnforge/core": "workspace:*",
+    "three": "catalog:"
+  },
+  "devDependencies": {
+    "@types/three": "catalog:"
+  }
+}

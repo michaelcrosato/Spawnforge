@@ -1,0 +1,108 @@
+# AGENTS.md
+
+Spawnforge turns a short JSON _blueprint_ into a finished 3D monster: mesh, skeleton, textures and
+animation, all made by code. It is a standalone library with its own sandbox; games plug it in
+once the proof of concept passes.
+
+Read [docs/plan.md](docs/plan.md) before starting a feature. It is the design, and its scope table
+is the contract.
+
+## Status
+
+Scaffold only. The workspace, tooling, seeded RNG and a module registry skeleton exist. The
+blueprint schema, compile pipeline, motion and LLM tools do not. Next is phase 0: the blueprint
+format, `list_modules`, `describe_module`, `validate`, and the 20-prompt format eval.
+
+## Repo map
+
+| Path               | Contents                                                                                         | May depend on                    |
+| ------------------ | ------------------------------------------------------------------------------------------------ | -------------------------------- |
+| `packages/core`    | Blueprint schema, module registry, seeded RNG, compile pipeline, motion controller, analysis     | `zod`, Three.js math classes     |
+| `packages/modules` | First pack: body plans, parts, patterns, gaits, actions                                          | core                             |
+| `packages/three`   | The only layer that renders: skinned mesh assembly, TSL materials, pose sync, export             | core, `three`                    |
+| `packages/cli`     | The `spawnforge` command. Every command prints JSON. Headless renderer later                     | core, modules                    |
+| `packages/mcp`     | MCP server: a thin wrapper over the CLI command functions                                        | cli                              |
+| `apps/sandbox`     | Vite app: live 3D view, sliders, JSON panel, terrain test course, gallery                         | core, modules, three             |
+| `examples/`        | Blueprints beside their renders; also the golden test set                                        |                                  |
+| `docs/`            | `plan.md` (design), `architecture.md`, `blueprint.md` (format), `catalog.md` (generated, later) |                                  |
+
+## Commands
+
+```sh
+pnpm install                  # Node >= 22.18 and pnpm 10 (`corepack enable` picks the pinned version)
+pnpm check                    # lint + typecheck + tests; run before every commit
+pnpm test                     # Vitest once; `pnpm test:watch` to watch
+pnpm typecheck                # tsc on the root and every package
+pnpm format                   # Biome: format, sort imports, apply safe lint fixes
+pnpm dev                      # sandbox at http://localhost:5173 (add ?webgl to force the WebGL 2 backend)
+pnpm build                    # production build of the sandbox
+pnpm spawnforge list-modules  # run the CLI from source
+```
+
+## How the code runs
+
+There is no build step for packages. Each package exports its TypeScript source
+(`"exports": { ".": "./src/index.ts" }`). Node runs it directly with type stripping (Node 22.18+),
+Vite and Vitest load it as-is, and TypeScript (`tsc` 7) only typechecks. So:
+
+- **Erasable syntax only** (`erasableSyntaxOnly`): no `enum`, `namespace` or constructor parameter
+  properties. Use `as const` objects and string unions.
+- **Relative imports include `.ts`**: `import { createRng } from './rng.ts'`.
+- **Type-only imports are marked** (`import type`, or `type` inline) under `verbatimModuleSyntax`.
+- **Import other packages by name** (`@spawnforge/core`), never by path into their `src/`.
+
+## Rules
+
+From the plan. Follow them unless the plan changes.
+
+**Boundaries**
+
+- `core` and `modules` have no DOM, renderer or Node dependency, so they run in browsers, workers
+  and Node alike. Their tsconfig leaves out the `dom` lib and Node types, so a stray `document` or
+  `fs` fails typecheck. `core` may use Three.js math classes, nothing else from `three`.
+- Only `packages/three` renders or builds materials. Front-ends (sandbox, CLI, MCP, games) call
+  package APIs and never reach past them.
+- Pipeline stages are pure functions of blueprint, seed and quality. Their output is plain data
+  (typed arrays and JSON) that can leave a worker and sit in a cache.
+
+**Determinism**
+
+- Nothing that shapes a creature may use `Math.random`, the clock, or the iteration order of
+  unordered data. Draw from `createRng(seed).stream(id)`, keyed by part or layer id, so editing
+  one part never reshuffles another.
+- RNG golden values are pinned in `packages/core/src/rng.test.ts`. Changing them changes every
+  saved creature, so it needs a format bump and a migration.
+
+**Modules**
+
+- One capability is one file in a pack. The core never names a specific part, pattern, gait or
+  action.
+- Module ids are lowercase words joined by dots or dashes (`horn.curved`). Params are
+  `z.strictObject`, and every field has a default, a range and a `.describe()` that states its unit.
+
+**Blueprints and errors (LLM-first)**
+
+- Strict: unknown keys are errors with a "did you mean" fix. Friendly forms are explicit unions,
+  normalized in a separate step, never hidden transforms.
+- Errors carry an id-based path (`limbs[id=hindleg].attach.at`), the problem, the valid range and
+  a suggested fix.
+- World conventions follow glTF: metres, Y up, creature facing +Z. Blueprint lengths are
+  multiples of `scale`, the torso length in metres.
+
+**Dependencies**
+
+- Keep them few. The algorithms that shape monsters (noise, SDF, meshing, IK, springs, gaits) are
+  written in-house.
+- Shared runtime versions live in the pnpm catalog in `pnpm-workspace.yaml`; packages reference
+  them as `"catalog:"`. Three.js is pinned to one release (r186) and upgraded deliberately.
+
+**Tests**
+
+- Tests sit beside the code as `*.test.ts` and run in Node under Vitest.
+- New behaviour comes with tests. Modules will also get the automatic defaults, examples and fuzz
+  harness the plan describes.
+
+**Scope**
+
+- The scope table in `docs/plan.md` is the contract. New ideas go to its "Later" column, not into
+  the code.
