@@ -1,0 +1,99 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Dune Scorpion",
+  "seed": 1010,
+  "extends": "hexapod",
+  "scale": 0.5,
+  "body": {
+    "torso": {
+      "radius": [0.1, 0.16, 0.14, 0.15, 0.13, 0.08]
+    },
+    "head": {
+      "length": 0.2,
+      "radius": 0.08,
+      "pitch": -10
+    },
+    "tail": {
+      "length": 2.4,
+      "radius": [0.075, 0.055, 0.045, 0.04, 0.04, 0.055, 0.03],
+      "pitch": 40,
+      "curl": 200,
+      "segments": 12
+    }
+  },
+  "limbs": [
+    {
+      "id": "frontleg",
+      "length": 0.62,
+      "splay": 55,
+      "radius": [0.045, 0.02]
+    },
+    {
+      "id": "midleg",
+      "length": 0.64,
+      "splay": 60,
+      "radius": [0.045, 0.02]
+    },
+    {
+      "id": "hindleg",
+      "length": 0.7,
+      "splay": 55,
+      "radius": [0.045, 0.02]
+    }
+  ],
+  "parts": [
+    {
+      "id": "stinger",
+      "type": "horn.curved",
+      "attach": {
+        "on": "tail",
+        "at": 0.97,
+        "angle": 0
+      },
+      "params": {
+        "length": 0.18,
+        "width": 0.03,
+        "curve": 70,
+        "color": "#3a2a18",
+        "tipColor": "#1a1008"
+      }
+    },
+    {
+      "id": "eyes",
+      "params": {
+        "scale": 1.2,
+        "lids": false
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#d8c490",
+      "belly": "#e8dcb8",
+      "accent": "#a88c58"
+    },
+    "material": "chitin",
+    "layers": [
+      {
+        "type": "countershade",
+        "softness": 0.2
+      },
+      {
+        "type": "mottle",
+        "scale": 0.1,
+        "coverage": 0.3,
+        "contrast": 0.3,
+        "strength": 0.5
+      },
+      {
+        "type": "grime",
+        "color": "#b89c68",
+        "amount": 0.4
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "stalking",
+    "actions": ["bite", "idle", "look"]
+  }
+}

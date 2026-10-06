@@ -1,0 +1,87 @@
+{
+  "budgets": {
+    "compileMs": 500,
+    "skinTriangles": 30000,
+    "drawCalls": 3,
+    "furDrawCalls": 1,
+    "motionMsPerCreature": 0.1,
+    "motionMsFor50": 5
+  },
+  "examples": [
+    {
+      "name": "bog-troll",
+      "lines": 94,
+      "compileMs": 422,
+      "chromeCompileMs": 536,
+      "skinTriangles": 24802,
+      "drawCalls": 3,
+      "motionMsPerFrame": 0.059
+    },
+    {
+      "name": "ember-beetle",
+      "lines": 37,
+      "compileMs": 437,
+      "chromeCompileMs": 543,
+      "skinTriangles": 27340,
+      "drawCalls": 3,
+      "motionMsPerFrame": 0.068
+    },
+    {
+      "name": "grey-wolf",
+      "lines": 59,
+      "compileMs": 285,
+      "chromeCompileMs": 483,
+      "skinTriangles": 20718,
+      "drawCalls": 4,
+      "motionMsPerFrame": 0.099
+    },
+    {
+      "name": "reed-viper",
+      "lines": 23,
+      "compileMs": 107,
+      "chromeCompileMs": 114,
+      "skinTriangles": 8448,
+      "drawCalls": 3,
+      "motionMsPerFrame": 0.055
+    },
+    {
+      "name": "ridgeback-stalker",
+      "lines": 63,
+      "compileMs": 257,
+      "chromeCompileMs": 288,
+      "skinTriangles": 18182,
+      "drawCalls": 3,
+      "motionMsPerFrame": 0.061
+    },
+    {
+      "name": "rust-raptor",
+      "lines": 62,
+      "compileMs": 216,
+      "chromeCompileMs": 274,
+      "skinTriangles": 17760,
+      "drawCalls": 3,
+      "motionMsPerFrame": 0.065
+    },
+    {
+      "name": "terror-bird",
+      "lines": 77,
+      "compileMs": 354,
+      "chromeCompileMs": 315,
+      "skinTriangles": 24816,
+      "drawCalls": 3,
+      "motionMsPerFrame": 0.071
+    },
+    {
+      "name": "tusk-boar",
+      "lines": 76,
+      "compileMs": 432,
+      "chromeCompileMs": 585,
+      "skinTriangles": 27186,
+      "drawCalls": 3,
+      "motionMsPerFrame": 0.084
+    }
+  ],
+  "herd50": {
+    "medianMsPerFrame": 3.46
+  }
+}

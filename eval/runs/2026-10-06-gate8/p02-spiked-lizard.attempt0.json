@@ -1,0 +1,103 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Bulwark Lizard",
+  "seed": 52,
+  "extends": "quadruped",
+  "scale": 1.2,
+  "body": {
+    "muscle": 0.7,
+    "torso": { "radius": [0.2, 0.27, 0.26, 0.2], "arch": 0.04, "crossSection": "wide" },
+    "neck": { "length": 0.2, "radius": [0.12, 0.2], "pitch": 12 },
+    "head": {
+      "shape": "wedge",
+      "length": 0.36,
+      "radius": 0.13,
+      "pitch": -5,
+      "lips": 0,
+      "tongue": "forked",
+      "brow": 0.7
+    },
+    "tail": {
+      "length": 1.1,
+      "radius": [0.14, 0.09, 0.07, 0.06, 0.07, 0.2, 0.22, 0.1],
+      "pitch": -5,
+      "curl": 0,
+      "segments": 12
+    }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "length": 0.5,
+      "radius": [0.11, 0.06],
+      "attach": { "at": 0.14, "angle": 112 },
+      "splay": 32,
+      "foot": { "type": "foot.claw", "toes": 5, "toeLength": 0.1, "clawLength": 0.05 }
+    },
+    {
+      "id": "hindleg",
+      "length": 0.52,
+      "radius": [0.12, 0.06],
+      "attach": { "at": 0.86, "angle": 112 },
+      "splay": 32,
+      "foot": { "type": "foot.claw", "toes": 5, "toeLength": 0.1, "clawLength": 0.05 }
+    }
+  ],
+  "parts": [
+    {
+      "id": "dorsal",
+      "type": "spikes.row",
+      "attach": { "on": "spine", "from": 0.08, "to": 0.72, "angle": 0 },
+      "params": {
+        "count": 16,
+        "height": [0.08, 0.15, 0.14, 0.08, 0.05],
+        "width": 0.03,
+        "curve": 15,
+        "jitter": 0.15
+      }
+    },
+    {
+      "id": "flank-spikes",
+      "type": "spikes.row",
+      "attach": { "on": "torso", "from": 0.1, "to": 0.9, "angle": 65, "side": "both" },
+      "params": { "count": 7, "height": 0.06, "width": 0.025, "curve": 35 }
+    },
+    {
+      "id": "club-spikes",
+      "type": "horn.curved",
+      "attach": { "on": "tail", "at": 0.86, "angle": 80, "side": "both" },
+      "params": { "length": 0.1, "width": 0.03, "curve": 20, "aim": "out" }
+    },
+    {
+      "id": "club-top",
+      "type": "horn.curved",
+      "attach": { "on": "tail", "at": 0.9, "angle": 0 },
+      "params": { "length": 0.1, "width": 0.03, "curve": 30 }
+    },
+    {
+      "id": "brow-horns",
+      "type": "horn.curved",
+      "attach": { "on": "head", "at": 0.7, "angle": 55 },
+      "params": { "length": 0.12, "width": 0.03, "curve": 40, "aim": "back" }
+    },
+    { "id": "teeth", "type": "teeth.row", "params": { "fangs": 0, "scale": 0.9 } },
+    {
+      "id": "armor",
+      "type": "armor.bands",
+      "attach": { "on": "torso", "area": "back" },
+      "params": { "bands": 9, "color": "base" }
+    },
+    { "id": "eyes", "params": { "pupil": "slit", "squint": 0.4 } }
+  ],
+  "skin": {
+    "palette": { "base": "#5c5a3c", "belly": "#b9aa78", "accent": "#2c2a1a", "bone": "#d8cfae" },
+    "material": "scales",
+    "layers": [
+      { "type": "countershade", "height": -0.2, "softness": 0.2 },
+      { "type": "scales", "size": 0.04, "bump": 0.6 },
+      { "type": "mottle", "scale": 0.2, "coverage": 0.4, "strength": 0.5 },
+      { "type": "grime", "amount": 0.4 }
+    ]
+  },
+  "motion": { "temperament": "lumbering", "actions": ["bite", "roar", "look", "idle", "lash"] }
+}

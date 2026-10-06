@@ -188,6 +188,7 @@ function renderFields(registry = getRegistry()): string[] {
   const skin = objectIn(top.skin)?.properties ?? {};
   const sections: [string, JsonNode | undefined][] = [
     ['Top level', schema],
+    ['body', objectIn(top.body)],
     ['body.torso', objectIn(body.torso)],
     ['body.neck', objectIn(body.neck)],
     ['body.head', objectIn(body.head)],

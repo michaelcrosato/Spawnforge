@@ -33,6 +33,8 @@ export interface MotionCheck {
   readonly intersection: {
     readonly worst: number;
     readonly between?: readonly [string, string];
+    /** Which part of the first limb: its upper, middle or lower segment. */
+    readonly segment?: 'upper' | 'middle' | 'lower';
     readonly time?: number;
   };
 }
@@ -282,13 +284,21 @@ export function analyzeCreature(
         const splay =
           Math.ceil((Math.atan2(depth * 1.5, (limb?.length ?? 0.5) * L) * 180) / Math.PI / 5) * 5;
         const section = ['torso', 'neck', 'head', 'jaw', 'tail', 'spine'].includes(b);
+        const cm = (depth * 100).toFixed(0);
+        // Which remedy works depends on what meets (gate 8's agents found the old list misled):
+        // splay clears a leg from the body; two legs of a pair meet under it, where only
+        // attaching them higher or thinning them helps; front and hind legs meet in the stride.
+        const pair = !section && b.replace(/\.[LR]$/, '') === id;
+        const angle = limb?.angle;
         warn(
           `limbs[id=${id}]`,
           'limb_intersection',
-          `${a} passes ${(depth * 100).toFixed(1)} cm into ${b} ${where}`,
+          `${a} (its ${check.intersection.segment ?? 'lower'} segment) passes ${(depth * 100).toFixed(1)} cm into ${b} ${where}`,
           section
-            ? `move it clear of the ${b} by about ${(depth * 100).toFixed(0)} cm: about ${splay}° more splay, a lower attach.angle (higher up the side), a smaller gait stride or stepHeight, or a thinner ${b === 'torso' ? 'body' : b}`
-            : `separate the two by about ${(depth * 100).toFixed(0)} cm: about ${splay}° more splay, attach.at further apart, a smaller gait stride, or thinner legs`,
+            ? `move it clear of the ${b} by about ${cm} cm: about ${splay}° more splay works best; or a smaller gait stride or stepHeight, or a thinner ${b === 'torso' ? 'body' : b}. On a broad body a lower attach.angle can make it worse`
+            : pair
+              ? `the pair meets under the body: attach both higher up the side (a lower attach.angle${angle !== undefined ? `, e.g. ${Math.max(0, Math.round(angle - 15))}` : ''}) or make them thinner (radius); splay barely helps here`
+              : `the front and hind legs meet in the stride: a smaller gait stride, attach.at further apart, or thinner legs, by about ${cm} cm`,
         );
       }
     }
@@ -463,7 +473,14 @@ function runMotion(
   const slide = { worst: 0 } as { worst: number; leg?: string; time?: number };
   const pen = { worst: 0 } as { worst: number; part?: string; time?: number };
   const stretched = rig.legs.map(() => 0);
-  const hit = { worst: 0 } as { worst: number; between?: [string, string]; time?: number };
+  const hit = { worst: 0 } as {
+    worst: number;
+    between?: [string, string];
+    segment?: 'upper' | 'middle' | 'lower';
+    time?: number;
+  };
+  const segmentOf = (k: number, n: number) =>
+    k === 0 ? 'upper' : k === n - 1 ? 'lower' : 'middle';
   let frames = 0;
   let cycles = 0;
   let last = c.phase;
@@ -506,7 +523,7 @@ function runMotion(
     // Limbs through limbs, and lower limb bones through the body.
     for (let i = 0; i < legBones.length; i++) {
       for (let j = i + 1; j < legBones.length; j++) {
-        for (const bi of legBones[i] as number[]) {
+        for (const [k, bi] of (legBones[i] as number[]).entries()) {
           for (const bj of legBones[j] as number[]) {
             a.copy(pose.worldPos[bi] as Vector3);
             pose.tail(bi, b);
@@ -518,12 +535,14 @@ function runMotion(
               Object.assign(hit, {
                 worst: overlap,
                 between: [rig.legs[i]?.id ?? '', rig.legs[j]?.id ?? ''],
+                segment: segmentOf(k, (legBones[i] as number[]).length),
                 time,
               });
           }
         }
       }
-      for (const bi of (legBones[i] as number[]).slice(1)) {
+      for (const [k, bi] of (legBones[i] as number[]).entries()) {
+        if (k === 0) continue;
         for (const s of sections) {
           if (bones.sections[s] !== 'torso' && bones.sections[s] !== 'tail') continue;
           a.copy(pose.worldPos[bi] as Vector3);
@@ -536,6 +555,7 @@ function runMotion(
             Object.assign(hit, {
               worst: overlap,
               between: [rig.legs[i]?.id ?? '', bones.owners[s] ?? 'body'],
+              segment: segmentOf(k, (legBones[i] as number[]).length),
               time,
             });
         }
@@ -571,7 +591,9 @@ export function describeCreature(
       ? `${(v / 1000).toFixed(1)} t`
       : v >= 10
         ? `${Math.round(v)} kg`
-        : `${v.toFixed(1)} kg`;
+        : v >= 0.1
+          ? `${v.toFixed(1)} kg`
+          : `${Math.max(1, Math.round(v * 1000))} g`;
   const legs = spec.limbs.filter((l) => l.role === 'leg').length;
   const arms = spec.limbs.filter((l) => l.role === 'arm').length;
   const plan =

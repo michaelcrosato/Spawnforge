@@ -1,0 +1,164 @@
+{
+  "base": "d101c06",
+  "head": "b9fd5c8 (working tree)",
+  "orders": 2,
+  "head_preferred": 15,
+  "base_preferred": 2,
+  "same": 3,
+  "missing": 0,
+  "total": 20,
+  "picks": {
+    "first": {
+      "A": 10,
+      "B": 10,
+      "same": 0
+    },
+    "swapped": {
+      "A": 11,
+      "B": 9,
+      "same": 0
+    }
+  },
+  "rows": [
+    {
+      "pair": "p01",
+      "id": "p01-wolf",
+      "winner": "head",
+      "votes": [1, 1],
+      "why": "B has a defined lip line with two fangs and a chest and shoulder mass that tapers into the forelegs in the front view; A has loose star-shaped teeth floating under the jaw and a plain oval torso on thin straight legs. / Same silhouette; A's head has a closed lipped mouth with two clean fangs, while B's teeth are spiky star-shaped blobs along the jaw."
+    },
+    {
+      "pair": "p02",
+      "id": "p02-spiked-lizard",
+      "winner": "head",
+      "votes": [1, 1],
+      "why": "A's head shows a clear mouth slit with lips and a row of small teeth; B's teeth are stars hanging under the nose with no clear mouth. A's round scales have black pixel speckle on the head and front, so this is a narrow call. / Same armoured silhouette; B's mouth has a lip line with small teeth and fangs, while A's teeth are floating star shapes. B's scale pattern has some black-dot noise, but the mouth outweighs it."
+    },
+    {
+      "pair": "p03",
+      "id": "p03-horn-beetle",
+      "winner": "head",
+      "votes": [1, 1],
+      "why": "B adds abdomen segment lines and jointed leg bands, so the body and legs read as insect anatomy; A is a smooth glossy blob with featureless legs. Silhouette and spots are identical. / Same silhouette; A's abdomen has segment ridges that read as an insect, while B is a smooth featureless blob. Eyes and horn are identical."
+    },
+    {
+      "pair": "p04",
+      "id": "p04-green-serpent",
+      "winner": "base",
+      "votes": [-1, -1],
+      "why": "A has a tapered, snake-shaped head and clean polygonal scales. B's head is a flat mushroom cap that is wider than the neck in the front view, and its scale discs carry black speckle noise. / Silhouette, fangs and eyes are near-identical; A's scales show dithered black-dot noise over the head and neck, while B's cracked-plate skin is clean and reads clearly."
+    },
+    {
+      "pair": "p05",
+      "id": "p05-swamp-troll",
+      "winner": "head",
+      "votes": [1, 1],
+      "why": "A has a readable mouth line with a row of small teeth and a clear jaw. B's head shows almost no mouth, just a smooth chin, so the horned face looks blank. Torso and limbs are near identical (B's legs are slightly better separated). / Same body, horns and posture; A's head has no mouth at all, while B has a lipped mouth line with a row of small teeth along the jaw."
+    },
+    {
+      "pair": "p06",
+      "id": "p06-ram-demon",
+      "winner": "head",
+      "votes": [1, 1],
+      "why": "B has a mouth slit with a row of small teeth plus fangs, a neck crease under the head and slightly shaped thighs. A's fangs just hang under a black muzzle with no mouth line. / Same horned, striped body; A has a lip line with small teeth plus fangs on the dark muzzle, while B has only a few jagged fangs and no mouth line."
+    },
+    {
+      "pair": "p07",
+      "id": "p07-sprawl-lizard",
+      "winner": "same",
+      "votes": [-1, 1],
+      "why": "A's head has a clean lower jaw and lip with tidy tile scales. B's disc scales show black speckle and jaggies around the nostril and eye, and its mouth is a thinner line. Narrow call. / Same tiny newt silhouette; A has smooth tapering limbs and a thin lipped mouth, while B's front legs are angular and kinked and the jaw is a chunky block. A's head skin has some speckle noise."
+    },
+    {
+      "pair": "p08",
+      "id": "p08-boar",
+      "winner": "head",
+      "votes": [1, 1],
+      "why": "B has a visible mouth line across the muzzle and a smooth chin. A has no mouth at all and a jagged sawtooth colour edge on the chin. B has a dark stripe under the tusk. / Same tusked boar-beast; A has a clear mouth line and smile under the snout, while B has no mouth and a ragged jagged colour edge across the chin and chest."
+    },
+    {
+      "pair": "p09",
+      "id": "p09-long-neck",
+      "winner": "same",
+      "votes": [-1, 1],
+      "why": "Near tie. A's head and neck have clean tile scales and a visible nostril and lip. B's round scales speckle with white and black dots on the neck and head. / Same long-necked silhouette; A's head has a slim snout with a lip line and teeth, while B has a blocky chin lip and faceted slab skin. A has some dotted scale noise."
+    },
+    {
+      "pair": "p10",
+      "id": "p10-scorpion",
+      "winner": "head",
+      "votes": [1, 1],
+      "why": "A's tail, claws and legs are banded into segments and the head has a mandible and teeth line, so it reads as a scorpion. B is a smooth, featureless noodle with no mouth and no segmentation. / Same scorpion silhouette; B has banded segments on the tail and legs and a toothed mouth, while A is a smooth tube with no mouth and no joint markings."
+    },
+    {
+      "pair": "p11",
+      "id": "p11-sea-serpent",
+      "winner": "head",
+      "votes": [1, 1],
+      "why": "A's front view shows a closed mouth with a tooth row and two fangs. B's head has a big dark gaping hole with floating star teeth. A's disc scales do show some speckle. / Same spined serpent; B's mouth is closed with a row of teeth and two fangs in the front view, while A's is a dark gaping hole with star-shaped teeth. B's scales have dot noise."
+    },
+    {
+      "pair": "p12",
+      "id": "p12-raptor",
+      "winner": "head",
+      "votes": [1, 1],
+      "why": "In A's front view the thighs bulge from the hips and taper to the shins. B's legs are straight stilts with no thigh mass. A's head has a mouth with a row of teeth along the jaw. / Same small theropod; B has a lipped mouth with a row of rounded teeth and fuller thighs in the front view, while A has star-shaped teeth and straighter stilt-like legs. B has scale noise."
+    },
+    {
+      "pair": "p13",
+      "id": "p13-cave-bear",
+      "winner": "head",
+      "votes": [1, 1],
+      "why": "B has a clear mouth line along the muzzle with upper-lip teeth and fangs. A's teeth just dangle under the jaw and there is no mouth line. Bodies and claws are identical. / Same bear-like beast; A has a lipped mouth line with a row of small teeth and fangs, while B has spiky star-shaped teeth at the front of the jaw and no lip line."
+    },
+    {
+      "pair": "p14",
+      "id": "p14-leopard-stalker",
+      "winner": "head",
+      "votes": [1, 1],
+      "why": "B has a mouth slit and lip on the face, and spots on the legs and tail as well as the body. A has a sawtooth cream and tan edge on the chin and face that looks like painted teeth, and bare legs and tail. / Same spotted cat; A has a clean lip line and fuller thighs, while B has a jagged zigzag colour edge around the mouth and straight column legs in the front view."
+    },
+    {
+      "pair": "p15",
+      "id": "p15-gecko",
+      "winner": "head",
+      "votes": [1, 1],
+      "why": "B has eyelid rims around the eyes and a lower-jaw mouth line with teeth. A's face has no mouth and flat, lidless eyes. Bodies and feet are identical. / Same gecko-like body; A has a lipped mouth with small teeth and eyelid rims on the eyes, while B's snout has no readable mouth and its eyes are bare spheres. A has some dot noise on the head."
+    },
+    {
+      "pair": "p16",
+      "id": "p16-ant-soldier",
+      "winner": "head",
+      "votes": [1, 1],
+      "why": "A's abdomen has segment lines, its thorax is divided and its legs have joint bands, so it reads as an ant. B is a smooth blob and has a ragged seam line on the underside of the head. / Same ant silhouette; B has dark segment rings on the abdomen, thorax and leg joints, which makes it read as an arthropod, while A is a smooth glossy red blob."
+    },
+    {
+      "pair": "p17",
+      "id": "p17-goblin",
+      "winner": "head",
+      "votes": [1, 1],
+      "why": "A has heavy eyelids and a grin line with tiny teeth. B's eyes are plain yellow spheres and its mouth is a ragged zigzag colour boundary with no real mouth. / Same goblin; B has eyelids, brow and nostril bumps, and a lipped mouth with tiny teeth, while A has bare bulging eyes and a ragged jagged dark smear for a mouth."
+    },
+    {
+      "pair": "p18",
+      "id": "p18-cobra",
+      "winner": "base",
+      "votes": [-1, -1],
+      "why": "Near tie. B's polygonal scales are clean, while A's disc scales show heavy black pixel speckle on the head and neck. Silhouette, hood and fangs are the same. / Silhouette and fangs are nearly the same; B's scale skin has heavy black-dot dithering on the head and hood, while A's cracked-plate skin is clean and readable. Low confidence."
+    },
+    {
+      "pair": "p19",
+      "id": "p19-rhino",
+      "winner": "same",
+      "votes": [-1, 1],
+      "why": "B's plated polygon skin reads as rhino armour and is clean. A's overlapping disc scales are dotted with black speckle across the head and shoulders. Silhouette and horns are identical. / Same rhino; B has eyelids and a row of small teeth in the mouth, while A has no mouth and plain eyes. A's cracked plates are cleaner, but B's scale skin is noisy."
+    },
+    {
+      "pair": "p20",
+      "id": "p20-nightmare-hound",
+      "winner": "head",
+      "votes": [1, 1],
+      "why": "B has a clear mouth slit with lip and teeth, and the red eyes have lid rims. A's mouth is only a row of loose star teeth, and its eyes are bare spheres. / Same spiny dark hound; A has a lip line with clean fangs and red eyes with lid rims, while B has a row of star-shaped teeth and bare bulb eyes."
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Sea Serpent",
+  "seed": 1101,
+  "extends": "serpent",
+  "scale": 2,
+  "body": {
+    "neck": { "length": 0.3, "pitch": 25 },
+    "head": { "shape": "wedge", "length": 0.22, "radius": 0.08 },
+    "tail": { "length": 2.4 }
+  },
+  "parts": [
+    {
+      "id": "spines",
+      "type": "spikes.row",
+      "attach": { "on": "spine", "from": 0.05, "to": 0.97, "angle": 0 },
+      "params": { "count": 40, "height": [0.05, 0.1, 0.07, 0.03], "width": 0.02 }
+    },
+    { "id": "teeth", "type": "teeth.row", "params": { "incisors": 0, "fangs": 1, "lower": false } }
+  ],
+  "skin": {
+    "palette": { "base": "#12306a", "belly": "#d6e2e8", "accent": "#0a1a3c" },
+    "material": "scales",
+    "layers": [{ "type": "countershade", "height": 0.1 }, { "type": "scales", "size": 0.02 }]
+  },
+  "motion": { "temperament": "stalking", "media": { "water": true } }
+}

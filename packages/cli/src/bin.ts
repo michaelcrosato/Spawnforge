@@ -27,7 +27,9 @@ const HELP = `Usage: spawnforge <command> [options]
 Commands:
   list-modules [--kind <kind>]          Catalogue of parts, patterns, gaits, actions and presets
   describe-module <id> [--kind <kind>]  One module's parameters, ranges, defaults and an example
-  validate <file|->  [--expanded]       Errors and warnings with fixes, plus the minimal blueprint
+  validate <file|->  [--expanded] [--quiet]
+                                        Errors and warnings with fixes, plus the minimal blueprint
+                                        (--quiet leaves the blueprint out)
   render <file|-> [--out f.png] [--labels] [--size px] [--quality low|medium|high]
          [--views 3/4,side,head,front,top,rear,underside] [--jaw 0-1] [--blink 0-1]
                                         PNG contact sheet of the creature (headless Chromium)
@@ -105,6 +107,7 @@ function parseOptions() {
       help: { type: 'boolean', short: 'h' },
       kind: { type: 'string' },
       expanded: { type: 'boolean' },
+      quiet: { type: 'boolean', short: 'q' },
       out: { type: 'string' },
       labels: { type: 'boolean' },
       jaw: { type: 'string' },
@@ -471,7 +474,13 @@ const commands: Record<
   validate: () => {
     if (!arg) throw new CommandError('validate needs a file path, or - for stdin');
     const result = validate({ blueprint: readInput(arg), expanded: values.expanded });
-    return { output: result, exitCode: result.ok ? 0 : 1 };
+    // --quiet: the verdict only, without the minimal (or expanded) blueprint.
+    const output = values.quiet
+      ? Object.fromEntries(
+          Object.entries(result).filter(([key]) => key !== 'blueprint' && key !== 'expanded'),
+        )
+      : result;
+    return { output, exitCode: result.ok ? 0 : 1 };
   },
   schema: () => ({ output: blueprintJsonSchema() }),
 };

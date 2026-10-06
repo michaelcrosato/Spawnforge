@@ -1,0 +1,123 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Cinder Horn Beetle",
+  "seed": 303,
+  "extends": "hexapod",
+  "scale": 0.18,
+  "body": {
+    "torso": {
+      "radius": [0.12, 0.17, 0.2, 0.2, 0.17, 0.1],
+      "crossSection": "wide"
+    },
+    "head": {
+      "length": 0.2,
+      "radius": 0.1
+    }
+  },
+  "limbs": [
+    {
+      "id": "frontleg",
+      "attach": {
+        "at": 0.1
+      },
+      "radius": [0.045, 0.02]
+    },
+    {
+      "id": "midleg",
+      "attach": {
+        "at": 0.3
+      },
+      "radius": [0.045, 0.02]
+    },
+    {
+      "id": "hindleg",
+      "attach": {
+        "at": 0.52
+      },
+      "radius": [0.045, 0.02]
+    },
+    {
+      "id": "elytra",
+      "role": "wing",
+      "attach": {
+        "on": "torso",
+        "at": 0.22,
+        "angle": 40
+      },
+      "length": 0.8,
+      "membrane": {
+        "type": "membrane.case",
+        "dome": 0.7,
+        "ridges": 3,
+        "sheen": 0.9
+      }
+    }
+  ],
+  "parts": [
+    {
+      "id": "horn",
+      "type": "horn.curved",
+      "attach": {
+        "on": "head",
+        "at": 0.2,
+        "angle": 0
+      },
+      "params": {
+        "length": 0.4,
+        "width": 0.05,
+        "curve": -65,
+        "lean": -5,
+        "color": "#16120f",
+        "tipColor": "#060606"
+      }
+    },
+    {
+      "id": "antennae",
+      "type": "antenna",
+      "attach": {
+        "on": "head",
+        "at": 0.3,
+        "angle": 40,
+        "side": "both"
+      },
+      "params": {
+        "length": 0.3,
+        "shape": "club",
+        "color": "#1a1a1a"
+      }
+    },
+    {
+      "id": "eyes",
+      "params": {
+        "irisColor": "#ff8a20",
+        "scleraColor": "#140c08"
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#08080a",
+      "belly": "#17171b",
+      "accent": "#ff7a10"
+    },
+    "material": "chitin",
+    "layers": [
+      {
+        "type": "countershade",
+        "softness": 0.2
+      },
+      {
+        "type": "spots",
+        "color": "accent",
+        "size": 0.06,
+        "density": 0.7,
+        "jitter": 0.4,
+        "region": "back"
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "skittish",
+    "actions": ["idle", "look"]
+  }
+}

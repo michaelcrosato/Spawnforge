@@ -1,0 +1,75 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Gecko",
+  "seed": 1501,
+  "extends": "quadruped",
+  "scale": 0.4,
+  "body": {
+    "torso": { "radius": [0.15, 0.22, 0.2, 0.13], "arch": 0, "crossSection": "wide" },
+    "neck": { "length": 0.08, "radius": [0.11, 0.15], "pitch": 5, "crossSection": "wide" },
+    "head": {
+      "shape": "wedge",
+      "length": 0.36,
+      "radius": 0.12,
+      "pitch": 0,
+      "crossSection": "wide",
+      "lips": 0.1
+    },
+    "tail": { "length": 0.9, "radius": [0.12, 0.012], "pitch": 0, "crossSection": "wide" }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "attach": { "on": "torso", "at": 0.15, "angle": 115 },
+      "length": 0.5,
+      "radius": [0.06, 0.035],
+      "splay": 55,
+      "foot": {
+        "type": "foot.claw",
+        "toes": 5,
+        "toeLength": 0.22,
+        "spread": 120,
+        "clawLength": 0.015,
+        "clawWidth": 1.5
+      }
+    },
+    {
+      "id": "hindleg",
+      "attach": { "on": "torso", "at": 0.85, "angle": 115 },
+      "length": 0.55,
+      "radius": [0.065, 0.035],
+      "splay": 55,
+      "foot": {
+        "type": "foot.claw",
+        "toes": 5,
+        "toeLength": 0.24,
+        "spread": 120,
+        "clawLength": 0.015,
+        "clawWidth": 1.5
+      }
+    }
+  ],
+  "parts": [
+    {
+      "id": "eyes",
+      "attach": { "on": "head", "at": 0.4, "angle": 50 },
+      "params": {
+        "scale": 1.8,
+        "pupil": "slit",
+        "lids": false,
+        "irisColor": "#d8c040",
+        "bulge": 0.7
+      }
+    }
+  ],
+  "skin": {
+    "palette": { "base": "#7a7a58", "belly": "#d8d4b8", "accent": "#3a3a28" },
+    "material": "scales",
+    "layers": [
+      { "type": "countershade" },
+      { "type": "mottle", "scale": 0.1 },
+      { "type": "bands", "count": 9, "width": 0.4, "strength": 0.6, "region": "tail" }
+    ]
+  },
+  "motion": { "temperament": "stalking", "actions": ["bite", "look", "idle"] }
+}

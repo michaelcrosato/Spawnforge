@@ -1,0 +1,82 @@
+{
+  "p01": {
+    "pick": "A",
+    "why": "Same silhouette; A's head has a closed lipped mouth with two clean fangs, while B's teeth are spiky star-shaped blobs along the jaw."
+  },
+  "p02": {
+    "pick": "B",
+    "why": "Same armoured silhouette; B's mouth has a lip line with small teeth and fangs, while A's teeth are floating star shapes. B's scale pattern has some black-dot noise, but the mouth outweighs it."
+  },
+  "p03": {
+    "pick": "A",
+    "why": "Same silhouette; A's abdomen has segment ridges that read as an insect, while B is a smooth featureless blob. Eyes and horn are identical."
+  },
+  "p04": {
+    "pick": "B",
+    "why": "Silhouette, fangs and eyes are near-identical; A's scales show dithered black-dot noise over the head and neck, while B's cracked-plate skin is clean and reads clearly."
+  },
+  "p05": {
+    "pick": "B",
+    "why": "Same body, horns and posture; A's head has no mouth at all, while B has a lipped mouth line with a row of small teeth along the jaw."
+  },
+  "p06": {
+    "pick": "A",
+    "why": "Same horned, striped body; A has a lip line with small teeth plus fangs on the dark muzzle, while B has only a few jagged fangs and no mouth line."
+  },
+  "p07": {
+    "pick": "A",
+    "why": "Same tiny newt silhouette; A has smooth tapering limbs and a thin lipped mouth, while B's front legs are angular and kinked and the jaw is a chunky block. A's head skin has some speckle noise."
+  },
+  "p08": {
+    "pick": "A",
+    "why": "Same tusked boar-beast; A has a clear mouth line and smile under the snout, while B has no mouth and a ragged jagged colour edge across the chin and chest."
+  },
+  "p09": {
+    "pick": "A",
+    "why": "Same long-necked silhouette; A's head has a slim snout with a lip line and teeth, while B has a blocky chin lip and faceted slab skin. A has some dotted scale noise."
+  },
+  "p10": {
+    "pick": "B",
+    "why": "Same scorpion silhouette; B has banded segments on the tail and legs and a toothed mouth, while A is a smooth tube with no mouth and no joint markings."
+  },
+  "p11": {
+    "pick": "B",
+    "why": "Same spined serpent; B's mouth is closed with a row of teeth and two fangs in the front view, while A's is a dark gaping hole with star-shaped teeth. B's scales have dot noise."
+  },
+  "p12": {
+    "pick": "B",
+    "why": "Same small theropod; B has a lipped mouth with a row of rounded teeth and fuller thighs in the front view, while A has star-shaped teeth and straighter stilt-like legs. B has scale noise."
+  },
+  "p13": {
+    "pick": "A",
+    "why": "Same bear-like beast; A has a lipped mouth line with a row of small teeth and fangs, while B has spiky star-shaped teeth at the front of the jaw and no lip line."
+  },
+  "p14": {
+    "pick": "A",
+    "why": "Same spotted cat; A has a clean lip line and fuller thighs, while B has a jagged zigzag colour edge around the mouth and straight column legs in the front view."
+  },
+  "p15": {
+    "pick": "A",
+    "why": "Same gecko-like body; A has a lipped mouth with small teeth and eyelid rims on the eyes, while B's snout has no readable mouth and its eyes are bare spheres. A has some dot noise on the head."
+  },
+  "p16": {
+    "pick": "B",
+    "why": "Same ant silhouette; B has dark segment rings on the abdomen, thorax and leg joints, which makes it read as an arthropod, while A is a smooth glossy red blob."
+  },
+  "p17": {
+    "pick": "B",
+    "why": "Same goblin; B has eyelids, brow and nostril bumps, and a lipped mouth with tiny teeth, while A has bare bulging eyes and a ragged jagged dark smear for a mouth."
+  },
+  "p18": {
+    "pick": "A",
+    "why": "Silhouette and fangs are nearly the same; B's scale skin has heavy black-dot dithering on the head and hood, while A's cracked-plate skin is clean and readable. Low confidence."
+  },
+  "p19": {
+    "pick": "B",
+    "why": "Same rhino; B has eyelids and a row of small teeth in the mouth, while A has no mouth and plain eyes. A's cracked plates are cleaner, but B's scale skin is noisy."
+  },
+  "p20": {
+    "pick": "A",
+    "why": "Same spiny dark hound; A has a lip line with clean fangs and red eyes with lid rims, while B has a row of star-shaped teeth and bare bulb eyes."
+  }
+}

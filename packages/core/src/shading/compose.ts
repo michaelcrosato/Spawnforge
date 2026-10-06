@@ -133,7 +133,7 @@ const MATERIAL_SCALE = 0.014;
 const CHITIN_PLATES = 14;
 const CHITIN_LIMB_PLATES = 4;
 
-/** One scale of an overlapping row: where in it a point is, and its edges. */
+/** One scale of an overlapping row: where in it a point is, and its relief. */
 export interface Shingle<F> {
   /** 0 at the visible part's front (just behind the scale ahead) rising to 1 at its free rear edge. */
   readonly plate: F;
@@ -141,6 +141,11 @@ export interface Shingle<F> {
   readonly edge: F;
   /** A random value per scale in [0, 1). */
   readonly id: F;
+  /**
+   * The relief, 0 to 1: the highest of the scales covering the point, each rising toward its
+   * rear edge and falling to nothing at its rim. Continuous, so bump mapping never sees a step.
+   */
+  readonly height: F;
 }
 
 /** Scale radius in lattice cells: big enough that the scales overlap everywhere. */
@@ -148,9 +153,9 @@ const SHINGLE_RADIUS = 0.85;
 
 /**
  * Overlapping scales of `size` torso lengths, like a fish's or a snake's: round scales on a
- * staggered lattice, each overlapping the one behind it, so a point shows the front-most scale
- * that covers it. Its free rear edge is a scalloped arc, and the scale rises toward it along
- * the body's tail-ward direction (down the limbs on limbs).
+ * staggered lattice, each rising along the body's tail-ward direction (down the limbs on limbs)
+ * to a free rear edge and falling away at its rim. A point shows the highest scale there, so each
+ * raised rear edge lies over the low front of the scale behind it, in scalloped rows.
  */
 export function shingles<F>(k: Kit<F>, s: Surface<F>, size: number, salt: number): Shingle<F> {
   const f = k.num(1 / size);
@@ -166,9 +171,9 @@ export function shingles<F>(k: Kit<F>, s: Surface<F>, size: number, salt: number
   const tz = k.div(k.sub(k.num(0), back), norm);
   const R = k.num(SHINGLE_RADIUS);
   const jitter = k.num(0.25);
-  let bestKey = k.num(-1e6);
-  let along = k.num(0);
-  let dist = k.num(1);
+  let height = k.num(0);
+  let plate = k.num(0);
+  let edge = k.num(0);
   let id = k.num(0);
   const bz = k.floor(z);
   for (let dz = -1; dz <= 1; dz++) {
@@ -190,38 +195,23 @@ export function shingles<F>(k: Kit<F>, s: Surface<F>, size: number, salt: number
         const oy = k.sub(k.add(k.add(k.add(cy, half), shift), jy), y);
         const oz = k.sub(k.add(k.add(cz, half), jz), z);
         const d = k.sqrt(k.add(k.add(k.mul(ox, ox), k.mul(oy, oy)), k.mul(oz, oz)));
-        // How far toward the head the scale's centre lies (the point's own share is the same
-        // for every scale).
-        const front = k.sub(k.num(0), k.add(k.mul(oy, ty), k.mul(oz, tz)));
-        // Covering scales rank by how far forward they sit; if none covers, the nearest.
-        const covered = k.step(d, R);
-        const key = k.add(
-          k.mul(covered, k.add(k.num(1000), front)),
-          k.mul(k.sub(one, covered), k.sub(k.num(0), d)),
+        // How far toward the tail the point lies from the scale's centre, as a share of R.
+        const along = k.div(k.add(k.mul(oy, ty), k.mul(oz, tz)), R);
+        const rise = k.smoothstep(k.num(-0.9), k.num(0.7), along);
+        const rim = k.div(k.sub(R, d), R);
+        const cap = k.mul(
+          k.add(k.num(0.25), k.mul(rise, k.num(0.75))),
+          k.smoothstep(k.num(0), k.num(0.3), rim),
         );
-        const better = k.step(bestKey, key);
-        bestKey = k.max(bestKey, key);
-        // The point relative to the centre, along the tail-ward direction, as a share of R.
-        along = k.mix(along, k.div(front, R), better);
-        dist = k.mix(dist, d, better);
-        id = k.mix(id, k.hash3(cx, cy, cz, salt + 53), better);
+        const higher = k.step(height, cap);
+        height = k.max(height, cap);
+        plate = k.mix(plate, rise, higher);
+        edge = k.mix(edge, k.max(k.num(0), rim), higher);
+        id = k.mix(id, k.hash3(cx, cy, cz, salt + 53), higher);
       }
     }
   }
-  return {
-    plate: k.smoothstep(k.num(-0.9), k.num(0.7), along),
-    edge: k.max(k.num(0), k.div(k.sub(R, dist), R)),
-    id,
-  };
-}
-
-/**
- * A shingle's relief, 0 to 1: rising toward its free rear edge, and easing at the rim to about
- * the height of the scale behind there, so the step between them stays small and bump mapping
- * does not sparkle along it.
- */
-export function shingleHeight<F>(k: Kit<F>, sh: Shingle<F>): F {
-  return k.mix(k.num(0.28), sh.plate, k.smoothstep(k.num(0), k.num(0.25), sh.edge));
+  return { plate, edge, id, height };
 }
 
 /** sRGB (0 to 1) to linear light. */
@@ -274,16 +264,11 @@ function materialSurface<F>(
     }
     case 'scales': {
       const sh = shingles(k, s, MATERIAL_SCALE, 503);
-      const rim = k.smoothstep(k.num(0), k.num(0.25), sh.edge);
+      // The low front of each scale, tucked under the one ahead, lies in its shadow.
+      const low = k.sub(one, sh.height);
       return {
-        height: k.mul(
-          k.mul(shingleHeight(k, sh), k.num(MATERIAL_SCALE * 0.12)),
-          relief(k, s, MATERIAL_SCALE),
-        ),
-        dark: k.mul(
-          k.add(k.mul(k.sub(one, sh.plate), k.num(0.14)), k.mul(k.sub(one, rim), k.num(0.12))),
-          detail(k, s, MATERIAL_SCALE),
-        ),
+        height: k.mul(k.mul(sh.height, k.num(MATERIAL_SCALE * 0.12)), relief(k, s, MATERIAL_SCALE)),
+        dark: k.mul(k.mul(k.mul(low, low), k.num(0.3)), detail(k, s, MATERIAL_SCALE)),
         roughness: k.num(0),
       };
     }
