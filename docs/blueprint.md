@@ -300,11 +300,16 @@ spawnforge patch wolf.json '[{"op":"set","path":"limbs[id=hindleg].length","valu
 ## Species and variation
 
 **Species.** Anywhere a number goes, a range `{ "min": 0.5, "max": 0.7 }` makes the blueprint a
-species: one file for endless individuals. `instantiate` (CLI `spawnforge instantiate
-species.json --seed 7`) resolves every range for a seed; integers stay integers when both ends
-are. Each range draws from its own stream, keyed by its path, so narrowing one range never
-changes the others. `validate` recognises a species and checks it at both ends of every range
-(all minimums, then all maximums) and at a few seeds, so an error names the range that breaks:
+species: one file for endless individuals. Anywhere a colour goes, `{ "min": "#5a5a5a", "max":
+"#9a9a9a" }` picks a colour between the two (`#rrggbb` only, no names). `instantiate` (CLI
+`spawnforge instantiate species.json --seed 7`) resolves every range for a seed: integer fields
+(`segments`, `toes`, `count`) get whole numbers, every other number any value in between, so
+`{ "min": 2, "max": 3 }` on a tail length gives 2.6 as readily as 2. Each range draws from its own
+stream, keyed by its path, so narrowing one range never changes the others. `validate`
+recognises a species and checks it at both ends of every range (all minimums, then all maximums)
+and at a few seeds (listed in `checked`), so an error names the range that breaks. `patch` edits
+a species the same way. `analyze`, `render`, `mutate` and `crossbreed` work on one creature, so
+make an individual first:
 
 ```json
 {
@@ -329,24 +334,34 @@ skin,body.head`) makes a child: numbers drift within their schema ranges, profil
 shift, and now and then an enum flips or a part is added, removed or swapped for one with the
 same slot and a shared tag (eyes and ears are never touched). `amount` (0 to 1) is how many genes
 change and how far; values of zero stay zero, so a tailless creature does not sprout a tail.
-`locked` paths, such as `skin`, `body.head` or `parts[id=horns]`, never change. The result is the
-parent's file with the changes written in, plus a gene-by-gene diff.
+`locked` paths, such as `skin`, `body.head`, `parts[id=horns]` or `skin.layers[type=stripes]`,
+never change; a lock that matches nothing comes back as an `unknown_lock` warning. Palette colours
+keep their contrast with the base, so a mutated stripe never fades into the skin, and eyes and
+ears are never added, removed or swapped. The result is the parent's file with the changes
+written in, plus a gene-by-gene diff; it keeps the parent's `name` and `seed` (the seed places
+spots and scales, so the child keeps its parent's markings). Mutation is random: to push a gene
+one way (longer horns), lock it and change it with `patch`.
 
 **Crossbreed.** `crossbreed` (CLI `spawnforge crossbreed a.json b.json --mix 0.5`) keeps one
 parent's body plan (the second parent's, with chance `mix`, when they differ) and builds on that
 parent's file. It pairs limbs by id or by role and position (forelegs with forelegs), parts by id
-or type, and layers, gaits and actions by type; then it blends numbers and colours between pairs,
-picks enums and switches from either parent, and brings unpaired parts, layers and actions over
-by chance. `mix` 0 or 1 copies a parent; in between, each gene's share wobbles a little around
-`mix`. The result says which parent it is built on (`base`) and diffs against it.
+or type (same type on the same section: tusks on the jaw don't pair with a horn on the head),
+and layers, gaits and actions by type; then it blends numbers and colours between pairs, picks
+enums and switches from either parent, and brings unpaired parts, layers and actions over by
+chance. `mix` 0 or 1 copies a parent; in between, each gene's share wobbles a little around
+`mix`. Posture blends too (torso and neck pitch), so to keep one parent's body, build on it with
+`--base a` and lock what must not change: `--lock body.torso,limbs`. The result says which parent
+it is built on (`base`) and diffs against it.
 
 **Generate.** `generate` (CLI `spawnforge generate --theme reptile --seed 4`) builds a new
 creature from a theme module (`list_modules` with kind `theme`: `reptile`, `insect`, `demon`).
 The theme weights the body plan and narrows the proportions, optional parts, patterns, palette,
 material and temperament; the same theme and seed always give the same creature. Constraints
 narrow it further: `--body-plan biped`, `--max-height 1.2` and `--min-height 0.5` (body height in
-metres, not counting horns; the creature is rescaled to fit), `--actions bite,roar` (it gets a
-body that can) and `--parts horn.curved`. Generated blueprints are ordinary blueprints: edit them
+metres, not counting horns or spikes, the same as `analyze`'s `bodyHeight`; its `height` counts
+them; the creature is rescaled to fit), `--actions bite,roar` (it gets a body that can; the file
+leaves `motion.actions` out, which means every action the body allows) and `--parts
+horn.curved`. Generated blueprints are ordinary blueprints: edit them
 with `patch`, or `mutate` and `crossbreed` them. In the sandbox, the breed tab does all three.
 
 ## Validation

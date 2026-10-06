@@ -52,6 +52,15 @@ export class CommandError extends Error {
   }
 }
 
+/** Species have ranges where numbers go; tools that build one creature need an individual. */
+export function needIndividual(blueprint: unknown, what: string): void {
+  if (isSpecies(blueprint))
+    throw new CommandError(
+      `this is a species (it has { "min", "max" } ranges), and ${what} works on one creature`,
+      'make an individual first: spawnforge instantiate species.json --seed 1 (MCP: instantiate)',
+    );
+}
+
 export interface ListModulesResult {
   format: string;
   modules: Omit<CatalogEntry, 'params'>[];
@@ -203,6 +212,8 @@ export interface ValidateResult {
   creature?: unknown;
   /** True when the input was a species (it has ranges); use `instantiate` for individuals. */
   species?: boolean;
+  /** For a species: the individuals checked (both ends of every range, then a few seeds). */
+  checked?: string[];
 }
 
 /** Validates a blueprint: errors and warnings with id-based paths and fixes, plus the minimal form. */
@@ -213,7 +224,13 @@ export function validate(
   if (isSpecies(options.blueprint) && typeof options.blueprint === 'object') {
     // A species (a blueprint with { min, max } ranges): checked at both ends of every range.
     const species = validateSpecies(options.blueprint as Record<string, unknown>, registry);
-    return { ok: species.ok, species: true, errors: species.errors, warnings: species.warnings };
+    return {
+      ok: species.ok,
+      species: true,
+      checked: species.checked,
+      errors: species.errors,
+      warnings: species.warnings,
+    };
   }
   const result = validateBlueprint(options.blueprint, registry);
   return {
@@ -290,6 +307,18 @@ export function patch(
     ops.data as PatchOp[],
     registry,
   );
+  if (isSpecies(result.blueprint)) {
+    // A species is checked as one: at both ends of every range.
+    const species = validateSpecies(result.blueprint, registry);
+    const errors = [...result.errors.filter((e) => e.code === 'bad_patch'), ...species.errors];
+    return {
+      ok: errors.length === 0,
+      diff: formatDiff(result.diff),
+      errors,
+      warnings: species.warnings,
+      blueprint: result.blueprint,
+    };
+  }
   return {
     ok: result.ok,
     diff: formatDiff(result.diff),
@@ -309,6 +338,7 @@ export function analyze(
   options: { blueprint: unknown; terrainSeed?: number },
   registry = getRegistry(),
 ): AnalyzeResult {
+  needIndividual(options.blueprint, 'analyze');
   const checked = validateBlueprint(options.blueprint, registry, { minimal: false });
   if (!checked.ok || !checked.creature) return { ok: false, errors: checked.errors };
   const analysis = analyzeCreature(checked.creature, registry, {
@@ -402,6 +432,7 @@ export function mutate(
   registry = getRegistry(),
 ): VariationCommandResult {
   unit('amount', options.amount);
+  needIndividual(options.blueprint, 'mutate');
   const result = mutateBlueprint(
     asObject(options.blueprint, 'the blueprint'),
     {
@@ -421,14 +452,28 @@ export function mutate(
  * `base`.
  */
 export function crossbreed(
-  options: { a: unknown; b: unknown; seed?: number; mix?: number },
+  options: {
+    a: unknown;
+    b: unknown;
+    seed?: number;
+    mix?: number;
+    base?: 'a' | 'b';
+    locked?: readonly string[];
+  },
   registry = getRegistry(),
 ): VariationCommandResult & { base: 'a' | 'b' } {
   unit('mix', options.mix);
+  needIndividual(options.a, 'crossbreed');
+  needIndividual(options.b, 'crossbreed');
   const result = crossbreedBlueprints(
     asObject(options.a, 'parent a'),
     asObject(options.b, 'parent b'),
-    { seed: options.seed ?? 1, ...(options.mix !== undefined ? { mix: options.mix } : {}) },
+    {
+      seed: options.seed ?? 1,
+      ...(options.mix !== undefined ? { mix: options.mix } : {}),
+      ...(options.base ? { base: options.base } : {}),
+      ...(options.locked ? { locked: options.locked } : {}),
+    },
     registry,
   );
   return { ...result, diff: formatDiff(result.diff) };
@@ -445,7 +490,7 @@ export function instantiate(
   warnings: readonly Issue[];
 } {
   const species = asObject(options.species, 'the species');
-  const individual = instantiateSpecies(species, options.seed ?? 1);
+  const individual = instantiateSpecies(species, options.seed ?? 1, registry);
   const result = validateBlueprint(individual, registry);
   return {
     ok: result.ok,

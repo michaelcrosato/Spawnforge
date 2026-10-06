@@ -82,6 +82,40 @@ describe('species', () => {
   });
 });
 
+describe('species ranges', () => {
+  it('gives integer fields whole numbers and number fields anything in between', () => {
+    const sp = {
+      format: FORMAT,
+      extends: 'serpent',
+      body: { tail: { length: { min: 2, max: 3 } }, torso: { segments: { min: 6, max: 10 } } },
+    };
+    const tails = new Set<number>();
+    for (let seed = 1; seed <= 12; seed++) {
+      const one = instantiate(sp, seed, registry) as {
+        body: { tail: { length: number }; torso: { segments: number } };
+      };
+      tails.add(one.body.tail.length);
+      expect(Number.isInteger(one.body.torso.segments)).toBe(true);
+    }
+    expect([...tails].some((t) => !Number.isInteger(t))).toBe(true);
+  });
+
+  it('blends colours between two ends', () => {
+    const sp = {
+      format: FORMAT,
+      extends: 'quadruped',
+      skin: { palette: { base: { min: '#202020', max: '#e0e0e0' } } },
+    };
+    const colors = [1, 2, 3, 4].map(
+      (seed) =>
+        (instantiate(sp, seed, registry).skin as { palette: { base: string } }).palette.base,
+    );
+    expect(new Set(colors).size).toBe(4);
+    for (const c of colors) expect(c).toMatch(/^#[0-9a-f]{6}$/);
+    expect(validateSpecies(sp, registry).ok).toBe(true);
+  });
+});
+
 describe('mutate', () => {
   it('gives valid, repeatable children for every example', () => {
     for (const name of EXAMPLES)
@@ -104,6 +138,36 @@ describe('mutate', () => {
     expect(mutate(parent, { seed: 1, amount: 0 }, registry).diff).toEqual([]);
     const warned = mutate(parent, { seed: 1, locked: ['body.wings'] }, registry);
     expect(warned.warnings.map((w) => w.code)).toContain('unknown_lock');
+  });
+
+  it('locks layers by type or id, as patch addresses them', () => {
+    const viper = example('reed-viper');
+    for (const lock of ['skin.layers[type=stripes]', 'skin.layers[1]']) {
+      for (const seed of [1, 2, 3]) {
+        const child = mutate(viper, { seed, amount: 1, locked: [lock] }, registry);
+        expect(child.warnings.map((w) => w.code)).not.toContain('unknown_lock');
+        expect(child.diff.filter((d) => d.path.startsWith('skin.layers[1]'))).toEqual([]);
+      }
+    }
+  });
+
+  it('keeps pattern colours readable against the skin', () => {
+    const viper = example('reed-viper');
+    const lightness = (hex: string) => {
+      const n = Number.parseInt(hex.slice(1), 16);
+      const c = [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+      return (Math.max(...c) + Math.min(...c)) / 510;
+    };
+    for (let seed = 1; seed <= 30; seed++) {
+      const child = mutate(viper, { seed, amount: 1 }, registry);
+      const palette = (
+        expand(child.blueprint, registry).doc as {
+          skin: { palette: Record<string, string> };
+        }
+      ).skin.palette;
+      const gap = Math.abs(lightness(palette.accent as string) - lightness(palette.base as string));
+      expect(gap).toBeGreaterThanOrEqual(0.1);
+    }
   });
 
   it('changes parts now and then, never removing eyes', () => {
@@ -144,6 +208,33 @@ describe('crossbreed', () => {
       expect(sc).toBeGreaterThanOrEqual(Math.min(sa, sb));
       expect(sc).toBeLessThanOrEqual(Math.max(sa, sb));
     }
+  });
+
+  it('builds on the parent asked for and keeps locked paths', () => {
+    const troll = example('bog-troll');
+    const beetle = example('ember-beetle');
+    for (const seed of [1, 2, 3, 4]) {
+      const child = crossbreed(
+        troll,
+        beetle,
+        { seed, mix: 0.5, base: 'a', locked: ['body.torso', 'limbs'] },
+        registry,
+      );
+      expect(child.ok).toBe(true);
+      expect(child.base).toBe('a');
+      expect(child.blueprint.extends).toBe('biped');
+      expect(child.diff.filter((d) => /^(body\.torso|limbs)/.test(d.path))).toEqual([]);
+    }
+  });
+
+  it('pairs parts of one type only on the same section', () => {
+    const troll = example('bog-troll');
+    const beetle = example('ember-beetle');
+    // The troll's tusks sit on the jaw and the beetle's horn on the head: at mix 1 the horn
+    // comes over as its own part.
+    const child = crossbreed(troll, beetle, { seed: 1, mix: 1, base: 'a' }, registry);
+    const parts = (expand(child.blueprint, registry).doc as { parts: { id: string }[] }).parts;
+    expect(parts.map((p) => p.id)).toContain('horn');
   });
 
   it('keeps the body plan of the parent mix points to', () => {

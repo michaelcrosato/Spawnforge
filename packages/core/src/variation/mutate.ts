@@ -3,6 +3,7 @@ import { cloneJson, isRecord } from '../blueprint/merge.ts';
 import type { PartModule, Registry } from '../registry.ts';
 import { createRng, type Rng } from '../rng.ts';
 import {
+  canonicalPath,
   expand,
   finish,
   type Gene,
@@ -10,10 +11,12 @@ import {
   genesOf,
   getAt,
   isLocked,
+  lightnessOf,
   nudgeColor,
   setAt,
   tidy,
   type VariationResult,
+  withLightness,
 } from './genes.ts';
 
 type Json = Record<string, unknown>;
@@ -72,7 +75,7 @@ function placeable(registry: Registry): PartModule[] {
   return registry.list('part').filter((m) => m.slot !== 'foot');
 }
 
-/** Sense organs are never removed, swapped out or swapped in. */
+/** Sense organs are never added, removed, swapped out or swapped in. */
 const isSense = (module: PartModule | undefined) => module?.tags.includes('sense') ?? false;
 
 /**
@@ -87,7 +90,7 @@ function changeStructure(child: Json, rng: Rng, registry: Registry, locked: read
   const tags = new Set(parts.flatMap((p) => moduleOf(p)?.tags ?? []));
   const present = new Set(parts.map((p) => p.type));
   const addable = placeable(registry).filter(
-    (m) => !present.has(m.id) && m.tags.some((t) => tags.has(t)),
+    (m) => !present.has(m.id) && !isSense(m) && m.tags.some((t) => tags.has(t)),
   );
   const swaps = (p: Json) => {
     const old = moduleOf(p);
@@ -132,6 +135,39 @@ function changeStructure(child: Json, rng: Rng, registry: Registry, locked: read
 }
 
 /**
+ * Patterns stay readable: each palette colour keeps at least the lightness difference from the
+ * base it had in the parent (up to 0.12), on the same side, so a stripe never fades into the skin.
+ */
+function keepContrast(parent: Json, child: Json, locked: readonly string[]) {
+  const before = (parent.skin as Json | undefined)?.palette as Record<string, string> | undefined;
+  const after = (child.skin as Json | undefined)?.palette as Record<string, string> | undefined;
+  if (!before?.base || !after?.base) return;
+  const [lo, hi] = [0.04, 0.96];
+  // Twice: moving the base for one colour can matter to another.
+  for (let pass = 0; pass < 2; pass++)
+    for (const name of Object.keys(after)) {
+      const old = before[name];
+      const color = after[name] as string;
+      if (name === 'base' || !old || isLocked(`skin.palette.${name}`, locked)) continue;
+      const was = lightnessOf(old) - lightnessOf(before.base);
+      const side = Math.sign(was) || 1;
+      const need = Math.min(Math.abs(was), 0.12);
+      const base = lightnessOf(after.base);
+      const now = lightnessOf(color) - base;
+      if (Math.sign(now) === side && Math.abs(now) >= need - 0.005) continue;
+      const target = base + side * need;
+      if (target >= lo && target <= hi) after[name] = withLightness(color, target);
+      else {
+        // No room on that side of the base: put the colour at the edge and move the base.
+        const edge = side > 0 ? hi : lo;
+        after[name] = withLightness(color, edge);
+        if (!isLocked('skin.palette.base', locked))
+          after.base = withLightness(after.base, edge - side * need);
+      }
+    }
+}
+
+/**
  * A child of one parent: numbers drift within their ranges, colours shift, and now and then an
  * enum flips or a part is added, removed or swapped (parts with matching tags). Locked paths
  * never change. Each gene draws from its own seed stream, so locking one never reshuffles the
@@ -145,7 +181,9 @@ export function mutate(
   const { doc, errors } = expand(blueprint, registry);
   if (!doc) return { ok: false, blueprint, diff: [], errors, warnings: [] };
   const amount = clamp(options.amount ?? 0.3, 0, 1);
-  const locked = options.locked ?? [];
+  // Locks in any form patch accepts, spelled the way gene paths are.
+  const locks = (options.locked ?? []).map((lock) => ({ lock, path: canonicalPath(doc, lock) }));
+  const locked = locks.flatMap((l) => (l.path === undefined ? [] : [l.path]));
   // Mixed with the parent's own seed, so one mutation seed sends different parents different ways.
   const root = createRng(options.seed ?? 1).stream(`parent:${String(doc.seed ?? 0)}`);
   const child = cloneJson(doc);
@@ -160,19 +198,20 @@ export function mutate(
     const value = mutateGene(gene, rng, amount);
     if (value !== undefined) setAt(child, gene.path, value);
   }
+  keepContrast(doc, child, locked);
   if (options.structure !== false && !isLocked('parts', locked)) {
     const rng = root.stream('structure');
     if (rng.chance(amount * 0.6)) changeStructure(child, rng, registry, locked);
   }
   const result = finish(blueprint, doc, child, registry);
-  const unused: Issue[] = locked
-    .filter((lock) => lock !== '' && getAt(doc, lock) === undefined)
-    .map((lock) => ({
+  const unused: Issue[] = locks
+    .filter((l) => l.path === undefined)
+    .map((l) => ({
       severity: 'warning' as const,
-      path: lock,
+      path: l.lock,
       code: 'unknown_lock',
       message: 'nothing at this locked path, so it locks nothing',
-      fix: 'use an id-based path such as "body.head" or "parts[id=horns]"',
+      fix: 'use a path like "body.head", "parts[id=horns]" or "skin.layers[type=stripes]"',
     }));
   return { ...result, warnings: [...unused, ...result.warnings] };
 }

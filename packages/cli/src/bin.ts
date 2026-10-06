@@ -13,6 +13,7 @@ import {
   instantiate,
   listModules,
   mutate,
+  needIndividual,
   patch,
   validate,
 } from './commands.ts';
@@ -44,8 +45,10 @@ Commands:
   mutate <file|-> [--seed n] [--amount 0-1] [--lock path,path] [--keep-parts] [--out file]
                                         A child of one blueprint: values drift, parts may change;
                                         locked paths (e.g. skin,body.head) never do
-  crossbreed <a> <b> [--seed n] [--mix 0-1] [--out file]
-                                        A child of two blueprints; mix is the share from b
+  crossbreed <a> <b> [--seed n] [--mix 0-1] [--base a|b] [--lock path,path] [--out file]
+                                        A child of two blueprints; mix is the share from b,
+                                        base picks whose body it is built on, locked paths keep
+                                        the base parent's values
   instantiate <species|-> [--seed n] [--out file]
                                         One individual of a species (a blueprint whose numbers
                                         may be { "min": 0.5, "max": 0.7 } ranges)
@@ -103,6 +106,7 @@ const { positionals, values } = parseArgs({
     lock: { type: 'string' },
     'keep-parts': { type: 'boolean' },
     mix: { type: 'string' },
+    base: { type: 'string' },
   },
 });
 const [command, arg] = positionals;
@@ -127,6 +131,7 @@ function number(name: string, value: string | undefined): number | undefined {
 async function render(): Promise<{ output: unknown; exitCode?: number }> {
   if (!arg) throw new CommandError('render needs a file path, or - for stdin');
   const blueprint = readInput(arg);
+  needIndividual(blueprint, 'render');
   const checked = validate({ blueprint });
   if (!checked.ok) return { output: { ok: false, errors: checked.errors }, exitCode: 1 };
   const views = values.views?.split(',').map((v) => {
@@ -299,12 +304,17 @@ const commands: Record<
       );
     const seed = seedOf();
     const mix = number('mix', values.mix);
+    const locked = list(values.lock);
+    if (values.base !== undefined && values.base !== 'a' && values.base !== 'b')
+      throw new CommandError(`--base must be a or b, not "${values.base}"`);
     return emit(
       crossbreed({
         a: readInput(arg),
         b: readInput(other),
         ...(seed !== undefined ? { seed } : {}),
         ...(mix !== undefined ? { mix } : {}),
+        ...(values.base ? { base: values.base as 'a' | 'b' } : {}),
+        ...(locked ? { locked } : {}),
       }),
     );
   },

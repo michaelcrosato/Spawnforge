@@ -9,6 +9,7 @@ import {
   instantiate,
   listModules,
   mutate,
+  needIndividual,
   patch,
   patchOpsSchema,
   validate,
@@ -278,6 +279,14 @@ export function createServer(): McpServer {
         bPath: z.string().optional().describe('Path to parent b, instead of "b"'),
         seed: z.number().int().optional().describe('Which child (default 1)'),
         mix: z.number().min(0).max(1).optional().describe('Share from b, 0 to 1'),
+        base: z
+          .enum(['a', 'b'])
+          .optional()
+          .describe('The parent whose body plan and file the child is built on'),
+        locked: z
+          .array(z.string())
+          .optional()
+          .describe('Paths that keep the base parent\'s values, e.g. ["body.torso", "limbs"]'),
         out: outInput,
       }),
     },
@@ -289,6 +298,8 @@ export function createServer(): McpServer {
             b: readBlueprint({ blueprint: input.b, path: input.bPath }),
             ...(input.seed !== undefined ? { seed: input.seed } : {}),
             ...(input.mix !== undefined ? { mix: input.mix } : {}),
+            ...(input.base ? { base: input.base } : {}),
+            ...(input.locked ? { locked: input.locked } : {}),
           }),
           input.out,
         ),
@@ -426,6 +437,10 @@ export function createServer(): McpServer {
         });
       }
       const checked = validate({ blueprint });
+      if (checked.species)
+        return reply(() => {
+          needIndividual(blueprint, 'render');
+        });
       if (!checked.ok) return reply(() => ({ ok: false, errors: checked.errors }));
       try {
         const r = await getRenderer();

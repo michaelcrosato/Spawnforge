@@ -4,11 +4,13 @@ import type { Registry } from '../registry.ts';
 import { createRng } from '../rng.ts';
 import {
   blendColor,
+  canonicalPath,
   expand,
   finish,
   gauss,
   genesOf,
   getAt,
+  isLocked,
   setAt,
   tidy,
   type VariationResult,
@@ -21,6 +23,13 @@ export interface CrossbreedOptions {
   readonly seed?: number;
   /** How much comes from the second parent, 0 to 1 (default 0.5). */
   readonly mix?: number;
+  /**
+   * The parent whose body plan and file the child is built on. By default a, or b with chance
+   * `mix` when their body plans differ.
+   */
+  readonly base?: 'a' | 'b';
+  /** Paths that keep the base parent's values, e.g. `body.torso`, `limbs`, `parts[id=tusks]`. */
+  readonly locked?: readonly string[];
 }
 
 export interface CrossbreedResult extends VariationResult {
@@ -33,6 +42,8 @@ const items = (doc: Json, path: string): Json[] => {
   const list = getAt(doc, path);
   return Array.isArray(list) ? list.filter(isRecord) : [];
 };
+
+const on = (part: Json) => (isRecord(part.attach) ? part.attach.on : undefined);
 
 /**
  * Pairs each list item of the base with its counterpart in the donor: limbs by id, else by role
@@ -58,7 +69,9 @@ function pairItems(base: Json, donor: Json): Map<string, string> {
   for (const part of items(base, 'parts')) {
     const match =
       donorParts.find((d) => d.id === part.id && d.type === part.type) ??
-      donorParts.find((d) => d.type === part.type && !used.has(d));
+      // A part of the same type pairs only where it sits on the same section: a troll's tusks
+      // on the jaw are not a beetle's horn on the head.
+      donorParts.find((d) => d.type === part.type && !used.has(d) && on(d) === on(part));
     if (!match) continue;
     used.add(match);
     pairs.set(`parts[id=${part.id}]`, `parts[id=${match.id}]`);
@@ -122,14 +135,23 @@ export function crossbreed(
   const root = createRng(options.seed ?? 1).stream(
     `parents:${String(left.doc.seed ?? 0)}:${String(right.doc.seed ?? 0)}`,
   );
-  const fromB = left.doc.extends !== right.doc.extends && root.stream('plan').chance(mix);
+  const fromB =
+    options.base !== undefined
+      ? options.base === 'b'
+      : left.doc.extends !== right.doc.extends && root.stream('plan').chance(mix);
   const [baseInput, baseDoc, donor] = fromB ? [b, right.doc, left.doc] : [a, left.doc, right.doc];
   // Share of each gene that comes from the donor.
   const t = fromB ? 1 - mix : mix;
   const child = cloneJson(baseDoc);
   const pairs = pairItems(baseDoc, donor);
+  const locks = (options.locked ?? []).map((lock) => ({
+    lock,
+    path: canonicalPath(baseDoc, lock),
+  }));
+  const locked = locks.flatMap((l) => (l.path === undefined ? [] : [l.path]));
 
   for (const gene of genesOf(baseDoc, registry)) {
+    if (isLocked(gene.path, locked)) continue;
     const where = counterpart(gene.path, pairs);
     const theirs = where === undefined ? undefined : getAt(donor, where);
     if (theirs === undefined) continue;
@@ -160,14 +182,17 @@ export function crossbreed(
   // come over with chance t.
   const pairedDonor = new Set(pairs.values());
   const inherit = root.stream('inherit');
+  const partsLocked = isLocked('parts', locked);
   const parts = items(child, 'parts').filter(
     (p) =>
+      partsLocked ||
+      isLocked(`parts[id=${p.id}]`, locked) ||
       pairs.has(`parts[id=${p.id}]`) ||
       registry.get('part', p.type as string)?.tags.includes('sense') ||
       inherit.chance(1 - t),
   );
   const ids = new Set(parts.map((p) => p.id));
-  for (const part of items(donor, 'parts')) {
+  for (const part of partsLocked ? [] : items(donor, 'parts')) {
     if (pairedDonor.has(`parts[id=${part.id}]`) || !inherit.chance(t)) continue;
     if (registry.get('part', part.type as string)?.tags.includes('sense')) continue;
     let id = part.id as string;
@@ -178,6 +203,7 @@ export function crossbreed(
   child.parts = parts;
   // Layers and actions the donor has and the base lacks come over with chance t.
   for (const list of ['skin.layers', 'motion.actions']) {
+    if (isLocked(list, locked)) continue;
     const mine = items(child, list);
     const kept = mine.filter((_, i) => pairs.has(`${list}[${i}]`) || inherit.chance(1 - t));
     const types = new Set(kept.map((x) => x.type));
@@ -189,5 +215,15 @@ export function crossbreed(
   child.seed = root.stream('seed').int(0, 2 ** 31 - 1);
   const names = [left.doc.name, right.doc.name].filter((n) => typeof n === 'string');
   if (names.length === 2) child.name = `${names[0]} × ${names[1]}`;
-  return { ...finish(baseInput, baseDoc, child, registry), base: fromB ? 'b' : 'a' };
+  const result = finish(baseInput, baseDoc, child, registry);
+  const unused: Issue[] = locks
+    .filter((l) => l.path === undefined)
+    .map((l) => ({
+      severity: 'warning' as const,
+      path: l.lock,
+      code: 'unknown_lock',
+      message: 'nothing at this path in the base parent, so it locks nothing',
+      fix: 'use a path like "body.torso", "limbs" or "parts[id=tusks]"',
+    }));
+  return { ...result, warnings: [...unused, ...result.warnings], base: fromB ? 'b' : 'a' };
 }

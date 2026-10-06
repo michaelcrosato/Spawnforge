@@ -14,6 +14,7 @@ export {
   type ListModulesResult,
   listModules,
   mutate,
+  needIndividual,
   type PatchCommandResult,
   patch,
   patchOpsSchema,

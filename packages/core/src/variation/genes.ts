@@ -134,9 +134,16 @@ export function genesOf(doc: Json, registry: Registry): Gene[] {
   const genes: Gene[] = [];
   const walk = (value: unknown, node: Schema | undefined, path: string, key: string) => {
     if (FIXED.has(key)) return;
-    if (typeof value === 'number') {
+    // A species range stands where a number goes; it reads as a gene at its lower end.
+    const ranged =
+      isRecord(value) &&
+      Object.keys(value).length === 2 &&
+      typeof value.min === 'number' &&
+      typeof value.max === 'number';
+    if (typeof value === 'number' || ranged) {
       const range = numberRange(node);
-      if (range) genes.push({ path, kind: 'number', value, ...range });
+      const v = ranged ? ((value as Json).min as number) : value;
+      if (range) genes.push({ path, kind: 'number', value: v, ...range });
       return;
     }
     if (typeof value === 'boolean') {
@@ -219,6 +226,43 @@ export function setAt(doc: unknown, path: string, value: unknown): void {
       else node = node[at];
     }
   }
+}
+
+/**
+ * A path as genes spell it: limbs and parts by id, other list items by index. Accepts the forms
+ * patch does (`skin.layers[type=stripes]`, `skin.layers[id=spots]`, `skin.layers[1]`). Undefined
+ * when nothing is there.
+ */
+export function canonicalPath(doc: unknown, path: string): string | undefined {
+  if (path === '') return '';
+  let node = doc;
+  let out = '';
+  let steps: Step[];
+  try {
+    steps = parsePath(path);
+  } catch {
+    return undefined;
+  }
+  for (const step of steps) {
+    if ('key' in step) {
+      if (!isRecord(node) || !(step.key in node)) return undefined;
+      node = node[step.key];
+      out += out ? `.${step.key}` : step.key;
+      continue;
+    }
+    if (!Array.isArray(node)) return undefined;
+    const list = node;
+    const at = indexIn(list, step);
+    const item = list[at];
+    if (item === undefined) return undefined;
+    const top = out.split(/[.[]/)[0] ?? '';
+    out +=
+      ID_LISTS.has(top) && out === top && isRecord(item) && typeof item.id === 'string'
+        ? `[id=${item.id}]`
+        : `[${at}]`;
+    node = item;
+  }
+  return out;
 }
 
 /** True when `path` is `lock` or lies inside it. */
@@ -385,4 +429,35 @@ function toHex(rgb: readonly number[]): string {
         .padStart(2, '0'),
     )
     .join('')}`;
+}
+
+/** HSL lightness of a `#rrggbb` colour, 0 to 1. */
+export function lightnessOf(hex: string): number {
+  const [r, g, b] = parseHex(hex);
+  return (Math.max(r, g, b) + Math.min(r, g, b)) / 510;
+}
+
+/** The same hue and saturation at another lightness. */
+export function withLightness(hex: string, lightness: number): string {
+  const [r, g, b] = parseHex(hex).map((c) => c / 255) as [number, number, number];
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  const d = max - min;
+  const s = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1));
+  const h =
+    d === 0
+      ? 0
+      : max === r
+        ? (60 * ((g - b) / d) + 360) % 360
+        : max === g
+          ? 60 * ((b - r) / d + 2)
+          : 60 * ((r - g) / d + 4);
+  const L = Math.min(0.97, Math.max(0.03, lightness));
+  const a = s * Math.min(L, 1 - L);
+  const f = (n: number) => {
+    const k = (n + h / 30) % 12;
+    return (L - a * Math.max(-1, Math.min(k - 3, 9 - k, 1))) * 255;
+  };
+  return toHex([f(0), f(8), f(4)]);
 }
