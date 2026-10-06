@@ -6,21 +6,13 @@
   "scale": 1.2,
   "body": {
     "torso": {
-      "radius": [
-        0.2,
-        0.27,
-        0.27,
-        0.2
-      ],
+      "radius": [0.2, 0.27, 0.27, 0.2],
       "arch": 0.02,
       "crossSection": "wide"
     },
     "neck": {
       "length": 0.26,
-      "radius": [
-        0.13,
-        0.18
-      ],
+      "radius": [0.13, 0.18],
       "pitch": 12
     },
     "head": {
@@ -32,14 +24,7 @@
     },
     "tail": {
       "length": 0.9,
-      "radius": [
-        0.17,
-        0.11,
-        0.09,
-        0.1,
-        0.15,
-        0.12
-      ],
+      "radius": [0.17, 0.11, 0.09, 0.1, 0.15, 0.12],
       "pitch": -5,
       "curl": 0
     }
@@ -48,10 +33,7 @@
     {
       "id": "foreleg",
       "length": 0.5,
-      "radius": [
-        0.11,
-        0.06
-      ],
+      "radius": [0.11, 0.06],
       "splay": 35,
       "attach": {
         "at": 0.12,
@@ -66,10 +48,7 @@
     {
       "id": "hindleg",
       "length": 0.52,
-      "radius": [
-        0.13,
-        0.06
-      ],
+      "radius": [0.13, 0.06],
       "splay": 35,
       "attach": {
         "at": 0.88,
@@ -94,12 +73,7 @@
       },
       "params": {
         "count": 16,
-        "height": [
-          0.07,
-          0.14,
-          0.1,
-          0.06
-        ],
+        "height": [0.07, 0.14, 0.1, 0.06],
         "width": 0.03,
         "curve": 15,
         "jitter": 0.2
@@ -194,12 +168,7 @@
   },
   "motion": {
     "temperament": "lumbering",
-    "actions": [
-      "bite",
-      "roar",
-      "look",
-      "idle"
-    ],
+    "actions": ["bite", "roar", "look", "idle"],
     "gaits": [
       {
         "type": "walk",

@@ -11,20 +11,45 @@
     "tail": { "length": 0.65, "radius": [0.07, 0.11, 0.1, 0.02], "pitch": -25, "curl": 5 }
   },
   "limbs": [
-    { "id": "foreleg", "length": 0.62, "radius": [0.06, 0.03], "foot": { "type": "foot.claw", "toes": 4, "clawLength": 0.025 } },
-    { "id": "hindleg", "length": 0.64, "radius": [0.075, 0.03], "foot": { "type": "foot.claw", "toes": 4, "clawLength": 0.025 } }
+    {
+      "id": "foreleg",
+      "length": 0.62,
+      "radius": [0.06, 0.03],
+      "foot": { "type": "foot.claw", "toes": 4, "clawLength": 0.025 }
+    },
+    {
+      "id": "hindleg",
+      "length": 0.64,
+      "radius": [0.075, 0.03],
+      "foot": { "type": "foot.claw", "toes": 4, "clawLength": 0.025 }
+    }
   ],
   "parts": [
-    { "id": "ears", "type": "horn.curved", "attach": { "on": "head", "at": 0.85, "angle": 40 },
-      "params": { "length": 0.1, "width": 0.04, "curve": -15, "color": "base", "tipColor": "base" } },
-    { "id": "teeth", "type": "teeth.row", "params": { "count": 8, "fangs": 1, "fangLength": 0.05 } },
+    {
+      "id": "ears",
+      "type": "horn.curved",
+      "attach": { "on": "head", "at": 0.85, "angle": 40 },
+      "params": { "length": 0.1, "width": 0.04, "curve": -15, "color": "base", "tipColor": "base" }
+    },
+    {
+      "id": "teeth",
+      "type": "teeth.row",
+      "params": { "count": 8, "fangs": 1, "fangLength": 0.05 }
+    },
     { "id": "eyes", "params": { "size": 0.02, "irisColor": "#d8a020" } }
   ],
   "skin": {
     "palette": { "base": "#6c6e72", "belly": "#d6d2c8", "accent": "#3a3c40" },
     "layers": [
       { "type": "countershade", "height": 0 },
-      { "type": "mottle", "scale": 0.1, "contrast": 0.3, "coverage": 0.5, "strength": 0.6, "region": "back" }
+      {
+        "type": "mottle",
+        "scale": 0.1,
+        "contrast": 0.3,
+        "coverage": 0.5,
+        "strength": 0.6,
+        "region": "back"
+      }
     ]
   },
   "motion": { "temperament": "stalking", "actions": ["bite", "roar", "look", "idle"] }

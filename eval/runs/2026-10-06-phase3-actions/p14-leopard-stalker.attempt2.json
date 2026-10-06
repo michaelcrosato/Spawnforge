@@ -6,20 +6,12 @@
   "scale": 1.1,
   "body": {
     "torso": {
-      "radius": [
-        0.11,
-        0.15,
-        0.14,
-        0.1
-      ],
+      "radius": [0.11, 0.15, 0.14, 0.1],
       "arch": 0.05
     },
     "neck": {
       "length": 0.25,
-      "radius": [
-        0.08,
-        0.11
-      ],
+      "radius": [0.08, 0.11],
       "pitch": 20,
       "segments": 3
     },
@@ -31,10 +23,7 @@
     },
     "tail": {
       "length": 1.1,
-      "radius": [
-        0.07,
-        0.035
-      ],
+      "radius": [0.07, 0.035],
       "pitch": -15,
       "curl": 170,
       "curlStart": 0.6,
@@ -45,10 +34,7 @@
     {
       "id": "foreleg",
       "length": 0.55,
-      "radius": [
-        0.07,
-        0.04
-      ],
+      "radius": [0.07, 0.04],
       "foot": {
         "type": "foot.claw",
         "toes": 4,
@@ -59,10 +45,7 @@
     {
       "id": "hindleg",
       "length": 0.6,
-      "radius": [
-        0.085,
-        0.04
-      ],
+      "radius": [0.085, 0.04],
       "foot": {
         "type": "foot.claw",
         "toes": 4,
@@ -151,11 +134,6 @@
   },
   "motion": {
     "temperament": "stalking",
-    "actions": [
-      "bite",
-      "roar",
-      "look",
-      "idle"
-    ]
+    "actions": ["bite", "roar", "look", "idle"]
   }
 }

@@ -7,33 +7,73 @@
   "body": {
     "torso": { "radius": [0.24, 0.31, 0.29, 0.22], "arch": 0.06 },
     "neck": { "length": 0.2, "radius": [0.17, 0.24], "pitch": 0 },
-    "head": { "shape": "wedge", "length": 0.5, "radius": 0.17, "jaw": true, "pitch": -25, "crossSection": "tall" },
+    "head": {
+      "shape": "wedge",
+      "length": 0.5,
+      "radius": 0.17,
+      "jaw": true,
+      "pitch": -25,
+      "crossSection": "tall"
+    },
     "tail": { "length": 0.5, "radius": [0.05, 0.015], "pitch": -30 }
   },
   "limbs": [
-    { "id": "foreleg", "length": 0.58, "radius": [0.14, 0.09], "foot": { "type": "foot.claw", "toes": 3, "toeLength": 0.07, "clawLength": 0.02 } },
-    { "id": "hindleg", "length": 0.58, "radius": [0.15, 0.09], "foot": { "type": "foot.claw", "toes": 3, "toeLength": 0.07, "clawLength": 0.02 } }
+    {
+      "id": "foreleg",
+      "length": 0.58,
+      "radius": [0.14, 0.09],
+      "foot": { "type": "foot.claw", "toes": 3, "toeLength": 0.07, "clawLength": 0.02 }
+    },
+    {
+      "id": "hindleg",
+      "length": 0.58,
+      "radius": [0.15, 0.09],
+      "foot": { "type": "foot.claw", "toes": 3, "toeLength": 0.07, "clawLength": 0.02 }
+    }
   ],
   "parts": [
     {
       "id": "horn-big",
       "type": "horn.curved",
       "attach": { "on": "head", "at": 0.12, "angle": 0 },
-      "params": { "length": 0.36, "width": 0.075, "curve": 40, "ridges": 0, "color": "#a09482", "tipColor": "#3a342c" }
+      "params": {
+        "length": 0.36,
+        "width": 0.075,
+        "curve": 40,
+        "ridges": 0,
+        "color": "#a09482",
+        "tipColor": "#3a342c"
+      }
     },
     {
       "id": "horn-small",
       "type": "horn.curved",
       "attach": { "on": "head", "at": 0.45, "angle": 0 },
-      "params": { "length": 0.17, "width": 0.055, "curve": 30, "color": "#a09482", "tipColor": "#3a342c" }
+      "params": {
+        "length": 0.17,
+        "width": 0.055,
+        "curve": 30,
+        "color": "#a09482",
+        "tipColor": "#3a342c"
+      }
     },
     {
       "id": "ears",
       "type": "horn.curved",
       "attach": { "on": "head", "at": 0.92, "angle": 50 },
-      "params": { "length": 0.14, "width": 0.05, "curve": -15, "color": "base", "tipColor": "accent" }
+      "params": {
+        "length": 0.14,
+        "width": 0.05,
+        "curve": -15,
+        "color": "base",
+        "tipColor": "accent"
+      }
     },
-    { "id": "eyes", "attach": { "on": "head", "at": 0.5, "angle": 80 }, "params": { "size": 0.022, "irisColor": "#3a2a1a" } }
+    {
+      "id": "eyes",
+      "attach": { "on": "head", "at": 0.5, "angle": 80 },
+      "params": { "size": 0.022, "irisColor": "#3a2a1a" }
+    }
   ],
   "skin": {
     "palette": { "base": "#74767a", "belly": "#94969a", "accent": "#45474b" },
@@ -44,5 +84,8 @@
       { "type": "grime", "amount": 0.3 }
     ]
   },
-  "motion": { "temperament": "lumbering", "actions": [{ "type": "bite", "reach": 1 }, "roar", "look", "idle"] }
+  "motion": {
+    "temperament": "lumbering",
+    "actions": [{ "type": "bite", "reach": 1 }, "roar", "look", "idle"]
+  }
 }

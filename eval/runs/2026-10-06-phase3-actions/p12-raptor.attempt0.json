@@ -23,7 +23,13 @@
       "length": 1.0,
       "segments": 3,
       "radius": [0.1, 0.035],
-      "foot": { "type": "foot.claw", "toes": 3, "toeLength": 0.1, "clawLength": 0.07, "clawCurve": 80 }
+      "foot": {
+        "type": "foot.claw",
+        "toes": 3,
+        "toeLength": 0.1,
+        "clawLength": 0.07,
+        "clawCurve": 80
+      }
     },
     {
       "id": "arm",
@@ -35,7 +41,11 @@
     }
   ],
   "parts": [
-    { "id": "eyes", "attach": { "on": "head", "at": 0.35, "angle": 60 }, "params": { "size": 0.022, "pupil": "slit", "irisColor": "#e0a020" } },
+    {
+      "id": "eyes",
+      "attach": { "on": "head", "at": 0.35, "angle": 60 },
+      "params": { "size": 0.022, "pupil": "slit", "irisColor": "#e0a020" }
+    },
     { "id": "teeth", "type": "teeth.row", "params": { "count": 9, "length": 0.025, "fangs": 0 } }
   ],
   "skin": {

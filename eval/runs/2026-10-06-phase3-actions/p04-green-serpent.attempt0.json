@@ -11,7 +11,11 @@
     "tail": { "length": 2.2, "radius": [0.095, 0.01] }
   },
   "parts": [
-    { "id": "fangs", "type": "teeth.row", "params": { "count": 6, "fangs": 2, "fangLength": 0.1, "length": 0.02 } },
+    {
+      "id": "fangs",
+      "type": "teeth.row",
+      "params": { "count": 6, "fangs": 2, "fangLength": 0.1, "length": 0.02 }
+    },
     { "id": "eyes", "params": { "size": 0.018, "irisColor": "#ffd020" } }
   ],
   "skin": {
@@ -19,7 +23,14 @@
     "material": "scales",
     "layers": [
       { "type": "countershade" },
-      { "type": "stripes", "color": "accent", "count": 28, "width": 0.3, "jitter": 0.2, "region": "back" },
+      {
+        "type": "stripes",
+        "color": "accent",
+        "count": 28,
+        "width": 0.3,
+        "jitter": 0.2,
+        "region": "back"
+      },
       { "type": "scales", "size": 0.02, "gapColor": "#1c3d18" }
     ]
   },

@@ -11,29 +11,61 @@
     "tail": { "length": 0.45, "radius": [0.05, 0.015], "pitch": -30 }
   },
   "limbs": [
-    { "id": "foreleg", "length": 0.5, "radius": [0.1, 0.07], "foot": { "type": "foot.claw", "toes": 3, "toeLength": 0.06, "clawLength": 0.02 } },
-    { "id": "hindleg", "length": 0.5, "radius": [0.11, 0.07], "foot": { "type": "foot.claw", "toes": 3, "toeLength": 0.06, "clawLength": 0.02 } }
+    {
+      "id": "foreleg",
+      "length": 0.5,
+      "radius": [0.1, 0.07],
+      "foot": { "type": "foot.claw", "toes": 3, "toeLength": 0.06, "clawLength": 0.02 }
+    },
+    {
+      "id": "hindleg",
+      "length": 0.5,
+      "radius": [0.11, 0.07],
+      "foot": { "type": "foot.claw", "toes": 3, "toeLength": 0.06, "clawLength": 0.02 }
+    }
   ],
   "parts": [
     {
       "id": "horn-big",
       "type": "horn.curved",
       "attach": { "on": "head", "at": 0.12, "angle": 0 },
-      "params": { "length": 0.26, "width": 0.06, "curve": 25, "color": "#9a8e7c", "tipColor": "#3a342c" }
+      "params": {
+        "length": 0.26,
+        "width": 0.06,
+        "curve": 25,
+        "color": "#9a8e7c",
+        "tipColor": "#3a342c"
+      }
     },
     {
       "id": "horn-small",
       "type": "horn.curved",
       "attach": { "on": "head", "at": 0.45, "angle": 0 },
-      "params": { "length": 0.13, "width": 0.045, "curve": 20, "color": "#9a8e7c", "tipColor": "#3a342c" }
+      "params": {
+        "length": 0.13,
+        "width": 0.045,
+        "curve": 20,
+        "color": "#9a8e7c",
+        "tipColor": "#3a342c"
+      }
     },
     {
       "id": "ears",
       "type": "horn.curved",
       "attach": { "on": "head", "at": 0.9, "angle": 45 },
-      "params": { "length": 0.1, "width": 0.04, "curve": -15, "color": "base", "tipColor": "accent" }
+      "params": {
+        "length": 0.1,
+        "width": 0.04,
+        "curve": -15,
+        "color": "base",
+        "tipColor": "accent"
+      }
     },
-    { "id": "eyes", "attach": { "on": "head", "at": 0.45, "angle": 75 }, "params": { "size": 0.022, "irisColor": "#3a2a1a" } }
+    {
+      "id": "eyes",
+      "attach": { "on": "head", "at": 0.45, "angle": 75 },
+      "params": { "size": 0.022, "irisColor": "#3a2a1a" }
+    }
   ],
   "skin": {
     "palette": { "base": "#7b7d80", "belly": "#9c9d9e", "accent": "#4a4c50" },

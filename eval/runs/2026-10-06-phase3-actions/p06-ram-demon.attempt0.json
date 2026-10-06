@@ -10,7 +10,12 @@
     "tail": { "length": 0.5, "radius": [0.06, 0.01], "pitch": -30, "curl": 30 }
   },
   "limbs": [
-    { "id": "leg", "length": 1.3, "radius": [0.11, 0.06], "foot": { "type": "foot.claw", "toes": 3, "clawLength": 0.05 } },
+    {
+      "id": "leg",
+      "length": 1.3,
+      "radius": [0.11, 0.06],
+      "foot": { "type": "foot.claw", "toes": 3, "clawLength": 0.05 }
+    },
     { "id": "arm", "length": 1.1, "radius": [0.07, 0.045] }
   ],
   "parts": [
@@ -18,7 +23,14 @@
       "id": "horns",
       "type": "horn.curved",
       "attach": { "on": "head", "at": 0.8, "angle": 40 },
-      "params": { "length": 0.65, "width": 0.05, "curve": 400, "turn": -35, "lean": -10, "ridges": 12 }
+      "params": {
+        "length": 0.65,
+        "width": 0.05,
+        "curve": 400,
+        "turn": -35,
+        "lean": -10,
+        "ridges": 12
+      }
     },
     { "id": "teeth", "type": "teeth.row", "params": { "count": 7, "fangs": 2 } },
     { "id": "eyes", "params": { "size": 0.028, "irisColor": "#ffd030", "pupil": "goat" } }
@@ -27,7 +39,14 @@
     "palette": { "base": "#b3201a", "belly": "#d9573a", "accent": "#140c0b" },
     "layers": [
       { "type": "countershade", "strength": 0.5 },
-      { "type": "stripes", "color": "accent", "count": 14, "width": 0.4, "jitter": 0.3, "fade": 0.3 }
+      {
+        "type": "stripes",
+        "color": "accent",
+        "count": 14,
+        "width": 0.4,
+        "jitter": 0.3,
+        "fade": 0.3
+      }
     ]
   },
   "motion": { "temperament": "aggressive", "actions": ["bite", "roar", "look", "idle"] }

@@ -61,10 +61,6 @@
   },
   "motion": {
     "temperament": "skittish",
-    "actions": [
-      "bite",
-      "look",
-      "idle"
-    ]
+    "actions": ["bite", "look", "idle"]
   }
 }

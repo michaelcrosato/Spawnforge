@@ -6,7 +6,13 @@
   "scale": 0.8,
   "body": {
     "torso": { "radius": [0.1, 0.15, 0.14, 0.1], "arch": 0, "crossSection": "wide" },
-    "neck": { "length": 0.1, "radius": [0.08, 0.1], "pitch": 0, "crossSection": "wide", "segments": 2 },
+    "neck": {
+      "length": 0.1,
+      "radius": [0.08, 0.1],
+      "pitch": 0,
+      "crossSection": "wide",
+      "segments": 2
+    },
     "head": { "shape": "flat", "length": 0.3, "radius": 0.11, "pitch": 0, "crossSection": "wide" },
     "tail": { "length": 1.1, "radius": [0.09, 0.01], "pitch": -3, "crossSection": "wide" }
   },
@@ -17,7 +23,14 @@
       "length": 0.5,
       "radius": [0.05, 0.03],
       "splay": 60,
-      "foot": { "type": "foot.claw", "toes": 5, "toeLength": 0.14, "spread": 140, "clawLength": 0.02, "clawCurve": 50 }
+      "foot": {
+        "type": "foot.claw",
+        "toes": 5,
+        "toeLength": 0.14,
+        "spread": 140,
+        "clawLength": 0.02,
+        "clawCurve": 50
+      }
     },
     {
       "id": "hindleg",
@@ -25,7 +38,14 @@
       "length": 0.55,
       "radius": [0.06, 0.03],
       "splay": 60,
-      "foot": { "type": "foot.claw", "toes": 5, "toeLength": 0.14, "spread": 140, "clawLength": 0.02, "clawCurve": 50 }
+      "foot": {
+        "type": "foot.claw",
+        "toes": 5,
+        "toeLength": 0.14,
+        "spread": 140,
+        "clawLength": 0.02,
+        "clawCurve": 50
+      }
     }
   ],
   "parts": [

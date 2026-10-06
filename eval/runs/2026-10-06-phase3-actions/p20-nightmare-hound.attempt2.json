@@ -6,20 +6,12 @@
   "scale": 1.1,
   "body": {
     "torso": {
-      "radius": [
-        0.17,
-        0.23,
-        0.18,
-        0.1
-      ],
+      "radius": [0.17, 0.23, 0.18, 0.1],
       "arch": 0.1
     },
     "neck": {
       "length": 0.3,
-      "radius": [
-        0.09,
-        0.15
-      ],
+      "radius": [0.09, 0.15],
       "pitch": 30
     },
     "head": {
@@ -31,10 +23,7 @@
     },
     "tail": {
       "length": 0.8,
-      "radius": [
-        0.07,
-        0.01
-      ],
+      "radius": [0.07, 0.01],
       "curl": 20
     }
   },
@@ -42,10 +31,7 @@
     {
       "id": "foreleg",
       "length": 0.65,
-      "radius": [
-        0.07,
-        0.035
-      ],
+      "radius": [0.07, 0.035],
       "foot": {
         "type": "foot.claw",
         "toes": 4,
@@ -55,10 +41,7 @@
     {
       "id": "hindleg",
       "length": 0.7,
-      "radius": [
-        0.08,
-        0.035
-      ],
+      "radius": [0.08, 0.035],
       "foot": {
         "type": "foot.claw",
         "toes": 4,
@@ -78,13 +61,7 @@
       },
       "params": {
         "count": 20,
-        "height": [
-          0.07,
-          0.15,
-          0.2,
-          0.12,
-          0.06
-        ],
+        "height": [0.07, 0.15, 0.2, 0.12, 0.06],
         "width": 0.024,
         "curve": 35,
         "jitter": 0.8,
@@ -161,11 +138,6 @@
   },
   "motion": {
     "temperament": "aggressive",
-    "actions": [
-      "bite",
-      "roar",
-      "look",
-      "idle"
-    ]
+    "actions": ["bite", "roar", "look", "idle"]
   }
 }

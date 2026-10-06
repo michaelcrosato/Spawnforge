@@ -8,10 +8,7 @@
     "torso": { "pitch": 78 },
     "head": { "shape": "round", "length": 0.5, "radius": 0.24, "jaw": true, "pitch": 0 }
   },
-  "limbs": [
-    { "id": "leg", "length": 1.1 },
-    { "id": "arm", "length": 1.1 }
-  ],
+  "limbs": [{ "id": "leg", "length": 1.1 }, { "id": "arm", "length": 1.1 }],
   "parts": [
     {
       "id": "eyes",
@@ -23,7 +20,14 @@
       "id": "ears",
       "type": "horn.curved",
       "attach": { "on": "head", "at": 0.85, "angle": 80 },
-      "params": { "length": 0.25, "width": 0.05, "curve": -15, "lean": -60, "color": "base", "tipColor": "base" }
+      "params": {
+        "length": 0.25,
+        "width": 0.05,
+        "curve": -15,
+        "lean": -60,
+        "color": "base",
+        "tipColor": "base"
+      }
     },
     { "id": "teeth", "type": "teeth.row", "params": { "count": 6, "fangs": 2, "length": 0.02 } }
   ],

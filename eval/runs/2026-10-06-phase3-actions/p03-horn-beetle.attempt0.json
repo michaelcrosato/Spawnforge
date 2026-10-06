@@ -9,8 +9,18 @@
     "head": { "length": 0.2, "radius": 0.1 }
   },
   "parts": [
-    { "id": "horn", "type": "horn.curved", "attach": { "on": "head", "at": 0.15, "angle": 0 },
-      "params": { "length": 0.5, "width": 0.055, "curve": -50, "color": "#16120f", "tipColor": "#050505" } },
+    {
+      "id": "horn",
+      "type": "horn.curved",
+      "attach": { "on": "head", "at": 0.15, "angle": 0 },
+      "params": {
+        "length": 0.5,
+        "width": 0.055,
+        "curve": -50,
+        "color": "#16120f",
+        "tipColor": "#050505"
+      }
+    },
     { "id": "eyes", "params": { "size": 0.03, "irisColor": "#ff7a1a" } }
   ],
   "skin": {

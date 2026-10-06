@@ -6,20 +6,12 @@
   "scale": 0.15,
   "body": {
     "torso": {
-      "radius": [
-        0.12,
-        0.16,
-        0.15,
-        0.11
-      ],
+      "radius": [0.12, 0.16, 0.15, 0.11],
       "arch": 0
     },
     "neck": {
       "length": 0.15,
-      "radius": [
-        0.08,
-        0.1
-      ],
+      "radius": [0.08, 0.1],
       "pitch": 5
     },
     "head": {
@@ -31,10 +23,7 @@
     },
     "tail": {
       "length": 3,
-      "radius": [
-        0.08,
-        0.008
-      ],
+      "radius": [0.08, 0.008],
       "pitch": -5,
       "curl": 20,
       "segments": 16
@@ -50,10 +39,7 @@
       },
       "length": 0.42,
       "splay": 68,
-      "radius": [
-        0.05,
-        0.025
-      ],
+      "radius": [0.05, 0.025],
       "foot": {
         "type": "foot.claw",
         "toes": 5,
@@ -70,10 +56,7 @@
       },
       "length": 0.46,
       "splay": 68,
-      "radius": [
-        0.06,
-        0.025
-      ],
+      "radius": [0.06, 0.025],
       "foot": {
         "type": "foot.claw",
         "toes": 5,
@@ -122,14 +105,7 @@
   },
   "motion": {
     "temperament": "skittish",
-    "gaits": [
-      "trot",
-      "walk"
-    ],
-    "actions": [
-      "bite",
-      "look",
-      "idle"
-    ]
+    "gaits": ["trot", "walk"],
+    "actions": ["bite", "look", "idle"]
   }
 }

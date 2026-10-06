@@ -6,20 +6,12 @@
   "scale": 1.5,
   "body": {
     "torso": {
-      "radius": [
-        0.27,
-        0.33,
-        0.29,
-        0.22
-      ],
+      "radius": [0.27, 0.33, 0.29, 0.22],
       "arch": 0.06
     },
     "neck": {
       "length": 0.3,
-      "radius": [
-        0.17,
-        0.26
-      ],
+      "radius": [0.17, 0.26],
       "pitch": -5
     },
     "head": {
@@ -32,10 +24,7 @@
     },
     "tail": {
       "length": 0.5,
-      "radius": [
-        0.05,
-        0.015
-      ],
+      "radius": [0.05, 0.015],
       "pitch": -30
     }
   },
@@ -43,10 +32,7 @@
     {
       "id": "foreleg",
       "length": 0.58,
-      "radius": [
-        0.14,
-        0.09
-      ],
+      "radius": [0.14, 0.09],
       "foot": {
         "type": "foot.claw",
         "toes": 3,
@@ -57,10 +43,7 @@
     {
       "id": "hindleg",
       "length": 0.58,
-      "radius": [
-        0.15,
-        0.09
-      ],
+      "radius": [0.15, 0.09],
       "foot": {
         "type": "foot.claw",
         "toes": 3,

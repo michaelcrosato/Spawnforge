@@ -6,21 +6,13 @@
   "scale": 0.9,
   "body": {
     "torso": {
-      "radius": [
-        0.15,
-        0.26,
-        0.24,
-        0.2
-      ],
+      "radius": [0.15, 0.26, 0.24, 0.2],
       "pitch": 76,
       "arch": 0.08
     },
     "neck": {
       "length": 0.2,
-      "radius": [
-        0.11,
-        0.15
-      ],
+      "radius": [0.11, 0.15],
       "pitch": 65
     },
     "head": {
@@ -35,18 +27,12 @@
     {
       "id": "leg",
       "length": 1.0,
-      "radius": [
-        0.14,
-        0.08
-      ]
+      "radius": [0.14, 0.08]
     },
     {
       "id": "arm",
       "length": 1.55,
-      "radius": [
-        0.1,
-        0.07
-      ],
+      "radius": [0.1, 0.07],
       "foot": {
         "type": "foot.claw",
         "toes": 3,
@@ -110,11 +96,6 @@
   },
   "motion": {
     "temperament": "lumbering",
-    "actions": [
-      "roar",
-      "bite",
-      "look",
-      "idle"
-    ]
+    "actions": ["roar", "bite", "look", "idle"]
   }
 }

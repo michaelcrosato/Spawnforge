@@ -24,13 +24,27 @@
       "id": "ears",
       "type": "horn.curved",
       "attach": { "on": "head", "at": 0.85, "angle": 90 },
-      "params": { "length": 0.38, "width": 0.07, "curve": 25, "lean": -20, "color": "base", "tipColor": "base" }
+      "params": {
+        "length": 0.38,
+        "width": 0.07,
+        "curve": 25,
+        "lean": -20,
+        "color": "base",
+        "tipColor": "base"
+      }
     },
     {
       "id": "nose",
       "type": "horn.curved",
       "attach": { "on": "head", "at": 0.1, "angle": 0 },
-      "params": { "length": 0.12, "width": 0.05, "lean": 50, "curve": -30, "color": "base", "tipColor": "base" }
+      "params": {
+        "length": 0.12,
+        "width": 0.05,
+        "lean": 50,
+        "curve": -30,
+        "color": "base",
+        "tipColor": "base"
+      }
     },
     { "id": "teeth", "type": "teeth.row", "params": { "count": 6, "fangs": 2, "length": 0.02 } }
   ],

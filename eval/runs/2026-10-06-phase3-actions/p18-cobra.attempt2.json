@@ -11,16 +11,7 @@
     "neck": {
       "length": 0.8,
       "pitch": 78,
-      "radius": [
-        0.06,
-        0.15,
-        0.2,
-        0.13,
-        0.085,
-        0.08,
-        0.08,
-        0.08
-      ],
+      "radius": [0.06, 0.15, 0.2, 0.13, 0.085, 0.08, 0.08, 0.08],
       "crossSection": "wide",
       "segments": 8
     },
@@ -82,11 +73,6 @@
   },
   "motion": {
     "temperament": "stalking",
-    "actions": [
-      "bite",
-      "roar",
-      "look",
-      "idle"
-    ]
+    "actions": ["bite", "roar", "look", "idle"]
   }
 }

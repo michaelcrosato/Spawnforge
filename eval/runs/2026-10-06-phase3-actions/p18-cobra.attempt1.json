@@ -6,7 +6,13 @@
   "scale": 0.8,
   "body": {
     "torso": { "pitch": 18 },
-    "neck": { "length": 0.8, "pitch": 78, "radius": [0.06, 0.15, 0.2, 0.13, 0.085, 0.08, 0.08, 0.08], "crossSection": "wide", "segments": 8 },
+    "neck": {
+      "length": 0.8,
+      "pitch": 78,
+      "radius": [0.06, 0.15, 0.2, 0.13, 0.085, 0.08, 0.08, 0.08],
+      "crossSection": "wide",
+      "segments": 8
+    },
     "head": { "shape": "wedge", "length": 0.22, "radius": 0.08, "pitch": -8 },
     "tail": { "length": 2.4 }
   },

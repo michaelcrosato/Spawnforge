@@ -7,20 +7,12 @@
   "body": {
     "torso": {
       "pitch": 80,
-      "radius": [
-        0.18,
-        0.27,
-        0.26,
-        0.22
-      ],
+      "radius": [0.18, 0.27, 0.26, 0.22],
       "arch": 0.06
     },
     "neck": {
       "length": 0.1,
-      "radius": [
-        0.1,
-        0.12
-      ]
+      "radius": [0.1, 0.12]
     },
     "head": {
       "shape": "round",
@@ -34,10 +26,7 @@
     {
       "id": "leg",
       "length": 0.85,
-      "radius": [
-        0.12,
-        0.07
-      ],
+      "radius": [0.12, 0.07],
       "splay": 10,
       "attach": {
         "at": 0.9,
@@ -53,10 +42,7 @@
     {
       "id": "arm",
       "length": 1.0,
-      "radius": [
-        0.075,
-        0.05
-      ],
+      "radius": [0.075, 0.05],
       "splay": 5,
       "attach": {
         "angle": 95
@@ -147,11 +133,6 @@
   },
   "motion": {
     "temperament": "calm",
-    "actions": [
-      "bite",
-      "roar",
-      "look",
-      "idle"
-    ]
+    "actions": ["bite", "roar", "look", "idle"]
   }
 }

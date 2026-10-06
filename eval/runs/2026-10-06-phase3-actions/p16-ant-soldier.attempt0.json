@@ -12,7 +12,15 @@
       "id": "mandibles",
       "type": "horn.curved",
       "attach": { "on": "head", "at": 0.08, "angle": 100 },
-      "params": { "length": 0.2, "width": 0.025, "lean": 60, "curve": 110, "turn": 90, "color": "#2a0a08", "tipColor": "#0f0505" }
+      "params": {
+        "length": 0.2,
+        "width": 0.025,
+        "lean": 60,
+        "curve": 110,
+        "turn": 90,
+        "color": "#2a0a08",
+        "tipColor": "#0f0505"
+      }
     },
     { "id": "eyes", "params": { "size": 0.03, "irisColor": "#1a0a08" } }
   ],

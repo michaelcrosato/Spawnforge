@@ -11,11 +11,26 @@
   },
   "limbs": [
     { "id": "leg", "length": 1.0, "radius": [0.14, 0.08] },
-    { "id": "arm", "length": 1.6, "radius": [0.1, 0.07], "foot": { "type": "foot.claw", "toes": 3, "clawLength": 0.06 } }
+    {
+      "id": "arm",
+      "length": 1.6,
+      "radius": [0.1, 0.07],
+      "foot": { "type": "foot.claw", "toes": 3, "clawLength": 0.06 }
+    }
   ],
   "parts": [
-    { "id": "tusks", "type": "horn.curved", "attach": { "on": "jaw", "at": 0.25, "angle": 60 },
-      "params": { "length": 0.16, "width": 0.028, "curve": -60, "color": "#e6dcc0", "tipColor": "#b9a98a" } },
+    {
+      "id": "tusks",
+      "type": "horn.curved",
+      "attach": { "on": "jaw", "at": 0.25, "angle": 60 },
+      "params": {
+        "length": 0.16,
+        "width": 0.028,
+        "curve": -60,
+        "color": "#e6dcc0",
+        "tipColor": "#b9a98a"
+      }
+    },
     { "id": "eyes", "params": { "size": 0.028, "irisColor": "#d8d020" } }
   ],
   "skin": {
