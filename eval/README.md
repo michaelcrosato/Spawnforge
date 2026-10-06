@@ -72,7 +72,8 @@ Both orders are needed because reviewers lean toward one side: milestone 8.1's t
 single-order reviews picked B in 60–75% of pairs whichever side the head was on, which pulls any
 score toward an even split. With both orders a lean gives one vote each way and counts as
 `same`, so only a preference that holds both ways counts. `score` reports each reviewer's
-picks per side in `quality-score.json`.
+picks per side in `quality-score.json`. Views are 640 px (`--size`): at 360 px a wolf's leg is
+about 10 px wide, too small to judge its shape.
 
 ## Motion review (plan 2)
 

@@ -1,9 +1,7 @@
-import { Vector3 } from 'three';
-import type { MassDef } from './types.ts';
-
 /**
- * Anatomy from rules (docs/design/8.1-anatomy.md): muscle bellies, joint caps and a chest keel
- * as masses on bones, and radius multipliers for joints, chitin segments, the torso and tails.
+ * Anatomy from rules (docs/design/8.1-anatomy.md): radius multipliers for limbs (muscle swell and
+ * narrow joints, or chitin segments), the torso, the neck and tails, which the skeleton puts in
+ * its bones' profiles; the masses (a chest keel, a neck muscle, the limb roots) are its own.
  * Everything scales with `s = 2 × muscle` (0 to 2) and vanishes at s = 0, where a creature
  * compiles to exactly the mesh it had before.
  */
@@ -24,33 +22,46 @@ const smoothstep = (a: number, b: number, x: number) => {
   return t * t * (3 - 2 * t);
 };
 
+/** How a limb is shaped, per segment and joint (1 is full strength). */
+export interface LimbShape {
+  /** Scale of joint j's narrowing (stocky segments narrow less). */
+  readonly joint?: (j: number) => number;
+  /** How much segment k swells with muscle, as a share of its radius at s = 1. */
+  readonly swell?: (k: number) => number;
+}
+
 /**
  * Radius multiplier along a limb, at `T` (0 at the root, 1 at the tip; joints at k/n). Ordinary
- * limbs narrow symmetrically at each joint, most at the last one (ankle, wrist) when there are
- * three segments or more (on two, the joint is a knee or elbow); `jointScale(j)` scales joint j
- * (stocky segments narrow less). Chitin limbs swell in the middle of each segment and narrow at
- * the joints. The tip never changes, so feet stay on the ground and claws keep their size.
+ * limbs swell with muscle in the upper part of each segment (`shape.swell`: thighs and upper arms
+ * most) and narrow symmetrically at each joint, most at the last one (ankle, wrist) when there
+ * are three segments or more (on two, the joint is a knee or elbow). It is all radial, so muscle
+ * reads as a limb that is full near the body and tapers into its joints, never as a lump.
+ * Chitin limbs swell in the middle of each segment and narrow at the joints. The tip never
+ * changes, so feet stay on the ground and claws keep their size.
  */
 export function limbFactor(
   T: number,
   n: number,
   s: number,
   chitin: boolean,
-  jointScale: (j: number) => number = () => 1,
+  shape: LimbShape = {},
 ): number {
   if (s <= 0) return 1;
   const keepTip = 1 - smoothstep(0.8, 1, T);
+  const k = Math.min(n - 1, Math.floor(T * n));
+  const t = T * n - k;
   if (chitin) {
-    const k = Math.min(n - 1, Math.floor(T * n));
-    const t = T * n - k;
     const swell = Math.sin(Math.PI * t);
     const f = 0.22 * s * swell - 0.1 * s * (1 - swell);
     // The last segment's far end is the tip: keep it.
     return 1 + f * (k === n - 1 ? 1 - smoothstep(0.6, 1, t) : 1);
   }
+  const joint = shape.joint ?? (() => 1);
   let f = 0;
   for (let j = 1; j < n; j++)
-    f -= (j === n - 1 && n >= 3 ? 0.26 : 0.18) * s * jointScale(j) * bump(T, j / n, 0.07);
+    f -= (j === n - 1 && n >= 3 ? 0.26 : 0.18) * s * joint(j) * bump(T, j / n, 0.07);
+  // The swell peaks 40% down the segment and is gone at both of its joints.
+  f += s * (shape.swell?.(k) ?? 0) * Math.sin(Math.PI * t ** 0.75);
   return 1 + f * keepTip;
 }
 
@@ -80,117 +91,6 @@ export function shapedProfile(
  */
 export function slenderness(radius: number, length: number): number {
   return 1 - smoothstep(0.3, 0.55, radius / Math.max(1e-9, length));
-}
-
-/** A belly: a capsule along a bone, offset toward its face (q > 0) or back (q < 0). */
-interface BellyRule {
-  readonly from: number;
-  readonly to: number;
-  /** How far its outer side reaches past the bone's radius, per unit s. */
-  readonly p: number;
-  /** Offset of its axis from the bone's, per unit s (toward the face when positive). */
-  readonly q: number;
-}
-
-/** Bellies by role and segment: thigh and upper arm (front, back), calf, forearm. */
-export function bellyRules(
-  role: 'leg' | 'arm',
-  k: number,
-  frontLeg: boolean,
-): readonly BellyRule[] {
-  if (k === 0)
-    return role === 'arm'
-      ? [
-          { from: 0.3, to: 0.7, p: 0.32, q: 0.2 },
-          { from: 0.15, to: 0.6, p: 0.38, q: -0.26 },
-        ]
-      : [
-          // Down the visible part of the thigh: the upper end is inside the body, and a
-          // hamstring near the hip reads as a lump.
-          { from: 0.35, to: 0.78, p: 0.38, q: 0.22 },
-          { from: 0.35, to: 0.82, p: 0.42, q: -0.24 },
-        ];
-  if (k === 1)
-    return role === 'arm' || frontLeg
-      ? [{ from: 0.12, to: 0.45, p: 0.36, q: 0.08 }]
-      : [{ from: 0.14, to: 0.5, p: 0.52, q: -0.32 }];
-  return [];
-}
-
-/**
- * The bellies of one limb bone as masses. `radiusAt` gives the bone's radius along it; `bulk`, a
- * radius the muscle grows toward (for thighs and upper arms, a share of the body they attach to,
- * since those muscles are much thicker than the limb below them), or 0. `taper` is the far end's
- * radius as a share of the near end's.
- */
-export function bellies(
-  bone: number,
-  head: Vector3,
-  tail: Vector3,
-  face: Vector3,
-  radiusAt: (t: number) => number,
-  rules: readonly BellyRule[],
-  s: number,
-  bulk = 0,
-  taper = 0.8,
-): MassDef[] {
-  if (s <= 0) return [];
-  const out: MassDef[] = [];
-  for (const rule of rules) {
-    const tm = (rule.from + rule.to) / 2;
-    const limbR = radiusAt(tm);
-    const r = limbR + (Math.max(limbR, bulk) - limbR) * Math.min(1, s);
-    const offset = face.clone().multiplyScalar(rule.q * s * r);
-    // Its outer side reaches r (1 + p s); the far end tapers toward the joint.
-    const rho = Math.max(0.5 * r, r * (1 + rule.p * s) - Math.abs(rule.q) * s * r);
-    out.push({
-      bone,
-      a: new Vector3().lerpVectors(head, tail, rule.from).add(offset),
-      b: new Vector3().lerpVectors(head, tail, rule.to).add(offset),
-      ra: rho,
-      rb: rho * taper,
-      up: face.clone(),
-      // Narrower across than front to back, so no belly grows toward the other leg.
-      cross: [0.9, 1],
-      blend: 0.45 * r * Math.min(1, s),
-    });
-  }
-  return out;
-}
-
-/**
- * A knee or elbow cap on the outside of a bend, owned by the lower bone. Fades in between 10°
- * and 25° of bend, so a straightened joint loses it smoothly.
- */
-export function jointCap(
-  bone: number,
-  joint: Vector3,
-  upperHead: Vector3,
-  lowerTail: Vector3,
-  rJoint: number,
-  s: number,
-): MassDef | undefined {
-  if (s <= 0) return undefined;
-  const u = new Vector3().subVectors(upperHead, joint).normalize();
-  const v = new Vector3().subVectors(lowerTail, joint).normalize();
-  const bend = Math.PI - u.angleTo(v);
-  const fade = smoothstep((10 * Math.PI) / 180, (25 * Math.PI) / 180, bend);
-  if (fade <= 0) return undefined;
-  const out = u.clone().add(v).negate();
-  if (out.lengthSq() < 1e-10) return undefined;
-  out.normalize();
-  const radius = 0.28 * rJoint * (0.6 + 0.4 * Math.min(1, s)) * fade;
-  const center = joint.clone().addScaledVector(out, 0.72 * rJoint);
-  return {
-    bone,
-    a: center,
-    b: center.clone(),
-    ra: radius,
-    rb: radius,
-    up: out,
-    cross: [1, 1],
-    blend: 0.5 * rJoint * Math.min(1, s),
-  };
 }
 
 /** Where the torso gets a chest, a pelvis and a waist, from the limbs on it (`at` values). */

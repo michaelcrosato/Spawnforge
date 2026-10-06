@@ -41,7 +41,8 @@ const { positionals, values } = parseArgs({
     base: { type: 'string' },
     head: { type: 'string' },
     set: { type: 'string', default: 'eval/runs/2026-10-06-phase4-poc' },
-    size: { type: 'string', default: '360' },
+    // Large enough to see a limb's shape: at 360 px a wolf's leg is about 10 px wide.
+    size: { type: 'string', default: '640' },
   },
 });
 const [mode, outArg] = positionals;

@@ -1,9 +1,6 @@
 import { Vector3 } from 'three';
 import { describe, expect, it } from 'vitest';
 import {
-  bellies,
-  bellyRules,
-  jointCap,
   limbFactor,
   shapedProfile,
   slenderness,
@@ -25,12 +22,7 @@ describe('anatomy rules', () => {
     }
     expect(torsoFactor(0.2, { chest: 0.2, pelvis: 0.7, waist: 0.45 }, 0)).toBe(1);
     expect(tailFactor(0, 0)).toBe(1);
-    const head = new Vector3();
-    const tail = new Vector3(0, 0, 1);
-    expect(
-      bellies(0, head, tail, new Vector3(0, 1, 0), () => 0.1, bellyRules('leg', 0, false), 0),
-    ).toEqual([]);
-    expect(jointCap(1, head, new Vector3(0, 1, 0), new Vector3(1, 0, 0), 0.1, 0)).toBeUndefined();
+    expect(limbFactor(0.2, 3, 0, false, { swell: () => 0.5 })).toBe(1);
     // A profile multiplied by 1 is the profile it was (or none).
     expect(
       shapedProfile(
@@ -60,10 +52,26 @@ describe('anatomy rules', () => {
     // On two segments the one joint is a knee, narrowed like one.
     expect(limbFactor(1 / 2, 2, 1, false)).toBeCloseTo(limbFactor(1 / 3, n, 1, false), 2);
     // Stocky segments narrow less at their joints, and slender ones fully.
-    expect(limbFactor(1 / 3, n, 1, false, () => 0)).toBe(1);
+    expect(limbFactor(1 / 3, n, 1, false, { joint: () => 0 })).toBe(1);
     expect(slenderness(0.02, 0.3)).toBe(1);
     expect(slenderness(0.2, 0.3)).toBe(0);
     expect(slenderness(0.13, 0.3)).toBeGreaterThan(0);
+  });
+
+  it('swell a segment 40% down it with muscle, and leave its joints alone', () => {
+    const shape = { swell: (k: number) => (k === 0 ? 0.3 : 0) };
+    // The thigh is fullest 40% of the way to the knee: about 1.3 times its radius.
+    expect(limbFactor(0.4 / 3, 3, 1, false, shape)).toBeCloseTo(1.3, 2);
+    expect(limbFactor(0.4 / 3, 3, 1, false, shape)).toBeGreaterThan(
+      limbFactor(0.8 / 3, 3, 1, false, shape),
+    );
+    // At the knee the swell is gone and only the joint's narrowing is left.
+    expect(limbFactor(1 / 3, 3, 1, false, shape)).toBeCloseTo(limbFactor(1 / 3, 3, 1, false), 6);
+    // Segments with no swell are unchanged between their joints.
+    expect(limbFactor(2.5 / 3, 3, 1, false, shape)).toBeCloseTo(
+      limbFactor(2.5 / 3, 3, 1, false),
+      6,
+    );
   });
 
   it('plan a chest, pelvis and waist from the limbs on the torso', () => {
@@ -96,25 +104,6 @@ describe('anatomy rules', () => {
         { role: 'leg', at: 0.34 },
       ]),
     ).toEqual({ chest: undefined, pelvis: undefined, waist: undefined });
-  });
-
-  it('cap the outside of a bend, fading in between 10° and 25°', () => {
-    const joint = new Vector3(0, 0, 0);
-    const up = new Vector3(0, 1, 0);
-    const straight = new Vector3(0, -1, 0);
-    expect(jointCap(1, joint, up, straight, 0.1, 1)).toBeUndefined();
-    // Bent 40°: the knee points away from both bones.
-    const bent = new Vector3(Math.sin((40 * Math.PI) / 180), -Math.cos((40 * Math.PI) / 180), 0);
-    const cap = jointCap(1, joint, up, bent, 0.1, 1) as MassDef;
-    expect(cap.ra).toBeCloseTo(0.028);
-    expect(cap.a.x).toBeLessThan(0);
-    // Bent 17.5°: half way through the fade.
-    const half = new Vector3(
-      Math.sin((17.5 * Math.PI) / 180),
-      -Math.cos((17.5 * Math.PI) / 180),
-      0,
-    );
-    expect((jointCap(1, joint, up, half, 0.1, 1) as MassDef).ra).toBeCloseTo(0.014, 3);
   });
 });
 

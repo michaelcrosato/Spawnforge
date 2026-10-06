@@ -2,9 +2,6 @@ import { Vector3 } from 'three';
 import type { CreatureSpec, CrossSection, LimbSpec } from '../blueprint/creature.ts';
 import type { PartModule, Registry } from '../registry.ts';
 import {
-  bellies,
-  bellyRules,
-  jointCap,
   limbFactor,
   shapedProfile,
   slenderness,
@@ -883,6 +880,14 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
     );
     const jointScale = (j: number) =>
       Math.min(slender[j - 1] as number, slender[Math.min(j, n - 1)] as number);
+    // Thighs and upper arms swell most, more when the limb is thin for the body it joins (they
+    // are much thicker than the limb below them); calves and forearms less; feet and hands not.
+    const rootRadiusL = sampleProfile(limb.radius, 0.5 / n) * L;
+    const bulk = (limb.role === 'arm' ? 0.32 : 0.42) * frame.radius;
+    const thin = Math.max(0, Math.min(1, (bulk - rootRadiusL) / rootRadiusL));
+    const swell = (k: number) =>
+      (k === 0 ? 0.28 + 0.22 * thin : k === 1 ? 0.14 : 0) * (slender[k] as number);
+    const shape = { joint: jointScale, swell };
     for (let k = 0; k < n; k++) {
       const a = solved.points[k] as Vector3;
       const c = solved.points[k + 1] as Vector3;
@@ -903,9 +908,9 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
           ...shaped(
             (u) => sampleProfile(limb.radius, (k + u) / n) * L,
             boneProfile(limb.radius, k / n, (k + 1) / n, L),
-            (u) => limbFactor((k + u) / n, n, sLimb, chitin, jointScale),
-            // A chitin segment's arch needs more points than a joint's narrowing.
-            chitin ? 4 : 2,
+            (u) => limbFactor((k + u) / n, n, sLimb, chitin, shape),
+            // Four spans, so a segment's swell and its joints' narrowing come out smooth.
+            4,
           ),
           cross: [1, 1],
           t0: k / n,
@@ -913,44 +918,6 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
           skin: true,
         }),
       );
-    }
-    // Muscle bellies and joint caps (not on chitin, whose segments swell instead).
-    const limbMasses: MassDef[] = [];
-    if (!chitin && sLimb > 0 && (limb.role === 'leg' || limb.role === 'arm')) {
-      for (let k = 0; k < n; k++) {
-        const bone = b.bones[limbBones[k] as number] as BoneDef;
-        const rules = bellyRules(limb.role, k, isFront);
-        // Thighs and upper arms are as thick as a share of the body they join; haunches and
-        // shoulders taper hard toward the knee or elbow.
-        const bulk =
-          (k === 0 ? (limb.role === 'arm' ? 0.32 : 0.42) : k === 1 ? 0.2 : 0) * frame.radius;
-        const radiusAt = (u: number) => sampleProfile(limb.radius, (k + u) / n) * L;
-        limbMasses.push(
-          ...bellies(
-            limbBones[k] as number,
-            bone.head,
-            bone.tail,
-            bone.up,
-            radiusAt,
-            rules,
-            sLimb * (slender[k] as number),
-            bulk,
-            k === 0 ? 0.55 : 0.6,
-          ),
-        );
-      }
-      // Caps at every joint but the last (the ankle or wrist).
-      for (let j = 1; j < n - 1; j++) {
-        const cap = jointCap(
-          limbBones[j] as number,
-          solved.points[j] as Vector3,
-          solved.points[j - 1] as Vector3,
-          solved.points[j + 1] as Vector3,
-          sampleProfile(limb.radius, j / n) * L * limbFactor(j / n, n, sLimb, chitin, jointScale),
-          sLimb * jointScale(j),
-        );
-        if (cap) limbMasses.push(cap);
-      }
     }
     // Knee, hock and elbow helpers.
     for (let k = 1; k < n; k++) {
@@ -1000,7 +967,6 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
             cross: [1, 1],
             blend: 0.4 * rootRadius * Math.min(1, sLimb),
           },
-          ...limbMasses,
         ],
       },
       limbBones,

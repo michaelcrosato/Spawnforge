@@ -71,20 +71,20 @@ describe('anatomy', () => {
       build(example(name))
         .bones.filter((b) => b.shaped)
         .map((b) => b.name);
-    // A quadruped: the root sphere, two thigh bellies, a calf and a knee cap on each leg; a chest
-    // keel and a neck muscle; torso, tail and legs shaped.
+    // A quadruped: a chest keel and a neck muscle; each leg's root sphere; torso, tail and legs
+    // shaped (the legs' muscle is in their profiles).
     expect(masses('ridgeback-stalker')).toMatchObject({
       torso: 1,
       neck: 1,
-      'foreleg.L': 5,
-      'hindleg.R': 5,
+      'foreleg.L': 1,
+      'hindleg.R': 1,
     });
     expect(shaped('ridgeback-stalker')).toEqual(
       expect.arrayContaining(['spine.0', 'tail.0', 'hindleg.L.1']),
     );
-    // An upright biped with two-segment limbs: bellies but no caps, and no keel on its upright
-    // torso (its chest comes from the profile).
-    expect(masses('bog-troll')).toMatchObject({ torso: 0, neck: 1, 'leg.L': 4, 'arm.R': 4 });
+    // An upright biped: no keel on its upright torso (its chest comes from the profile).
+    expect(masses('bog-troll')).toMatchObject({ torso: 0, neck: 1, 'leg.L': 1, 'arm.R': 1 });
+    expect(shaped('bog-troll')).toEqual(expect.arrayContaining(['leg.L.0', 'arm.R.1']));
     // A chitin hexapod: its root spheres only; the segments swell through their profiles, and the
     // clustered pairs give the torso no chest or pelvis.
     const beetle = masses('ember-beetle');
