@@ -1,0 +1,170 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Wall Gecko",
+  "seed": 1501,
+  "extends": "quadruped",
+  "scale": 0.8,
+  "body": {
+    "torso": {
+      "radius": [
+        0.11,
+        0.16,
+        0.15,
+        0.1
+      ],
+      "arch": 0,
+      "crossSection": "wide"
+    },
+    "neck": {
+      "length": 0.1,
+      "radius": [
+        0.08,
+        0.1
+      ],
+      "pitch": 0,
+      "crossSection": "wide",
+      "segments": 2
+    },
+    "head": {
+      "shape": "wedge",
+      "length": 0.34,
+      "radius": 0.12,
+      "pitch": 0,
+      "crossSection": "wide"
+    },
+    "tail": {
+      "length": 1.1,
+      "radius": [
+        0.09,
+        0.01
+      ],
+      "pitch": -3,
+      "crossSection": "wide"
+    }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "attach": {
+        "on": "torso",
+        "at": 0.12,
+        "angle": 120
+      },
+      "length": 0.5,
+      "radius": [
+        0.055,
+        0.035
+      ],
+      "splay": 70,
+      "foot": {
+        "type": "foot.claw",
+        "toes": 5,
+        "toeLength": 0.2,
+        "spread": 150,
+        "clawLength": 0.025,
+        "clawCurve": 50,
+        "clawWidth": 2
+      }
+    },
+    {
+      "id": "hindleg",
+      "attach": {
+        "on": "torso",
+        "at": 0.88,
+        "angle": 120
+      },
+      "length": 0.55,
+      "radius": [
+        0.055,
+        0.035
+      ],
+      "splay": 70,
+      "foot": {
+        "type": "foot.claw",
+        "toes": 5,
+        "toeLength": 0.2,
+        "spread": 150,
+        "clawLength": 0.025,
+        "clawCurve": 50,
+        "clawWidth": 2
+      }
+    }
+  ],
+  "parts": [
+    {
+      "id": "eyes",
+      "attach": {
+        "on": "head",
+        "at": 0.45,
+        "angle": 50
+      },
+      "params": {
+        "size": 0.05,
+        "pupil": "slit",
+        "irisColor": "#d8c040",
+        "bulge": 0.8
+      }
+    },
+    {
+      "id": "teeth",
+      "type": "teeth.row",
+      "params": {
+        "count": 10,
+        "length": 0.01,
+        "fangs": 0
+      }
+    }
+  ],
+  "skin": {
+    "material": "scales",
+    "palette": {
+      "base": "#7a8858",
+      "belly": "#d6d2a6",
+      "accent": "#3c4a2c"
+    },
+    "layers": [
+      {
+        "type": "countershade",
+        "height": -0.2
+      },
+      {
+        "type": "mottle",
+        "color": "accent",
+        "scale": 0.1,
+        "coverage": 0.45,
+        "contrast": 0.5
+      },
+      {
+        "type": "stripes",
+        "count": 9,
+        "width": 0.3,
+        "region": "tail",
+        "jitter": 0.3
+      },
+      {
+        "type": "scales",
+        "size": 0.02,
+        "bump": 0.3
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "skittish",
+    "actions": [
+      "bite",
+      "look",
+      "idle"
+    ],
+    "gaits": [
+      {
+        "type": "trot",
+        "stride": 2,
+        "duty": 0.55
+      },
+      {
+        "type": "walk",
+        "stride": 2
+      }
+    ]
+  }
+}

@@ -1,0 +1,136 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Dune Scorpion",
+  "seed": 1010,
+  "extends": "hexapod",
+  "scale": 0.45,
+  "body": {
+    "torso": {
+      "radius": [
+        0.1,
+        0.16,
+        0.15,
+        0.17,
+        0.14,
+        0.09
+      ]
+    },
+    "head": {
+      "shape": "round",
+      "length": 0.2,
+      "radius": 0.08,
+      "pitch": -5
+    },
+    "tail": {
+      "length": 2.4,
+      "radius": [
+        0.09,
+        0.06,
+        0.05,
+        0.045,
+        0.075,
+        0.015
+      ],
+      "pitch": 40,
+      "curl": 200,
+      "segments": 12
+    }
+  },
+  "limbs": [
+    {
+      "id": "pincer",
+      "role": "arm",
+      "attach": {
+        "on": "torso",
+        "at": 0.03,
+        "angle": 95
+      },
+      "length": 0.7,
+      "segments": 2,
+      "radius": [
+        0.07,
+        0.055
+      ],
+      "splay": 65,
+      "lift": 90,
+      "foot": {
+        "type": "foot.claw",
+        "toes": 2,
+        "toeLength": 0.22,
+        "spread": 45,
+        "clawLength": 0.12,
+        "clawCurve": 70,
+        "clawWidth": 2.2,
+        "clawColor": "#a07a48"
+      }
+    }
+  ],
+  "parts": [
+    {
+      "id": "stinger",
+      "type": "horn.curved",
+      "attach": {
+        "on": "tail",
+        "at": 0.97,
+        "angle": 0
+      },
+      "params": {
+        "length": 0.14,
+        "width": 0.03,
+        "curve": 60,
+        "color": "#8a5a28",
+        "tipColor": "#2a1608"
+      }
+    },
+    {
+      "id": "eyes",
+      "attach": {
+        "on": "head",
+        "at": 0.35,
+        "angle": 40
+      },
+      "params": {
+        "size": 0.025,
+        "irisColor": "#201008"
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#d8bf86",
+      "belly": "#efe2bc",
+      "accent": "#8a6a38"
+    },
+    "material": "chitin",
+    "layers": [
+      {
+        "type": "countershade",
+        "softness": 0.2
+      },
+      {
+        "type": "mottle",
+        "color": "accent",
+        "scale": 0.1,
+        "coverage": 0.3,
+        "contrast": 0.4
+      },
+      {
+        "type": "grime",
+        "color": "#b08f58",
+        "amount": 0.3
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "stalking",
+    "gaits": [
+      "tripod",
+      "walk"
+    ],
+    "actions": [
+      "bite",
+      "look",
+      "idle"
+    ]
+  }
+}

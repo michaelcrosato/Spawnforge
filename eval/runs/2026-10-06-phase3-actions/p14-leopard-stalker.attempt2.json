@@ -1,0 +1,161 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Leopard Stalker",
+  "seed": 1401,
+  "extends": "quadruped",
+  "scale": 1.1,
+  "body": {
+    "torso": {
+      "radius": [
+        0.11,
+        0.15,
+        0.14,
+        0.1
+      ],
+      "arch": 0.05
+    },
+    "neck": {
+      "length": 0.25,
+      "radius": [
+        0.08,
+        0.11
+      ],
+      "pitch": 20,
+      "segments": 3
+    },
+    "head": {
+      "shape": "round",
+      "length": 0.26,
+      "radius": 0.1,
+      "pitch": -10
+    },
+    "tail": {
+      "length": 1.1,
+      "radius": [
+        0.07,
+        0.035
+      ],
+      "pitch": -15,
+      "curl": 170,
+      "curlStart": 0.6,
+      "segments": 12
+    }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "length": 0.55,
+      "radius": [
+        0.07,
+        0.04
+      ],
+      "foot": {
+        "type": "foot.claw",
+        "toes": 4,
+        "toeLength": 0.05,
+        "clawLength": 0.03
+      }
+    },
+    {
+      "id": "hindleg",
+      "length": 0.6,
+      "radius": [
+        0.085,
+        0.04
+      ],
+      "foot": {
+        "type": "foot.claw",
+        "toes": 4,
+        "toeLength": 0.05,
+        "clawLength": 0.03
+      }
+    }
+  ],
+  "parts": [
+    {
+      "id": "eyes",
+      "attach": {
+        "on": "head",
+        "at": 0.35,
+        "angle": 55
+      },
+      "params": {
+        "size": 0.025,
+        "pupil": "slit",
+        "irisColor": "#a8c830",
+        "iris": 0.8
+      }
+    },
+    {
+      "id": "teeth",
+      "type": "teeth.row",
+      "params": {
+        "count": 4,
+        "length": 0.012,
+        "fangs": 1,
+        "fangLength": 0.05
+      }
+    },
+    {
+      "id": "ears",
+      "type": "horn.curved",
+      "attach": {
+        "on": "head",
+        "at": 0.85,
+        "angle": 40
+      },
+      "params": {
+        "length": 0.08,
+        "width": 0.045,
+        "curve": -15,
+        "color": "base",
+        "tipColor": "accent"
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#c9954a",
+      "belly": "#f0e4c4",
+      "accent": "#2a1a10"
+    },
+    "layers": [
+      {
+        "type": "countershade",
+        "height": -0.1
+      },
+      {
+        "type": "countershade",
+        "color": "base",
+        "height": -0.1,
+        "region": "tail"
+      },
+      {
+        "type": "spots",
+        "color": "accent",
+        "size": 0.045,
+        "density": 1.0,
+        "jitter": 0.7,
+        "ring": 0.0,
+        "strength": 0.8
+      },
+      {
+        "type": "spots",
+        "color": "accent",
+        "size": 0.08,
+        "density": 0.9,
+        "jitter": 0.5,
+        "ring": 0.7
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "stalking",
+    "actions": [
+      "bite",
+      "roar",
+      "look",
+      "idle"
+    ]
+  }
+}

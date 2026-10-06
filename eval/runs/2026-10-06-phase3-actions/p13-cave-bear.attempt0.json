@@ -1,0 +1,48 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Cave Bear",
+  "seed": 1301,
+  "extends": "quadruped",
+  "scale": 1.5,
+  "body": {
+    "torso": { "radius": [0.2, 0.27, 0.25, 0.21], "arch": 0.1, "segments": 6 },
+    "neck": { "length": 0.22, "radius": [0.15, 0.21], "pitch": 20, "segments": 2 },
+    "head": { "shape": "snout", "length": 0.3, "radius": 0.14, "pitch": -15 },
+    "tail": { "length": 0.12, "radius": [0.07, 0.04], "pitch": -20 }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "attach": { "on": "torso", "at": 0.14, "angle": 105 },
+      "length": 0.5,
+      "radius": [0.13, 0.08],
+      "foot": { "type": "foot.claw", "toes": 5, "toeLength": 0.06, "spread": 60, "clawLength": 0.1, "clawCurve": 60, "clawWidth": 1.6, "clawColor": "#e8dcc0" }
+    },
+    {
+      "id": "hindleg",
+      "attach": { "on": "torso", "at": 0.88, "angle": 105 },
+      "length": 0.5,
+      "radius": [0.15, 0.08],
+      "foot": { "type": "foot.claw", "toes": 5, "toeLength": 0.06, "spread": 60, "clawLength": 0.08, "clawCurve": 60, "clawWidth": 1.5, "clawColor": "#e8dcc0" }
+    }
+  ],
+  "parts": [
+    { "id": "eyes", "attach": { "on": "head", "at": 0.4, "angle": 55 }, "params": { "size": 0.009, "irisColor": "#201408" } },
+    { "id": "teeth", "type": "teeth.row", "params": { "count": 7, "length": 0.02, "fangs": 1, "fangLength": 0.04 } },
+    {
+      "id": "ears",
+      "type": "horn.curved",
+      "attach": { "on": "head", "at": 0.85, "angle": 45 },
+      "params": { "length": 0.07, "width": 0.045, "curve": -10, "color": "base", "tipColor": "base" }
+    }
+  ],
+  "skin": {
+    "palette": { "base": "#5a3d28", "belly": "#7a5a40", "accent": "#2c1c10" },
+    "layers": [
+      { "type": "countershade", "strength": 0.5 },
+      { "type": "mottle", "color": "accent", "scale": 0.2, "coverage": 0.45 },
+      { "type": "grime", "amount": 0.7, "color": "#4a3a2a" }
+    ]
+  },
+  "motion": { "temperament": "lumbering", "actions": ["bite", "roar", "look", "idle"] }
+}

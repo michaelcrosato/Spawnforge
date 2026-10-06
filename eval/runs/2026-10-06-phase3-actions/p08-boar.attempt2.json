@@ -1,0 +1,173 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Tusk Boar",
+  "seed": 808,
+  "extends": "quadruped",
+  "scale": 1.0,
+  "body": {
+    "torso": {
+      "radius": [
+        0.22,
+        0.3,
+        0.25,
+        0.17
+      ],
+      "arch": 0.1,
+      "segments": 6
+    },
+    "neck": {
+      "length": 0.24,
+      "radius": [
+        0.2,
+        0.27
+      ],
+      "pitch": -5,
+      "segments": 2
+    },
+    "head": {
+      "shape": "snout",
+      "length": 0.62,
+      "radius": 0.24,
+      "jaw": true,
+      "pitch": -20
+    },
+    "tail": {
+      "length": 0.28,
+      "radius": [
+        0.05,
+        0.02
+      ],
+      "pitch": 25,
+      "curl": 70,
+      "segments": 4
+    }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "attach": {
+        "on": "torso",
+        "at": 0.14,
+        "angle": 110
+      },
+      "length": 0.45,
+      "radius": [
+        0.12,
+        0.065
+      ],
+      "foot": {
+        "type": "foot.claw",
+        "toes": 2,
+        "toeLength": 0.05,
+        "clawLength": 0.02,
+        "clawWidth": 2
+      }
+    },
+    {
+      "id": "hindleg",
+      "attach": {
+        "on": "torso",
+        "at": 0.86,
+        "angle": 110
+      },
+      "length": 0.47,
+      "radius": [
+        0.12,
+        0.065
+      ],
+      "foot": {
+        "type": "foot.claw",
+        "toes": 2,
+        "toeLength": 0.05,
+        "clawLength": 0.02,
+        "clawWidth": 2
+      }
+    }
+  ],
+  "parts": [
+    {
+      "id": "tusks",
+      "type": "horn.curved",
+      "attach": {
+        "on": "jaw",
+        "at": 0.3,
+        "angle": 65
+      },
+      "params": {
+        "length": 0.26,
+        "width": 0.04,
+        "curve": -70,
+        "color": "#efe6cc",
+        "tipColor": "#c8b890"
+      }
+    },
+    {
+      "id": "mane",
+      "type": "spikes.row",
+      "attach": {
+        "on": "spine",
+        "from": 0.05,
+        "to": 0.9,
+        "angle": 0
+      },
+      "params": {
+        "count": 16,
+        "height": [
+          0.06,
+          0.1,
+          0.05
+        ],
+        "width": 0.02,
+        "curve": 30,
+        "jitter": 0.4,
+        "color": "#3a2a20",
+        "tipColor": "#1e1510"
+      }
+    },
+    {
+      "id": "eyes",
+      "attach": {
+        "on": "head",
+        "at": 0.6,
+        "angle": 60
+      },
+      "params": {
+        "size": 0.03,
+        "irisColor": "#402010"
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#5a4636",
+      "belly": "#8a7560",
+      "accent": "#2a1f18"
+    },
+    "layers": [
+      {
+        "type": "countershade",
+        "strength": 0.7
+      },
+      {
+        "type": "mottle",
+        "color": "accent",
+        "scale": 0.12,
+        "coverage": 0.35,
+        "contrast": 0.3
+      },
+      {
+        "type": "grime",
+        "amount": 0.4
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "aggressive",
+    "actions": [
+      "bite",
+      "roar",
+      "look",
+      "idle"
+    ]
+  }
+}

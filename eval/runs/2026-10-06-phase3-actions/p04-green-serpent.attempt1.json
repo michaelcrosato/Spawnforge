@@ -1,0 +1,100 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Giant Green Serpent",
+  "seed": 404,
+  "extends": "serpent",
+  "scale": 1.8,
+  "body": {
+    "torso": {
+      "radius": [
+        0.09,
+        0.115,
+        0.12,
+        0.11
+      ]
+    },
+    "neck": {
+      "length": 0.5,
+      "radius": [
+        0.085,
+        0.1
+      ],
+      "pitch": 25,
+      "segments": 4
+    },
+    "head": {
+      "shape": "wedge",
+      "length": 0.26,
+      "radius": 0.1
+    },
+    "tail": {
+      "length": 1.8,
+      "radius": [
+        0.11,
+        0.01
+      ]
+    }
+  },
+  "parts": [
+    {
+      "id": "fangs",
+      "type": "teeth.row",
+      "params": {
+        "count": 5,
+        "fangs": 1,
+        "fangLength": 0.1,
+        "length": 0.02,
+        "lower": false
+      }
+    },
+    {
+      "id": "eyes",
+      "params": {
+        "size": 0.02,
+        "irisColor": "#ffd020"
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#2f7a2a",
+      "belly": "#d8d890",
+      "accent": "#e8c820"
+    },
+    "material": "scales",
+    "layers": [
+      {
+        "type": "countershade"
+      },
+      {
+        "type": "stripes",
+        "color": "accent",
+        "count": 28,
+        "width": 0.3,
+        "jitter": 0.2,
+        "region": "back"
+      },
+      {
+        "type": "scales",
+        "size": 0.02,
+        "gapColor": "#1c3d18"
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "aggressive",
+    "gaits": [
+      {
+        "type": "slither",
+        "amplitude": 0.2,
+        "waves": 2
+      }
+    ],
+    "actions": [
+      "bite",
+      "roar",
+      "look",
+      "idle"
+    ]
+  }
+}
