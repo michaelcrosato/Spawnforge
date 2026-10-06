@@ -39,8 +39,32 @@ export interface BoneDef {
    * the bone; the skin follows it with one cone per span instead of a straight taper.
    */
   readonly profile?: readonly number[];
+  /** Whether anatomy shaped the profile (8.1); thin bones' tubes then follow it too. */
+  readonly shaped?: boolean;
+  /** The profile before anatomy shaped it, which decides whether the bone is thin. */
+  readonly plainProfile?: readonly number[];
+  /** The cross-section before anatomy flattened it (legless bodies), for the same decision. */
+  readonly plainCross?: readonly [number, number];
   /** Index of the chain this bone belongs to (-1 for none). */
   readonly chain: number;
+}
+
+/**
+ * A mass on a bone: a rounded cone (a capsule when the radii match, a sphere when `a` is `b`)
+ * that joins its chain with a smooth minimum against the chain's cones only, so masses never
+ * stack on each other. It moves with its bone.
+ */
+export interface MassDef {
+  readonly bone: number;
+  readonly a: Vector3;
+  readonly b: Vector3;
+  readonly ra: number;
+  readonly rb: number;
+  /** Frame for the cross-section: `up` and the scales across (side) and up. */
+  readonly up: Vector3;
+  readonly cross: readonly [number, number];
+  /** Smooth-min radius against the chain's cones (metres); 0 is a plain union. */
+  readonly blend: number;
 }
 
 /** A run of bones that join with a plain union; chains join their parents with a smooth min. */
@@ -53,8 +77,8 @@ export interface ChainDef {
   readonly parentBone: number;
   /** Smooth-min radius where it meets its parent chain (metres). */
   readonly blend: number;
-  /** Extra masses (shoulders, hips) unioned into the chain's first bone. */
-  readonly masses: readonly { readonly center: Vector3; readonly radius: number }[];
+  /** Muscle masses, joint caps, the limb root's sphere: blended into the chain's cones. */
+  readonly masses: readonly MassDef[];
 }
 
 /** One leg for the motion controller. */

@@ -47,7 +47,10 @@ format eval scored 20/20 on suite B, `eval/runs/2026-10-06-phase7-format/`) and 
 compiled rig holds lists of heads, tails and driven chains, with goldens unchanged) and 7.5
 (scenarios for `render` and `analyze`, the module harness for every kind, visual regression for
 every example, and the quality and motion reviews, `eval/README.md`) and 7.6 (every package
-builds to `dist/` for publishing, at 0.1.0; `pnpm smoke` installs the tarballs into a game).
+builds to `dist/` for publishing, at 0.1.0; `pnpm smoke` installs the tarballs into a game) and
+8.1 (`muscle` shapes limbs, torso, neck and tail by rules, and `neck.curve` makes an S; `muscle: 0`
+is plan 1's mesh exactly, and the meshing grid keeps the muscle-free lattice; the quality review
+shows both orders at 640 px, `docs/design/8.1-anatomy.md`).
 
 ## Repo map
 

@@ -60,11 +60,20 @@ node eval/quality.ts score eval/runs/<run>/quality
 `prepare` renders each blueprint at the base commit (in a temporary git worktree, with its own
 `pnpm install --offline`) and at the head (default: this working tree) into `pNN-A.png` and
 `pNN-B.png`, writes the rubric and the pairs to `review.md` (and `review.html` for people) and
-keeps the key in `quality-key.json`. The reviewer reads only `review.md` and the images, picks the
-better creature of each pair (or `same`) against the rubric (silhouette, anatomy, extremities,
-mouth and eyes, surface) and says why, in `quality-answers.json`
-(`{ "p01": { "pick": "A", "why": "…" } }`). `score` counts how often the head was preferred;
-gate 8 needs it in at least 16 of 20 pairs.
+keeps the key in `quality-key.json`. It writes the same pairs with their sides swapped into
+`swapped/`. Each folder goes to its own reviewer, who reads only that `review.md` and the images,
+picks the better creature of each pair (or `same`) against the rubric (silhouette, anatomy,
+extremities, mouth and eyes, surface) and says why, in `quality-answers.json`
+(`{ "p01": { "pick": "A", "why": "…" } }`). `score` adds the two verdicts on each pair (+1 head,
+−1 base, 0 same) and counts how often the head was preferred; gate 8 needs it in at least 16 of
+20 pairs.
+
+Both orders are needed because reviewers lean toward one side: milestone 8.1's three
+single-order reviews picked B in 60–75% of pairs whichever side the head was on, which pulls any
+score toward an even split. With both orders a lean gives one vote each way and counts as
+`same`, so only a preference that holds both ways counts. `score` reports each reviewer's
+picks per side in `quality-score.json`. Views are 640 px (`--size`): at 360 px a wolf's leg is
+about 10 px wide, too small to judge its shape.
 
 ## Motion review (plan 2)
 

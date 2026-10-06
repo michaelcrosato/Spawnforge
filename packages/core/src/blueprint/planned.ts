@@ -7,8 +7,8 @@ import type { Issue } from './issues.ts';
  * it validates, and compile skips what it cannot draw yet. This lists what is skipped, naming the
  * plan milestone that builds each thing. Pass `written` (the blueprint merged with its preset,
  * before defaults) to include fields that something else implies, such as a stance (from the foot)
- * or a medium (from the limbs), or whose defaults already have a value, such as `muscle`, only
- * when the blueprint sets them; the thing that implies them is listed anyway. Each milestone
+ * or a medium (from the limbs), or whose defaults already have a value, such as `head.lips`,
+ * only when the blueprint sets them; the thing that implies them is listed anyway. Each milestone
  * deletes its rows here.
  */
 export function notBuilt(
@@ -67,7 +67,6 @@ export function notBuilt(
   if (body.neck.count > 1) add('body.neck.count', 'several heads', '9.1');
   if (body.tail.count > 1) add('body.tail.count', 'several tails', '9.1');
   if (body.tail.forkAt > 0 && body.tail.count > 1) add('body.tail.forkAt', 'a forked tail', '9.1');
-  if (body.neck.curve !== 0) add('body.neck.curve', 'an S-curved neck', '8.1');
   const roles: Record<string, [string, string]> = {
     wing: ['a wing', '9.3'],
     fin: ['a fin', '9.3'],
@@ -105,7 +104,6 @@ export function notBuilt(
             : undefined,
         written,
       );
-    if (get('body', 'muscle') !== undefined) add('body.muscle', 'muscle', '8.1');
     const limbList = get('limbs');
     for (const limb of Array.isArray(limbList) ? (limbList as Record<string, unknown>[]) : []) {
       const stance = limb?.stance;
@@ -116,10 +114,6 @@ export function notBuilt(
     if (get('motion', 'media', 'air') === true) add('motion.media.air', 'flying', '10.4');
     for (const key of ['lips', 'tongue', 'brow'])
       if (get('body', 'head', key) !== undefined) add(`body.head.${key}`, `the ${key}`, '8.3');
-    const limbs = get('limbs');
-    for (const limb of Array.isArray(limbs) ? limbs : [])
-      if (typeof limb === 'object' && limb !== null && 'muscle' in limb)
-        add(`limbs[id=${String((limb as { id?: unknown }).id)}].muscle`, 'muscle', '8.1');
   }
   return issues;
 }

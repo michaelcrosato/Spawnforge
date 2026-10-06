@@ -1,0 +1,131 @@
+{
+  "base": "d101c06",
+  "head": "a80551a (working tree)",
+  "head_preferred": 10,
+  "base_preferred": 5,
+  "same": 5,
+  "missing": 0,
+  "total": 20,
+  "rows": [
+    {
+      "pair": "p01",
+      "id": "p01-wolf",
+      "winner": "head",
+      "why": "B's upper limbs have shoulder and thigh mass that blends into a deeper chest; A's legs are thinner and stick-like, with a ball-like elbow in the 3/4 view."
+    },
+    {
+      "pair": "p02",
+      "id": "p02-spiked-lizard",
+      "winner": "base",
+      "why": "In side and 3/4 views B's legs read as jointed limbs with an upper arm and knee; A's legs are balloon-like blobs on stubby feet."
+    },
+    {
+      "pair": "p03",
+      "id": "p03-horn-beetle",
+      "winner": "same",
+      "why": "Only a barely visible femur taper on the thin black legs differs; the silhouette, horn, eyes and spots are identical."
+    },
+    {
+      "pair": "p04",
+      "id": "p04-green-serpent",
+      "winner": "same",
+      "why": "The snake bodies and heads are essentially identical; only tiny snout and scale-shading differences."
+    },
+    {
+      "pair": "p05",
+      "id": "p05-swamp-troll",
+      "winner": "head",
+      "why": "B's torso has a more defined chest and shoulder mass where the arms attach; A's torso is a plainer tube."
+    },
+    {
+      "pair": "p06",
+      "id": "p06-ram-demon",
+      "winner": "head",
+      "why": "B has a broader chest, a visible waist and thigh mass with readable knees; A's torso is a more uniform egg or tube with stick arms."
+    },
+    {
+      "pair": "p07",
+      "id": "p07-sprawl-lizard",
+      "winner": "same",
+      "why": "Same silhouette, head and sprawled limbs; differences are a few pixels of shoulder thickness."
+    },
+    {
+      "pair": "p08",
+      "id": "p08-boar",
+      "winner": "head",
+      "why": "In side view B's front legs come out of the body with a visible upper arm and elbow; A's legs are short stubs mostly hidden under the belly."
+    },
+    {
+      "pair": "p09",
+      "id": "p09-long-neck",
+      "winner": "head",
+      "why": "A's hind thighs blend smoothly into the body; B has a lumpy knob at the hip and thinner, tube-like upper legs."
+    },
+    {
+      "pair": "p10",
+      "id": "p10-scorpion",
+      "winner": "same",
+      "why": "Pincers, tail and body match; leg thickness differs only slightly and neither reads better."
+    },
+    {
+      "pair": "p11",
+      "id": "p11-sea-serpent",
+      "winner": "head",
+      "why": "A's mouth is a clean slit along the teeth; B's mouth cut is larger, with a jagged, angular edge at the back of the gape (slight difference)."
+    },
+    {
+      "pair": "p12",
+      "id": "p12-raptor",
+      "winner": "head",
+      "why": "B's thighs are more muscular and join the hips better, with a clearer knee; A's legs are thinner at the top for a theropod build."
+    },
+    {
+      "pair": "p13",
+      "id": "p13-cave-bear",
+      "winner": "head",
+      "why": "B's legs show elbow and forearm bulges and a defined hock; A's legs are plain smooth columns."
+    },
+    {
+      "pair": "p14",
+      "id": "p14-leopard-stalker",
+      "winner": "base",
+      "why": "B's cat legs are cleaner, with defined knees and hocks; A has a lumpy elbow bulge and a blobby thigh in side view."
+    },
+    {
+      "pair": "p15",
+      "id": "p15-gecko",
+      "winner": "head",
+      "why": "B's sprawled limbs have clearer upper-arm and thigh bulges and elbows; A's limbs are smoother tubes (slight)."
+    },
+    {
+      "pair": "p16",
+      "id": "p16-ant-soldier",
+      "winner": "base",
+      "why": "A's middle leg shows rippled, ribbed artifacts along the lower segment; B's leg segments are clean and smooth."
+    },
+    {
+      "pair": "p17",
+      "id": "p17-goblin",
+      "winner": "base",
+      "why": "B's torso has a chest-to-waist shape and better-defined thighs; A has a large round lump at the lower back in side view."
+    },
+    {
+      "pair": "p18",
+      "id": "p18-cobra",
+      "winner": "same",
+      "why": "The cobra pose, head, fangs and banding are effectively identical."
+    },
+    {
+      "pair": "p19",
+      "id": "p19-rhino",
+      "winner": "base",
+      "why": "B's legs read as limbs with shoulder and thigh masses and a visible forearm angle; A's legs are stubby blobs merging into the body."
+    },
+    {
+      "pair": "p20",
+      "id": "p20-nightmare-hound",
+      "winner": "head",
+      "why": "A has a deeper chest with a defined upper arm and thigh mass; B's legs are thinner, plainer tubes (slight)."
+    }
+  ]
+}

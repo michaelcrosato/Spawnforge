@@ -1,0 +1,82 @@
+{
+  "p01": {
+    "pick": "B",
+    "why": "B's legs have elbow and knee bulges, tapered shins and a fuller hind thigh, where A's legs are plain straight tubes."
+  },
+  "p02": {
+    "pick": "same",
+    "why": "The ankylosaur is practically identical; B's belly sits a hair lower (92 vs 91 cm tall), with no quality difference."
+  },
+  "p03": {
+    "pick": "same",
+    "why": "The horned beetle renders are indistinguishable in every view."
+  },
+  "p04": {
+    "pick": "same",
+    "why": "Only tiny shifts in neck width and colour-band edges on the head; both snakes read equally well."
+  },
+  "p05": {
+    "pick": "B",
+    "why": "In front and top views B's long arms hang free of the torso and the legs part at the crotch, while A's arms and thighs fuse into the body."
+  },
+  "p06": {
+    "pick": "same",
+    "why": "The striped ram-horned biped is near-identical; the thigh and knee shading differs by only a few pixels."
+  },
+  "p07": {
+    "pick": "same",
+    "why": "The small salamander only differs by fractional limb thickness; nothing to choose between them."
+  },
+  "p08": {
+    "pick": "same",
+    "why": "The tusked boar is near-identical; the back curve and ear angle move a few pixels."
+  },
+  "p09": {
+    "pick": "B",
+    "why": "B's thighs and upper legs are broader and taper into the knee for believable mass, where A's are thin tubes, though B shows slight pale smears at the leg roots."
+  },
+  "p10": {
+    "pick": "same",
+    "why": "The scorpion is near-identical; only the pincer-arm root under the head shifts slightly."
+  },
+  "p11": {
+    "pick": "A",
+    "why": "In front view A's head is clearly wider than the neck with a deeper open mouth; B's narrower head blends into an almost equally wide neck column."
+  },
+  "p12": {
+    "pick": "B",
+    "why": "B's thighs are drumstick-shaped and taper to the knee with a clean crotch; A's inner thighs bulge into a rounded, pants-like crotch."
+  },
+  "p13": {
+    "pick": "same",
+    "why": "The bear-like quadruped is near-identical; only the belly line between the legs sits marginally lower in B."
+  },
+  "p14": {
+    "pick": "B",
+    "why": "In front view A's forelegs flare out into a skirt-like mass under the chest; B's forelegs drop as clean columns with a clearer elbow in side view."
+  },
+  "p15": {
+    "pick": "same",
+    "why": "The camo salamander is near-identical; the upper-arm roundness differs only slightly."
+  },
+  "p16": {
+    "pick": "A",
+    "why": "B's lower leg segments have a serrated, faceted outline in the side view; A's legs are smooth and tapered."
+  },
+  "p17": {
+    "pick": "B",
+    "why": "B's thighs separate at a clear crotch notch and read as two legs; A's fuller thighs fuse together at the crotch."
+  },
+  "p18": {
+    "pick": "B",
+    "why": "B's raised body tapers into a narrower neck under the head so the head reads as distinct; A's neck is as wide as the head and swells straight into the bulb."
+  },
+  "p19": {
+    "pick": "same",
+    "why": "The rhino is near-identical; only the ear and shoulder-hump height shifts marginally."
+  },
+  "p20": {
+    "pick": "same",
+    "why": "Slight trade-offs only: B's belly hangs a little lower (1.2 vs 1.3 m tall) and A's legs are a touch thicker, with no clear winner."
+  }
+}

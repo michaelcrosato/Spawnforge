@@ -1,0 +1,76 @@
+{
+  "p01": {
+    "pick": "B",
+    "why": "A's front legs pinch in under the chest and bulge at the elbows; B's flow from the chest as cleaner columns with a defined upper arm in the 3/4 view"
+  },
+  "p02": {
+    "pick": "same",
+    "why": "Renders are nearly identical; front and side legs, belly and tail club match within a few pixels"
+  },
+  "p03": {
+    "pick": "same",
+    "why": "Effectively identical beetle; leg joints, horn and spots show no meaningful difference"
+  },
+  "p04": {
+    "pick": "same",
+    "why": "Snake body, head and fangs match; only a slightly thicker neck base in B and a less visible small rear tooth, neither better"
+  },
+  "p05": {
+    "pick": "B",
+    "why": "B's legs and torso show knee and shoulder shaping in the front and 3/4 views where A's limbs read as plain tubes"
+  },
+  "p06": {
+    "pick": "B",
+    "why": "B's thighs are fuller, with a visible knee bulge in the front, 3/4 and rear views; A's legs are straight, even-width tubes"
+  },
+  "p07": {
+    "pick": "same",
+    "why": "Sprawling limbs, head and spots are indistinguishable; at most a marginally thicker upper arm in B"
+  },
+  "p08": {
+    "pick": "same",
+    "why": "Body, tusks, legs and feet match in every view; differences are sub-pixel shading"
+  },
+  "p09": {
+    "pick": "B",
+    "why": "A shows pale pinched creases where the legs meet the body (armpit and groin); B's leg roots are smoother and fuller"
+  },
+  "p10": { "pick": "same", "why": "Scorpion legs, pincers, tail and head are visually identical" },
+  "p11": {
+    "pick": "same",
+    "why": "Only the mouth gape differs slightly (B's runs a bit further back); neither head reads better"
+  },
+  "p12": {
+    "pick": "B",
+    "why": "In the front view B's thighs carry real mass into the hips, while A stands on thin stilt-like legs"
+  },
+  "p13": {
+    "pick": "B",
+    "why": "B's front legs show a clearer shoulder and elbow, and the hind knee is more pronounced; A's limbs are smoother columns"
+  },
+  "p14": {
+    "pick": "B",
+    "why": "B's legs have fuller upper limbs and a defined thigh mass in the front and side views; A's legs are thinner, straight tubes"
+  },
+  "p15": {
+    "pick": "B",
+    "why": "In the front view B's forelegs show elbow and forearm shaping; A's are plain smooth tubes (slight difference)"
+  },
+  "p16": { "pick": "same", "why": "Ant legs, mandibles and body segments match in every view" },
+  "p17": {
+    "pick": "B",
+    "why": "B's thighs are fuller, with knee definition in the front and 3/4 views; A's legs are thin, uniform tubes"
+  },
+  "p18": {
+    "pick": "same",
+    "why": "Head, fangs, neck and coiled body match; at most a marginally thicker neck in B"
+  },
+  "p19": {
+    "pick": "same",
+    "why": "Rhino silhouette, legs and horn match; only faint differences in the head-to-shoulder blend"
+  },
+  "p20": {
+    "pick": "B",
+    "why": "B's legs have fuller upper limbs and thighs; A shows a dark wedge between thin front legs in the front view"
+  }
+}

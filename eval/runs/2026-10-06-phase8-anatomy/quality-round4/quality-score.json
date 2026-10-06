@@ -1,0 +1,164 @@
+{
+  "base": "d101c06",
+  "head": "06b2d11",
+  "orders": 2,
+  "head_preferred": 6,
+  "base_preferred": 6,
+  "same": 8,
+  "missing": 0,
+  "total": 20,
+  "picks": {
+    "first": {
+      "A": 0,
+      "B": 12,
+      "same": 8
+    },
+    "swapped": {
+      "A": 11,
+      "B": 6,
+      "same": 3
+    }
+  },
+  "rows": [
+    {
+      "pair": "p01",
+      "id": "p01-wolf",
+      "winner": "base",
+      "votes": [-1, -1],
+      "why": "B's chest sits higher and its legs drop as long straight columns with shaped elbows and knees; A's chest bulges low and its forelegs look stubby and creased. / A's legs show shoulder/elbow and thigh/knee shaping in side and 3/4 views; B's are straighter tubes."
+    },
+    {
+      "pair": "p02",
+      "id": "p02-spiked-lizard",
+      "winner": "base",
+      "votes": [0, -1],
+      "why": "Nearly identical spiked ankylosaur; B's belly is only marginally wider and lower in front view. / From above, B's shoulders and hips read as distinct masses with a waist; A's torso is a straighter-sided slab."
+    },
+    {
+      "pair": "p03",
+      "id": "p03-horn-beetle",
+      "winner": "same",
+      "votes": [1, -1],
+      "why": "B's beetle legs show a femur/tibia knee bulge so they read as jointed; A's are plain tapering tubes. / B's legs taper cleanly; A's legs have a lumpy bulge-and-pinch at the leg joint seen from above."
+    },
+    {
+      "pair": "p04",
+      "id": "p04-green-serpent",
+      "winner": "same",
+      "votes": [0, 0],
+      "why": "Same snake: head, fangs, stripes and mid-body step match; A is only 3 cm wider. / Only the head differs a little (A rounder with a clearer neck pinch, B slightly broader-jawed); neither is clearly better."
+    },
+    {
+      "pair": "p05",
+      "id": "p05-swamp-troll",
+      "winner": "head",
+      "votes": [0, 1],
+      "why": "Trade-off: B's thighs are fuller (side, rear) but fuse into a wide sack in front view, while A's are thin but clearly separated. / A's thighs and shoulders carry more mass, so the legs taper from hip to knee; B's legs are thinner tubes under a narrower torso."
+    },
+    {
+      "pair": "p06",
+      "id": "p06-ram-demon",
+      "winner": "same",
+      "votes": [1, -1],
+      "why": "B's thighs are fuller and taper to the knee from the pelvis; A's legs are straight uniform tubes. / B's thighs and shoulders are fuller and taper smoothly to the knee; A's thinner legs have knobby knee bulges."
+    },
+    {
+      "pair": "p07",
+      "id": "p07-sprawl-lizard",
+      "winner": "same",
+      "votes": [0, 0],
+      "why": "Nearly identical salamander; only a tiny belly lump behind A's forelegs in side view. / Nearly identical; tiny differences in belly sag and upper-limb thickness, with no clear winner."
+    },
+    {
+      "pair": "p08",
+      "id": "p08-boar",
+      "winner": "base",
+      "votes": [-1, -1],
+      "why": "A's belly sags lower between the legs so the legs read stubbier; B's belly is higher and the legs read cleaner. / A has thicker upper limbs with a defined elbow, knee and haunch; B's legs are stubby, blobby tubes off a ball torso."
+    },
+    {
+      "pair": "p09",
+      "id": "p09-long-neck",
+      "winner": "head",
+      "votes": [1, 1],
+      "why": "B's upper legs have muscle tapering to the knee and shoulder mass in front view; A's legs are uniform tubes. / A's legs taper from muscular upper segments into a broader chest; B's legs are uniform thin tubes."
+    },
+    {
+      "pair": "p10",
+      "id": "p10-scorpion",
+      "winner": "base",
+      "votes": [0, -1],
+      "why": "Nearly identical scorpion; A's top-view legs have a slight sausage bulge at the femur, too small to decide on. / A's walking legs taper cleanly; B's legs are lumpy sausage-like segments with bulging joints in the top view."
+    },
+    {
+      "pair": "p11",
+      "id": "p11-sea-serpent",
+      "winner": "head",
+      "votes": [0, 1],
+      "why": "Nearly identical sea serpent; height and width differ by only a few cm, and the head, teeth and spines match. / In the front view, A's head stands out from a narrower throat; B's head runs straight into a thick neck."
+    },
+    {
+      "pair": "p12",
+      "id": "p12-raptor",
+      "winner": "same",
+      "votes": [-1, 1],
+      "why": "B's thigh reads as a defined drumstick in side view and its legs are clean in front; A's thighs blend into the belly in a bell-shaped hip. / B has muscular drumstick thighs and a visible belly between the legs; A's legs are slim stilts that run up into the chest."
+    },
+    {
+      "pair": "p13",
+      "id": "p13-cave-bear",
+      "winner": "base",
+      "votes": [-1, -1],
+      "why": "B's forelegs separate cleanly from the chest with a visible upper arm and elbow; A's merge into a broad chest. / A's limbs show shoulder/elbow and thigh/knee shaping and separate cleanly from the chest; B's legs are straighter pillars blending into the torso."
+    },
+    {
+      "pair": "p14",
+      "id": "p14-leopard-stalker",
+      "winner": "same",
+      "votes": [-1, 1],
+      "why": "B's forelegs drop cleanly from the chest; A has a crease under the chest with smeared spots and wider merged forelegs. / B's legs have shoulder and thigh mass that tapers to the paws, and a fuller chest; A's legs are thin straight tubes."
+    },
+    {
+      "pair": "p15",
+      "id": "p15-gecko",
+      "winner": "head",
+      "votes": [1, 1],
+      "why": "B's upper limbs are fuller and blend into shoulder mass (front, rear 3/4); A's are thinner and uniform. / A's upper limbs carry more shoulder and thigh muscle with a readable elbow bend; B's limbs are thinner uniform tubes."
+    },
+    {
+      "pair": "p16",
+      "id": "p16-ant-soldier",
+      "winner": "base",
+      "votes": [-1, -1],
+      "why": "A's middle leg bulges like a sausage after the knee (top view); B's legs taper smoothly. / A's legs are slimmer with cleaner femur-tibia joints; B shows a lumpy bulge at the leg joints in the top view."
+    },
+    {
+      "pair": "p17",
+      "id": "p17-goblin",
+      "winner": "head",
+      "votes": [1, 1],
+      "why": "B's thighs are fuller and taper to a knee; A's legs are uniform thin tubes. / A's thighs taper from fuller hips to the knee; B's legs are straighter columns that split higher at a narrow crotch."
+    },
+    {
+      "pair": "p18",
+      "id": "p18-cobra",
+      "winner": "same",
+      "votes": [0, 0],
+      "why": "Nearly identical raised striped snake; B's mid-body is only marginally broader. / Only fine shading and scale-crack differences; body, head, fangs and eyes match."
+    },
+    {
+      "pair": "p19",
+      "id": "p19-rhino",
+      "winner": "head",
+      "votes": [0, 1],
+      "why": "Trade-off: B's belly hangs deeper like a rhino barrel but makes its legs read shorter; A's body is a straighter tube. / A has a shoulder hump, a barrel belly and thicker upper legs; B's torso is a uniform capsule with legs hung from its underside."
+    },
+    {
+      "pair": "p20",
+      "id": "p20-nightmare-hound",
+      "winner": "same",
+      "votes": [-1, 1],
+      "why": "B's hind thigh separates from the body with a defined knee and hock in side view; A's hind leg grows out of the belly mass. / B's legs have muscular thighs and shoulders tapering to the paws, with a deeper chest; A's legs are thin uniform tubes."
+    }
+  ]
+}

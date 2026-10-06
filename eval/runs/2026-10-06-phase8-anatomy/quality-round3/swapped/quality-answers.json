@@ -1,0 +1,82 @@
+{
+  "p01": {
+    "pick": "B",
+    "why": "In the front view B's upper legs are fuller with a visible knee where they leave the chest; A's legs are narrow straight tubes."
+  },
+  "p02": {
+    "pick": "same",
+    "why": "A has a deeper chest-belly fold and a slight waist pinch, B a straighter trunk with a crisper but shallower fold; legs and head match, so neither is better."
+  },
+  "p03": {
+    "pick": "B",
+    "why": "B's beetle legs have a slightly thicker upper segment and a visible joint where the lower segment starts; A's legs are plain tapered tubes (subtle)."
+  },
+  "p04": {
+    "pick": "B",
+    "why": "B's neck narrows just below the head in the front and head views, so the head reads as distinct; A's neck is an even tube up to the jaw (subtle)."
+  },
+  "p05": {
+    "pick": "B",
+    "why": "B's forearms swell at the elbow and the thigh reads as its own mass in the side view; A's arms and legs are uniform tubes (subtle)."
+  },
+  "p06": {
+    "pick": "B",
+    "why": "B's knees bulge as knees with a calf taper below them in the front and 3/4 views; A's legs are smooth straight tubes."
+  },
+  "p07": {
+    "pick": "same",
+    "why": "Limbs, head and body are practically identical at this size; B's upper arm is at most marginally fuller."
+  },
+  "p08": {
+    "pick": "B",
+    "why": "A's belly sags low between the legs and swallows the elbows; B's belly line is tucked, so the forelegs and hind legs read as separate limbs."
+  },
+  "p09": {
+    "pick": "B",
+    "why": "A shows a pale pinched crease where the thighs meet the belly; B's thighs join cleanly, with fuller upper legs and a defined knee."
+  },
+  "p10": {
+    "pick": "B",
+    "why": "B's walking legs show segment joints (a knee bulge mid-leg); A's legs are smooth bent tubes."
+  },
+  "p11": {
+    "pick": "B",
+    "why": "In the front view B has a clearer neck waist under the head and a fuller body below it; A reads as a straighter column (subtle)."
+  },
+  "p12": {
+    "pick": "B",
+    "why": "A has a pale pinched crease where the thigh meets the belly; B's thigh blends in as a muscular drumstick with a clear knee."
+  },
+  "p13": {
+    "pick": "B",
+    "why": "B's foreleg shows an upper arm and elbow separating from the chest under a tucked belly; A's belly hangs low over the forelegs, so they read as stumps."
+  },
+  "p14": {
+    "pick": "B",
+    "why": "A's foreleg is thin, with a pale blob at the shoulder join and a crease in the hind thigh; B's foreleg is fuller, with a clear elbow and a smooth hind thigh."
+  },
+  "p15": {
+    "pick": "same",
+    "why": "Limbs, feet and head match; B's belly hangs a few pixels deeper, which makes neither better."
+  },
+  "p16": {
+    "pick": "B",
+    "why": "B's ant legs show a knuckle bulge at the segment joint in the top view and slightly thicker femurs; A's legs are plain tapered tubes (subtle)."
+  },
+  "p17": {
+    "pick": "same",
+    "why": "Legs, hips, head and arms match; only faint shading differs at the knee."
+  },
+  "p18": {
+    "pick": "same",
+    "why": "The front views match; in the head close-up B's neck flares wider below the jaw while A's tapers, and neither is clearly better."
+  },
+  "p19": {
+    "pick": "same",
+    "why": "A has a small dip behind the shoulder hump and B a smoother back with slightly fuller forelegs; the outlines are within a few pixels."
+  },
+  "p20": {
+    "pick": "B",
+    "why": "B has a deeper chest and fuller shoulders and upper legs that blend into the body; A's legs are thinner where they join."
+  }
+}

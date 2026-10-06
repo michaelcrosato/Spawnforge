@@ -1,0 +1,8 @@
+{
+  "phase": 8,
+  "kind": "quality reviews of milestone 8.1 (muscle, joints and body shape), one per tuning round",
+  "date": "2026-10-06",
+  "model": "Claude Code general-purpose subagents as blind reviewers, one per order, no other context",
+  "quality": "node eval/quality.ts prepare quality --base d101c06 --head 9c9c8d5 (the final round, both orders, 640 px views); earlier rounds in quality-trial/ and quality-round1/ to quality-round4/",
+  "set": "the phase 4 run's 20 final blueprints"
+}

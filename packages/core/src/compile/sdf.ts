@@ -4,14 +4,17 @@ import type { BoneDef, ChainDef } from './types.ts';
 /**
  * The creature's signed distance field: a rounded cone per skin bone (optionally with an
  * elliptical cross-section), plain union inside a chain, and a smooth minimum once per junction
- * where a chain meets its parent. Primitives live in flat typed arrays so evaluation stays fast.
+ * where a chain meets its parent. A chain's masses (muscles, caps, the limb root's sphere) are
+ * cones too; each joins the chain's cones with its own smooth minimum, `min(C, smin(C, m, k))`,
+ * so masses never stack and their order never matters. Primitives live in flat typed arrays so
+ * evaluation stays fast.
  */
 export interface Sdf {
   /** Number of primitives. */
   readonly count: number;
   /**
-   * Per primitive (stride 29): a(3) b(3) ra rb side(3) up(3) dir(3) sx sy h chain bone kind
-   * 1/sx 1/sy min(sx,sy) cone-b cone-a degenerate.
+   * Per primitive (stride 30): a(3) b(3) ra rb side(3) up(3) dir(3) sx sy h chain bone kind
+   * 1/sx 1/sy min(sx,sy) cone-b cone-a degenerate blend. Kind 0 is a bone's cone, 1 a mass.
    */
   readonly data: Float64Array;
   readonly chainCount: number;
@@ -21,12 +24,18 @@ export interface Sdf {
   readonly chainBlend: Float64Array;
   /** Bounding sphere per primitive: centre(3) radius. */
   readonly bounds: Float64Array;
+  /**
+   * Extra reach per primitive for culling: a mass's blend, and for a cone the largest blend of
+   * its chain's masses (a mass's smooth minimum needs the cones within its blend).
+   */
+  readonly reach: Float64Array;
+  /** Largest junction blend (masses' blends are in `reach`). */
   readonly maxBlend: number;
   /** Bones left out of the field because they are thinner than the grid can show. */
   readonly thinBones: readonly number[];
 }
 
-const STRIDE = 29;
+const STRIDE = 30;
 const BIG = 1e9;
 
 /** Builds the field from the skeleton, leaving out bones thinner than `minRadius`. */
@@ -38,6 +47,7 @@ export function buildSdf(
   const prims: number[] = [];
   const bounds: number[] = [];
   const thinBones: number[] = [];
+  const chainMassBlend = new Float64Array(chains.length);
   const boneChain = (bone: number) => (bones[bone] as BoneDef).chain;
 
   const push = (
@@ -53,6 +63,7 @@ export function buildSdf(
     chain: number,
     bone: number,
     kind: number,
+    blend = 0,
   ) => {
     const h = a.distanceTo(b);
     const degenerate = h < 1e-9 || Math.abs(ra - rb) >= h ? 1 : 0;
@@ -88,6 +99,7 @@ export function buildSdf(
       coneB,
       coneA,
       degenerate,
+      blend,
     );
     const scale = Math.max(sx, sy);
     bounds.push(
@@ -102,9 +114,11 @@ export function buildSdf(
     for (const id of chain.bones) {
       const bone = bones[id] as BoneDef;
       if (!bone.skin) continue;
-      const thinness =
-        Math.max(bone.r0, bone.r1, ...(bone.profile ?? [])) *
-        Math.min(bone.cross[0], bone.cross[1]);
+      // Thin by the radii the blueprint gave, so anatomy never moves a bone between the field
+      // and the swept tubes.
+      const plain = bone.shaped ? bone.plainProfile : bone.profile;
+      const cross = bone.plainCross ?? bone.cross;
+      const thinness = Math.max(bone.r0, bone.r1, ...(plain ?? [])) * Math.min(cross[0], cross[1]);
       if (thinness < minRadius) {
         thinBones.push(id);
         continue;
@@ -143,24 +157,49 @@ export function buildSdf(
       }
     }
     for (const mass of chain.masses) {
-      const first = chain.bones[0] ?? -1;
+      // A muscle on a bone too thin for the grid, or itself thinner, would float as an island.
+      // (Plain masses, such as the limb root's sphere at muscle 0, stay as they always were.)
+      if (mass.blend > 0) {
+        if (!bones[mass.bone]?.skin || thinBones.includes(mass.bone)) continue;
+        if (Math.min(mass.ra, mass.rb) * Math.min(mass.cross[0], mass.cross[1]) < minRadius)
+          continue;
+      }
+      const dir = new Vector3().subVectors(mass.b, mass.a);
+      if (dir.lengthSq() < 1e-14) dir.copy(mass.up).cross(new Vector3(1, 0, 0));
+      if (dir.lengthSq() < 1e-14) dir.set(0, 0, 1);
+      dir.normalize();
+      const up = mass.up.clone().addScaledVector(dir, -mass.up.dot(dir));
+      if (up.lengthSq() < 1e-12) up.set(0, 1, 0).addScaledVector(dir, -dir.y);
+      up.normalize();
+      const side = new Vector3().crossVectors(up, dir).normalize();
       push(
-        mass.center,
-        mass.center,
-        mass.radius,
-        mass.radius,
-        new Vector3(1, 0, 0),
-        new Vector3(0, 1, 0),
-        new Vector3(0, 0, 1),
-        1,
-        1,
+        mass.a,
+        mass.b,
+        mass.ra,
+        mass.rb,
+        side,
+        up,
+        dir,
+        mass.cross[0],
+        mass.cross[1],
         ci,
-        first,
+        mass.bone,
         1,
+        Math.max(0, mass.blend),
       );
+      chainMassBlend[ci] = Math.max(chainMassBlend[ci] as number, mass.blend);
     }
   }
 
+  const count = prims.length / STRIDE;
+  const reach = new Float64Array(count);
+  for (let i = 0; i < count; i++) {
+    const kind = prims[i * STRIDE + 22] as number;
+    reach[i] =
+      kind === 1
+        ? (prims[i * STRIDE + 29] as number)
+        : (chainMassBlend[prims[i * STRIDE + 20] as number] as number);
+  }
   const chainParent = new Int32Array(chains.length);
   const chainBlend = new Float64Array(chains.length);
   let maxBlend = 0;
@@ -170,12 +209,13 @@ export function buildSdf(
     maxBlend = Math.max(maxBlend, c.blend);
   });
   return {
-    count: prims.length / STRIDE,
+    count,
     data: new Float64Array(prims),
     chainCount: chains.length,
     chainParent,
     chainBlend,
     bounds: new Float64Array(bounds),
+    reach,
     maxBlend,
     thinBones,
   };
@@ -228,7 +268,11 @@ export function smin(a: number, b: number, k: number): number {
 export class SdfEvaluator {
   readonly sdf: Sdf;
   private readonly chainD: Float64Array;
+  /** Each chain's cones alone, which its masses blend against. */
+  private readonly chainC: Float64Array;
   private readonly touched: Int32Array;
+  private readonly massPrim: Int32Array;
+  private readonly massDist: Float64Array;
   private stamp = 1;
   /** Plain union of the last evaluation (for crease depth). */
   union = BIG;
@@ -238,37 +282,63 @@ export class SdfEvaluator {
   constructor(sdf: Sdf) {
     this.sdf = sdf;
     this.chainD = new Float64Array(sdf.chainCount);
+    this.chainC = new Float64Array(sdf.chainCount);
     this.touched = new Int32Array(sdf.chainCount);
+    this.massPrim = new Int32Array(sdf.count);
+    this.massDist = new Float64Array(sdf.count);
   }
 
   /** Field value at a point, using only `prims` (or every primitive when omitted). */
   eval(px: number, py: number, pz: number, prims?: ArrayLike<number>, primCount?: number): number {
     const sdf = this.sdf;
     const chainD = this.chainD;
+    const chainC = this.chainC;
     const touched = this.touched;
     const stamp = this.stamp;
     const n = prims ? (primCount ?? prims.length) : sdf.count;
-    let union = BIG;
     let nearest = -1;
+    let nearestDist = BIG;
     let lowest = sdf.chainCount;
     let highest = -1;
+    let masses = 0;
     for (let j = 0; j < n; j++) {
       const i = prims ? (prims[j] as number) : j;
       const dist = primDistance(sdf, i, px, py, pz);
+      if (dist < nearestDist) {
+        nearestDist = dist;
+        nearest = i;
+      }
       const c = sdf.data[i * STRIDE + 20] as number;
       if (touched[c] !== stamp) {
         touched[c] = stamp;
-        chainD[c] = dist;
+        chainC[c] = BIG;
         if (c < lowest) lowest = c;
         if (c > highest) highest = c;
-      } else if (dist < (chainD[c] as number)) {
-        chainD[c] = dist;
       }
-      if (dist < union) {
-        union = dist;
-        nearest = i;
+      if ((sdf.data[i * STRIDE + 22] as number) === 1) {
+        this.massPrim[masses] = i;
+        this.massDist[masses++] = dist;
+      } else if (dist < (chainC[c] as number)) {
+        chainC[c] = dist;
       }
     }
+    // Each chain: its cones, then each mass blended against the cones alone.
+    for (let c = lowest; c <= highest; c++)
+      if (touched[c] === stamp) chainD[c] = chainC[c] as number;
+    for (let m = 0; m < masses; m++) {
+      const i = this.massPrim[m] as number;
+      const c = sdf.data[i * STRIDE + 20] as number;
+      const v = smin(
+        chainC[c] as number,
+        this.massDist[m] as number,
+        sdf.data[i * STRIDE + 29] as number,
+      );
+      if (v < (chainD[c] as number)) chainD[c] = v;
+    }
+    // The plain union of the chains, after their masses: only junctions read as creases.
+    let union = BIG;
+    for (let c = lowest; c <= highest; c++)
+      if (touched[c] === stamp && (chainD[c] as number) < union) union = chainD[c] as number;
     // Fold children into parents; parents always have lower indices than their children.
     let d = BIG;
     for (let c = highest; c >= 0 && c >= lowest; c--) {
