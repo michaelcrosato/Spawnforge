@@ -13,7 +13,14 @@ import {
   Vector3,
 } from 'three';
 import { uniform } from 'three/tsl';
-import { eyeMaterial, partsMaterial, skinMaterial } from './materials.ts';
+import {
+  eyeMaterial,
+  FUR_SHELLS,
+  type FurEye,
+  furMaterial,
+  partsMaterial,
+  skinMaterial,
+} from './materials.ts';
 
 /** A compiled creature as Three.js objects: one skinned mesh per draw call, sharing a skeleton. */
 export interface CreatureObject {
@@ -25,9 +32,14 @@ export interface CreatureObject {
     readonly skin: SkinnedMesh;
     readonly parts: SkinnedMesh;
     readonly eyes: SkinnedMesh;
+    /**
+     * Shell fur: the skin's geometry drawn once per shell in one instanced call; absent without
+     * fur or at low quality.
+     */
+    readonly fur?: SkinnedMesh;
   };
-  /** Shader inputs the pose drives (`applyPose` sets them). */
-  readonly signals: { readonly breath: { value: number } };
+  /** Shader inputs the pose drives (`applyPose` sets them): breathing, and seconds for pulses. */
+  readonly signals: { readonly breath: { value: number }; readonly time: { value: number } };
   /** Eye bone indices (the eyeballs; eyelids are bones of their own that blink). */
   readonly eyeBones: readonly number[];
   /** Rest local transforms per bone, for resetting poses. */
@@ -101,7 +113,30 @@ export function buildBones(compiled: CompiledCreature): {
   return { bones, skeleton, rest: { positions, rotations } };
 }
 
-/** Builds the Three.js skeleton and the three skinned meshes for a compiled creature. */
+/** Each eye's rest centre (its bone) and radius (its farthest vertex), for fur to keep clear of. */
+function eyeSpheres(compiled: CompiledCreature): FurEye[] {
+  const { positions, skinIndex } = compiled.eyes;
+  const bones = compiled.bones.positions;
+  return allEyes(compiled.rig).map((bone) => {
+    const x = bones[bone * 3] as number;
+    const y = bones[bone * 3 + 1] as number;
+    const z = bones[bone * 3 + 2] as number;
+    let radius = 0;
+    for (let v = 0; v < positions.length / 3; v++)
+      if (skinIndex[v * 4] === bone)
+        radius = Math.max(
+          radius,
+          Math.hypot(
+            (positions[v * 3] as number) - x,
+            (positions[v * 3 + 1] as number) - y,
+            (positions[v * 3 + 2] as number) - z,
+          ),
+        );
+    return { x, y, z, radius };
+  });
+}
+
+/** Builds the Three.js skeleton and the skinned meshes for a compiled creature. */
 export function createCreatureObject(
   compiled: CompiledCreature,
   registry: Registry,
@@ -114,10 +149,33 @@ export function createCreatureObject(
   object.add(bones[0] as Bone);
 
   const breath = uniform(0);
+  const time = uniform(0);
+  const clear = compiled.material.fur ? eyeSpheres(compiled) : [];
   const skin = new SkinnedMesh(
     geometryOf(compiled.skin, { body: [compiled.skin.body, 4], region: [compiled.skin.region, 4] }),
-    skinMaterial(compiled.material, compiled.scale, registry, { breath }),
+    skinMaterial(compiled.material, compiled.scale, registry, { breath, time }, clear),
   );
+  // Fur shares the skin's geometry and draws its shells as instances: one call.
+  const shells = compiled.material.fur ? FUR_SHELLS[compiled.quality] : 0;
+  const fur =
+    compiled.material.fur && shells > 0
+      ? new SkinnedMesh(
+          skin.geometry,
+          furMaterial(
+            compiled.material,
+            compiled.material.fur,
+            shells,
+            compiled.scale,
+            registry,
+            { breath, time },
+            clear,
+          ),
+        )
+      : undefined;
+  if (fur) {
+    fur.name = 'fur';
+    fur.count = shells;
+  }
   const parts = new SkinnedMesh(
     geometryOf(compiled.parts, {
       color: [compiled.parts.color, 3],
@@ -144,12 +202,20 @@ export function createCreatureObject(
     if (mesh.geometry.index && mesh.geometry.index.count === 0) mesh.visible = false;
     object.add(mesh);
   }
+  if (fur) {
+    fur.bind(skeleton, new Matrix4());
+    // The skin under it already casts the shadow.
+    fur.castShadow = false;
+    fur.receiveShadow = true;
+    fur.frustumCulled = false;
+    object.add(fur);
+  }
   return {
     object,
     skeleton,
     bones,
-    meshes: { skin, parts, eyes },
-    signals: { breath },
+    meshes: fur ? { skin, parts, eyes, fur } : { skin, parts, eyes },
+    signals: { breath, time },
     eyeBones: allEyes(compiled.rig),
     rest: { positions: restPositions, rotations: restRotations },
     dispose() {
@@ -157,6 +223,7 @@ export function createCreatureObject(
         mesh.geometry.dispose();
         (mesh.material as { dispose(): void }).dispose();
       }
+      (fur?.material as { dispose(): void } | undefined)?.dispose();
     },
   };
 }

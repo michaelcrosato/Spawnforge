@@ -105,6 +105,25 @@ skeleton, the material spec, a rig description for motion, gameplay sockets, lab
 and stats. `@spawnforge/three` turns it into three `SkinnedMesh`es with TSL materials; the shader
 for patterns is built from the same `Kit` functions the CPU uses (`packages/core/src/shading`).
 
+### Shading
+
+- **Materials.** Each base material is a surface drawn through the kit in `shadeSkin` (pores,
+  hide's wrinkle network, overlapping scales, chitin's plates and seams), so bakes get it too,
+  and a look in `MATERIAL_LOOK` (roughness, wrap, scatter tint, clearcoat). The skin material is
+  a `MeshPhysicalNodeMaterial` whose lighting model adds wrapped diffuse light past the
+  terminator, tinted by the scatter colour; chitin adds a clearcoat.
+- **Layers** return a mask and optionally a colour, relief, roughness (over their own `coat`),
+  glow (`emissive`) and a second colour laid first (`under`). `Surface.time` drives pulses: the
+  pose's clock live (`Pose.time`, through `applyPose`), 0 in stills and bakes.
+- **Fur** is a fourth skinned mesh sharing the skin's geometry, drawn as one instanced call of
+  shells (12 at medium, 16 at high, none at low) pushed out along the skinned normal. Each
+  fragment keeps or discards itself against a hair on a rest-space lattice; colours are the skin's
+  stack, evaluated per vertex in the vertex stage. The skin under fur is darker and matte.
+- **Parity.** `packages/render/src/parity.test.ts` draws the stack unlit in headless Chromium, one
+  pixel per sampled skin vertex (three's `stackMaterial`), and compares it with `cpuKit` at the
+  same vertices (`surfaceAt`): at least 99% of samples agree within 2/255, for every pattern on
+  every material and for the examples.
+
 Compilation runs in a Web Worker in the browser (`@spawnforge/three/worker`) and returns
 transferable typed arrays.
 
@@ -146,7 +165,8 @@ same code runs live in the browser, checks motion in Node and renders filmstrips
 - **Jaws and blinks** are bone turns (`applyFace`, shared with the render page's `--jaw` and
   `--blink`): every jaw about its hinge, every blink-driven chain toward its `closed` pose (turns
   about each bone's local X). **Breathing** travels with the pose as a number that `applyPose`
-  feeds to the skin shader (the torso swells along its normals).
+  feeds to the skin shader (the torso swells along its normals), and so does the clock
+  (`Pose.time`) for pulsing patterns.
 
 `applyPose` in `@spawnforge/three` copies the pose into the Three.js bones each frame. The
 sandbox runs creatures on `testCourse` terrain; the render page's filmstrip mode walks one on
@@ -215,17 +235,18 @@ See [runtime.md](runtime.md) for how games use them.
   stay at the origin facing +Z. Plain typed arrays, like everything core produces.
 - **Vertex colours** (`packages/core/src/export/bake.ts`): the skin's pattern stack evaluated
   per vertex through the CPU kit, the same pattern functions the TSL shader runs; parts and eyes
-  convert their own colours. Linear, albedo only.
+  convert their own colours. Linear, albedo only: relief and glow wait for texture maps (11.1).
 - **Stats** (`packages/core/src/analysis/stats.ts`): `computeStats` gives a stats module a
   `StatsInput` of measured body numbers; modules never see the blueprint.
 - **Export scene** (`packages/three/src/export.ts`): `buildExportScene` assembles the skeleton,
-  three skinned meshes with vertex colours and plain `MeshStandardMaterial`s, socket nodes,
-  `AnimationClip`s and the extras. The render page writes it with `GLTFExporter` in headless
+  three skinned meshes with vertex colours and plain `MeshStandardMaterial`s (chitin's skin a
+  `MeshPhysicalMaterial` with its clearcoat), socket nodes, `AnimationClip`s and the extras, plus
+  notes on what the file leaves out (fur, glow). The render page writes it with `GLTFExporter` in headless
   Chromium (`Renderer.export`), as the sandbox does in the browser.
 - **Runtime** (`packages/three/src/runtime.ts`): `createBestiary` compiles through workers or on
   the calling thread with an LRU cache keyed by stable JSON, format and packs. A `Creature` wraps
   the Three.js object, a `MotionController`, sockets and events. Its baked level of detail steers
-  with simple kinematics and samples baked gait cycles at the speed's rate; going back to full
+  with simple kinematics and samples baked gait cycles at the speed's rate, and hides fur; going back to full
   motion calls `MotionController.place`, which plants the feet around the creature's spot.
 
 ## Runtime conventions

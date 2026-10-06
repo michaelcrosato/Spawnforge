@@ -1,15 +1,17 @@
 import { hexToRgb } from '../blueprint/colors.ts';
-import type { LayerSpec, Region, SkinMaterial } from '../blueprint/creature.ts';
+import type { FurSpec, LayerSpec, Region, SkinMaterial } from '../blueprint/creature.ts';
 import type { PatternModule, Registry } from '../registry.ts';
 import { deriveSeed } from '../rng.ts';
 import type { Kit, PatternHooks, Surface } from './kit.ts';
-import { cells, fbm } from './noise.ts';
+import { cells, fbm, valueNoise } from './noise.ts';
 
 /** Everything the skin shader needs, as plain data. Colours are sRGB hex. */
 export interface SkinMaterialSpec {
   readonly base: string;
   readonly material: SkinMaterial;
   readonly layers: readonly (LayerSpec & { readonly seed: number })[];
+  /** Shell fur over the skin, or none. */
+  readonly fur: FurSpec | null;
 }
 
 export interface SkinShade<F> {
@@ -20,6 +22,10 @@ export interface SkinShade<F> {
   readonly roughness: F;
   /** Relief in torso lengths, for bump mapping. */
   readonly height: F;
+  /** Glow in linear light, added on top of lighting (live only; bakes leave it out). */
+  readonly er: F;
+  readonly eg: F;
+  readonly eb: F;
 }
 
 export function skinMaterialSpec(
@@ -27,11 +33,13 @@ export function skinMaterialSpec(
   material: SkinMaterial,
   layers: readonly LayerSpec[],
   seed: number,
+  fur: FurSpec | null = null,
 ): SkinMaterialSpec {
   return {
     base,
     material,
     layers: layers.map((l) => ({ ...l, seed: deriveSeed(seed, `layer:${l.id}`) % 997 })),
+    fur,
   };
 }
 
@@ -73,13 +81,239 @@ function regionMask<F>(k: Kit<F>, s: Surface<F>, region: Region): F {
   }
 }
 
-// `hide` draws as skin until milestone 8.4 builds its creases.
-const BASE_ROUGHNESS: Record<SkinMaterial, number> = {
-  skin: 0.72,
-  scales: 0.5,
-  chitin: 0.3,
-  hide: 0.72,
+/**
+ * How a base material meets the light, beside the surface `shadeSkin` draws for it. Both
+ * backends read it: bakes take the roughness, the renderer the rest (docs/design/8.4-materials.md).
+ */
+export interface MaterialLook {
+  readonly roughness: number;
+  /** Wrap lighting: how far past the terminator diffuse light reaches (0 none, 1 all round). */
+  readonly wrap: number;
+  /** Tint of the wrapped light (linear RGB), which reads as light scattered under the skin. */
+  readonly scatter: readonly [number, number, number];
+  /** A lacquer layer over the surface, 0 to 1, and its roughness. */
+  readonly clearcoat: number;
+  readonly clearcoatRoughness: number;
+}
+
+export const MATERIAL_LOOK: Readonly<Record<SkinMaterial, MaterialLook>> = {
+  skin: {
+    roughness: 0.6,
+    wrap: 0.35,
+    scatter: [1, 0.66, 0.56],
+    clearcoat: 0,
+    clearcoatRoughness: 0,
+  },
+  hide: {
+    roughness: 0.82,
+    wrap: 0.2,
+    scatter: [1, 0.76, 0.66],
+    clearcoat: 0,
+    clearcoatRoughness: 0,
+  },
+  scales: {
+    roughness: 0.42,
+    wrap: 0.12,
+    scatter: [1, 0.85, 0.75],
+    clearcoat: 0,
+    clearcoatRoughness: 0,
+  },
+  chitin: {
+    roughness: 0.32,
+    wrap: 0,
+    scatter: [1, 1, 1],
+    clearcoat: 0.7,
+    clearcoatRoughness: 0.18,
+  },
 };
+
+/** The material's fine scales: the size, in torso lengths. */
+const MATERIAL_SCALE = 0.014;
+/** Chitin plates along the snout-to-tail axis, and along each limb. */
+const CHITIN_PLATES = 14;
+const CHITIN_LIMB_PLATES = 4;
+
+/** One scale of an overlapping row: where in it a point is, and its edges. */
+export interface Shingle<F> {
+  /** 0 at the visible part's front (just behind the scale ahead) rising to 1 at its free rear edge. */
+  readonly plate: F;
+  /** Distance to the scale's rim, as a share of its radius (0 on it, 1 at its centre). */
+  readonly edge: F;
+  /** A random value per scale in [0, 1). */
+  readonly id: F;
+}
+
+/** Scale radius in lattice cells: big enough that the scales overlap everywhere. */
+const SHINGLE_RADIUS = 0.85;
+
+/**
+ * Overlapping scales of `size` torso lengths, like a fish's or a snake's: round scales on a
+ * staggered lattice, each overlapping the one behind it, so a point shows the front-most scale
+ * that covers it. Its free rear edge is a scalloped arc, and the scale rises toward it along
+ * the body's tail-ward direction (down the limbs on limbs).
+ */
+export function shingles<F>(k: Kit<F>, s: Surface<F>, size: number, salt: number): Shingle<F> {
+  const f = k.num(1 / size);
+  const x = k.mul(s.x, f);
+  const y = k.mul(s.y, f);
+  const z = k.mul(s.z, f);
+  const half = k.num(0.5);
+  const one = k.num(1);
+  // Tail-ward: -Z on the body, -Y down a limb. The two are orthogonal, so normalize the blend.
+  const back = k.sub(one, s.limbs);
+  const norm = k.sqrt(k.add(k.mul(back, back), k.mul(s.limbs, s.limbs)));
+  const ty = k.div(k.sub(k.num(0), s.limbs), norm);
+  const tz = k.div(k.sub(k.num(0), back), norm);
+  const R = k.num(SHINGLE_RADIUS);
+  const jitter = k.num(0.25);
+  let bestKey = k.num(-1e6);
+  let along = k.num(0);
+  let dist = k.num(1);
+  let id = k.num(0);
+  const bz = k.floor(z);
+  for (let dz = -1; dz <= 1; dz++) {
+    const cz = dz === 0 ? bz : k.add(bz, k.num(dz));
+    // Rows along z are offset half a cell in x and y, so both the back and the flanks see
+    // staggered rows.
+    const shift = k.fract(k.mul(cz, half));
+    const bx = k.floor(k.sub(x, shift));
+    const by = k.floor(k.sub(y, shift));
+    for (let dy = -1; dy <= 1; dy++) {
+      const cy = dy === 0 ? by : k.add(by, k.num(dy));
+      for (let dx = -1; dx <= 1; dx++) {
+        const cx = dx === 0 ? bx : k.add(bx, k.num(dx));
+        const jx = k.mul(k.sub(k.hash3(cx, cy, cz, salt + 11), half), jitter);
+        const jy = k.mul(k.sub(k.hash3(cx, cy, cz, salt + 23), half), jitter);
+        const jz = k.mul(k.sub(k.hash3(cx, cy, cz, salt + 37), half), jitter);
+        // From the point to the scale's centre, in cells.
+        const ox = k.sub(k.add(k.add(k.add(cx, half), shift), jx), x);
+        const oy = k.sub(k.add(k.add(k.add(cy, half), shift), jy), y);
+        const oz = k.sub(k.add(k.add(cz, half), jz), z);
+        const d = k.sqrt(k.add(k.add(k.mul(ox, ox), k.mul(oy, oy)), k.mul(oz, oz)));
+        // How far toward the head the scale's centre lies (the point's own share is the same
+        // for every scale).
+        const front = k.sub(k.num(0), k.add(k.mul(oy, ty), k.mul(oz, tz)));
+        // Covering scales rank by how far forward they sit; if none covers, the nearest.
+        const covered = k.step(d, R);
+        const key = k.add(
+          k.mul(covered, k.add(k.num(1000), front)),
+          k.mul(k.sub(one, covered), k.sub(k.num(0), d)),
+        );
+        const better = k.step(bestKey, key);
+        bestKey = k.max(bestKey, key);
+        // The point relative to the centre, along the tail-ward direction, as a share of R.
+        along = k.mix(along, k.div(front, R), better);
+        dist = k.mix(dist, d, better);
+        id = k.mix(id, k.hash3(cx, cy, cz, salt + 53), better);
+      }
+    }
+  }
+  return {
+    plate: k.smoothstep(k.num(-0.9), k.num(0.7), along),
+    edge: k.max(k.num(0), k.div(k.sub(R, dist), R)),
+    id,
+  };
+}
+
+/**
+ * A shingle's relief, 0 to 1: rising toward its free rear edge, and easing at the rim to about
+ * the height of the scale behind there, so the step between them stays small and bump mapping
+ * does not sparkle along it.
+ */
+export function shingleHeight<F>(k: Kit<F>, sh: Shingle<F>): F {
+  return k.mix(k.num(0.28), sh.plate, k.smoothstep(k.num(0), k.num(0.25), sh.edge));
+}
+
+/** sRGB (0 to 1) to linear light. */
+function toLinear(c: number): number {
+  return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+}
+
+/** The base material's own surface: relief, a darkening of the albedo and a roughness shift. */
+function materialSurface<F>(
+  k: Kit<F>,
+  s: Surface<F>,
+  material: SkinMaterial,
+): { height: F; dark: F; roughness: F } {
+  const one = k.num(1);
+  const scaled = (v: F, by: number) => k.mul(v, k.num(by));
+  switch (material) {
+    case 'skin': {
+      // Faint pores in the relief, and a little unevenness in the sheen.
+      const pores = valueNoise(k, scaled(s.x, 250), scaled(s.y, 250), scaled(s.z, 250), 401);
+      const sheen = valueNoise(k, scaled(s.x, 40), scaled(s.y, 40), scaled(s.z, 40), 409);
+      return {
+        height: k.mul(k.mul(k.sub(pores, k.num(0.5)), k.num(0.00012)), relief(k, s, 0.004)),
+        dark: k.num(0),
+        roughness: k.mul(k.sub(sheen, k.num(0.5)), k.num(0.08)),
+      };
+    }
+    case 'hide': {
+      // A network of wrinkles at two sizes, deeper where sections join.
+      const groove = (size: number, salt: number, reach: 2 | 3, width: number) => {
+        const f = k.num(1 / size);
+        const c = cells(k, k.mul(s.x, f), k.mul(s.y, f), k.mul(s.z, f), 0.9, salt, { reach });
+        return k.sub(one, k.smoothstep(k.num(0), k.num(width), k.sub(c.second, c.distance)));
+      };
+      const coarse = groove(0.05, 701, 3, 0.12);
+      const fine = groove(0.018, 709, 2, 0.15);
+      const depth = k.add(k.num(0.4), k.mul(s.crease, k.num(0.8)));
+      const cut = k.add(
+        k.mul(k.mul(coarse, k.num(0.0016)), relief(k, s, 0.05)),
+        k.mul(k.mul(fine, k.num(0.0006)), relief(k, s, 0.018)),
+      );
+      const seen = k.add(
+        k.mul(k.mul(coarse, k.num(0.7)), detail(k, s, 0.05)),
+        k.mul(k.mul(fine, k.num(0.3)), detail(k, s, 0.018)),
+      );
+      return {
+        height: k.mul(k.sub(k.num(0), cut), depth),
+        dark: k.mul(k.mul(seen, k.num(0.18)), k.min(one, depth)),
+        roughness: k.num(0),
+      };
+    }
+    case 'scales': {
+      const sh = shingles(k, s, MATERIAL_SCALE, 503);
+      const rim = k.smoothstep(k.num(0), k.num(0.25), sh.edge);
+      return {
+        height: k.mul(
+          k.mul(shingleHeight(k, sh), k.num(MATERIAL_SCALE * 0.12)),
+          relief(k, s, MATERIAL_SCALE),
+        ),
+        dark: k.mul(
+          k.add(k.mul(k.sub(one, sh.plate), k.num(0.14)), k.mul(k.sub(one, rim), k.num(0.12))),
+          detail(k, s, MATERIAL_SCALE),
+        ),
+        roughness: k.num(0),
+      };
+    }
+    case 'chitin': {
+      // Plates across the body and along the limbs, and a seam down the back.
+      const period = (u: F) => {
+        const f = k.fract(u);
+        return k.min(f, k.sub(one, f));
+      };
+      const across = k.mix(
+        period(scaled(s.spine, CHITIN_PLATES)),
+        period(scaled(s.limb, CHITIN_LIMB_PLATES)),
+        s.limbs,
+      );
+      const seamAcross = k.sub(one, k.smoothstep(k.num(0.025), k.num(0.09), across));
+      const back = k.mul(k.smoothstep(k.num(0.985), k.num(0.997), s.height), k.sub(one, s.limbs));
+      const seam = k.mul(k.max(seamAcross, back), k.sub(one, s.head));
+      const dome = k.smoothstep(k.num(0.02), k.num(0.5), across);
+      const sheen = fbm(k, scaled(s.x, 14), scaled(s.y, 14), scaled(s.z, 14), 2, 607);
+      return {
+        height: k.add(
+          k.mul(k.sub(k.mul(dome, k.num(0.0016)), k.mul(seam, k.num(0.0018))), relief(k, s, 0.06)),
+          k.mul(sheen, k.num(0.001)),
+        ),
+        dark: k.mul(k.mul(seam, k.num(0.45)), detail(k, s, 0.03)),
+        roughness: k.num(0),
+      };
+    }
+  }
+}
 
 /** Base surface plus every layer, bottom first. */
 export function shadeSkin<F>(
@@ -94,42 +328,31 @@ export function shadeSkin<F>(
     fbm(k, k.mul(s.x, k.num(6)), k.mul(s.y, k.num(6)), k.mul(s.z, k.num(6)), 2, 401),
     k.num(0.5),
   );
-  const tone = k.add(k.num(1), k.mul(variation, k.num(0.16)));
+  const base = materialSurface(k, s, spec.material);
+  const tone = k.mul(k.add(k.num(1), k.mul(variation, k.num(0.16))), k.sub(k.num(1), base.dark));
   let r = k.mul(k.param(br), tone);
   let g = k.mul(k.param(bg), tone);
   let b = k.mul(k.param(bb), tone);
-  let roughness = k.num(BASE_ROUGHNESS[spec.material]);
-  let height = k.num(0);
-
-  if (spec.material === 'scales') {
-    const f = k.num(1 / 0.012);
-    const c = cells(k, k.mul(s.x, f), k.mul(s.y, f), k.mul(s.z, f), 0.6, 503, {
-      stagger: true,
-      reach: 3,
-    });
-    const edge = k.smoothstep(k.num(0), k.num(0.4), k.sub(c.second, c.distance));
-    height = k.add(height, k.mul(k.mul(edge, k.num(0.0012)), relief(k, s, 0.012)));
-  } else if (spec.material === 'chitin') {
-    const sheen = fbm(
-      k,
-      k.mul(s.x, k.num(14)),
-      k.mul(s.y, k.num(14)),
-      k.mul(s.z, k.num(14)),
-      2,
-      607,
-    );
-    height = k.add(height, k.mul(sheen, k.num(0.001)));
-  }
+  let roughness = k.add(k.num(MATERIAL_LOOK[spec.material].roughness), base.roughness);
+  let height = base.height;
+  let er = k.num(0);
+  let eg = k.num(0);
+  let eb = k.num(0);
 
   for (const layer of spec.layers) {
     const module = registry.get('pattern', layer.type) as PatternModule | undefined;
     const hooks = module?.hooks as PatternHooks | undefined;
     if (!hooks) continue;
     const out = hooks.shade(k, s, layer.params as Record<string, unknown>, layer.seed);
-    const weight = k.mul(
-      k.clamp(out.mask, k.num(0), k.num(1)),
-      k.mul(k.param(layer.strength), regionMask(k, s, layer.region)),
-    );
+    const where = k.mul(k.param(layer.strength), regionMask(k, s, layer.region));
+    if (out.under) {
+      const [ur, ug, ub] = hexToRgb(out.under.color);
+      const w = k.mul(k.clamp(out.under.mask, k.num(0), k.num(1)), where);
+      r = k.mix(r, k.param(ur), w);
+      g = k.mix(g, k.param(ug), w);
+      b = k.mix(b, k.param(ub), w);
+    }
+    const weight = k.mul(k.clamp(out.mask, k.num(0), k.num(1)), where);
     const hex =
       out.color ??
       (typeof layer.params.color === 'string' ? (layer.params.color as string) : undefined);
@@ -138,18 +361,34 @@ export function shadeSkin<F>(
       r = k.mix(r, k.param(lr), weight);
       g = k.mix(g, k.param(lg), weight);
       b = k.mix(b, k.param(lb), weight);
+      if (out.emissive !== undefined) {
+        const glow = k.mul(k.max(out.emissive, k.num(0)), where);
+        er = k.add(er, k.mul(glow, k.param(toLinear(lr))));
+        eg = k.add(eg, k.mul(glow, k.param(toLinear(lg))));
+        eb = k.add(eb, k.mul(glow, k.param(toLinear(lb))));
+      }
     }
-    if (out.roughness !== undefined) roughness = k.mix(roughness, out.roughness, weight);
-    if (out.height !== undefined)
-      height = k.add(
-        height,
-        k.mul(out.height, k.mul(k.param(layer.strength), regionMask(k, s, layer.region))),
+    if (out.roughness !== undefined)
+      roughness = k.mix(
+        roughness,
+        out.roughness,
+        out.coat === undefined ? weight : k.mul(k.clamp(out.coat, k.num(0), k.num(1)), where),
       );
+    if (out.height !== undefined) height = k.add(height, k.mul(out.height, where));
   }
 
   // Creases where sections join read a little darker, like ambient occlusion.
   const shade = k.sub(k.num(1), k.mul(s.crease, k.num(0.25)));
-  return { r: k.mul(r, shade), g: k.mul(g, shade), b: k.mul(b, shade), roughness, height };
+  return {
+    r: k.mul(r, shade),
+    g: k.mul(g, shade),
+    b: k.mul(b, shade),
+    roughness: k.clamp(roughness, k.num(0.04), k.num(1)),
+    height,
+    er,
+    eg,
+    eb,
+  };
 }
 
 /** Inside the mouth: wet colours in linear light, and where they apply. */

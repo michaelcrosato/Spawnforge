@@ -6,13 +6,23 @@ import type {
   ExportInfo,
   ExportRequest,
   ExportResponse,
+  ParityRequest,
+  ParityResponse,
   RenderInfo,
   RenderRequest,
   RenderResponse,
   View,
 } from './protocol.ts';
 
-export type { ExportInfo, ExportRequest, RenderInfo, RenderRequest, View };
+export type {
+  ExportInfo,
+  ExportRequest,
+  ParityRequest,
+  ParityResponse,
+  RenderInfo,
+  RenderRequest,
+  View,
+};
 
 const pageRoot = fileURLToPath(new URL('../page/', import.meta.url));
 
@@ -135,6 +145,22 @@ export class Renderer {
     return { glb: Buffer.from(response.glb, 'base64'), info: response.info };
   }
 
+  /**
+   * The pattern stack's raw outputs at the given skin vertices, computed on the GPU (WebGL 2) for
+   * the CPU–GPU parity test.
+   */
+  async parity(request: ParityRequest): Promise<ParityResponse> {
+    return (await this.page.evaluate(
+      (req) =>
+        (
+          (globalThis as PageGlobals).spawnforgeParity as (
+            r: ParityRequest,
+          ) => Promise<ParityResponse>
+        )(req),
+      request,
+    )) as ParityResponse;
+  }
+
   /** Compiles a blueprint in Chromium and returns its fingerprint (see core's `fingerprint`). */
   async fingerprint(
     blueprint: unknown,
@@ -196,6 +222,7 @@ interface PageGlobals {
   spawnforgeRender?: (request: RenderRequest) => Promise<RenderResponse>;
   spawnforgeFingerprint?: (blueprint: unknown, quality: 'low' | 'medium' | 'high') => string;
   spawnforgeExport?: (request: ExportRequest) => Promise<ExportResponse>;
+  spawnforgeParity?: (request: ParityRequest) => Promise<ParityResponse>;
   spawnforgeDiff?: (a: string, b: string, threshold: number) => Promise<unknown>;
 }
 

@@ -108,7 +108,8 @@ describe('format 0.2', () => {
     });
     expect(hydra.ok).toBe(true);
     expect(hydra.warnings).toEqual([]);
-    expect(hydra.notBuilt?.map((i) => i.path).sort()).toEqual(['body.neck.count', 'skin.fur']);
+    // Fur is built (8.4); several heads are not yet (9.1).
+    expect(hydra.notBuilt?.map((i) => i.path).sort()).toEqual(['body.neck.count']);
     expect(hydra.notBuilt?.[0]?.fix).toMatch(/^keep it/);
   });
 

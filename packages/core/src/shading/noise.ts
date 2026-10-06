@@ -49,6 +49,10 @@ export interface Cell<F> {
   readonly second: F;
   /** A random value per cell in [0, 1). */
   readonly id: F;
+  /** From the point to the nearest feature point, in cells. */
+  readonly dx: F;
+  readonly dy: F;
+  readonly dz: F;
 }
 
 /**
@@ -56,7 +60,8 @@ export interface Cell<F> {
  * of half a cell around its centre. `reach` 2 checks the 2×2×2 cells nearest the point, which
  * finds the nearest feature but not always the second nearest; use 3 (27 cells) where edges
  * between cells matter, as in scales. With `stagger`, every other row along z is shifted half a
- * cell, so the cells pack like scales instead of a square grid.
+ * cell in x, so the cells pack like scales on a surface facing y; `staggerY` shifts the rows in y
+ * too, so surfaces facing x (the flanks) see offset rows as well.
  */
 export function cells<F>(
   k: Kit<F>,
@@ -65,7 +70,7 @@ export function cells<F>(
   z: F,
   jitter: number,
   salt = 0,
-  options: { stagger?: boolean; reach?: 2 | 3 } = {},
+  options: { stagger?: boolean; staggerY?: boolean; reach?: 2 | 3 } = {},
 ): Cell<F> {
   const half = k.num(0.5);
   const reach = options.reach ?? 2;
@@ -73,33 +78,42 @@ export function cells<F>(
   const hi = reach === 3 ? 1 : 1;
   // With reach 3, centre on the cell containing the point; with reach 2, on the nearest corner.
   const centre = (v: F) => (reach === 3 ? k.floor(v) : k.floor(k.sub(v, half)));
-  const by = centre(y);
+  const plainBy = centre(y);
   const bz = centre(z);
   let best = k.num(9);
   let second = k.num(9);
   let id = k.num(0);
+  let ox = k.num(0);
+  let oy = k.num(0);
+  let oz = k.num(0);
   const j = k.num(jitter * 0.5);
   for (let dz = lo; dz <= hi; dz++) {
     const cz = dz === 0 ? bz : k.add(bz, k.num(dz));
     const shift = options.stagger ? k.fract(k.mul(cz, half)) : k.num(0);
+    const shiftY = options.stagger && options.staggerY ? shift : undefined;
     const bx = centre(k.sub(x, shift));
+    const by = shiftY ? centre(k.sub(y, shiftY)) : plainBy;
     for (let dy = lo; dy <= hi; dy++) {
       const cy = dy === 0 ? by : k.add(by, k.num(dy));
       for (let dx = lo; dx <= hi; dx++) {
         const cx = dx === 0 ? bx : k.add(bx, k.num(dx));
-        const ox = k.mul(k.sub(k.hash3(cx, cy, cz, salt + 11), half), j);
-        const oy = k.mul(k.sub(k.hash3(cx, cy, cz, salt + 23), half), j);
-        const oz = k.mul(k.sub(k.hash3(cx, cy, cz, salt + 37), half), j);
-        const ddx = k.sub(k.add(k.add(k.add(cx, half), shift), ox), x);
-        const ddy = k.sub(k.add(k.add(cy, half), oy), y);
-        const ddz = k.sub(k.add(k.add(cz, half), oz), z);
+        const jx = k.mul(k.sub(k.hash3(cx, cy, cz, salt + 11), half), j);
+        const jy = k.mul(k.sub(k.hash3(cx, cy, cz, salt + 23), half), j);
+        const jz = k.mul(k.sub(k.hash3(cx, cy, cz, salt + 37), half), j);
+        const ddx = k.sub(k.add(k.add(k.add(cx, half), shift), jx), x);
+        const fy = k.add(k.add(cy, half), jy);
+        const ddy = k.sub(shiftY ? k.add(fy, shiftY) : fy, y);
+        const ddz = k.sub(k.add(k.add(cz, half), jz), z);
         const d = k.sqrt(k.add(k.add(k.mul(ddx, ddx), k.mul(ddy, ddy)), k.mul(ddz, ddz)));
         const closer = k.step(d, best);
         second = k.min(second, k.max(d, best));
         best = k.min(best, d);
         id = k.mix(id, k.hash3(cx, cy, cz, salt + 53), closer);
+        ox = k.mix(ox, ddx, closer);
+        oy = k.mix(oy, ddy, closer);
+        oz = k.mix(oz, ddz, closer);
       }
     }
   }
-  return { distance: best, second, id };
+  return { distance: best, second, id, dx: ox, dy: oy, dz: oz };
 }

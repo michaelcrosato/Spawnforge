@@ -37,6 +37,20 @@ Work in progress toward 0.2, phase by phase (see the plan's status table).
   `applyFace` and `render --jaw --blink` pose a face. Every head's mesh and the goldens change.
 - **Examples:** a terror bird with a hooked beak; the examples and presets use the head-relative
   sizes.
+- **Materials and patterns (8.4):** each material has its own surface and light. `skin` is soft
+  (light wraps a little past the shadow edge), `hide` is thick and wrinkled (deeper in creases),
+  `scales` overlap in rows down the body instead of a mosaic, and `chitin` has segmented plates
+  and a lacquered clearcoat. `skin.fur` is drawn: shells in one instanced draw call at medium and
+  high quality, coloured by the skin's own patterns, shorter on the face and feet and clear of
+  the eyes and mouth; baked level of detail hides it. New layers: `scars`, `bioluminescence`
+  (glowing spots or dotted lines that pulse), `slime`, `warts`, `veins`, `rosettes` and `bands`;
+  the `scales` layer overlaps too, and `spots` are denser by default (size 0.04, density 0.75)
+  and stay visible from further away. Layers can glow (`emissive`), lay a second colour
+  (`under`) and shine over their own coverage (`coat`); `Pose.time` drives pulses. Exports keep
+  chitin's clearcoat and note what they leave out (fur, glow). A new test checks that the GPU
+  and CPU backends of the pattern kit agree. Meshes and goldens are unchanged.
+- **Examples:** the grey wolf has fur, the tusk boar hide and claw scars, the bog troll hide and
+  warts, and the ember beetle glowing spots.
 
 ## 0.1.0
 

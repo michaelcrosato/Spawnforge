@@ -126,3 +126,21 @@ export interface ExportResponse {
   readonly glb: string;
   readonly info: ExportInfo;
 }
+
+/**
+ * The CPU–GPU parity test: the page compiles the blueprint, draws the pattern stack unlit at the
+ * given skin vertices, one pixel each, and returns the raw outputs (see three's `stackMaterial`).
+ */
+export interface ParityRequest {
+  readonly blueprint: unknown;
+  readonly quality?: 'low' | 'medium' | 'high';
+  /** Skin vertex indices to sample. */
+  readonly samples: readonly number[];
+}
+
+export interface ParityResponse {
+  /** Per pass, four floats per sample: albedo and roughness; relief × 1000 and glow; mouth. */
+  readonly passes: readonly (readonly number[])[];
+  /** The render target's texel type: "float" or "half". */
+  readonly precision: 'float' | 'half';
+}

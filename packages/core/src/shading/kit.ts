@@ -62,6 +62,8 @@ export interface Surface<F> {
    * bakes). Patterns fade detail smaller than a few pixels so it never aliases into speckle.
    */
   readonly pixel: F;
+  /** Seconds, for pulses: the pose's clock live, 0 in stills and bakes. */
+  readonly time: F;
 }
 
 /** One layer's contribution. */
@@ -72,8 +74,20 @@ export interface LayerOutput<F> {
   readonly color?: string;
   /** Surface relief to add, in torso lengths. */
   readonly height?: F;
-  /** Roughness where the mask is 1. */
+  /** Roughness where the mask is 1 (or where `coat` is, when given). */
   readonly roughness?: F;
+  /**
+   * Where the layer's roughness applies, when it covers more than its colour does: a wet coat
+   * tints a little but shines everywhere. Defaults to `mask`.
+   */
+  readonly coat?: F;
+  /**
+   * Glow in the layer's colour, added on top of lighting (1 matches a lit surface). Live only:
+   * bakes leave it out until texture maps (milestone 11.1).
+   */
+  readonly emissive?: F;
+  /** A second colour laid before the main one, such as a rosette's centre. */
+  readonly under?: { readonly mask: F; readonly color: string };
 }
 
 /** Hooks a pattern module provides. */

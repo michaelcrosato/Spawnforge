@@ -116,7 +116,7 @@ since anatomy comes before the new vocabulary.
 | [8.1 Muscle and body shape](#81-muscle-masses-joints-and-body-shape) | **max (raised)** | Changes every creature, judged by eye; the rules must fit every body | 7.4, 7.5 | Done ([#16](https://github.com/michaelcrosato/Spawnforge/pull/16)); quality bar amended |
 | [8.2 Feet, hands, stance](#82-feet-hands-and-stance) | xhigh (confirmed) | Modules through existing seams, plus a contained rest-pose change | 7.3, 7.5 | Done ([#17](https://github.com/michaelcrosato/Spawnforge/pull/17)) |
 | [8.3 Heads](#83-heads-mouths-teeth-eyes-and-beaks) | xhigh (confirmed), one max step | Mouth and eye code with renders as the oracle; how lids and lips are built is a max step | 7.4 | Done ([#18](https://github.com/michaelcrosato/Spawnforge/pull/18)) |
-| [8.4 Materials and patterns](#84-materials-and-new-pattern-layers) | xhigh (confirmed) | Shader work with a new CPU–GPU parity test; fur is the risk | 7.3, 7.5 | Not started |
+| [8.4 Materials and patterns](#84-materials-and-new-pattern-layers) | xhigh (confirmed) | Shader work with a new CPU–GPU parity test; fur is the risk | 7.3, 7.5 | Done ([#19](https://github.com/michaelcrosato/Spawnforge/pull/19)) |
 | [9.1 Heads and tails](#91-several-heads-and-split-tails) | xhigh (confirmed) | Builds on 7.4's lists; per-head mouths and targeting are the work | Gate 8 | Not started |
 | [9.2 Eight legs, centaurs](#92-eight-legs-and-centaurs) | xhigh (confirmed) | Upright fronts and four leg pairs reach into posture and balance | Gate 8 | Not started |
 | [9.3 Wings and fins](#93-wings-fins-and-membranes) | **max (raised)** | New geometry and skinning across several bone chains, which flight depends on | Gate 8 | Not started |
@@ -648,6 +648,12 @@ main risk.
 - fur adds one draw call at most (its GPU cost is measured with 11.3's bench);
 - the goldens are unchanged (materials do not move vertices), and the render baselines are
   re-approved.
+
+**Built (2026-10-06):** as above, with scars as decals projected along the skin's normal (about
+`count` on a typical body), overlapping scales as round shingles where the scale nearer the head
+lies on top, and fur's 12 shells at medium and 16 at high. Pattern fades now take each feature's
+full size, so default spots, rosettes and warts show at contact-sheet distance. See
+`docs/design/8.4-materials.md`.
 
 ### Gate 8
 

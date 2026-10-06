@@ -306,17 +306,25 @@ length on the coil, so they need a `length` of 0.5–0.75 to read from a distanc
   the rest, with a belly clearly lighter than the base and an accent clearly lighter or darker so
   patterns read. It fills in only the colours the blueprint leaves out (the preset's give way), so
   `{ "harmony": "complementary", "base": "#305080" }` keeps that blue and finds the rest.
-- **`material`** is the surface under the patterns: `skin`, `scales`, `chitin` or `hide` (thick
-  and creased, _8.4_).
+- **`material`** is the surface under the patterns, and how it meets the light: `skin` (soft,
+  light glows a little past its shadow edge, faint pores), `hide` (thick, dry, with a network of
+  wrinkles that deepens in creases, for trolls, boars and elephants), `scales` (small
+  overlapping scales running down the body, glossier) or `chitin` (segmented plates with seams
+  and a lacquered sheen, for insects and spiders).
 - **`fur`** grows a coat over the material: `"fur": { "length": 0.03, "density": 0.8, "region":
   ["torso", "limbs", "tail"] }` (`length` in torso lengths, 0.002–0.3, default 0.03; `density`
   0–1, default 0.8; `region` one layer region or a list, default `all`), so a griffin can have a
   furry body and a bare head. Fur takes the colours of the skin under it (palette and layers), so
-  stripes and spots show through. `"fur": {}` is a full coat; `null` removes an inherited one
-  (_8.4_). Fur with `region` `all` leaves wing and fin membranes bare.
+  stripes and spots show through, though detail finer than a hair does not. `"fur": {}` is a full
+  coat; `null` removes an inherited one. Fur is shorter on the face, in creases and on the feet,
+  stays clear of the eyes and the mouth, and with `region` `all` leaves wing and fin membranes
+  bare. It is drawn as shells, from medium quality up; a 0.02–0.04 coat reads as fur, longer as
+  shaggy. `.glb` exports leave it out for now (the skin under it is exported).
 - **`layers`** is the pattern stack, bottom first: `countershade`, `stripes`, `spots`, `mottle`,
-  `scales` and `grime`, and from 8.4 `scars`, `bioluminescence`, `slime`, `warts`, `veins`,
-  `rosettes` and `bands`. A layer's parameters sit beside its `type`. Every layer also takes
+  `scales`, `grime`, `scars` (pale healed streaks; `rake` 3–4 for claw marks), `bioluminescence`
+  (glowing spots or dotted lines that pulse), `slime` (a wet gloss with drips), `warts` (raised
+  bumps), `veins` (branching lines), `rosettes` (broken rings around a tinted centre) and `bands`
+  (even rings round the body and tail). A layer's parameters sit beside its `type`. Every layer also takes
   **`region`** (`all`, `back`, `belly`, `head`, `torso` (which includes the neck), `limbs` (every
   limb, a wing's arm bones too), `tail` or `wings`, which covers wing and fin membranes) and
   **`strength`** (0 to 1). A region only masks where the layer shows; the pattern itself is laid
@@ -334,8 +342,10 @@ length on the coil, so they need a `length` of 0.5–0.75 to read from a distanc
   those `round`. On a tail that curls up, `countershade` follows the tail's underside, so the
   tip can show pale; give the tail its own layer (`region` "tail") if that is not wanted.
 - Pattern sizes are in torso lengths, so they scale with the creature. Details smaller than a few
-  pixels fade out instead of flickering, so on a small creature seen from afar, `scales` and
-  `spots` at their default sizes read as plain skin; use a `size` of 0.08–0.15 there.
+  pixels fade out instead of flickering, so on a small creature seen from afar, `scales`, `warts`
+  and `veins` at their default sizes read as plain skin; use a larger `size` (0.08–0.15) or
+  `width` there. Glow shows live and in renders; `.glb` exports leave it out until texture maps
+  (milestone 11.1).
 - On a creature with no legs, `countershade` at its default height gives the pale belly of a
   snake; raise `height` toward 0 to pale the flanks too.
 
@@ -549,7 +559,7 @@ name the section to change.
 ## Not drawn yet
 
 Everything format 0.1 had is drawn today: legs and arms, `foot.claw`, horns, ears, eyes, teeth,
-mouths with lips, gums and tongues, eyelids, brows, beaks, spike rows, the skin, scales and chitin materials, the first six pattern layers, walking,
+mouths with lips, gums and tongues, eyelids, brows, beaks, spike rows, every material, fur, every pattern layer, walking,
 trotting, the tripod gait, slithering, and the bite, roar, look and idle actions. Everything in
 this table validates but is **not drawn yet**: compile skips it, and `validate` lists it under
 `notBuilt`. Each row goes when its milestone lands. Until then, approximate with what exists if
@@ -558,7 +568,6 @@ neck for a cobra's hood (see the recipes).
 
 | Not drawn yet | Milestone that draws it |
 | --- | --- |
-| `hide`, `fur`, the new pattern layers | 8.4 |
 | Several heads and tails (`count`, `spread`, `forkAt`) | 9.1 |
 | Wings, fins, membranes, `fin.dorsal`, `fin.tail` | 9.3 |
 | Tentacles, `antenna`, `mandible`, `hand.pincer`, `pinch`, `lash` | 9.4 |

@@ -7,8 +7,8 @@ export default definePattern({
   tags: ['camouflage'],
   params: z.strictObject({
     color: colorRef('accent'),
-    size: z.number().min(0.005).max(0.5).default(0.05).describe('Spot radius in torso lengths'),
-    density: z.number().min(0).max(1).default(0.5).describe('Share of possible spots that appear'),
+    size: z.number().min(0.005).max(0.5).default(0.04).describe('Spot radius in torso lengths'),
+    density: z.number().min(0).max(1).default(0.75).describe('Share of possible spots that appear'),
     jitter: z.number().min(0).max(1).default(0.8).describe('Irregularity of placement and size'),
     ring: z.number().min(0).max(1).default(0).describe('Hollow the spots into rings (rosettes)'),
   }),
@@ -42,7 +42,7 @@ export default definePattern({
       return {
         mask: k.mul(
           k.mul(k.max(k.sub(spot, hollow), k.num(0)), keep),
-          detail(k, s, (p.size as number) * 0.6),
+          detail(k, s, (p.size as number) * 2),
         ),
       };
     },

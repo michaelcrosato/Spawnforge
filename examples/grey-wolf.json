@@ -39,6 +39,7 @@
   ],
   "skin": {
     "palette": { "base": "#7d8083", "belly": "#d6d3cb", "accent": "#4a4d50" },
+    "fur": { "length": 0.028 },
     "layers": [
       { "type": "countershade", "height": 0.4, "softness": 0.2 },
       { "type": "mottle", "scale": 0.07, "contrast": 0.25, "coverage": 0.5, "strength": 0.7 },

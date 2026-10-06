@@ -2,7 +2,7 @@ import type { Pose } from '@spawnforge/core';
 import type { CreatureObject } from './assemble.ts';
 
 /**
- * Copies a motion pose into the creature's Three.js bones and breathing (once per frame). Blinks
+ * Copies a motion pose into the creature's Three.js bones, breathing and clock (once per frame). Blinks
  * are eyelid bones' turns, already in the pose.
  */
 export function applyPose(creature: CreatureObject, pose: Pose): void {
@@ -16,4 +16,5 @@ export function applyPose(creature: CreatureObject, pose: Pose): void {
     bone.position.set(pos.x, pos.y, pos.z);
   }
   creature.signals.breath.value = pose.breath;
+  creature.signals.time.value = pose.time;
 }

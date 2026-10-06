@@ -8,6 +8,11 @@ import type { Surface } from '../shading/kit.ts';
 export interface BakedColors {
   readonly color: Float32Array;
   readonly roughness: Float32Array;
+  /**
+   * The skin's brightest glow (emissive layers), which vertex colours leave out until texture
+   * maps (milestone 11.1); 0 without any.
+   */
+  readonly glow?: number;
 }
 
 /** sRGB (0 to 1) to linear light, as glTF vertex colours expect. */
@@ -26,35 +31,17 @@ const smooth = (e0: number, e1: number, x: number) => {
 
 /**
  * The skin's pattern stack evaluated at every vertex on the CPU, with the same pattern functions
- * the renderer's shader runs (through the CPU kit). Albedo only: relief needs a texture, so bump
- * is left out. Inside the mouth is wet, from the same `shadeMouth` the shader runs.
+ * the renderer's shader runs (through the CPU kit). Albedo only: relief and glow need textures,
+ * so they are left out (`glow` says how bright the glow would be). Inside the mouth is wet, from the same `shadeMouth` the shader runs.
  */
 export function bakeSkinColors(compiled: CompiledCreature, registry: Registry): BakedColors {
-  const { positions, normals, body, region } = compiled.skin;
-  const n = positions.length / 3;
+  const { body } = compiled.skin;
+  const n = compiled.skin.positions.length / 3;
   const color = new Float32Array(n * 3);
   const roughness = new Float32Array(n);
-  const inv = 1 / compiled.scale;
+  let glow = 0;
   for (let i = 0; i < n; i++) {
-    const y = (positions[i * 3 + 1] as number) * inv;
-    const surface: Surface<number> = {
-      x: (positions[i * 3] as number) * inv,
-      y,
-      z: (positions[i * 3 + 2] as number) * inv,
-      nx: normals[i * 3] as number,
-      ny: normals[i * 3 + 1] as number,
-      nz: normals[i * 3 + 2] as number,
-      spine: body[i * 4] as number,
-      height: body[i * 4 + 1] as number,
-      limb: Math.max(body[i * 4 + 2] as number, 0),
-      crease: body[i * 4 + 3] as number,
-      head: region[i * 4] as number,
-      torso: region[i * 4 + 1] as number,
-      limbs: region[i * 4 + 2] as number,
-      tail: region[i * 4 + 3] as number,
-      ground: y,
-      pixel: 0,
-    };
+    const surface = surfaceAt(compiled, i);
     const shade = shadeSkin(cpuKit, surface, compiled.material, registry);
     const mouth = shadeMouth(cpuKit, body[i * 4 + 2] as number, body[i * 4 + 3] as number);
     const inside = mouth.inside;
@@ -63,8 +50,38 @@ export function bakeSkinColors(compiled: CompiledCreature, registry: Registry): 
     for (let c = 0; c < 3; c++)
       color[i * 3 + c] = (lin[c] as number) * (1 - inside) + (wet[c] as number) * inside;
     roughness[i] = shade.roughness * (1 - inside) + mouth.roughness * inside;
+    glow = Math.max(glow, shade.er, shade.eg, shade.eb);
   }
-  return { color, roughness };
+  return { color, roughness, glow };
+}
+
+/**
+ * The pattern stack's view of skin vertex `i` in the rest pose, with no screen (`pixel` 0) and the
+ * clock at 0: what bakes and the parity test evaluate.
+ */
+export function surfaceAt(compiled: CompiledCreature, i: number): Surface<number> {
+  const { positions, normals, body, region } = compiled.skin;
+  const inv = 1 / compiled.scale;
+  const y = (positions[i * 3 + 1] as number) * inv;
+  return {
+    x: (positions[i * 3] as number) * inv,
+    y,
+    z: (positions[i * 3 + 2] as number) * inv,
+    nx: normals[i * 3] as number,
+    ny: normals[i * 3 + 1] as number,
+    nz: normals[i * 3 + 2] as number,
+    spine: body[i * 4] as number,
+    height: body[i * 4 + 1] as number,
+    limb: Math.max(body[i * 4 + 2] as number, 0),
+    crease: body[i * 4 + 3] as number,
+    head: region[i * 4] as number,
+    torso: region[i * 4 + 1] as number,
+    limbs: region[i * 4 + 2] as number,
+    tail: region[i * 4 + 3] as number,
+    ground: y,
+    pixel: 0,
+    time: 0,
+  };
 }
 
 /** Hard parts already carry an sRGB colour and roughness per vertex. */

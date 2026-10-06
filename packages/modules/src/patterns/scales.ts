@@ -1,9 +1,10 @@
-import { cells, colorRef, definePattern, detail, relief } from '@spawnforge/core';
+import { colorRef, definePattern, detail, relief, shingleHeight, shingles } from '@spawnforge/core';
 import { z } from 'zod';
 
 export default definePattern({
   id: 'scales',
-  summary: 'Overlapping scales as bump and darker gaps between them.',
+  summary:
+    'Overlapping scales in staggered rows down the body: each one raised at its free rear edge, with darker gaps.',
   tags: ['texture', 'reptile'],
   params: z.strictObject({
     size: z.number().min(0.005).max(0.2).default(0.02).describe('Scale size in torso lengths'),
@@ -18,26 +19,28 @@ export default definePattern({
   hooks: {
     shade(k, s, p, seed) {
       const size = p.size as number;
-      const f = k.num(1 / size);
-      const c = cells(
-        k,
-        k.mul(s.x, f),
-        k.mul(s.y, f),
-        k.add(k.mul(s.z, f), k.num(seed)),
-        0.7,
-        seed,
-        { stagger: true, reach: 3 },
-      );
-      const edge = k.sub(c.second, c.distance);
-      const gapWidth = 0.04 + (p.gap as number) * 0.1;
-      const gap = k.sub(k.num(1), k.smoothstep(k.num(0), k.num(gapWidth), edge));
-      // Each scale domes up from its edges. Gaps fade out where scales shrink below a few
-      // pixels, and the relief sooner, since bump mapping needs more pixels to look smooth.
-      const dome = k.smoothstep(k.num(0), k.num(0.6), edge);
+      const gapParam = p.gap as number;
+      const sh = shingles(k, s, size, seed);
+      // A thin dark line along each scale's free rear edge, and the front of each scale, tucked
+      // under the one ahead, in its shadow.
+      const gapWidth = 0.06 + gapParam * 0.12;
+      const gap = k.sub(k.num(1), k.smoothstep(k.num(0), k.num(gapWidth), sh.edge));
+      const tucked = k.mul(k.sub(k.num(1), sh.plate), k.sub(k.num(1), sh.plate));
+      // Gaps fade out where scales shrink below a few pixels, and the relief sooner, since bump
+      // mapping needs more pixels to look smooth.
       return {
-        mask: k.mul(k.mul(gap, k.num(0.2 + (p.gap as number) * 0.5)), detail(k, s, size)),
+        mask: k.mul(
+          k.add(
+            k.mul(gap, k.num(0.2 + gapParam * 0.5)),
+            k.mul(tucked, k.num(0.1 + gapParam * 0.3)),
+          ),
+          detail(k, s, size),
+        ),
         color: p.gapColor as string,
-        height: k.mul(k.mul(dome, k.num((p.bump as number) * size * 0.3)), relief(k, s, size)),
+        height: k.mul(
+          k.mul(shingleHeight(k, sh), k.num((p.bump as number) * size * 0.3)),
+          relief(k, s, size),
+        ),
       };
     },
   },
