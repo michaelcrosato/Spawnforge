@@ -46,7 +46,7 @@ export interface PatchResult {
   readonly warnings: readonly Issue[];
 }
 
-type Step = { key: string } | { id: string } | { index: number } | { type: string };
+export type Step = { key: string } | { id: string } | { index: number } | { type: string };
 
 /** A path problem with a suggested fix. */
 class PathError extends Error {
@@ -63,7 +63,7 @@ const PATH_FIX =
 /** Multiplies and drops floating-point noise (0.6 × 1.5 is 0.9, not 0.8999999999999999). */
 const times = (v: number, by: number) => Number((v * by).toPrecision(10));
 
-function parsePath(path: string): Step[] {
+export function parsePath(path: string): Step[] {
   const steps: Step[] = [];
   const re = /([A-Za-z_][\w]*)|\[id=([^\]]+)\]|\[(\d+)\]|\[type=([^\]]+)\]|\./g;
   const unreadable = (at: number) =>

@@ -7,8 +7,12 @@ import {
   analyze,
   blueprintJsonSchema,
   CommandError,
+  crossbreed,
   describeModule,
+  generate,
+  instantiate,
   listModules,
+  mutate,
   patch,
   validate,
 } from './commands.ts';
@@ -34,6 +38,17 @@ Commands:
                                         back if the result is valid; prints the diff. ops is a
                                         JSON list, e.g. '[{"op":"set","path":"body.tail.length","value":1.2}]'
                                         (ops: set, add, remove, mirror, scale)
+  generate --theme <id> [--seed n] [--body-plan id] [--max-height m] [--min-height m]
+           [--actions bite,roar] [--parts horn.curved] [--out file]
+                                        A new creature from a theme (reptile, insect, demon…)
+  mutate <file|-> [--seed n] [--amount 0-1] [--lock path,path] [--keep-parts] [--out file]
+                                        A child of one blueprint: values drift, parts may change;
+                                        locked paths (e.g. skin,body.head) never do
+  crossbreed <a> <b> [--seed n] [--mix 0-1] [--out file]
+                                        A child of two blueprints; mix is the share from b
+  instantiate <species|-> [--seed n] [--out file]
+                                        One individual of a species (a blueprint whose numbers
+                                        may be { "min": 0.5, "max": 0.7 } ranges)
   schema                                The blueprint JSON Schema
 
 Options:
@@ -77,6 +92,17 @@ const { positionals, values } = parseArgs({
     speed: { type: 'string' },
     frames: { type: 'string' },
     view: { type: 'string' },
+    theme: { type: 'string' },
+    seed: { type: 'string' },
+    'body-plan': { type: 'string' },
+    'max-height': { type: 'string' },
+    'min-height': { type: 'string' },
+    actions: { type: 'string' },
+    parts: { type: 'string' },
+    amount: { type: 'string' },
+    lock: { type: 'string' },
+    'keep-parts': { type: 'boolean' },
+    mix: { type: 'string' },
   },
 });
 const [command, arg] = positionals;
@@ -184,6 +210,35 @@ function patchCommand(): { output: unknown; exitCode?: number } {
   };
 }
 
+const list = (value: string | undefined) =>
+  value === undefined
+    ? undefined
+    : value
+        .split(',')
+        .map((x) => x.trim())
+        .filter((x) => x !== '');
+
+const seedOf = () => {
+  const seed = number('seed', values.seed);
+  if (seed !== undefined && !Number.isInteger(seed))
+    throw new CommandError(`--seed must be an integer, not "${values.seed}"`);
+  return seed;
+};
+
+/** Writes the blueprint to --out when the result is ok; otherwise prints it with the result. */
+function emit(result: { ok: boolean; blueprint: Record<string, unknown> }): {
+  output: unknown;
+  exitCode: number;
+} {
+  const exitCode = result.ok ? 0 : 1;
+  if (values.out && result.ok) {
+    writeFileSync(values.out, `${JSON.stringify(result.blueprint, null, 2)}\n`);
+    const { blueprint: _written, ...rest } = result;
+    return { output: { ...rest, written: values.out }, exitCode };
+  }
+  return { output: result, exitCode };
+}
+
 const commands: Record<
   string,
   () => { output: unknown; exitCode?: number } | Promise<{ output: unknown; exitCode?: number }>
@@ -195,6 +250,69 @@ const commands: Record<
     return { output: result, exitCode: result.ok ? 0 : 1 };
   },
   patch: patchCommand,
+  generate: () => {
+    if (!values.theme)
+      throw new CommandError(
+        'generate needs --theme',
+        'e.g. spawnforge generate --theme reptile --seed 3',
+      );
+    const seed = seedOf();
+    const maxHeight = number('max-height', values['max-height']);
+    const minHeight = number('min-height', values['min-height']);
+    const actions = list(values.actions);
+    const parts = list(values.parts);
+    return emit(
+      generate({
+        theme: values.theme,
+        ...(seed !== undefined ? { seed } : {}),
+        constraints: {
+          ...(values['body-plan'] ? { bodyPlan: values['body-plan'] } : {}),
+          ...(maxHeight !== undefined ? { maxHeight } : {}),
+          ...(minHeight !== undefined ? { minHeight } : {}),
+          ...(actions ? { actions } : {}),
+          ...(parts ? { parts } : {}),
+        },
+      }),
+    );
+  },
+  mutate: () => {
+    if (!arg) throw new CommandError('mutate needs a blueprint file, or - for stdin');
+    const seed = seedOf();
+    const amount = number('amount', values.amount);
+    const locked = list(values.lock);
+    return emit(
+      mutate({
+        blueprint: readInput(arg),
+        ...(seed !== undefined ? { seed } : {}),
+        ...(amount !== undefined ? { amount } : {}),
+        ...(locked ? { locked } : {}),
+        ...(values['keep-parts'] ? { structure: false } : {}),
+      }),
+    );
+  },
+  crossbreed: () => {
+    const other = positionals[2];
+    if (!arg || !other)
+      throw new CommandError(
+        'crossbreed needs two blueprint files',
+        'e.g. spawnforge crossbreed a.json b.json --mix 0.5',
+      );
+    const seed = seedOf();
+    const mix = number('mix', values.mix);
+    return emit(
+      crossbreed({
+        a: readInput(arg),
+        b: readInput(other),
+        ...(seed !== undefined ? { seed } : {}),
+        ...(mix !== undefined ? { mix } : {}),
+      }),
+    );
+  },
+  instantiate: () => {
+    if (!arg) throw new CommandError('instantiate needs a species file, or - for stdin');
+    const seed = seedOf();
+    return emit(instantiate({ species: readInput(arg), ...(seed !== undefined ? { seed } : {}) }));
+  },
   'list-modules': () => ({ output: listModules({ kind: kindOf(values.kind) }) }),
   'describe-module': () => {
     if (!arg)

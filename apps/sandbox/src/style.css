@@ -217,3 +217,23 @@ body {
   pointer-events: none;
   text-shadow: 0 1px 2px #000;
 }
+
+.breed-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin: 6px 0;
+}
+
+.breed-row input[type="number"] {
+  width: 64px;
+}
+
+.breed-result {
+  margin-top: 8px;
+  font:
+    12px / 1.4 ui-monospace,
+    monospace;
+  color: #b8c0cc;
+  white-space: pre-wrap;
+}

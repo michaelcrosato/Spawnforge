@@ -148,6 +148,30 @@ flat ground, draws a gait cycle and reports cycle time, stride, duty per leg and
 - **`fingerprint`** hashes a compiled creature's quantized meshes and skeleton. The golden test
   pins the examples' hashes, and the render tests check that Chromium compiles to the same ones.
 
+## Variation
+
+All of it lives in `packages/core/src/variation` and works on blueprints, never on meshes, so
+every result is an ordinary blueprint that validates, diffs and compiles like a hand-written one.
+
+- **Species** (`species.ts`): `{ min, max }` ranges resolved by `instantiate` with one RNG stream
+  per path; `validateSpecies` validates the all-minimum and all-maximum individuals and a few
+  seeds.
+- **Genes** (`genes.ts`): `expand` resolves a blueprint over its preset and defaults (module
+  parameters inline, as blueprints write them), and `genesOf` lists every number, profile, enum,
+  colour and switch with its range from the JSON Schema or the module's own schema. A changed,
+  expanded child becomes patch operations on the parent's file (`opsBetween`), so the output keeps
+  the parent's shape; `finish` applies them and drops parts, layers, gaits or actions that no
+  longer fit (a bite without a jaw) instead of failing.
+- **Mutate** (`mutate.ts`) draws each gene from a stream keyed by its path and the parent's seed;
+  structural changes use part modules' `slot` and `tags`. **Crossbreed** (`crossbreed.ts`) pairs
+  items, blends or picks genes and inherits unpaired items by chance.
+- **Generate** (`generate.ts`) runs one grammar for every theme: body plan, shape, parts, layers,
+  palette (HSL ranges with a lightness-contrast rule so patterns stay readable), material,
+  temperament, name. A theme module (`defineTheme`, `bias: ThemeBias`) only supplies weights and
+  species fragments. Constraints filter body plans by the features required actions need, force
+  required parts, retry with the next attempt's stream, and meet height limits by rescaling,
+  measured from the skeleton without meshing.
+
 ## Runtime conventions
 
 - World units follow glTF: metres, Y up, creatures face +Z.

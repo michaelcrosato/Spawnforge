@@ -9,7 +9,7 @@ is the contract.
 
 ## Status
 
-Phases 0 to 4 are done, and so is the proof of concept ([docs/poc.md](docs/poc.md)).
+Phases 0 to 5 are done, and so is the proof of concept ([docs/poc.md](docs/poc.md)).
 
 - Phase 0: the blueprint format, the module registry and first pack, the CLI and MCP tools, the
   generated catalogue and the format eval.
@@ -25,8 +25,12 @@ Phases 0 to 4 are done, and so is the proof of concept ([docs/poc.md](docs/poc.m
   description), the 1,000-blueprint fuzz, golden determinism in Node and Chrome, budgets, and the
   PoC gate.
 
+- Phase 5: variation. Species with `{ min, max }` ranges and `instantiate`, `mutate` (with
+  locked paths and part swaps by tag), `crossbreed`, theme modules (reptile, insect, demon) and
+  `generate` with constraints, as CLI commands, MCP tools and the sandbox's breed tab.
+
 Every gate scored 20/20 on the prompt suite and 20/20 in blind review (`eval/runs/`). Next is
-phase 5: species with ranges, `mutate`, `crossbreed`, themes and `generate`.
+phase 6: baked clips, .glb export, stats modules and the game runtime API.
 
 ## Repo map
 
@@ -55,7 +59,9 @@ pnpm format                   # Biome: format, sort imports, apply safe lint fix
 pnpm generate                 # rewrite generated files after adding or changing a module
 pnpm dev                      # sandbox at http://localhost:5173 (add ?webgl to force the WebGL 2 backend)
 pnpm build                    # production build of the sandbox
-pnpm spawnforge <command>     # the CLI from source: list-modules, describe-module, validate, analyze, patch, render, schema
+pnpm spawnforge <command>     # the CLI from source: list-modules, describe-module, validate, analyze, patch, render,
+                              # generate, mutate, crossbreed, instantiate, schema
+pnpm spawnforge generate --theme reptile --seed 4 --out creatures/lizard.json   # a new creature from a theme
 pnpm spawnforge render examples/ridgeback-stalker.json --labels   # PNG contact sheet next to the file
 pnpm render:examples          # re-render examples/*.png after changing a blueprint or the pipeline
 pnpm fuzz [count] [quality]   # compile random blueprints from the schema (the PoC gate runs 1,000)

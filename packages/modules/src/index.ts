@@ -25,6 +25,9 @@ import actionsBite from './actions/bite.ts';
 import actionsIdle from './actions/idle.ts';
 import actionsLook from './actions/look.ts';
 import actionsRoar from './actions/roar.ts';
+import themesDemon from './themes/demon.ts';
+import themesInsect from './themes/insect.ts';
+import themesReptile from './themes/reptile.ts';
 
 /** The first pack: body plans, parts, patterns, gaits and actions for the proof of concept. */
 export const basicPack = definePack({
@@ -54,5 +57,8 @@ export const basicPack = definePack({
     actionsIdle,
     actionsLook,
     actionsRoar,
+    themesDemon,
+    themesInsect,
+    themesReptile,
   ],
 });

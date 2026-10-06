@@ -25,8 +25,12 @@ describe('MCP server', () => {
     const { tools } = await client.listTools();
     expect(tools.map((t) => t.name).sort()).toEqual([
       'analyze',
+      'crossbreed',
       'describe_module',
+      'generate',
+      'instantiate',
       'list_modules',
+      'mutate',
       'patch',
       'render',
       'validate',
@@ -67,6 +71,31 @@ describe('MCP server', () => {
     const result = await client.callTool({ name: 'describe_module', arguments: { id: 'hron' } });
     expect(result.isError).toBe(true);
     expect(textOf(result).fix).toBe('did you mean "horn.curved"?');
+  });
+
+  it('generates, mutates and crossbreeds valid creatures', async () => {
+    const call = async (name: string, args: Record<string, unknown>) =>
+      textOf(await client.callTool({ name, arguments: args }));
+    const made = await call('generate', {
+      theme: 'demon',
+      seed: 3,
+      constraints: { maxHeight: 1.5, actions: ['roar'] },
+    });
+    expect(made.ok).toBe(true);
+    expect(made.measurements.height).toBeLessThanOrEqual(1.5);
+    const child = await call('mutate', { blueprint: made.blueprint, seed: 2, locked: ['skin'] });
+    expect(child.ok).toBe(true);
+    expect(child.diff.some((line: string) => line.includes(' skin.'))).toBe(false);
+    const other = await call('generate', { theme: 'reptile', seed: 1 });
+    const cross = await call('crossbreed', { a: made.blueprint, b: other.blueprint, mix: 0.5 });
+    expect(cross.ok).toBe(true);
+    expect(['a', 'b']).toContain(cross.base);
+    const one = await call('instantiate', {
+      blueprint: { format: 'spawnforge/0.1', extends: 'quadruped', scale: { min: 0.8, max: 1.2 } },
+      seed: 4,
+    });
+    expect(one.ok).toBe(true);
+    expect(one.blueprint.scale).toBeGreaterThanOrEqual(0.8);
   });
 
   it('serves the blueprint guide as a resource', async () => {

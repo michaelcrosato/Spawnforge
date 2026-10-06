@@ -3,8 +3,12 @@ import { McpServer } from '@modelcontextprotocol/server';
 import {
   analyze,
   CommandError,
+  crossbreed,
   describeModule,
+  generate,
+  instantiate,
   listModules,
+  mutate,
   patch,
   patchOpsSchema,
   validate,
@@ -19,7 +23,9 @@ const INSTRUCTIONS = `Spawnforge builds 3D monsters from JSON blueprints.
 Workflow: read the blueprint guide (resource spawnforge://docs/blueprint.md) and the catalogue
 (spawnforge://docs/catalog.md), start from a body plan ("extends"), then call validate and fix
 every error it reports (each has a path, the problem, the valid range and a fix) until ok is true.
-Use describe_module for any part, pattern, gait, action or body plan you use.`;
+Use describe_module for any part, pattern, gait, action or body plan you use. To start from
+something rather than nothing, generate makes a creature from a theme; mutate and crossbreed make
+children of existing blueprints.`;
 
 type ToolResult = {
   content: { type: 'text'; text: string }[];
@@ -172,6 +178,145 @@ export function createServer(): McpServer {
         const { blueprint, ...rest } = result;
         return { ...rest, written: write, ...(input.path === undefined ? { blueprint } : {}) };
       }),
+  );
+
+  const blueprintInput = (what: string) => ({
+    blueprint: z.record(z.string(), z.unknown()).optional().describe(`The ${what} JSON object`),
+    path: z.string().optional().describe(`Path to the ${what} JSON file, instead of "blueprint"`),
+  });
+  const outInput = z
+    .string()
+    .optional()
+    .describe('File to write the new blueprint to (only when ok); otherwise it is returned');
+  const emit = (result: { ok: boolean; blueprint: Record<string, unknown> }, out?: string) => {
+    if (out === undefined || !result.ok) return result;
+    writeFileSync(out, `${JSON.stringify(result.blueprint, null, 2)}\n`);
+    const { blueprint: _written, ...rest } = result;
+    return { ...rest, written: out };
+  };
+
+  server.registerTool(
+    'generate',
+    {
+      title: 'Generate a creature from a theme',
+      description:
+        'Builds a new, valid creature from a theme (list_modules with kind "theme": reptile, insect, demon) and a seed: the theme weights the body plan, proportions, parts, patterns, colours and temperament. Constraints fix the body plan, a body height range in metres (the creature is rescaled to fit), actions it must be able to do and part types it must have. The same theme, seed and constraints always give the same creature. Returns the minimal blueprint and its body height and length.',
+      inputSchema: z.object({
+        theme: z.string().describe('Theme module id, e.g. "reptile"'),
+        seed: z.number().int().optional().describe('Which creature (default 1)'),
+        constraints: z
+          .object({
+            bodyPlan: z.string().optional().describe('Body plan id to use, e.g. "biped"'),
+            maxHeight: z.number().positive().optional().describe('Largest body height in metres'),
+            minHeight: z.number().positive().optional().describe('Smallest body height in metres'),
+            actions: z.array(z.string()).optional().describe('Actions it must have, e.g. ["bite"]'),
+            parts: z
+              .array(z.string())
+              .optional()
+              .describe('Part types it must have, e.g. ["horn.curved"]'),
+          })
+          .optional(),
+        out: outInput,
+      }),
+    },
+    async (input) =>
+      reply(() =>
+        emit(
+          generate({
+            theme: input.theme,
+            ...(input.seed !== undefined ? { seed: input.seed } : {}),
+            ...(input.constraints ? { constraints: input.constraints } : {}),
+          }),
+          input.out,
+        ),
+      ),
+  );
+
+  server.registerTool(
+    'mutate',
+    {
+      title: 'Mutate a blueprint',
+      description:
+        'Makes a child of one blueprint: numbers drift within their ranges, colours shift, and now and then an enum flips or a part is added, removed or swapped for one with matching tags (eyes and ears are kept). "amount" (0 to 1, default 0.3) sets how many genes change and how far. "locked" lists id-based paths that never change, e.g. ["skin", "body.head", "parts[id=horns]"]. The same parent and seed always give the same child. Returns the new blueprint and a gene-by-gene diff against the parent.',
+      inputSchema: z.object({
+        ...blueprintInput('parent blueprint'),
+        seed: z.number().int().optional().describe('Which mutation (default 1)'),
+        amount: z.number().min(0).max(1).optional().describe('How far to drift, 0 to 1'),
+        locked: z.array(z.string()).optional().describe('Paths that never change'),
+        structure: z
+          .boolean()
+          .optional()
+          .describe('Whether parts may be added, removed or swapped (default true)'),
+        out: outInput,
+      }),
+    },
+    async (input) =>
+      reply(() =>
+        emit(
+          mutate({
+            blueprint: readBlueprint(input),
+            ...(input.seed !== undefined ? { seed: input.seed } : {}),
+            ...(input.amount !== undefined ? { amount: input.amount } : {}),
+            ...(input.locked ? { locked: input.locked } : {}),
+            ...(input.structure !== undefined ? { structure: input.structure } : {}),
+          }),
+          input.out,
+        ),
+      ),
+  );
+
+  server.registerTool(
+    'crossbreed',
+    {
+      title: 'Crossbreed two blueprints',
+      description:
+        'Makes a child of two blueprints. It keeps one parent\'s body plan (the second\'s with chance "mix" when they differ), matches limbs by id or role, parts by id or type and layers by type, blends numbers and colours between matched genes, picks enums from either parent, and inherits unmatched parts, layers and actions by chance. "mix" (0 to 1, default 0.5) is the share from b; 0 or 1 copies a parent. Returns the new blueprint, which parent it is built on ("base") and a diff against that parent.',
+      inputSchema: z.object({
+        a: z.record(z.string(), z.unknown()).optional().describe('Parent a, as a JSON object'),
+        b: z.record(z.string(), z.unknown()).optional().describe('Parent b, as a JSON object'),
+        aPath: z.string().optional().describe('Path to parent a, instead of "a"'),
+        bPath: z.string().optional().describe('Path to parent b, instead of "b"'),
+        seed: z.number().int().optional().describe('Which child (default 1)'),
+        mix: z.number().min(0).max(1).optional().describe('Share from b, 0 to 1'),
+        out: outInput,
+      }),
+    },
+    async (input) =>
+      reply(() =>
+        emit(
+          crossbreed({
+            a: readBlueprint({ blueprint: input.a, path: input.aPath }),
+            b: readBlueprint({ blueprint: input.b, path: input.bPath }),
+            ...(input.seed !== undefined ? { seed: input.seed } : {}),
+            ...(input.mix !== undefined ? { mix: input.mix } : {}),
+          }),
+          input.out,
+        ),
+      ),
+  );
+
+  server.registerTool(
+    'instantiate',
+    {
+      title: 'Make an individual of a species',
+      description:
+        'A species is a blueprint in which any number can be a range, { "min": 0.5, "max": 0.7 }. This resolves every range for a seed (each range from its own stream, so one range never reshuffles another) and validates the individual. validate checks a species at both ends of every range.',
+      inputSchema: z.object({
+        ...blueprintInput('species'),
+        seed: z.number().int().optional().describe('Which individual (default 1)'),
+        out: outInput,
+      }),
+    },
+    async (input) =>
+      reply(() =>
+        emit(
+          instantiate({
+            species: readBlueprint(input),
+            ...(input.seed !== undefined ? { seed: input.seed } : {}),
+          }),
+          input.out,
+        ),
+      ),
   );
 
   for (const [name, file, mimeType, description] of [

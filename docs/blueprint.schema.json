@@ -1502,6 +1502,24 @@
         }
       },
       "additionalProperties": false
+    },
+    "theme:demon": {
+      "description": "Horned fiends and hellhounds: heavy shoulders, big curled or swept horns, fangs, spine rows, goat or slit pupils, blood reds and soot blacks.",
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    },
+    "theme:insect": {
+      "description": "Six-legged beetles and ants: glossy chitin, a thorax and abdomen with a narrow waist, thin legs, horns or pincers, dark or warning colours.",
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    },
+    "theme:reptile": {
+      "description": "Scaled lizards, raptors and snakes: low sprawling bodies, long tails, wedge or snout heads, slit pupils, greens and browns.",
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
     }
   }
 }

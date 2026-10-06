@@ -2,6 +2,7 @@ import { z } from 'zod';
 import type { PartHooks } from './compile/parts.ts';
 import type { ActionHooks } from './motion/actions.ts';
 import type { PatternHooks } from './shading/kit.ts';
+import type { ThemeBias } from './variation/generate.ts';
 
 /** The kinds of module the core can run. See docs/plan.md, "Modularity and variation". */
 export const MODULE_KINDS = [
@@ -99,7 +100,8 @@ export interface BodyPlanModule extends ModuleBase<'bodyPlan', z.ZodType> {
 }
 
 export interface ThemeModule<P extends z.ZodType = z.ZodType> extends ModuleBase<'theme', P> {
-  readonly hooks?: unknown;
+  /** Weights and ranges `generate` draws from (see `ThemeBias`). */
+  readonly bias: ThemeBias;
 }
 
 export interface StatsModule<P extends z.ZodType = z.ZodType> extends ModuleBase<'stats', P> {
