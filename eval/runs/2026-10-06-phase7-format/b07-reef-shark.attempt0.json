@@ -1,0 +1,49 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Reef Shark",
+  "seed": 707,
+  "extends": "fish",
+  "scale": 1.3,
+  "body": {
+    "torso": { "radius": [0.1, 0.16, 0.15, 0.09] },
+    "head": { "shape": "wedge", "length": 0.3, "radius": 0.11 },
+    "tail": { "length": 0.9, "radius": [0.09, 0.025] }
+  },
+  "limbs": [
+    {
+      "id": "pectoral",
+      "length": 0.4,
+      "attach": { "at": 0.2, "angle": 125 },
+      "membrane": { "type": "membrane.fin", "rays": 7, "width": 0.9 }
+    }
+  ],
+  "parts": [
+    {
+      "id": "dorsal",
+      "attach": { "at": 0.4 },
+      "params": { "height": 0.4, "length": 0.28, "sweep": 40, "shape": "triangle" }
+    },
+    { "id": "tailfin", "params": { "shape": "forked", "size": 0.55, "upper": 0.65 } },
+    { "id": "teeth", "type": "teeth.row", "params": { "count": 18, "length": 0.03, "fangs": 0 } }
+  ],
+  "skin": {
+    "palette": { "base": "#6b7680", "belly": "#eef0ee", "accent": "#2a323a" },
+    "material": "scales",
+    "layers": [
+      { "type": "countershade", "height": -0.1, "softness": 0.2 },
+      {
+        "type": "mottle",
+        "color": "accent",
+        "scale": 0.25,
+        "coverage": 0.3,
+        "strength": 0.4,
+        "region": "back"
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "stalking",
+    "gaits": [{ "type": "swim.undulate", "amplitude": 0.18, "waves": 1 }],
+    "actions": ["bite", "look", "idle"]
+  }
+}

@@ -100,6 +100,10 @@ export interface DescribeModuleResult {
   details?: Record<string, unknown>;
   /** For body plans: the preset blueprint, whose limb and part ids you can override. */
   preset?: Record<string, unknown>;
+  /** For stubs: the plan milestone that builds the module; until then compile skips it. */
+  planned?: string;
+  /** Capabilities the module gives a body, which some actions need (`display`, `pincer`, …). */
+  provides?: readonly string[];
 }
 
 function findModule(id: string, kind: ModuleKind | undefined, registry: Registry) {
@@ -136,6 +140,8 @@ export function describeModule(
     tags: module.tags,
     params: paramsJsonSchema(module.params),
     defaults: (module.params.safeParse({}).data ?? {}) as Record<string, unknown>,
+    ...(module.planned ? { planned: module.planned } : {}),
+    ...(module.provides?.length ? { provides: module.provides } : {}),
   };
   switch (module.kind) {
     case 'bodyPlan':
@@ -151,7 +157,9 @@ export function describeModule(
         usage:
           module.slot === 'foot'
             ? `Set as a limb's foot: { "foot": { "type": "${module.id}", ...params } }.`
-            : `Add to "parts" with "type": "${module.id}"; parameters go in "params".`,
+            : module.slot === 'membrane'
+              ? `Set as a wing's or fin's membrane: { "membrane": { "type": "${module.id}", ...params } }, not in "parts".`
+              : `Add to "parts" with "type": "${module.id}"; parameters go in "params".`,
         example: module.example,
         details: { slot: module.slot, material: module.material, defaultAttach: module.attach },
       };
@@ -230,6 +238,11 @@ export interface ValidateResult {
   species?: boolean;
   /** For a species: the individuals checked (both ends of every range, then a few seeds). */
   checked?: string[];
+  /**
+   * What the blueprint uses that is in the format but not built yet, with the plan milestone
+   * that builds it. Keep these: they validate, and appear once built.
+   */
+  notBuilt?: readonly Issue[];
 }
 
 /** Validates a blueprint: errors and warnings with id-based paths and fixes, plus the minimal form. */
@@ -253,6 +266,7 @@ export function validate(
     ok: result.ok,
     errors: result.errors,
     warnings: result.warnings,
+    ...(result.notBuilt ? { notBuilt: result.notBuilt } : {}),
     ...(result.blueprint ? { blueprint: result.blueprint } : {}),
     ...(options.expanded && result.creature ? { creature: result.creature } : {}),
   };
@@ -476,7 +490,10 @@ export function analyze(
   return {
     ok: true,
     ...rounded,
-    warnings: [...checked.warnings, ...analysis.warnings],
+    // Compile repeats a few validation warnings (`not_built`); each is said once.
+    warnings: [...checked.warnings, ...analysis.warnings].filter(
+      (w, i, all) => all.findIndex((o) => o.path === w.path && o.code === w.code) === i,
+    ),
     ...(stats ? { stats } : {}),
   };
 }

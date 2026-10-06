@@ -1,0 +1,43 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Cerberus",
+  "seed": 505,
+  "extends": "quadruped",
+  "scale": 1.5,
+  "body": {
+    "torso": { "radius": [0.17, 0.21, 0.18, 0.13] },
+    "neck": { "count": 3, "length": 0.4, "radius": [0.07, 0.11], "pitch": 30 },
+    "head": { "shape": "snout", "length": 0.28, "radius": 0.09 },
+    "tail": { "length": 0.7, "radius": [0.07, 0.015], "curl": 15 }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "length": 0.6,
+      "radius": [0.07, 0.035],
+      "foot": { "type": "foot.paw", "toes": 4, "claws": "short" }
+    },
+    {
+      "id": "hindleg",
+      "length": 0.62,
+      "radius": [0.08, 0.035],
+      "foot": { "type": "foot.paw", "toes": 4, "claws": "short" }
+    }
+  ],
+  "parts": [
+    { "id": "eyes", "params": { "irisColor": "#ff3a10", "pupil": "slit" } },
+    { "id": "teeth", "type": "teeth.row", "params": { "count": 9, "fangs": 2 } },
+    {
+      "id": "ears",
+      "type": "ear.pointed",
+      "attach": { "on": "head", "at": 0.85, "angle": 45 },
+      "params": { "length": 0.12, "width": 0.045 }
+    }
+  ],
+  "skin": {
+    "palette": { "base": "#0f0e0e", "belly": "#2a2523", "accent": "#050505" },
+    "fur": { "length": 0.03, "density": 0.9 },
+    "layers": [{ "type": "countershade", "strength": 0.4 }]
+  },
+  "motion": { "temperament": "aggressive" }
+}

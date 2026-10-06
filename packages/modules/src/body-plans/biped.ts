@@ -44,6 +44,6 @@ export default defineBodyPlan({
       palette: { base: '#6f7a4a', belly: '#c9c39a', accent: '#2f3320' },
       layers: [{ type: 'countershade' }],
     },
-    motion: { temperament: 'calm', gaits: ['walk'] },
+    motion: { temperament: 'calm' },
   },
 });

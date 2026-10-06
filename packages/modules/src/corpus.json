@@ -1162,5 +1162,89 @@
   "eval/runs/2026-10-06-phase5-variation/v08.json": {
     "ok": true,
     "errors": []
+  },
+  "eval/runs/2026-10-06-phase7-format/b01-dragon.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-06-phase7-format/b02-wyvern.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-06-phase7-format/b03-giant-bat.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-06-phase7-format/b04-hydra.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-06-phase7-format/b05-cerberus.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-06-phase7-format/b06-kraken.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-06-phase7-format/b07-reef-shark.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-06-phase7-format/b08-cave-spider.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-06-phase7-format/b09-scorpion-king.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-06-phase7-format/b10-centaur.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-06-phase7-format/b11-sea-turtle.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-06-phase7-format/b12-quillback-boar.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-06-phase7-format/b13-frilled-lizard.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-06-phase7-format/b14-stegosaur.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-06-phase7-format/b15-sail-back.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-06-phase7-format/b16-giant-moth.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-06-phase7-format/b17-two-tailed-fox.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-06-phase7-format/b18-griffin.attempt0.json": {
+    "ok": false,
+    "errors": ["motion.actions[4] missing_feature"]
+  },
+  "eval/runs/2026-10-06-phase7-format/b18-griffin.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-06-phase7-format/b19-armoured-burrower.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-06-phase7-format/b20-glow-slug.attempt0.json": {
+    "ok": true,
+    "errors": []
   }
 }

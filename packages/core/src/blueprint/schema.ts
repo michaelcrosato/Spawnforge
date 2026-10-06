@@ -18,9 +18,54 @@ export type Side = (typeof SIDES)[number];
 export const HEAD_SHAPES = ['round', 'snout', 'flat', 'wedge'] as const;
 export const CROSS_SECTIONS = ['round', 'tall', 'wide'] as const;
 export const TEMPERAMENTS = ['calm', 'stalking', 'skittish', 'aggressive', 'lumbering'] as const;
-export const REGIONS = ['all', 'back', 'belly', 'head', 'torso', 'limbs', 'tail'] as const;
-export const SKIN_MATERIALS = ['skin', 'scales', 'chitin'] as const;
-export const LIMB_ROLES = ['leg', 'arm'] as const;
+export const REGIONS = ['all', 'back', 'belly', 'head', 'torso', 'limbs', 'tail', 'wings'] as const;
+export const SKIN_MATERIALS = ['skin', 'scales', 'chitin', 'hide'] as const;
+export const LIMB_ROLES = ['leg', 'arm', 'wing', 'fin', 'tentacle'] as const;
+export type LimbRoleName = (typeof LIMB_ROLES)[number];
+/** Fields only some roles take; every limb also takes the common ones (id, attach, length, …). */
+export const ROLE_FIELDS: Record<LimbRoleName, readonly string[]> = {
+  leg: ['splay', 'lift', 'stance', 'foot'],
+  arm: ['splay', 'lift', 'foot'],
+  wing: ['membrane', 'foot'],
+  fin: ['membrane', 'foot'],
+  tentacle: ['curl', 'curlStart', 'foot'],
+};
+const ROLE_ONLY = ['splay', 'lift', 'stance', 'membrane', 'curl', 'curlStart'];
+
+/** Removes the fields a limb's role does not take (for writing a resolved limb back out). */
+export function roleFieldsOnly(limb: Record<string, unknown>): void {
+  const role = (typeof limb.role === 'string' ? limb.role : 'leg') as LimbRoleName;
+  const own = ROLE_FIELDS[role] ?? [];
+  for (const key of ROLE_ONLY) if (!own.includes(key)) delete limb[key];
+  for (const [key, value] of Object.entries(limb)) if (value === undefined) delete limb[key];
+}
+
+/** Where an area-slot part sits on what it attaches to. */
+export const AREAS = ['back', 'belly', 'sides', 'all'] as const;
+export const STANCES = ['plantigrade', 'digitigrade', 'unguligrade'] as const;
+export const TONGUES = ['none', 'flat', 'forked'] as const;
+export const MEDIA = ['land', 'water', 'air'] as const;
+
+/**
+ * Defaults per limb role. Legs and arms keep format 0.1's; the new roles get shapes that work
+ * as they are, so `{ "id": "wing", "role": "wing" }` is a usable wing.
+ */
+export const ROLE_DEFAULTS: Record<
+  LimbRoleName,
+  {
+    readonly at: number;
+    readonly angle: number;
+    readonly length: number;
+    readonly segments: number;
+    readonly radius: readonly number[];
+  }
+> = {
+  leg: { at: 0.5, angle: 100, length: 0.5, segments: 3, radius: [0.06, 0.03] },
+  arm: { at: 0.5, angle: 100, length: 0.5, segments: 3, radius: [0.06, 0.03] },
+  wing: { at: 0.2, angle: 40, length: 1.2, segments: 3, radius: [0.05, 0.015] },
+  fin: { at: 0.25, angle: 115, length: 0.35, segments: 2, radius: [0.05, 0.02] },
+  tentacle: { at: 0.9, angle: 150, length: 1.5, segments: 10, radius: [0.06, 0.008] },
+};
 
 /** Item ids: lowercase, no dots (mirrored copies get `.L` and `.R`). */
 export const ITEM_ID = /^[a-z][a-z0-9_-]*$/;
@@ -34,12 +79,21 @@ export interface ModuleIds {
   bodyPlan: readonly string[];
   part: readonly string[];
   foot: readonly string[];
+  membrane?: readonly string[];
   pattern: readonly string[];
   gait: readonly string[];
   action: readonly string[];
 }
 
-const NO_IDS: ModuleIds = { bodyPlan: [], part: [], foot: [], pattern: [], gait: [], action: [] };
+const NO_IDS: ModuleIds = {
+  bodyPlan: [],
+  part: [],
+  foot: [],
+  membrane: [],
+  pattern: [],
+  gait: [],
+  action: [],
+};
 
 function idEnum(ids: readonly string[], what: string) {
   return ids.length > 0
@@ -105,6 +159,19 @@ export function buildBlueprintSchema(ids: ModuleIds = NO_IDS, defaults: PackDefa
       pitch: range(-60, 90).default(20).describe('Degrees the neck rises above horizontal'),
       crossSection: z.enum(CROSS_SECTIONS).default('round').describe('Shape across the neck'),
       segments: z.number().int().min(1).max(8).default(3).describe('Bones in the neck'),
+      count: z
+        .number()
+        .int()
+        .min(1)
+        .max(9)
+        .default(1)
+        .describe('Necks, each with its own head shaped like body.head (a hydra has several)'),
+      spread: range(0, 170)
+        .optional()
+        .describe('Degrees between the outermost necks as they fan out; default 25 per extra neck'),
+      curve: range(-90, 90)
+        .default(0)
+        .describe('Degrees of S-bend: forward at the base and back below the head (a swan)'),
     })
     .describe('Joins the head to the front of the torso.');
 
@@ -119,6 +186,9 @@ export function buildBlueprintSchema(ids: ModuleIds = NO_IDS, defaults: PackDefa
         .describe('A hinged lower jaw, needed for bite, roar and teeth'),
       pitch: range(-60, 60).default(0).describe('Degrees the snout points above horizontal'),
       crossSection: z.enum(CROSS_SECTIONS).default('round').describe('Shape across the head'),
+      lips: range(0, 1).default(0.3).describe('Thickness of the lips along the mouth'),
+      tongue: z.enum(TONGUES).default('flat').describe('The tongue in the mouth'),
+      brow: range(0, 1).default(0.2).describe('How heavy the brow ridge is'),
     })
     .describe('The head. `at` runs from the snout tip (0) to the back of the skull (1).');
 
@@ -141,62 +211,164 @@ export function buildBlueprintSchema(ids: ModuleIds = NO_IDS, defaults: PackDefa
         .default(-10)
         .describe('Degrees the tail root points above horizontal; negative droops'),
       segments: z.number().int().min(2).max(24).default(8).describe('Bones in the tail'),
+      count: z
+        .number()
+        .int()
+        .min(1)
+        .max(9)
+        .default(1)
+        .describe('Tails, each shaped like this one (a two-tailed fox has 2)'),
+      spread: range(0, 170)
+        .optional()
+        .describe('Degrees between the outermost tails as they fan out; default 20 per extra tail'),
+      forkAt: range(0, 0.95)
+        .default(0)
+        .describe(
+          'Where along the tail several tails branch: 0 leaves the torso separately, 0.7 forks near the tip',
+        ),
     })
     .describe('Runs back from the torso. `at` runs from the root (0) to the tip (1).');
 
   const side = z.enum(SIDES).describe('"both" makes a mirrored pair with ids ending .L and .R');
 
-  const limbAttach = z.strictObject({
-    on: z.string().default('torso').describe('Body section the limb grows from'),
-    at: range(0, 1)
-      .default(0.5)
-      .describe('Where along the section: 0 is the snout end, 1 the tail end'),
-    side: side.default('both'),
-    angle: range(0, 180)
-      .default(100)
-      .describe('Degrees around the section from the top: 90 is the side, 180 the belly'),
-  });
+  const limbAttach = (role: LimbRoleName) =>
+    z.strictObject({
+      on: z.string().default('torso').describe('Body section the limb grows from'),
+      at: range(0, 1)
+        .default(ROLE_DEFAULTS[role].at)
+        .describe('Where along the section: 0 is the snout end, 1 the tail end'),
+      side: side.default('both'),
+      angle: range(0, 180)
+        .default(ROLE_DEFAULTS[role].angle)
+        .describe('Degrees around the section from the top: 90 is the side, 180 the belly'),
+    });
 
-  const footType = idEnum(ids.foot, 'Foot part');
-  const foot = z
-    .object({ type: defaults.foot ? footType.default(defaults.foot) : footType })
-    .catchall(z.unknown())
-    .describe('Foot part at the limb tip; its parameters sit beside `type`');
+  /** A slot field on a limb (`foot`, `membrane`): a module object, its id, or null for none. */
+  const slotField = (
+    ids: readonly string[],
+    what: string,
+    fallback: string | undefined,
+    description: string,
+  ) => {
+    const type = idEnum(ids, what);
+    const object = z
+      .object({ type: fallback ? type.default(fallback) : type })
+      .catchall(z.unknown())
+      .describe(`${what} module; its parameters sit beside \`type\``);
+    return z
+      .union([object, type, z.null()])
+      .prefault((fallback ? {} : null) as never)
+      .describe(
+        fallback
+          ? `${description} (default { "type": "${fallback}" }); the id alone also works; null for none`
+          : `${description}; the id alone also works; null for none`,
+      );
+  };
+  const footField = (role: LimbRoleName) =>
+    slotField(
+      ids.foot,
+      'Foot part',
+      defaults.foot?.[role],
+      role === 'wing' ? "Claw at the wrist (a bat's thumb)" : 'Foot or hand part at the limb tip',
+    );
+  const membraneField = (role: LimbRoleName) =>
+    slotField(
+      ids.membrane ?? [],
+      'Membrane',
+      defaults.membrane?.[role],
+      'The surface the limb carries (skin, feathers, a fin)',
+    );
 
-  const limb = z.strictObject({
+  const limbCommon = (role: LimbRoleName) => ({
     id: z.string().regex(ITEM_ID).describe('Unique id; mirrored copies get .L and .R'),
-    role: z
-      .enum(LIMB_ROLES)
-      .default('leg')
-      .describe('"leg" limbs carry the body; "arm" limbs are free'),
-    attach: limbAttach.prefault({}),
-    length: range(0.05, 3).default(0.5).describe('Total limb length in torso lengths'),
+    attach: limbAttach(role).prefault({}),
+    length: range(0.05, role === 'tentacle' ? 4 : 3)
+      .default(ROLE_DEFAULTS[role].length)
+      .describe('Total limb length in torso lengths'),
     segments: z
       .number()
       .int()
       .min(2)
-      .max(4)
-      .default(3)
-      .describe('Bones from hip or shoulder to ankle'),
-    radius: profile(0.005, 0.5, 'Radius from root to tip, in torso lengths').default([0.06, 0.03]),
-    splay: range(-30, 90)
-      .default(0)
-      .describe('Degrees the limb swings out from under the body; about 50 for sprawlers'),
-    lift: range(0, 150)
-      .default(0)
+      .max(role === 'tentacle' ? 16 : 4)
+      .default(ROLE_DEFAULTS[role].segments)
       .describe(
-        'Arms only: degrees the arm is raised forward from hanging; 90 holds it straight out (pincers)',
+        role === 'tentacle' ? 'Bones along the tentacle' : 'Bones from hip or shoulder to ankle',
       ),
-    foot: z
-      .union([foot, z.null()])
-      .prefault((defaults.foot ? {} : null) as never)
-      .describe(
-        defaults.foot
-          ? `Foot part at the limb tip (default { "type": "${defaults.foot}" }), or null for none`
-          : 'Foot part at the limb tip, or null for none',
-      ),
+    radius: profile(0.005, 0.5, 'Radius from root to tip, in torso lengths').default([
+      ...ROLE_DEFAULTS[role].radius,
+    ]),
+    muscle: range(0, 1)
+      .optional()
+      .describe('How muscled this limb is, 0 to 1; left out, it follows body.muscle'),
     remove: z.literal(true).optional().describe('Delete an inherited limb with this id'),
   });
+  const splay = range(-30, 90)
+    .default(0)
+    .describe('Degrees the limb swings out from under the body; about 50 for sprawlers');
+  const lift = range(0, 150)
+    .default(0)
+    .describe(
+      'Arms only: degrees the arm is raised forward from hanging; 90 holds it straight out (pincers)',
+    );
+  const limb = z
+    .discriminatedUnion('role', [
+      z
+        .strictObject({
+          role: z.literal('leg').default('leg').describe('"leg" limbs carry the body'),
+          ...limbCommon('leg'),
+          splay,
+          lift,
+          stance: z
+            .enum(STANCES)
+            .optional()
+            .describe(
+              'How the foot meets the ground: plantigrade (whole sole), digitigrade (toes), unguligrade (hoof tips); left out, the foot suggests one',
+            ),
+          foot: footField('leg'),
+        })
+        .describe('A leg: carries the body; legs come in mirrored pairs'),
+      z
+        .strictObject({
+          role: z.literal('arm').describe('"arm" limbs are free for actions'),
+          ...limbCommon('arm'),
+          splay,
+          lift,
+          foot: footField('arm'),
+        })
+        .describe('An arm: hangs free, for grabbing and striking'),
+      z
+        .strictObject({
+          role: z.literal('wing').describe('"wing" limbs fold at rest and beat in the air'),
+          ...limbCommon('wing'),
+          membrane: membraneField('wing'),
+          foot: footField('wing'),
+        })
+        .describe('A wing: an arm-like chain carrying a membrane, folded at rest'),
+      z
+        .strictObject({
+          role: z.literal('fin').describe('"fin" limbs steer and beat in water'),
+          ...limbCommon('fin'),
+          membrane: membraneField('fin'),
+          foot: footField('fin'),
+        })
+        .describe('A fin or flipper: a short flat limb; null membrane makes a flipper'),
+      z
+        .strictObject({
+          role: z.literal('tentacle').describe('"tentacle" limbs curl and reach'),
+          ...limbCommon('tentacle'),
+          curl: range(-360, 360)
+            .default(0)
+            .describe(
+              'Total degrees the tentacle curls at rest, toward the belly; negative curls toward the back',
+            ),
+          curlStart: range(0, 0.95)
+            .default(0)
+            .describe('Share of the tentacle that stays straight before the curl begins'),
+          foot: footField('tentacle'),
+        })
+        .describe('A tentacle: a long tapering chain of up to 16 bones'),
+    ])
+    .describe('A limb; its role decides its fields and defaults');
 
   const partAttach = z.strictObject({
     on: z
@@ -214,6 +386,10 @@ export function buildBlueprintSchema(ids: ModuleIds = NO_IDS, defaults: PackDefa
       .optional()
       .describe('Degrees around the section from the top: 0 dorsal, 90 side, 180 belly'),
     side: side.optional().describe('Defaults to "both", or "center" when angle is 0 or 180'),
+    area: z
+      .enum(AREAS)
+      .optional()
+      .describe('Area-slot parts only: which area of "on" they cover (back, belly, sides, all)'),
   });
 
   const part = z.strictObject({
@@ -253,9 +429,26 @@ export function buildBlueprintSchema(ids: ModuleIds = NO_IDS, defaults: PackDefa
     .partial()
     .describe('Named colours. base, belly and accent always exist; add any others by name');
 
+  const fur = z
+    .strictObject({
+      length: range(0.002, 0.3).default(0.03).describe('Hair length in torso lengths'),
+      density: range(0, 1).default(0.8).describe('How thick the coat is'),
+      region: z
+        .union([z.enum(REGIONS), z.array(z.enum(REGIONS)).min(1).max(8)])
+        .default('all')
+        .describe(
+          'Where it grows: a layer region or a list of them, e.g. ["torso", "limbs", "tail"]',
+        ),
+    })
+    .describe('A coat of fur over the skin');
+
   const skin = z.strictObject({
     palette: palette.default({}),
     material: z.enum(SKIN_MATERIALS).default('skin').describe('Base surface under the patterns'),
+    fur: z
+      .union([fur, z.null()])
+      .optional()
+      .describe('Fur over the skin, where its region says; null removes an inherited coat'),
     layers: z
       .array(layer)
       .max(12)
@@ -273,14 +466,26 @@ export function buildBlueprintSchema(ids: ModuleIds = NO_IDS, defaults: PackDefa
       .describe('Sets pace, posture and idle behaviour'),
     gaits: z
       .array(moduleRef(ids.gait, 'Gait'))
-      .max(6)
+      .max(12)
       .optional()
-      .describe('Gaits it may use; by default every gait that suits its legs'),
+      .describe(
+        'Gaits it may use; by default every gait that suits its body; a list replaces the defaults only for the media its gaits serve',
+      ),
     actions: z
       .array(moduleRef(ids.action, 'Action'))
       .max(12)
       .optional()
       .describe('Actions it can perform; by default every action its body allows'),
+    media: z
+      .strictObject({
+        land: z.boolean().optional().describe('Walks (or slithers) on the ground'),
+        water: z.boolean().optional().describe('Swims'),
+        air: z.boolean().optional().describe('Flies; needs a wing'),
+      })
+      .optional()
+      .describe(
+        'Where it moves; each switch left out follows the body (land with legs, water with fins or tentacles on the torso and no legs, air with wings)',
+      ),
   });
 
   return z.strictObject({
@@ -305,6 +510,9 @@ export function buildBlueprintSchema(ids: ModuleIds = NO_IDS, defaults: PackDefa
         neck: neck.prefault({}),
         head: head.prefault({}),
         tail: tail.prefault({}),
+        muscle: range(0, 1)
+          .default(0.5)
+          .describe('How muscled the body is, 0 (smooth tubes) to 1 (heavily built)'),
       })
       .prefault({}),
     limbs: z

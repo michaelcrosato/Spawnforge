@@ -1,6 +1,7 @@
 import { Matrix4, Quaternion, Vector3 } from 'three';
 import type { CreatureSpec } from '../blueprint/creature.ts';
 import type { Issue } from '../blueprint/issues.ts';
+import { buildable, notBuilt } from '../blueprint/planned.ts';
 import { sweep } from '../geometry/kit.ts';
 import type { MotionData } from '../motion/controller.ts';
 import { motionData } from '../motion/gaits.ts';
@@ -160,10 +161,12 @@ const v3 = (v: Vector3): Vec3 => [v.x, v.y, v.z];
 
 /** Compiles a creature spec into meshes, a skeleton and a rig. Pure: same input, same output. */
 export function compileCreature(
-  spec: CreatureSpec,
+  input: CreatureSpec,
   registry: Registry,
   options: CompileOptions = {},
 ): CompiledCreature {
+  // Format 0.2 holds plan 2's whole vocabulary; build what exists and report the rest.
+  const spec = buildable(input);
   const quality = options.quality ?? 'medium';
   const cells = QUALITY_CELLS[quality];
   if (cells === undefined)
@@ -176,7 +179,8 @@ export function compileCreature(
     clock = now;
   };
   const L = spec.scale;
-  const warnings: Issue[] = [];
+  // What the format holds but the pipeline cannot draw yet is skipped below; say so.
+  const warnings: Issue[] = notBuilt(input, registry);
 
   // 1. Skeleton.
   const skeleton = buildSkeleton(spec, registry);

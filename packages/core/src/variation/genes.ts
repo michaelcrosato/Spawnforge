@@ -9,6 +9,7 @@ import {
   parsePath,
   type Step,
 } from '../blueprint/patch.ts';
+import { roleFieldsOnly } from '../blueprint/schema.ts';
 import { blueprintSchemaFor, resolveDocument } from '../blueprint/validate.ts';
 import { type ModuleKind, paramsJsonSchema, type Registry } from '../registry.ts';
 import type { Rng } from '../rng.ts';
@@ -20,6 +21,8 @@ interface Schema {
   minimum?: number;
   maximum?: number;
   enum?: unknown[];
+  const?: unknown;
+  default?: unknown;
   properties?: Record<string, Schema>;
   items?: Schema;
   anyOf?: Schema[];
@@ -60,6 +63,11 @@ const FIXED = new Set([
   'on',
   'side',
   'region',
+  // Format 0.2: counts and media stay as written until 9.6 designs breeding across them.
+  'count',
+  'forkAt',
+  'media',
+  'area',
 ]);
 
 const options = (node: Schema | undefined): Schema[] =>
@@ -69,6 +77,19 @@ function child(node: Schema | undefined, key: string): Schema | undefined {
   if (!node) return undefined;
   return (
     node.properties?.[key] ?? options(node).find((s) => s.properties?.[key])?.properties?.[key]
+  );
+}
+
+/** The variant of a union whose `role` (its discriminator) matches the value's. */
+function variantOf(node: Schema | undefined, value: Json): Schema | undefined {
+  const variants = options(node).filter((s) => s.properties?.role);
+  if (variants.length === 0) return node;
+  const role = value.role ?? 'leg';
+  return (
+    variants.find((s) => {
+      const r = s.properties?.role;
+      return r?.const === role || r?.default === role;
+    }) ?? node
   );
 }
 
@@ -93,7 +114,7 @@ function enumOf(node: Schema | undefined): unknown[] | undefined {
 
 /** Which module kind a `{ type, params }` object at this path refers to. */
 function moduleKindAt(path: string): ModuleKind | undefined {
-  if (/^parts\[[^\]]+\]$/.test(path) || /\.foot$/.test(path)) return 'part';
+  if (/^parts\[[^\]]+\]$/.test(path) || /\.(foot|membrane)$/.test(path)) return 'part';
   if (/^skin\.layers\[[^\]]+\]$/.test(path)) return 'pattern';
   if (/^motion\.gaits\[[^\]]+\]$/.test(path)) return 'gait';
   if (/^motion\.actions\[[^\]]+\]$/.test(path)) return 'action';
@@ -118,7 +139,11 @@ export function expand(blueprint: unknown, registry: Registry): { doc?: Json; er
     for (const [k, v] of Object.entries(out)) if (v === undefined) delete out[k];
     return out;
   };
-  for (const limb of (doc.limbs as Json[] | undefined) ?? []) limb.foot = inline(limb.foot);
+  for (const limb of (doc.limbs as Json[] | undefined) ?? []) {
+    roleFieldsOnly(limb);
+    if ('foot' in limb) limb.foot = inline(limb.foot);
+    if ('membrane' in limb) limb.membrane = inline(limb.membrane);
+  }
   const skin = doc.skin as Json | undefined;
   if (skin && Array.isArray(skin.layers)) skin.layers = skin.layers.map(inline);
   const motion = doc.motion as Json | undefined;
@@ -170,6 +195,8 @@ export function genesOf(doc: Json, registry: Registry): Gene[] {
       return;
     }
     if (!isRecord(value)) return;
+    // A union keyed by a field (limbs by `role`): use the variant this value is.
+    node = variantOf(node, value);
     const kind = moduleKindAt(path);
     const module =
       kind && typeof value.type === 'string' ? registry.get(kind, value.type) : undefined;

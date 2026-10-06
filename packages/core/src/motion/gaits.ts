@@ -8,7 +8,8 @@ export function motionData(spec: CreatureSpec, registry: Registry): MotionData {
   const gaits: GaitInfo[] = [];
   for (const ref of spec.motion.gaits) {
     const module = registry.get('gait', ref.type) as GaitModule | undefined;
-    if (!module) continue;
+    // Stubs (`planned`) validate but have nothing to run yet.
+    if (!module || module.planned) continue;
     const p = ref.params as Record<string, unknown>;
     const num = (key: string, fallback: number) =>
       typeof p[key] === 'number' ? (p[key] as number) : fallback;

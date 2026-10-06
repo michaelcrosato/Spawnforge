@@ -74,7 +74,9 @@ describe('createRegistry', () => {
 
   it('rejects defaults that name a module no pack defines', () => {
     expect(() =>
-      createRegistry([definePack({ id: 'a', modules: [horn], defaults: { foot: 'foot.hoof' } })]),
+      createRegistry([
+        definePack({ id: 'a', modules: [horn], defaults: { foot: { leg: 'foot.hoof' } } }),
+      ]),
     ).toThrow(/default foot names part "foot.hoof"/);
   });
 });

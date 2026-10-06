@@ -1,0 +1,11 @@
+{
+  "phase": 7,
+  "suite": "b",
+  "kind": "format eval for format 0.2 (milestone 7.3): suite B with the docs and validate only, since most of the new vocabulary is not built yet",
+  "date": "2026-10-06",
+  "model": "Claude Sonnet (Claude Code subagent, model alias \"sonnet\")",
+  "commit": "331ba69",
+  "tools": "spawnforge CLI: validate, list-modules, describe-module",
+  "docs": ["docs/blueprint.md", "docs/catalog.md", "examples/"],
+  "agents": "4 independent agents, 5 prompts each, no shared context"
+}

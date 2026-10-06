@@ -1,4 +1,10 @@
-import { blueprintSchemaFor, FORMAT, MODULE_KINDS, type ModuleKind } from '@spawnforge/core';
+import {
+  blueprintSchemaFor,
+  FORMAT,
+  MODULE_KINDS,
+  type ModuleKind,
+  ROLE_DEFAULTS,
+} from '@spawnforge/core';
 import { z } from 'zod';
 import { describeModule, getRegistry } from './commands.ts';
 import { compactJson } from './json.ts';
@@ -24,7 +30,8 @@ interface JsonProp {
   items?: JsonProp;
 }
 
-function typeOf(p: JsonProp): string {
+function typeOf(p: JsonProp & { const?: unknown }): string {
+  if (p.const !== undefined) return JSON.stringify(p.const);
   if (p.enum) return p.enum.map((v) => JSON.stringify(v)).join(' | ');
   if (p.anyOf) return p.anyOf.map(typeOf).join(' or ');
   if (p.type === 'array' && p.items) return `list of ${typeOf(p.items)}`;
@@ -55,6 +62,22 @@ export function renderCatalog(registry = getRegistry()): string {
     '`describe_module` tool for the same facts as JSON.',
     '',
   ];
+  // An index first: every id by kind, with the milestone that builds each stub.
+  lines.push(
+    '## At a glance',
+    '',
+    'Every module by kind. A milestone in brackets marks a stub: it validates, and compile skips it',
+    'until that milestone lands (`list-modules` gives the same as `planned`; `validate` lists what a',
+    'blueprint uses of it under `notBuilt`).',
+    '',
+  );
+  for (const kind of MODULE_KINDS) {
+    const modules = registry.list(kind);
+    if (modules.length === 0) continue;
+    const ids = modules.map((m) => `\`${m.id}\`${m.planned ? ` (${m.planned})` : ''}`);
+    lines.push(`- **${KIND_TITLES[kind]}:** ${ids.join(', ')}`);
+  }
+  lines.push('');
   lines.push(...renderFields(registry));
   for (const kind of MODULE_KINDS) {
     const modules = registry.list(kind);
@@ -63,6 +86,16 @@ export function renderCatalog(registry = getRegistry()): string {
     for (const module of modules) {
       const d = describeModule({ id: module.id, kind }, registry);
       lines.push(`### \`${module.id}\``, '', d.summary, '', d.usage, '');
+      if (d.planned)
+        lines.push(
+          `**Not built yet** (plan milestone ${d.planned}): it validates, but compile skips it and warns \`not_built\`.`,
+          '',
+        );
+      if (d.provides)
+        lines.push(
+          `Provides ${d.provides.map((p) => `\`${p}\``).join(', ')}, which actions can need.`,
+          '',
+        );
       if (d.details) {
         const facts = Object.entries(d.details)
           .map(([k, v]) => `${k}: \`${JSON.stringify(v)}\``)
@@ -115,6 +148,9 @@ interface JsonNode extends JsonProp {
   properties?: Record<string, JsonNode>;
   additionalProperties?: JsonNode | boolean;
   prefault?: unknown;
+  oneOf?: JsonNode[];
+  items?: JsonNode;
+  const?: unknown;
 }
 
 /** Follows anyOf/items to the object schema inside a property, if any. */
@@ -137,7 +173,17 @@ function renderFields(registry = getRegistry()): string[] {
   }) as JsonNode;
   const top = schema.properties ?? {};
   const body = objectIn(top.body)?.properties ?? {};
-  const limb = objectIn(top.limbs);
+  // Limbs are one schema per role; each role gets its own table.
+  const limbItems = (top.limbs?.items ?? objectIn(top.limbs)) as JsonNode | undefined;
+  const roles = [
+    ...((limbItems?.oneOf ?? []) as JsonNode[]),
+    ...((limbItems?.anyOf ?? []) as JsonNode[]),
+  ].filter((o) => o.properties?.role);
+  const roleName = (o: JsonNode) => {
+    const r = o.properties?.role as (JsonNode & { const?: unknown }) | undefined;
+    return String(r?.const ?? r?.default ?? '?');
+  };
+  const limb = roles[0] ?? objectIn(top.limbs);
   const part = objectIn(top.parts);
   const skin = objectIn(top.skin)?.properties ?? {};
   const sections: [string, JsonNode | undefined][] = [
@@ -146,13 +192,23 @@ function renderFields(registry = getRegistry()): string[] {
     ['body.neck', objectIn(body.neck)],
     ['body.head', objectIn(body.head)],
     ['body.tail', objectIn(body.tail)],
-    ['limbs[]', limb],
-    ['limbs[].attach', objectIn(limb?.properties?.attach)],
+    ...roles.map((o): [string, JsonNode | undefined] => [
+      `limbs[] with "role": "${roleName(o)}"`,
+      o,
+    ]),
+    [
+      `limbs[].attach (at and angle default by role: ${Object.entries(ROLE_DEFAULTS)
+        .map(([role, d]) => `${role} ${d.at} and ${d.angle}`)
+        .join(', ')})`,
+      objectIn(limb?.properties?.attach),
+    ],
     ['parts[]', part],
     ['parts[].attach', objectIn(part?.properties?.attach)],
     ['skin', objectIn(top.skin)],
+    ['skin.fur', objectIn(skin.fur)],
     ['skin.layers[] (every layer)', objectIn(skin.layers)],
     ['motion', objectIn(top.motion)],
+    ['motion.media', objectIn(objectIn(top.motion)?.properties?.media)],
   ];
   const out = [
     '## Blueprint fields',
@@ -172,7 +228,7 @@ function renderFields(registry = getRegistry()): string[] {
         !p.description
       )
         continue;
-      const nested = objectIn(p) && !['foot', 'palette'].includes(name);
+      const nested = objectIn(p) && !['foot', 'membrane', 'palette'].includes(name);
       const type = nested && p.type !== 'array' ? 'object (below)' : typeOf(p);
       const def = p.default === undefined ? '' : `\`${compactJson(p.default)}\``;
       out.push(

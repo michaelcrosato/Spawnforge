@@ -41,7 +41,9 @@ and export evals passed (`eval/runs/`).
 Next is [plan 2](docs/plan-2.md): anatomy and surfaces, the bodies plan 1 deferred (wings, fins,
 tentacles, shells, extra heads), motion for games (run, jump, swim, fly, hits, death), texture
 maps and levels of detail in exports, installable packages, and editing tools. Its status table
-tracks each milestone.
+tracks each milestone. Done so far: 7.1 (carry-overs), 7.2 (`migrate` and the corpus test) and
+7.3 (format 0.2, which holds all of plan 2's vocabulary as stub modules before it is built; its
+format eval scored 20/20 on suite B, `eval/runs/2026-10-06-phase7-format/`).
 
 ## Repo map
 

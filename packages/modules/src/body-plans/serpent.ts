@@ -26,6 +26,6 @@ export default defineBodyPlan({
       material: 'scales',
       layers: [{ type: 'countershade' }, { type: 'scales', size: 0.025 }],
     },
-    motion: { temperament: 'stalking', gaits: ['slither'] },
+    motion: { temperament: 'stalking' },
   },
 });

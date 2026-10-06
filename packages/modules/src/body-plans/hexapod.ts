@@ -2,7 +2,7 @@ import { defineBodyPlan } from '@spawnforge/core';
 
 export default defineBodyPlan({
   id: 'hexapod',
-  summary: 'Six sprawled legs on a low, wide body with a chitin shell; runs a tripod gait.',
+  summary: 'Six sprawled legs on a low, wide body with chitin skin; runs a tripod gait.',
   tags: ['legs:6', 'insect', 'sprawl'],
   preset: {
     scale: 0.8,
@@ -63,6 +63,6 @@ export default defineBodyPlan({
       material: 'chitin',
       layers: [{ type: 'countershade', softness: 0.2 }],
     },
-    motion: { temperament: 'skittish', gaits: ['tripod', 'walk'] },
+    motion: { temperament: 'skittish' },
   },
 });

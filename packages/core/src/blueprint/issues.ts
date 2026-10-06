@@ -9,10 +9,51 @@ const HINTS: Record<string, string> = {
   'body.torso.size': 'the torso length is the blueprint `scale` (metres); widths use "radius"',
   'body.head.size': 'use "length" and "radius"',
   colour: 'spelled "color"',
-  wings: 'wings are not in this version; see docs/plan.md "Later"',
+  wings: 'wings are limbs: add { "id": "wing", "role": "wing" } to the top-level "limbs" list',
+  fins: 'fins are limbs ({ "role": "fin" }) for pairs, or fin parts on the midline (list_modules)',
+  tentacles: 'tentacles are limbs: add { "id": "tentacle", "role": "tentacle" } to "limbs"',
   legs: 'legs are items in the top-level "limbs" list with "role": "leg"',
   arms: 'arms are items in the top-level "limbs" list with "role": "arm"',
   size: 'sizes are relative: lengths and radii are multiples of the blueprint `scale`',
+  'body.heads': 'heads come one per neck: set "body": { "neck": { "count": 3 } }',
+  'body.head.count': 'heads come one per neck: set "body": { "neck": { "count": 3 } }',
+  'body.tails': 'set "body": { "tail": { "count": 2 } }',
+  'body.fur': 'fur is a coat over the skin: set "skin": { "fur": {} }',
+  'limbs.hand': 'a hand goes in "foot", whatever the limb (list_modules shows the hand modules)',
+  'limbs.count':
+    'write one entry per pair ("side": "both" mirrors it), each pair with its own attach.at or angle',
+  'limbs.curl': 'only tentacles curl: set "role": "tentacle", or remove it',
+  'limbs.curlStart': 'only tentacles curl: set "role": "tentacle", or remove it',
+  'limbs.membrane':
+    'only wings and fins carry a membrane: set "role": "wing" or "fin", or remove it',
+  'limbs.stance': 'only legs have a stance; remove it',
+  'limbs.splay': 'only legs and arms take "splay"; remove it',
+  'limbs.lift': 'only legs and arms take "lift"; remove it',
+  'parts.attach.region':
+    'coverings use "area" (back, belly, sides or all); "region" belongs to skin layers',
+  'skin.layers.area': 'layers use "region" (all, back, belly, head, torso, limbs, tail, wings)',
+  'skin.fur.color': 'fur takes its colours from the palette and the pattern layers',
+  'motion.fly': 'say where it moves: "media": { "air": true } (it needs a wing limb)',
+  'motion.flying': 'say where it moves: "media": { "air": true } (it needs a wing limb)',
+  'motion.flies': 'say where it moves: "media": { "air": true } (it needs a wing limb)',
+  'motion.swim': 'say where it moves: "media": { "water": true }',
+  'motion.swims': 'say where it moves: "media": { "water": true }',
+  'motion.swimming': 'say where it moves: "media": { "water": true }',
+  'motion.aquatic': 'say where it moves: "media": { "water": true }',
+};
+
+/** Fixes for values models reach for that the format spells another way, keyed `path:value`. */
+const VALUE_HINTS: Record<string, string> = {
+  'skin.material:fur':
+    'fur is a coat over a material: keep "material" and add "skin": { "fur": {} }',
+  'skin.material:feathers': 'only wings have feathers, as the membrane of a wing limb',
+  'limbs.role:flipper': 'a flipper is a fin without a membrane: "role": "fin", "membrane": null',
+  'limbs.role:pincer': 'pincers are hands: an arm whose "foot" is a pincer module',
+  'limbs.role:claw': 'claws are feet or hands: a leg or arm whose "foot" has claws',
+  'limbs.role:antenna': 'antennae are parts (list_modules with kind "part")',
+  'limbs.role:tail': 'tails are body sections: set body.tail (body.tail.count for several)',
+  'limbs.role:head': 'heads come one per neck: set body.neck.count',
+  'limbs.role:neck': 'necks are body sections: set body.neck (body.neck.count for several)',
 };
 
 /** A problem found in a blueprint, written for a model to read and fix. */
@@ -107,6 +148,31 @@ export function unwrap(schema: z.ZodType): z.ZodType {
   return s;
 }
 
+/**
+ * The option of a union that fits `value`: the first whose shape matches, preferring an object
+ * whose literal fields (a discriminator such as `role`) agree with the value's.
+ */
+function pickOption(options: readonly z.ZodType[], value: unknown): z.ZodType | undefined {
+  const shaped = options.filter((o) => matchesShape(o, value));
+  if (isRecord(value)) {
+    const agrees = shaped.find((o) => {
+      const shape = defOf(unwrap(o)).shape ?? {};
+      // Literal fields the value sets, or that default (a missing discriminator takes the
+      // literal's default); optional literals it leaves out, such as `remove`, say nothing.
+      const literals = Object.entries(shape)
+        .filter(([, s]) => defOf(unwrap(s)).type === 'literal')
+        .map(([key, s]) => ({
+          allowed: (defOf(unwrap(s)) as { values?: unknown[] }).values ?? [],
+          own: value[key] ?? (defOf(s) as { defaultValue?: unknown }).defaultValue,
+        }))
+        .filter((l) => l.own !== undefined);
+      return literals.length > 0 && literals.every((l) => l.allowed.includes(l.own));
+    });
+    if (agrees) return agrees;
+  }
+  return shaped[0];
+}
+
 function matchesShape(schema: z.ZodType, value: unknown): boolean {
   const t = defOf(unwrap(schema)).type;
   if (Array.isArray(value)) return t === 'array';
@@ -120,7 +186,7 @@ function childSchema(schema: z.ZodType, key: PathKey, value: unknown): z.ZodType
   let s = unwrap(schema);
   let def = defOf(s);
   if (def.type === 'union' && def.options) {
-    s = unwrap(def.options.find((o) => matchesShape(o, value)) ?? def.options[0] ?? s);
+    s = unwrap(pickOption(def.options, value) ?? def.options[0] ?? s);
     def = defOf(s);
   }
   if (def.type === 'object') return def.shape?.[String(key)] ?? def.catchall;
@@ -151,7 +217,7 @@ export function objectKeys(schema: z.ZodType, value: unknown): string[] | undefi
   let s = unwrap(schema);
   let def = defOf(s);
   if (def.type === 'union' && def.options) {
-    s = unwrap(def.options.find((o) => matchesShape(o, value)) ?? s);
+    s = unwrap(pickOption(def.options, value) ?? s);
     def = defOf(s);
   }
   return def.type === 'object' && def.shape ? Object.keys(def.shape) : undefined;
@@ -227,6 +293,8 @@ const quoteList = (values: readonly unknown[]) => values.map((v) => JSON.stringi
 
 interface RawIssue {
   code: string;
+  discriminator?: string;
+  options?: unknown[];
   path: PropertyKey[];
   message: string;
   keys?: string[];
@@ -250,12 +318,14 @@ export function fromZodIssues(
   schema: z.ZodType,
   input: unknown,
   pathString: (path: readonly PathKey[]) => string,
+  /** Hints from the packs (`Registry.hints()`), which may name their modules. */
+  packHints: Readonly<Record<string, string>> = {},
 ): Issue[] {
   const out: Issue[] = [];
   for (const raw of rawIssues as RawIssue[]) {
     const path = raw.path.map((k) => (typeof k === 'number' ? k : String(k)));
     const at = locate(schema, input, path);
-    const issue = convert(raw, path, at, schema, input, pathString);
+    const issue = convert(raw, path, at, schema, input, pathString, packHints);
     out.push(...issue);
   }
   return out;
@@ -268,8 +338,11 @@ function convert(
   schema: z.ZodType,
   input: unknown,
   pathString: (path: readonly PathKey[]) => string,
+  packHints: Readonly<Record<string, string>>,
 ): Issue[] {
   const p = pathString(path);
+  const hints: Record<string, string> = { ...HINTS, ...packHints };
+  const valueHints: Record<string, string> = { ...VALUE_HINTS, ...packHints };
   const err = (code: string, message: string, extra: Partial<Issue> = {}): Issue => ({
     severity: 'error',
     path: p,
@@ -283,12 +356,12 @@ function convert(
       const known = at.schema ? (objectKeys(at.schema, at.value) ?? []) : [];
       return (raw.keys ?? []).map((key) => {
         const where = path.filter((k) => typeof k === 'string').join('.');
-        const scoped = Object.keys(HINTS)
-          .filter((h) => h.startsWith(`${where}.`))
+        const scoped = Object.keys(hints)
+          .filter((h) => h.startsWith(`${where}.`) && !h.includes(':'))
           .map((h) => h.slice(where.length + 1));
-        const hintKey = HINTS[`${where}.${key}`] !== undefined ? key : didYouMean(key, scoped);
+        const hintKey = hints[`${where}.${key}`] !== undefined ? key : didYouMean(key, scoped);
         const hint =
-          (hintKey !== undefined ? HINTS[`${where}.${hintKey}`] : undefined) ?? HINTS[key];
+          (hintKey !== undefined ? hints[`${where}.${hintKey}`] : undefined) ?? hints[key];
         const guess = hint === undefined ? didYouMean(key, known) : undefined;
         return {
           severity: 'error' as const,
@@ -333,6 +406,15 @@ function convert(
     case 'invalid_value': {
       const values = raw.values ?? [];
       const v = at.value;
+      const where = path.filter((k) => typeof k === 'string').join('.');
+      const valueHint = typeof v === 'string' ? valueHints[`${where}:${v}`] : undefined;
+      if (valueHint)
+        return [
+          err('invalid_value', `${describeValue(v)} is not allowed`, {
+            expected: `one of ${quoteList(values)}`,
+            fix: valueHint,
+          }),
+        ];
       const guess = typeof v === 'string' ? didYouMean(v, values.map(String)) : undefined;
       const sibling = typeof v === 'string' ? siblingWith(schema, input, path, v) : undefined;
       const field = path.at(-1);
@@ -368,6 +450,19 @@ function convert(
       ];
     }
     case 'invalid_union': {
+      // A union keyed by a field (limbs by `role`): the value of that field is not one it knows.
+      if (raw.discriminator) {
+        const values = (raw.options ?? []).filter((o) => o !== null && o !== undefined);
+        return convert(
+          { ...raw, code: 'invalid_value', values },
+          path,
+          locate(schema, input, path),
+          schema,
+          input,
+          pathString,
+          packHints,
+        );
+      }
       // Report the branch that matches the value's shape (a number vs a list, a string vs an object).
       const v = at.value;
       const branches = raw.errors ?? [];
@@ -381,6 +476,7 @@ function convert(
           schema,
           input,
           pathString,
+          packHints,
         );
       }
       const shapes = options.map((o) => defOf(unwrap(o)).type).join(' or ');

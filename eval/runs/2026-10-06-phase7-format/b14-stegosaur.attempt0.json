@@ -1,0 +1,65 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Stegosaur",
+  "seed": 14,
+  "extends": "quadruped",
+  "scale": 2.5,
+  "body": {
+    "torso": { "radius": [0.16, 0.25, 0.27, 0.17], "arch": 0.2, "pitch": -10 },
+    "neck": { "length": 0.3, "radius": [0.06, 0.11], "pitch": 5, "segments": 3 },
+    "head": { "shape": "snout", "length": 0.2, "radius": 0.06, "pitch": -25 },
+    "tail": { "length": 1.2, "radius": [0.12, 0.015], "pitch": 5, "curl": 0, "segments": 12 }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "length": 0.5,
+      "radius": [0.09, 0.05],
+      "attach": { "at": 0.15, "angle": 100 },
+      "foot": { "type": "foot.pad", "nails": 4 }
+    },
+    {
+      "id": "hindleg",
+      "length": 0.75,
+      "radius": [0.12, 0.06],
+      "attach": { "at": 0.85, "angle": 100 },
+      "foot": { "type": "foot.pad", "nails": 3 }
+    }
+  ],
+  "parts": [
+    { "id": "eyes", "params": { "size": 0.015 } },
+    {
+      "id": "plates",
+      "type": "plates.row",
+      "attach": { "on": "spine", "from": 0.12, "to": 0.8, "angle": 0 },
+      "params": {
+        "count": 16,
+        "height": [0.08, 0.18, 0.28, 0.34, 0.3, 0.2, 0.1],
+        "alternate": true,
+        "shape": "kite",
+        "color": "#c9a77a",
+        "edgeColor": "accent"
+      }
+    },
+    {
+      "id": "tail-spikes",
+      "type": "spikes.row",
+      "attach": { "on": "tail", "from": 0.6, "to": 0.95, "angle": 50, "side": "both" },
+      "params": { "count": 2, "height": 0.2, "width": 0.03, "curve": 25 }
+    }
+  ],
+  "skin": {
+    "palette": { "base": "#6b7a4a", "belly": "#bdb48a", "accent": "#a8452a" },
+    "material": "scales",
+    "layers": [
+      { "type": "countershade" },
+      { "type": "mottle", "color": "#3f4a2c", "scale": 0.2, "coverage": 0.4 },
+      { "type": "scales", "size": 0.04 }
+    ]
+  },
+  "motion": {
+    "temperament": "lumbering",
+    "gaits": ["walk"],
+    "actions": ["idle", "look", "bite"]
+  }
+}

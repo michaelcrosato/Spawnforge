@@ -1,0 +1,53 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Red Dragon",
+  "seed": 101,
+  "extends": "quadruped",
+  "scale": 1.6,
+  "body": {
+    "torso": { "radius": [0.15, 0.2, 0.18, 0.13] },
+    "neck": { "length": 0.45, "radius": [0.08, 0.12], "pitch": 35 },
+    "head": { "shape": "wedge", "length": 0.34, "radius": 0.11 },
+    "tail": { "length": 1.1, "radius": [0.1, 0.012], "curl": 15 }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "length": 0.6,
+      "foot": { "type": "foot.claw", "toes": 3, "clawLength": 0.05 }
+    },
+    {
+      "id": "hindleg",
+      "length": 0.65,
+      "foot": { "type": "foot.claw", "toes": 3, "clawLength": 0.05 }
+    },
+    {
+      "id": "wing",
+      "role": "wing",
+      "length": 1.5,
+      "membrane": { "type": "membrane.bat", "fingers": 4 }
+    }
+  ],
+  "parts": [
+    {
+      "id": "horns",
+      "type": "horn.curved",
+      "attach": { "on": "head", "at": 0.8, "angle": 50 },
+      "params": { "length": 0.4, "curve": 50, "aim": "back" }
+    },
+    {
+      "id": "tail-spikes",
+      "type": "spikes.row",
+      "attach": { "on": "tail", "from": 0.05, "to": 0.95, "angle": 0 },
+      "params": { "count": 14, "height": [0.06, 0.1, 0.04], "curve": 25 }
+    },
+    { "id": "teeth", "type": "teeth.row", "params": { "count": 10, "fangs": 2 } },
+    { "id": "eyes", "params": { "pupil": "slit", "irisColor": "#ffb020" } }
+  ],
+  "skin": {
+    "palette": { "base": "#a81c14", "belly": "#d9a35a", "accent": "#4a0c08" },
+    "material": "scales",
+    "layers": [{ "type": "countershade" }, { "type": "scales", "size": 0.03, "bump": 0.5 }]
+  },
+  "motion": { "temperament": "aggressive", "actions": ["bite", "roar", "look", "idle"] }
+}

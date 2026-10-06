@@ -2,7 +2,13 @@ import { colorRef, definePart } from '@spawnforge/core';
 import { z } from 'zod';
 
 const params = z.strictObject({
-  count: z.number().int().min(1).max(60).default(7).describe('Spikes in the row'),
+  count: z
+    .number()
+    .int()
+    .min(1)
+    .max(60)
+    .default(7)
+    .describe('Spikes in the row (in each row, with side "both")'),
   height: z
     .union([z.number().min(0.01).max(0.5), z.array(z.number().min(0.01).max(0.5)).min(1).max(16)])
     .default(0.08)

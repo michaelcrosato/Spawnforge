@@ -69,12 +69,12 @@ This table is plan 2's contract, as plan 1's scope table was. New ideas go to th
 
 | Area | Plan 2 | Later |
 | --- | --- | --- |
-| Body plans | `octopod` (eight legs), `centaur`, `wyvern` (wings as forelimbs) and `fish` | Different heads on one body, segmented bodies (caterpillars), colonies |
+| Body plans | `octopod` (eight legs), `centaur`, `wyvern` (wings as forelimbs) and `fish` | Different heads on one body, segmented bodies (caterpillars), colonies; a `bat` preset; necks of different lengths on one body |
 | Body sections | Muscle masses, joints and body shape; an S-curved neck; several identical necks and heads; several or split tails | General body graphs |
 | Limbs | Stance (plantigrade, digitigrade, unguligrade); wings (membrane, feathered, and insect wings with wing cases); fins and flippers; tentacles | Walking on tentacles, prehensile tails as limbs |
-| Parts | Hooves, paws, pads, talons, hands, beaks, mandibles, pincers, antennae, shells, armour plates and bands, quills, frills, hoods, sails, dorsal and tail fins | Body feathers, manes and hair, worn gear |
-| Textures | Distinct skin, hide, scales and chitin; fur shells; scars, bioluminescence, slime, warts, veins, rosettes, bands | Wounds that appear in play, wetness from water |
-| Animation | Gaits that change with speed; run, gallop, bound; jump and pounce; swimming; flight (flap, glide, hover, take off, land); hit reactions; death | Ragdolls and physics, climbing, burrowing, herd and flock behaviour |
+| Parts | Hooves, paws, pads, talons, hands, beaks, mandibles, pincers, antennae, shells, armour plates and bands, quills, frills, hoods, sails, dorsal and tail fins | Body feathers, manes and hair, worn gear; a stinger that continues the tail (with a venom bulb); several rows of teeth; a ring frill; stalked eyes as one part; fin tip colours; glowing eyes |
+| Textures | Distinct skin, hide, scales and chitin; fur shells; scars, bioluminescence, slime, warts, veins, rosettes, bands | Wounds that appear in play, wetness from water; fur colour and length per region; solid tints for a region or a tip (a white tail tip); finer regions (neck, arms, legs, feet) |
+| Animation | Gaits that change with speed; run, gallop, bound; jump and pounce; swimming; flight (flap, glide, hover, take off, land); hit reactions; death | Ragdolls and physics, climbing, burrowing, herd and flock behaviour; a slug's crawl; curling into a ball; a quadruped rearing to run on two legs; resting wing poses |
 | Export and runtime | Buildable npm packages; texture maps from UV atlases; levels of detail; crowds; a GPU benchmark; engine guides | KTX2 texture compression, engine plug-ins, Three.js past r186 |
 | Tools | `diff`, `migrate`, an underside view, cadence and sibling-field checks, scenario files for renders and analysis, click-to-place parts, a static gallery, quality and motion reviews in the evals | Submissions to a hosted gallery, an in-game editor for players |
 
@@ -109,7 +109,7 @@ since anatomy comes before the new vocabulary.
 | --- | --- | --- | --- | --- |
 | [7.1 Carry-overs](#71-carry-overs-and-tidying) | high (lowered) | Small, local fixes, each specified here and testable | | Done ([#10](https://github.com/michaelcrosato/Spawnforge/pull/10)) |
 | [7.2 Migrations](#72-migrations-a-command-and-a-corpus-test) | high (lowered) | The migration chain exists; this adds a command, writers and a corpus test | | Done ([#11](https://github.com/michaelcrosato/Spawnforge/pull/11)) |
-| [7.3 Format 0.2](#73-format-02-the-new-vocabulary-and-a-format-eval) | **max (raised)** | The format is the contract for models, saved files and phases 8–12 | 7.2 | Not started |
+| [7.3 Format 0.2](#73-format-02-the-new-vocabulary-and-a-format-eval) | **max (raised)** | The format is the contract for models, saved files and phases 8–12 | 7.2 | Done ([#12](https://github.com/michaelcrosato/Spawnforge/pull/12)) |
 | [7.4 Rig lists](#74-rig-lists-without-a-visible-change) | xhigh (confirmed) | A wide refactor, but unchanged goldens are a strict oracle | 7.3 | Not started |
 | [7.5 Eval and test tools](#75-eval-and-test-tools) | high (lowered) | Scripts and harnesses in the style of plan 1's, with clear outputs | | Not started |
 | [7.6 Buildable packages](#76-buildable-packages) | high (lowered) | Standard tooling; an install test is the oracle | | Not started |
@@ -199,8 +199,10 @@ Follow [eval/README.md](../eval/README.md), as plan 1 did:
 **Versions, goldens and looks**
 
 - The format becomes `spawnforge/0.2` in milestone 7.3. It stays open until 12.3 freezes it: until
-  then, additions go in, and changes to 0.1 fields extend the one 0.1 → 0.2 migration. After 12.3,
-  any schema change bumps the format and adds a migration.
+  then, additions go in. No value a blueprint can write changes meaning in plan 2: new behaviour
+  comes as new fields, modules and defaults, so files saved as 0.1 or early 0.2 stay correct. A
+  milestone that must change a meaning bumps the format and adds a step that runs on 0.2 files.
+  After 12.3, any schema change bumps the format and adds a migration.
 - In 0.x the pipeline may change how a blueprint looks. A milestone that moves vertices re-records
   the golden fingerprints once (`UPDATE_GOLDEN=1 pnpm test`), re-renders the examples
   (`pnpm render:examples`) and says why in the commit and the changelog.
@@ -590,8 +592,9 @@ decide it first, as a max step.
   that follows the jaw, and an inner mouth that darkens toward the throat.
 - **Teeth**: seated in the gums, sized along the row (incisors, canines, molars), and dense by
   default; `teeth.row` gets parameters for fangs and spacing. Tooth sizes follow the head rather
-  than the torso, so a long serpent's fangs stop reading as planks; the 0.1 → 0.2 migration
-  converts saved sizes so old creatures keep their teeth.
+  than the torso, so a long serpent's fangs stop reading as planks: new head-relative size
+  parameters with defaults, while sizes a blueprint already writes keep meaning torso lengths
+  (no value changes meaning in plan 2; see 7.3's design).
 - **Eyes**: smaller defaults and softer gloss; eyelids that close to blink (exported as lid
   bones, not squashed eyeballs); brow ridges.
 - **Skull**: nostrils, cheekbones and a brow, as SDF details at the head's scale.
@@ -599,7 +602,7 @@ decide it first, as a max step.
 
 **Done when** the PR shows head views (`render --views head`) of every example, the bite and roar
 filmstrips show the lips and tongue moving with the jaw, exported blinks use the lids, the
-corpus test passes with the extended migration, and the goldens are re-recorded.
+corpus test passes, and the goldens are re-recorded.
 
 ### 8.4 Materials and new pattern layers
 
@@ -612,7 +615,8 @@ main risk.
   - `scales`: overlapping scales running along the body, not a Voronoi mosaic;
   - `chitin`: segmented plates with seams and a clearcoat-like sheen;
   - `fur`: shell fur, at most 16 shells along the normal drawn as one instanced draw call, off at
-    low quality.
+    low quality. It takes the colours of the skin under it (palette and layers), and never grows
+    on wing or fin membranes (as `blueprint.md` already says).
 - New pattern modules: `scars`, `bioluminescence` (emissive, pulsing), `slime` (wet gloss and
   drips), `warts` (bump; plan.md makes detail under two grid cells a shader matter), `veins`,
   `rosettes` and `bands`; denser `spots` by default.
@@ -697,7 +701,8 @@ and spread (a new `render --pose spread`), walk without wings passing through th
 **Effort: xhigh (confirmed).** Parts with bones and springs are a new capability for part
 modules, designed in 7.3's rig sketch, with tests as the oracle.
 
-- **Tentacle limbs**: up to 16 segments, tapered and spring-driven, with a rest curl. They curl
+- **Tentacle limbs**: up to 16 segments, tapered and spring-driven, with a rest curl (positive
+  toward the belly, as the format says). They curl
   and reach by cyclic coordinate descent, as the neck already does, or by FABRIK, which plan.md
   planned for long chains but plan 1 never needed. Suckers are a pattern or a part.
 - **Parts with bones**: a part module may declare bone chains with spring settings (eyes already

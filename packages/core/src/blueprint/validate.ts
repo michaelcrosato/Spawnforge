@@ -1,5 +1,13 @@
 import { z } from 'zod';
-import type { ActionModule, Feature, GaitModule, PartModule, Registry } from '../registry.ts';
+import type {
+  ActionModule,
+  GaitModule,
+  Medium,
+  ModuleKind,
+  Need,
+  PartModule,
+  Registry,
+} from '../registry.ts';
 import { createRng } from '../rng.ts';
 import { harmonyPalette, toHex } from './colors.ts';
 import type {
@@ -11,16 +19,21 @@ import type {
   PartSpec,
   SideName,
 } from './creature.ts';
+import { headSpacing, instanceNames } from './instances.ts';
 import { formatPath, fromZodIssues, type Issue, type PathKey } from './issues.ts';
 import { cloneJson, isRecord, mergeBlueprint } from './merge.ts';
 import { migrate } from './migrate.ts';
 import { isColorField, normalizeBlueprint, normalizeModules } from './normalize.ts';
+import { notBuilt } from './planned.ts';
 import {
   type BlueprintDoc,
   type BlueprintSchema,
   buildBlueprintSchema,
   DEFAULT_PALETTE,
+  type LimbRoleName,
+  MEDIA,
   REGIONS,
+  type STANCES,
 } from './schema.ts';
 import { didYouMean } from './suggest.ts';
 
@@ -35,8 +48,9 @@ export function blueprintSchemaFor(registry: Registry): BlueprintSchema {
     schema = buildBlueprintSchema(
       {
         bodyPlan: registry.ids('bodyPlan'),
-        part: parts.filter((p) => p.slot !== 'foot').map((p) => p.id),
+        part: parts.filter((p) => p.slot !== 'foot' && p.slot !== 'membrane').map((p) => p.id),
         foot: parts.filter((p) => p.slot === 'foot').map((p) => p.id),
+        membrane: parts.filter((p) => p.slot === 'membrane').map((p) => p.id),
         pattern: registry.ids('pattern'),
         gait: registry.ids('gait'),
         action: registry.ids('action'),
@@ -52,15 +66,45 @@ export function blueprintSchemaFor(registry: Registry): BlueprintSchema {
 
 type Params = Record<string, unknown>;
 
+/** A module in a limb's slot (`foot`, `membrane`), with its parameters resolved. */
+export interface SlotRef {
+  type: string;
+  params: Params;
+}
+
+/** One limb after defaults: every role's fields, with those its role lacks at their neutral values. */
+export interface ResolvedLimb {
+  id: string;
+  role: LimbRoleName;
+  attach: { on: string; at: number; side: 'both' | 'left' | 'right' | 'center'; angle: number };
+  length: number;
+  segments: number;
+  radius: number | number[];
+  muscle: number | undefined;
+  splay: number;
+  lift: number;
+  stance: (typeof STANCES)[number] | undefined;
+  curl: number;
+  curlStart: number;
+  foot: SlotRef | null;
+  membrane: SlotRef | null;
+}
+
+/** A coat of fur, resolved. */
+export interface ResolvedFur {
+  length: number;
+  density: number;
+  region: (typeof REGIONS)[number][];
+}
+
 /** A blueprint after merging, defaults and module parameters, before mirroring. */
 export interface ResolvedDoc extends Omit<BlueprintDoc, 'limbs' | 'parts' | 'skin' | 'motion'> {
-  limbs: (Omit<BlueprintDoc['limbs'][number], 'foot'> & {
-    foot: { type: string; params: Params } | null;
-  })[];
+  limbs: ResolvedLimb[];
   parts: (BlueprintDoc['parts'][number] & { params: Params })[];
   skin: {
     palette: Record<string, string>;
     material: BlueprintDoc['skin']['material'];
+    fur: ResolvedFur | null;
     layers: {
       type: string;
       id: string | undefined;
@@ -73,6 +117,7 @@ export interface ResolvedDoc extends Omit<BlueprintDoc, 'limbs' | 'parts' | 'ski
     temperament: BlueprintDoc['motion']['temperament'];
     gaits: ModuleRefSpec[];
     actions: ModuleRefSpec[];
+    media: Record<Medium, boolean>;
   };
 }
 
@@ -83,6 +128,8 @@ interface ResolveOutcome {
   warnings: Issue[];
   /** Ids of items dropped while repairing (references to them are not reported again). */
   dropped: Set<string>;
+  /** The blueprint merged with its preset, before defaults: what was written. */
+  written?: Record<string, unknown>;
 }
 
 type Path = (string | number)[];
@@ -184,7 +231,7 @@ export function resolveDocument(input: unknown, registry: Registry): ResolveOutc
   // still run and every problem is reported in one pass.
   let working = merged;
   if (!parsed.success) {
-    errors.push(...fromZodIssues(parsed.error.issues, schema, merged, pathOf));
+    errors.push(...fromZodIssues(parsed.error.issues, schema, merged, pathOf, registry.hints()));
     working = cloneJson(merged);
     for (let round = 0; round < 4 && !parsed.success; round++) {
       const paths = parsed.error.issues
@@ -217,10 +264,15 @@ export function resolveDocument(input: unknown, registry: Registry): ResolveOutc
     const result = s.safeParse(value);
     if (!result.success) {
       errors.push(
-        ...fromZodIssues(result.error.issues, s, value, (p) =>
-          formatPath([...prefix, ...p], working, (item) =>
-            isRecord(item) ? userIndex.get(item) : undefined,
-          ),
+        ...fromZodIssues(
+          result.error.issues,
+          s,
+          value,
+          (p) =>
+            formatPath([...prefix, ...p], working, (item) =>
+              isRecord(item) ? userIndex.get(item) : undefined,
+            ),
+          registry.hints(),
         ),
       );
       // Drop just the offending fields so later checks still see the rest.
@@ -238,20 +290,26 @@ export function resolveDocument(input: unknown, registry: Registry): ResolveOutc
   };
 
   const rawLimbs = Array.isArray(working.limbs) ? working.limbs : [];
-  const feet = rawLimbs.map((limb, i) => {
-    if (!isRecord(limb)) return undefined;
-    const defaultFoot = registry.defaults().foot;
-    const foot = limb.foot === undefined ? (defaultFoot ? {} : null) : limb.foot;
-    if (foot === null) return null;
-    if (!isRecord(foot)) return undefined;
-    const type = typeof foot.type === 'string' ? foot.type : defaultFoot;
-    if (type === undefined) return undefined;
-    const module = registry.get('part', type);
-    const out = moduleParams(module, { ...foot, type }, { type: z.string() }, ['limbs', i, 'foot']);
-    if (!out) return undefined;
-    const { type: _t, ...params } = out;
-    return { type, params };
-  });
+  /** A limb's foot or membrane: its own, the pack's default for its role, or none. */
+  const slotOf = (key: 'foot' | 'membrane') =>
+    rawLimbs.map((limb, i): SlotRef | null | undefined => {
+      if (!isRecord(limb)) return undefined;
+      const role = (typeof limb.role === 'string' ? limb.role : 'leg') as LimbRoleName;
+      const fallback = registry.defaults()[key]?.[role];
+      const raw = limb[key] === undefined ? (fallback ? {} : null) : limb[key];
+      if (raw === null) return null;
+      const value = typeof raw === 'string' ? { type: raw } : raw;
+      if (!isRecord(value)) return undefined;
+      const type = typeof value.type === 'string' ? value.type : fallback;
+      if (type === undefined) return undefined;
+      const module = registry.get('part', type);
+      const out = moduleParams(module, { ...value, type }, { type: z.string() }, ['limbs', i, key]);
+      if (!out) return undefined;
+      const { type: _t, ...params } = out;
+      return { type, params };
+    });
+  const feet = slotOf('foot');
+  const membranes = slotOf('membrane');
 
   const rawParts = Array.isArray(working.parts) ? working.parts : [];
   const partParams = rawParts.map((part, i) => {
@@ -317,7 +375,6 @@ export function resolveDocument(input: unknown, registry: Registry): ResolveOutc
   }
   // Defaults that came from the schema (not the merged input) still need their module params.
   const defaultLayers = rawLayers === undefined;
-  const defaultGaits = gaits === undefined;
   const defaultActions = actions === undefined;
   const resolveDefaults = (kind: 'gait' | 'action', list: readonly (string | { type: string })[]) =>
     list.map((item) => {
@@ -327,13 +384,70 @@ export function resolveDocument(input: unknown, registry: Registry): ResolveOutc
       return { type, params: out };
     });
 
+  const limbs: ResolvedLimb[] = doc.limbs.map((limb, i) => {
+    const own = limb as Partial<Record<'splay' | 'lift' | 'curl' | 'curlStart', number>> & {
+      stance?: ResolvedLimb['stance'];
+    };
+    return {
+      id: limb.id,
+      role: limb.role,
+      attach: limb.attach,
+      length: limb.length,
+      segments: limb.segments,
+      radius: limb.radius,
+      muscle: limb.muscle,
+      splay: own.splay ?? 0,
+      lift: own.lift ?? 0,
+      stance: own.stance,
+      curl: own.curl ?? 0,
+      curlStart: own.curlStart ?? 0,
+      foot: feet[i] ?? null,
+      membrane: membranes[i] ?? null,
+    };
+  });
+  const media = { ...bodyMedia(limbs) };
+  for (const medium of MEDIA) {
+    const set = doc.motion.media?.[medium];
+    if (set !== undefined) media[medium] = set;
+  }
+  const features = bodyFeatures({ body: doc.body, limbs, parts: doc.parts }, registry);
+  // A gait list replaces the defaults only for the media its gaits serve.
+  const listed = (gaits?.filter(Boolean) ?? []) as ModuleRefSpec[];
+  const covered = new Set(listed.map((g) => registry.get('gait', g.type)?.medium ?? 'land'));
+  const defaultGaits =
+    gaits === undefined
+      ? suitableGaits(registry, {
+          legs: limbs.filter((l) => l.role === 'leg').length,
+          features,
+          media,
+        })
+      : suitableGaits(registry, {
+          legs: limbs.filter((l) => l.role === 'leg').length,
+          features,
+          media: Object.fromEntries(MEDIA.map((m) => [m, media[m] && !covered.has(m)])) as Record<
+            Medium,
+            boolean
+          >,
+        });
+  const fur = doc.skin.fur
+    ? {
+        length: doc.skin.fur.length,
+        density: doc.skin.fur.density,
+        region:
+          typeof doc.skin.fur.region === 'string'
+            ? [doc.skin.fur.region]
+            : [...doc.skin.fur.region],
+      }
+    : null;
+
   const resolved: ResolvedDoc = {
     ...doc,
-    limbs: doc.limbs.map((limb, i) => ({ ...limb, foot: feet[i] ?? null })),
+    limbs,
     parts: doc.parts.map((part, i) => ({ ...part, params: partParams[i] ?? {} })),
     skin: {
       palette,
       material: doc.skin.material,
+      fur,
       layers: doc.skin.layers.map((layer, i) => {
         const full = defaultLayers
           ? (withGeneric(
@@ -353,48 +467,100 @@ export function resolveDocument(input: unknown, registry: Registry): ResolveOutc
     },
     motion: {
       temperament: doc.motion.temperament,
-      gaits: defaultGaits
-        ? resolveDefaults(
-            'gait',
-            suitableGaits(registry, doc.limbs.filter((l) => l.role === 'leg').length),
-          )
-        : (gaits.filter(Boolean) as ModuleRefSpec[]),
+      gaits: [...listed, ...resolveDefaults('gait', defaultGaits)],
       actions: defaultActions
-        ? resolveDefaults('action', suitableActions(registry, bodyFeatures(doc)))
+        ? resolveDefaults('action', suitableActions(registry, features))
         : (actions.filter(Boolean) as ModuleRefSpec[]),
+      media,
     },
   };
-  return { doc: resolved, errors, warnings, dropped };
+  return { doc: resolved, errors, warnings, dropped, written: merged };
 }
 
-/** Which features a body has, for the actions that need them. */
-export function bodyFeatures(doc: {
-  body: { head: { jaw: boolean }; tail: { length: number } };
-  limbs: readonly { role: string }[];
-}): Record<Feature, boolean> {
+/** Where a body moves before its blueprint's own `motion.media` switches. */
+export function bodyMedia(
+  limbs: readonly { role: string; attach?: { on?: string } }[],
+): Record<Medium, boolean> {
+  const legs = limbs.some((l) => l.role === 'leg');
+  // Fins or tentacles on the torso make a swimmer; on the head they are stalks or whiskers.
+  const swims = limbs.some(
+    (l) => (l.role === 'fin' || l.role === 'tentacle') && (l.attach?.on ?? 'torso') === 'torso',
+  );
   return {
-    head: true,
-    jaw: doc.body.head.jaw,
-    arm: doc.limbs.some((l) => l.role === 'arm'),
-    tail: doc.body.tail.length > 0,
-    legs: doc.limbs.some((l) => l.role === 'leg'),
+    land: legs || !swims,
+    water: !legs && swims,
+    air: limbs.some((l) => l.role === 'wing'),
   };
 }
 
+/**
+ * What a body has, for the actions and gaits that need it: the core's features (`head`, `jaw`,
+ * `arm`, `tail`, `legs`, `wing`, `fin`, `tentacle`) and every capability its modules provide.
+ */
+export function bodyFeatures(
+  doc: {
+    body: { head: { jaw: boolean }; tail: { length: number } };
+    limbs: readonly {
+      role: string;
+      foot?: { type: string } | null;
+      membrane?: { type: string } | null;
+    }[];
+    parts?: readonly { type: string }[];
+    skin?: { layers?: readonly { type: string }[] };
+  },
+  registry?: Registry,
+): Set<string> {
+  const has = new Set<string>(['head']);
+  if (doc.body.head.jaw) has.add('jaw');
+  if (doc.body.tail.length > 0) has.add('tail');
+  for (const limb of doc.limbs) has.add(limb.role === 'leg' ? 'legs' : limb.role);
+  const provided = (kind: ModuleKind, type: string | undefined) => {
+    for (const p of (type && registry?.get(kind, type)?.provides) || []) has.add(p);
+  };
+  for (const limb of doc.limbs) {
+    provided('part', limb.foot?.type);
+    provided('part', limb.membrane?.type);
+  }
+  for (const part of doc.parts ?? []) provided('part', part.type);
+  for (const layer of doc.skin?.layers ?? []) provided('pattern', layer.type);
+  return has;
+}
+
+/** Whether a body meets one need (a feature, or any of a list). */
+export const meets = (has: ReadonlySet<string>, need: Need): boolean =>
+  typeof need === 'string' ? has.has(need) : need.some((n) => has.has(n));
+
+/** Says a need in words: "a jaw", "a tail or a tentacle". */
+export const sayNeed = (need: Need): string =>
+  (typeof need === 'string' ? [need] : [...need]).map((n) => `a ${n}`).join(' or ');
+
 /** Actions whose needs a body meets, in id order. */
-export function suitableActions(registry: Registry, has: Record<Feature, boolean>): string[] {
+export function suitableActions(registry: Registry, has: ReadonlySet<string>): string[] {
   return registry
     .list('action')
-    .filter((a) => a.needs.every((need) => has[need]))
+    .filter((a) => !a.planned && a.needs.every((need) => meets(has, need)))
     .map((a) => a.id)
     .sort();
 }
 
-/** Gaits that suit a leg-pair count, slowest first. */
-export function suitableGaits(registry: Registry, pairs: number): string[] {
+/** Whether a gait suits a body: land gaits by leg pairs, every gait by its needs. */
+export function gaitSuits(
+  g: GaitModule,
+  body: { legs: number; features: ReadonlySet<string> },
+): boolean {
+  const land = (g.medium ?? 'land') === 'land';
+  const pairs = !land || (g.legPairs === 'any' ? body.legs >= 1 : g.legPairs.includes(body.legs));
+  return pairs && (g.needs ?? []).every((need) => meets(body.features, need));
+}
+
+/** Built gaits that suit a body in the media it uses, slowest first. */
+export function suitableGaits(
+  registry: Registry,
+  body: { legs: number; features: ReadonlySet<string>; media: Record<Medium, boolean> },
+): string[] {
   return registry
     .list('gait')
-    .filter((g) => (g.legPairs === 'any' ? pairs >= 1 : g.legPairs.includes(pairs)))
+    .filter((g) => !g.planned && body.media[g.medium ?? 'land'] && gaitSuits(g, body))
     .sort((a, b) => a.froude[0] - b.froude[0] || a.id.localeCompare(b.id))
     .map((g) => g.id);
 }
@@ -418,7 +584,7 @@ function partParamHints(
     if (issue.code === 'unknown_key' && limb && footKeys.has(limb[1] ?? ''))
       return {
         ...issue,
-        fix: `move "${limb[1]}" into "foot", e.g. "foot": { "type": "${registry.defaults().foot ?? '…'}", "${limb[1]}": … }`,
+        fix: `move "${limb[1]}" into "foot", e.g. "foot": { "type": "${registry.defaults().foot?.leg ?? '…'}", "${limb[1]}": … }`,
       };
     const m = /^parts\[id=([^\]]+)\]\.([A-Za-z0-9_]+)$/.exec(issue.path);
     if (issue.code !== 'unknown_key' || !m) return issue;
@@ -482,11 +648,19 @@ function semanticChecks(doc: ResolvedDoc, registry: Registry): Issue[] {
     }
   }
 
-  // Limbs grow from body sections; legs come in mirrored pairs.
-  const limbSections = ['torso', ...(hasNeck ? ['neck'] : []), ...(hasTail ? ['tail'] : [])];
+  // Limbs grow from body sections (any neck or tail; tentacles also from the head); legs come in
+  // mirrored pairs.
+  const necks = hasNeck ? instanceNames('neck', doc.body.neck.count) : [];
+  const tails = hasTail ? instanceNames('tail', doc.body.tail.count) : [];
   let legCount = 0;
   for (const limb of doc.limbs) {
     const p = itemPath('limbs', limb.id);
+    const limbSections = [
+      'torso',
+      ...necks,
+      ...tails,
+      ...(limb.role === 'tentacle' ? ['head'] : []),
+    ];
     if (!limbSections.includes(limb.attach.on)) {
       const guess = didYouMean(limb.attach.on, limbSections);
       error(
@@ -512,15 +686,19 @@ function semanticChecks(doc: ResolvedDoc, registry: Registry): Issue[] {
         );
       }
     }
-    if (limb.foot) {
-      const module = registry.get('part', limb.foot.type);
-      if (module && module.slot !== 'foot') {
-        error(`${p}.foot.type`, 'wrong_slot', `"${limb.foot.type}" is not a foot part`, {
+    for (const key of ['foot', 'membrane'] as const) {
+      const slot = limb[key];
+      const module = slot ? registry.get('part', slot.type) : undefined;
+      if (slot && module && module.slot !== key) {
+        error(`${p}.${key}.type`, 'wrong_slot', `"${slot.type}" is not a ${key} part`, {
           expected: registry
             .list('part')
-            .filter((m) => m.slot === 'foot')
+            .filter((m) => m.slot === key)
             .map((m) => `"${m.id}"`)
             .join(', '),
+          ...(module.slot === 'foot' || module.slot === 'membrane'
+            ? { fix: `set it in "${module.slot}" instead` }
+            : {}),
         });
       }
     }
@@ -529,7 +707,49 @@ function semanticChecks(doc: ResolvedDoc, registry: Registry): Issue[] {
     error('limbs', 'too_many_legs', `${legCount} leg pairs; at most 6 are supported`);
   }
 
-  // Parts attach to sections, limbs or other parts.
+  // Several heads need room to sit side by side.
+  const chest = (
+    typeof doc.body.torso.radius === 'number'
+      ? doc.body.torso.radius
+      : (doc.body.torso.radius[0] ?? 0.15)
+  ) as number;
+  const spread = doc.body.neck.spread ?? Math.min(170, NECK_SPREAD * (doc.body.neck.count - 1));
+  const spacing = headSpacing({
+    neck: { count: doc.body.neck.count, length: doc.body.neck.length, spread },
+    head: doc.body.head,
+    chest,
+  });
+  if (spacing.gap < spacing.needed) {
+    let wider = spread;
+    while (wider < 170) {
+      wider += 5;
+      const s = headSpacing({
+        neck: { count: doc.body.neck.count, length: doc.body.neck.length, spread: wider },
+        head: doc.body.head,
+        chest,
+      });
+      if (s.gap >= s.needed) break;
+    }
+    warn(
+      'body.neck',
+      'heads_overlap',
+      `${doc.body.neck.count} heads ${(spacing.gap * 100).toFixed(0)}% of a torso length apart would overlap`,
+      {
+        fix:
+          wider < 170
+            ? `set "spread": ${wider} or more, or lengthen the necks`
+            : 'lengthen the necks (body.neck.length) or make the heads smaller',
+      },
+    );
+  }
+
+  // Parts attach to sections (or one instance of several), limbs or other parts.
+  const instances = [
+    ...necks,
+    ...(hasNeck || doc.body.neck.count > 1 ? instanceNames('head', doc.body.neck.count) : []),
+    ...(doc.body.head.jaw ? instanceNames('jaw', doc.body.neck.count) : []),
+    ...tails,
+  ];
   const limbIds = new Set(doc.limbs.map((l) => l.id));
   const partIds = new Set(doc.parts.map((p) => p.id));
   for (const part of doc.parts) {
@@ -547,10 +767,26 @@ function semanticChecks(doc: ResolvedDoc, registry: Registry): Issue[] {
       );
       continue;
     }
+    if (module.slot === 'membrane') {
+      error(
+        `${p}.type`,
+        'wrong_slot',
+        `"${part.type}" is a membrane; set it in a wing or fin limb's "membrane" field instead`,
+        { fix: `use { "role": "wing", "membrane": "${part.type}" } in "limbs"` },
+      );
+      continue;
+    }
+    if (part.attach.area !== undefined && module.slot !== 'area')
+      error(`${p}.attach.area`, 'wrong_slot', `"${part.type}" sits at a point, not over an area`, {
+        fix: 'remove "area"; place it with "at" and "angle"',
+      });
     const on = part.attach.on ?? module.attach.on;
     const base = on.replace(/\.(L|R)$/, '');
     const known =
-      sections.includes(on) || limbIds.has(base) || (partIds.has(base) && base !== part.id);
+      sections.includes(on) ||
+      instances.includes(on) ||
+      limbIds.has(base) ||
+      (partIds.has(base) && base !== part.id);
     if (!known) {
       const candidates = [...sections, ...limbIds, ...[...partIds].filter((id) => id !== part.id)];
       // Names models reach for that are parts of a section rather than sections.
@@ -603,8 +839,8 @@ function semanticChecks(doc: ResolvedDoc, registry: Registry): Issue[] {
       });
     }
     if (module.slot === 'row') {
-      const from = part.attach.from ?? 0;
-      const to = part.attach.to ?? 1;
+      const from = part.attach.from ?? module.attach.from ?? 0;
+      const to = part.attach.to ?? module.attach.to ?? 1;
       if (from > to)
         warn(
           `${p}.attach`,
@@ -681,24 +917,47 @@ function semanticChecks(doc: ResolvedDoc, registry: Registry): Issue[] {
   });
   for (const part of doc.parts) checkColors(part.params, `${itemPath('parts', part.id)}.params`);
 
-  // Gaits suit the leg count; actions have the body features they need.
+  // Gaits suit the body and its media; actions have the body features they need.
   const pairs = legCount;
-  const suits = (g: GaitModule) => (g.legPairs === 'any' ? pairs >= 1 : g.legPairs.includes(pairs));
-  const compatible = suitableGaits(registry, pairs);
+  const features = bodyFeatures(doc, registry);
+  const body = { legs: pairs, features, media: doc.motion.media };
+  const compatible = suitableGaits(registry, body);
   doc.motion.gaits.forEach((ref, i) => {
     const gait = registry.get('gait', ref.type);
-    if (gait && !suits(gait)) {
+    if (!gait) return;
+    const medium = gait.medium ?? 'land';
+    if (!gaitSuits(gait, body)) {
+      const land = medium === 'land';
+      const missing = (gait.needs ?? []).find((need) => !meets(features, need));
       error(
         `motion.gaits[${i}]`,
         'gait_mismatch',
-        `"${ref.type}" does not suit ${pairs} leg pair${pairs === 1 ? '' : 's'}`,
+        land && !missing
+          ? `"${ref.type}" does not suit ${pairs} leg pair${pairs === 1 ? '' : 's'}`
+          : `"${ref.type}" needs ${sayNeed(missing ?? [])}`,
         {
           expected: compatible.map((c) => `"${c}"`).join(', ') || 'no gait suits this body',
           fix: compatible.length > 0 ? `use "${compatible[0]}"` : undefined,
         },
       );
+    } else if (!doc.motion.media[medium]) {
+      error(
+        `motion.gaits[${i}]`,
+        'medium_off',
+        `"${ref.type}" moves it through ${medium === 'air' ? 'the air' : medium}, which motion.media turns off`,
+        { fix: `set "motion": { "media": { "${medium}": true } }, or remove the gait` },
+      );
     }
   });
+  // Where it moves: flying needs wings, and it has to move somewhere.
+  if (doc.motion.media.air && !features.has('wing'))
+    error('motion.media.air', 'missing_feature', 'nothing to fly with', {
+      fix: 'add a limb with "role": "wing", or set "air": false',
+    });
+  if (!MEDIA.some((m) => doc.motion.media[m]))
+    error('motion.media', 'no_medium', 'every medium is off, so the creature cannot move', {
+      fix: 'turn on at least one of land, water and air',
+    });
   // Each gait or action is listed once; a repeat would be ignored.
   for (const key of ['gaits', 'actions'] as const) {
     const seen = new Set<string>();
@@ -720,26 +979,30 @@ function semanticChecks(doc: ResolvedDoc, registry: Registry): Issue[] {
       fix: `add "${compatible[0]}"`,
     });
   }
-  const arms = doc.limbs.filter((l) => l.role === 'arm').length;
-  const has: Record<string, boolean> = {
-    head: true,
-    jaw: doc.body.head.jaw,
-    arm: arms > 0,
-    tail: hasTail,
-    legs: pairs > 0,
-  };
   const fixFor: Record<string, string> = {
     jaw: 'set body.head.jaw to true',
     arm: 'add a limb with "role": "arm"',
     tail: 'give body.tail a length above 0',
     legs: 'add a limb with "role": "leg"',
+    wing: 'add a limb with "role": "wing"',
+    fin: 'add a limb with "role": "fin"',
+    tentacle: 'add a limb with "role": "tentacle"',
   };
   doc.motion.actions.forEach((ref, i) => {
     const action = registry.get('action', ref.type) as ActionModule | undefined;
     for (const need of action?.needs ?? []) {
-      if (!has[need]) {
-        error(`motion.actions[${i}]`, 'missing_feature', `"${ref.type}" needs a ${need}`, {
-          fix: fixFor[need],
+      if (!meets(features, need)) {
+        const first = typeof need === 'string' ? need : need[0];
+        const providers = registry
+          .list()
+          .filter((m) => first !== undefined && m.provides?.includes(first))
+          .map((m) => `"${m.id}"`);
+        error(`motion.actions[${i}]`, 'missing_feature', `"${ref.type}" needs ${sayNeed(need)}`, {
+          fix:
+            (first && fixFor[first]) ??
+            (providers.length > 0
+              ? `add a module that provides "${first}": ${providers.join(', ')}; or remove the action`
+              : `remove the action: nothing provides "${first}"`),
         });
       }
     }
@@ -748,6 +1011,10 @@ function semanticChecks(doc: ResolvedDoc, registry: Registry): Issue[] {
 }
 
 // --- Expansion into a creature spec -------------------------------------------------------------
+
+/** Degrees between neighbouring necks, and tails, when `spread` is left out. */
+const NECK_SPREAD = 25;
+const TAIL_SPREAD = 20;
 
 const asProfile = (v: number | readonly number[]): number[] =>
   typeof v === 'number' ? [v] : [...v];
@@ -787,6 +1054,10 @@ export function expandCreature(doc: ResolvedDoc, registry: Registry): CreatureSp
       const foot: FootSpec | null = limb.foot
         ? { id: `${id}.foot`, type: limb.foot.type, params: limb.foot.params }
         : null;
+      const membrane: FootSpec | null = limb.membrane
+        ? { id: `${id}.membrane`, type: limb.membrane.type, params: limb.membrane.params }
+        : null;
+      const footModule = limb.foot ? registry.get('part', limb.foot.type) : undefined;
       return {
         id,
         baseId: limb.id,
@@ -801,7 +1072,12 @@ export function expandCreature(doc: ResolvedDoc, registry: Registry): CreatureSp
         radius: asProfile(limb.radius),
         splay: limb.splay,
         lift: limb.lift,
+        muscle: limb.muscle ?? doc.body.muscle,
+        stance: limb.role === 'leg' ? (limb.stance ?? footModule?.stance) : undefined,
+        curl: limb.curl,
+        curlStart: limb.curlStart,
         foot,
+        membrane,
         pair: limb.role === 'leg' ? legOrder.indexOf(limb.id) : undefined,
       };
     });
@@ -844,6 +1120,7 @@ export function expandCreature(doc: ResolvedDoc, registry: Registry): CreatureSp
           from,
           to,
           angle,
+          area: part.attach.area ?? module.attach.area,
           params: part.params,
         }));
       } else {
@@ -860,6 +1137,7 @@ export function expandCreature(doc: ResolvedDoc, registry: Registry): CreatureSp
           from,
           to,
           angle: s.name === 'center' ? (angle < 90 ? 0 : 180) : angle,
+          area: part.attach.area ?? module.attach.area,
           params: part.params,
         }));
       }
@@ -900,14 +1178,23 @@ export function expandCreature(doc: ResolvedDoc, registry: Registry): CreatureSp
     extends: doc.extends,
     scale: doc.scale,
     body: {
+      muscle: doc.body.muscle,
       torso: { ...doc.body.torso, radius: asProfile(doc.body.torso.radius) },
-      neck: { ...doc.body.neck, radius: asProfile(doc.body.neck.radius) },
+      neck: {
+        ...doc.body.neck,
+        radius: asProfile(doc.body.neck.radius),
+        spread: doc.body.neck.spread ?? Math.min(170, NECK_SPREAD * (doc.body.neck.count - 1)),
+      },
       head: doc.body.head,
-      tail: { ...doc.body.tail, radius: asProfile(doc.body.tail.radius) },
+      tail: {
+        ...doc.body.tail,
+        radius: asProfile(doc.body.tail.radius),
+        spread: doc.body.tail.spread ?? Math.min(170, TAIL_SPREAD * (doc.body.tail.count - 1)),
+      },
     },
     limbs,
     parts: parts.map((p) => ({ ...p, params: resolveColors(p.params) })),
-    skin: { palette, material: doc.skin.material, layers },
+    skin: { palette, material: doc.skin.material, fur: doc.skin.fur, layers },
     motion: doc.motion,
   };
 }
@@ -998,6 +1285,11 @@ export interface ValidationResult {
   readonly blueprint?: Record<string, unknown>;
   /** The creature spec the compiler builds from (when there are no errors). */
   readonly creature?: CreatureSpec;
+  /**
+   * Things the blueprint uses that the format has but the pipeline does not build yet, each with
+   * the plan milestone that builds it. Not errors or warnings: keep them.
+   */
+  readonly notBuilt?: readonly Issue[];
 }
 
 export interface ValidateOptions {
@@ -1028,11 +1320,19 @@ export function validateBlueprint(
   }
   if (errors.length > 0) return { ok: false, errors, warnings };
   const creature = expandCreature(outcome.doc, registry);
+  const planned = notBuilt(creature, registry, outcome.written);
   const blueprint =
     options.minimal === false
       ? undefined
       : minimalBlueprint(input as Record<string, unknown>, registry);
-  return { ok: true, errors, warnings, ...(blueprint ? { blueprint } : {}), creature };
+  return {
+    ok: true,
+    errors,
+    warnings,
+    ...(planned.length > 0 ? { notBuilt: planned } : {}),
+    ...(blueprint ? { blueprint } : {}),
+    creature,
+  };
 }
 
 function mergedForHints(

@@ -1,0 +1,105 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Glow Slug",
+  "seed": 20,
+  "extends": "serpent",
+  "scale": 0.9,
+  "body": {
+    "torso": { "radius": [0.14, 0.2, 0.22, 0.18], "pitch": 0, "crossSection": "wide" },
+    "neck": { "length": 0.12, "radius": [0.12, 0.16], "pitch": 20, "segments": 2 },
+    "head": {
+      "shape": "round",
+      "length": 0.18,
+      "radius": 0.12,
+      "jaw": false,
+      "pitch": 0,
+      "tongue": "none"
+    },
+    "tail": {
+      "length": 1.0,
+      "radius": [0.17, 0.1, 0.015],
+      "pitch": 0,
+      "curl": 0,
+      "crossSection": "wide",
+      "segments": 12
+    }
+  },
+  "limbs": [
+    {
+      "id": "eyestalk",
+      "role": "tentacle",
+      "attach": { "on": "head", "at": 0.7, "angle": 25, "side": "both" },
+      "length": 0.35,
+      "segments": 5,
+      "radius": [0.028, 0.018],
+      "curl": 25,
+      "curlStart": 0.5
+    },
+    {
+      "id": "feeler",
+      "role": "tentacle",
+      "attach": { "on": "head", "at": 0.3, "angle": 70, "side": "both" },
+      "length": 0.15,
+      "segments": 3,
+      "radius": [0.02, 0.008],
+      "curl": 20
+    }
+  ],
+  "parts": [
+    {
+      "id": "eyes",
+      "attach": { "on": "eyestalk", "at": 1, "angle": 20 },
+      "params": { "size": 0.038, "bulge": 1, "pupil": "round", "irisColor": "#ffd060" }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#2c4a4c",
+      "belly": "#8ab8a4",
+      "accent": "#16262e",
+      "glow": "#60ffd0",
+      "slimeTint": "#a8e8c0"
+    },
+    "material": "skin",
+    "layers": [
+      { "type": "countershade", "softness": 0.3 },
+      { "type": "mottle", "color": "accent", "scale": 0.18, "contrast": 0.4, "coverage": 0.5 },
+      {
+        "type": "warts",
+        "color": "accent",
+        "size": 0.018,
+        "density": 0.5,
+        "height": 0.4,
+        "region": "back"
+      },
+      { "type": "slime", "color": "slimeTint", "wetness": 0.95, "drips": 0.6, "tint": 0.25 },
+      {
+        "type": "bioluminescence",
+        "color": "glow",
+        "shape": "spots",
+        "size": 0.035,
+        "density": 0.55,
+        "brightness": 2.2,
+        "pulse": 0.4,
+        "region": "back"
+      },
+      {
+        "type": "bioluminescence",
+        "color": "glow",
+        "shape": "lines",
+        "size": 0.01,
+        "density": 0.4,
+        "brightness": 1.5,
+        "pulse": 0.2,
+        "region": "tail",
+        "strength": 0.8
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "calm",
+    "media": { "land": true, "water": false },
+    "gaits": [{ "type": "slither", "amplitude": 0.03, "waves": 1 }],
+    "actions": ["idle", "look"]
+  }
+}

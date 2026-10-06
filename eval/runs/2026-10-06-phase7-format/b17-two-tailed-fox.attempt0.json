@@ -1,0 +1,79 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Two-Tailed Fox",
+  "seed": 17,
+  "extends": "quadruped",
+  "scale": 0.6,
+  "body": {
+    "torso": { "radius": [0.13, 0.16, 0.15, 0.12], "arch": 0.05 },
+    "neck": { "length": 0.3, "radius": [0.07, 0.1], "pitch": 35 },
+    "head": { "shape": "snout", "length": 0.32, "radius": 0.09, "pitch": -12 },
+    "tail": {
+      "count": 2,
+      "spread": 30,
+      "length": 0.95,
+      "radius": [0.06, 0.12, 0.11, 0.015],
+      "pitch": -10,
+      "curl": 20,
+      "segments": 10
+    }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "length": 0.6,
+      "radius": [0.045, 0.022],
+      "foot": { "type": "foot.paw", "toes": 4, "claws": "short", "padColor": "#2a1a14" }
+    },
+    {
+      "id": "hindleg",
+      "length": 0.62,
+      "radius": [0.06, 0.022],
+      "foot": { "type": "foot.paw", "toes": 4, "claws": "short", "padColor": "#2a1a14" }
+    }
+  ],
+  "parts": [
+    {
+      "id": "eyes",
+      "attach": { "on": "head", "at": 0.4, "angle": 58 },
+      "params": { "size": 0.022, "pupil": "slit", "irisColor": "#d89a20" }
+    },
+    {
+      "id": "ears",
+      "type": "ear.pointed",
+      "attach": { "on": "head", "at": 0.85, "angle": 40, "side": "both" },
+      "params": { "length": 0.2, "width": 0.07, "color": "base", "tipColor": "#2a1a14" }
+    },
+    {
+      "id": "teeth",
+      "type": "teeth.row",
+      "params": { "count": 8, "length": 0.015, "fangs": 1, "fangLength": 0.04 }
+    }
+  ],
+  "skin": {
+    "palette": { "base": "#d9732a", "belly": "#f4ead8", "accent": "#2a1a12", "tailTip": "#fbf4e6" },
+    "material": "skin",
+    "fur": { "length": 0.04, "density": 0.9, "region": "all" },
+    "layers": [
+      { "type": "countershade", "height": 0.0, "softness": 0.3 },
+      {
+        "type": "mottle",
+        "color": "accent",
+        "scale": 0.3,
+        "contrast": 0.2,
+        "coverage": 0.9,
+        "region": "limbs",
+        "strength": 0.8
+      },
+      {
+        "type": "bands",
+        "color": "tailTip",
+        "count": 2,
+        "width": 0.12,
+        "sharpness": 0.5,
+        "region": "tail"
+      }
+    ]
+  },
+  "motion": { "temperament": "stalking", "actions": ["idle", "look", "bite", "pounce"] }
+}

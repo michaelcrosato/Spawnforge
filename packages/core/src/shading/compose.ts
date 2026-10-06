@@ -67,10 +67,19 @@ function regionMask<F>(k: Kit<F>, s: Surface<F>, region: Region): F {
       return s.limbs;
     case 'tail':
       return s.tail;
+    case 'wings':
+      // Wing and fin membranes are separate meshes (from milestone 9.3); the skin has none.
+      return k.num(0);
   }
 }
 
-const BASE_ROUGHNESS: Record<SkinMaterial, number> = { skin: 0.72, scales: 0.5, chitin: 0.3 };
+// `hide` draws as skin until milestone 8.4 builds its creases.
+const BASE_ROUGHNESS: Record<SkinMaterial, number> = {
+  skin: 0.72,
+  scales: 0.5,
+  chitin: 0.3,
+  hide: 0.72,
+};
 
 /** Base surface plus every layer, bottom first. */
 export function shadeSkin<F>(

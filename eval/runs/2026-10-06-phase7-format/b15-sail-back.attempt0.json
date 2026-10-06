@@ -1,0 +1,56 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Sail-back",
+  "seed": 15,
+  "extends": "quadruped",
+  "scale": 1,
+  "body": {
+    "torso": { "radius": [0.12, 0.17, 0.17, 0.12], "arch": 0.02, "pitch": 0 },
+    "neck": { "length": 0.2, "radius": [0.08, 0.11], "pitch": 10 },
+    "head": { "shape": "wedge", "length": 0.3, "radius": 0.09, "pitch": -5 },
+    "tail": { "length": 1.5, "radius": [0.1, 0.01], "pitch": -10, "curl": 0, "segments": 12 }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "length": 0.5,
+      "radius": [0.06, 0.03],
+      "splay": 55,
+      "attach": { "angle": 120 },
+      "foot": { "type": "foot.claw", "toes": 5 }
+    },
+    {
+      "id": "hindleg",
+      "length": 0.55,
+      "radius": [0.07, 0.03],
+      "splay": 55,
+      "attach": { "angle": 120 },
+      "foot": { "type": "foot.claw", "toes": 5 }
+    }
+  ],
+  "parts": [
+    { "id": "eyes", "params": { "size": 0.02, "pupil": "round" } },
+    { "id": "teeth", "type": "teeth.row", "params": { "count": 12, "fangs": 2 } },
+    {
+      "id": "sail",
+      "type": "sail",
+      "attach": { "on": "spine", "from": 0.1, "to": 0.42 },
+      "params": {
+        "height": [0.1, 0.35, 0.55, 0.5, 0.3, 0.1],
+        "spines": 14,
+        "color": "accent",
+        "spineColor": "bone"
+      }
+    }
+  ],
+  "skin": {
+    "palette": { "base": "#7a6a3a", "belly": "#cdbf90", "accent": "#b8402a", "bone": "#d8c8a0" },
+    "material": "scales",
+    "layers": [
+      { "type": "countershade" },
+      { "type": "stripes", "color": "#4a3a20", "count": 14, "region": "back", "strength": 0.7 },
+      { "type": "scales", "size": 0.03 }
+    ]
+  },
+  "motion": { "temperament": "stalking" }
+}

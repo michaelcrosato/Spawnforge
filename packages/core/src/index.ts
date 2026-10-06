@@ -14,6 +14,7 @@ export {
 export * from './blueprint/colors.ts';
 export type * from './blueprint/creature.ts';
 export { type BlueprintDiff, diffBlueprints } from './blueprint/diff.ts';
+export { headSpacing, instanceNames, instanceSuffixes } from './blueprint/instances.ts';
 export { formatIssue, formatPath, type Issue } from './blueprint/issues.ts';
 export { cloneJson, ID_LISTS, isRecord, mergeBlueprint } from './blueprint/merge.ts';
 export { KNOWN_FORMATS, type Migration, migrate, toCurrentFormat } from './blueprint/migrate.ts';
@@ -26,8 +27,10 @@ export {
   type PatchOp,
   type PatchResult,
 } from './blueprint/patch.ts';
+export { buildable, notBuilt } from './blueprint/planned.ts';
 export { randomBlueprint, sampleSchema } from './blueprint/random.ts';
 export {
+  AREAS,
   type BlueprintDoc,
   buildBlueprintSchema,
   CROSS_SECTIONS,
@@ -36,11 +39,16 @@ export {
   HEAD_SHAPES,
   ITEM_ID,
   LIMB_ROLES,
+  MEDIA,
   REGIONS,
+  ROLE_DEFAULTS,
+  ROLE_FIELDS,
   SECTIONS,
   SIDES,
   SKIN_MATERIALS,
+  STANCES,
   TEMPERAMENTS,
+  TONGUES,
 } from './blueprint/schema.ts';
 export { didYouMean, editDistance } from './blueprint/suggest.ts';
 export {
