@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { StatsHooks } from './analysis/stats.ts';
+import type { LimbRole } from './blueprint/creature.ts';
 import type { PartHooks } from './compile/parts.ts';
 import type { ActionHooks } from './motion/actions.ts';
 import type { PatternHooks } from './shading/kit.ts';
@@ -43,6 +44,12 @@ export interface ModuleBase<K extends ModuleKind, P extends z.ZodType = z.ZodTyp
    */
   readonly planned?: string;
   /**
+   * Capabilities the module gives a body that uses it, for the actions and gaits that need them:
+   * `pincer` from a pincer hand, `display` from a frill, `hover` from insect wings. The core reads
+   * them without knowing the modules behind them.
+   */
+  readonly provides?: readonly string[];
+  /**
    * Turns friendly forms of the module's parameters into canonical ones before validation, as
    * blueprint normalization does for the core's fields: a horn's `aim` into `lean` and `turn`.
    * Gets the parameters as written (possibly invalid) and returns them rewritten; anything it
@@ -63,7 +70,11 @@ export type PartSlot =
   /** The end of a limb, set through the limb's `foot` field. */
   | 'foot'
   /** Along the mouth line of a head with a jaw. */
-  | 'mouth';
+  | 'mouth'
+  /** The surface of a wing or fin, set through the limb's `membrane` field. */
+  | 'membrane'
+  /** Scattered over or fitted to an area of skin: `area`, and optionally `from` and `to`. */
+  | 'area';
 
 /** Base materials hard parts can use. */
 export type PartMaterial = 'bone' | 'horn' | 'chitin' | 'enamel' | 'eye' | 'skin';
@@ -72,7 +83,17 @@ export interface PartModule<P extends z.ZodType = z.ZodType> extends ModuleBase<
   readonly slot: PartSlot;
   readonly material: PartMaterial;
   /** Default anchor when a blueprint leaves `attach` fields out. */
-  readonly attach: { readonly on: string; readonly at?: number; readonly angle?: number };
+  readonly attach: {
+    readonly on: string;
+    readonly at?: number;
+    readonly angle?: number;
+    readonly from?: number;
+    readonly to?: number;
+    /** For area-slot parts. */
+    readonly area?: 'back' | 'belly' | 'sides' | 'all';
+  };
+  /** For foot-slot parts: the stance a leg takes when its blueprint leaves `stance` out. */
+  readonly stance?: 'plantigrade' | 'digitigrade' | 'unguligrade';
   /** A complete `parts[]` entry (or `foot` object for foot parts) showing typical use. */
   readonly example: Record<string, unknown>;
   /** Geometry (and, for feet, toe bones). */
@@ -105,14 +126,36 @@ export interface GaitModule<P extends z.ZodType = z.ZodType> extends ModuleBase<
   readonly duty: number | ((pairs: number) => number);
   /** Speeds the gait suits, as Froude numbers v²/(g·h). */
   readonly froude: readonly [number, number];
+  /** Where the gait moves the creature (default `land`). */
+  readonly medium?: Medium;
+  /** Body features or capabilities the gait needs, beside its leg pairs (see `Need`). */
+  readonly needs?: readonly Need[];
   readonly hooks?: unknown;
 }
 
-/** Body features an action may need. */
-export type Feature = 'head' | 'jaw' | 'arm' | 'tail' | 'legs';
+/** Where a creature moves. */
+export type Medium = 'land' | 'water' | 'air';
+
+/**
+ * What a body has, for the actions and gaits that need it: the core's features (`head`, `jaw`,
+ * `arm`, `tail`, `legs`, `wing`, `fin`, `tentacle`) and the capabilities its modules provide.
+ */
+export type Feature =
+  | 'head'
+  | 'jaw'
+  | 'arm'
+  | 'tail'
+  | 'legs'
+  | 'wing'
+  | 'fin'
+  | 'tentacle'
+  | (string & {});
+
+/** One need: a feature, or a list meaning any of them (`['tail', 'tentacle']`). */
+export type Need = Feature | readonly Feature[];
 
 export interface ActionModule<P extends z.ZodType = z.ZodType> extends ModuleBase<'action', P> {
-  readonly needs: readonly Feature[];
+  readonly needs: readonly Need[];
   /** Body-relative goals over time (see `ActionHooks`). */
   readonly hooks?: ActionHooks;
 }
@@ -183,8 +226,10 @@ export function defineStats<P extends z.ZodType>(m: Omit<StatsModule<P>, 'kind'>
  * With several packs, the first pack that sets a default wins.
  */
 export interface PackDefaults {
-  /** Foot part a limb gets when its blueprint leaves `foot` out. */
-  readonly foot?: string;
+  /** Foot part each limb role gets when its blueprint leaves `foot` out. */
+  readonly foot?: Readonly<Partial<Record<LimbRole, string>>>;
+  /** Membrane each limb role gets when its blueprint leaves `membrane` out (wings and fins). */
+  readonly membrane?: Readonly<Partial<Record<LimbRole, string>>>;
   /** Pattern layers a skin gets when its blueprint leaves `skin.layers` out. */
   readonly layers?: readonly Readonly<Record<string, unknown>>[];
   /** Body plan `generate` falls back on when no plan of a theme fits. */
@@ -196,6 +241,11 @@ export interface Pack {
   readonly id: string;
   readonly modules: readonly ModuleDefinition[];
   readonly defaults?: PackDefaults;
+  /**
+   * Fixes for guesses models make about this pack's vocabulary, which may name its modules:
+   * `"limbs.hand"` for an unknown key, `"limbs.role:pincer"` for a value. They join the core's.
+   */
+  readonly hints?: Readonly<Record<string, string>>;
 }
 
 export function definePack<const P extends Pack>(pack: P): P {
@@ -225,6 +275,8 @@ export interface Registry {
   catalog(): CatalogEntry[];
   /** The packs' defaults, merged (the first pack to set one wins). */
   defaults(): PackDefaults;
+  /** The packs' hints for validation errors, merged (the first pack wins). */
+  hints(): Readonly<Record<string, string>>;
 }
 
 export function paramsJsonSchema(params: z.ZodType): Record<string, unknown> {
@@ -273,17 +325,26 @@ export function createRegistry(packs: readonly Pack[]): Registry {
   }
   const kindOf: Record<keyof PackDefaults, ModuleKind> = {
     foot: 'part',
+    membrane: 'part',
     layers: 'pattern',
     bodyPlan: 'bodyPlan',
   };
   for (const [name, kind] of Object.entries(kindOf) as [keyof PackDefaults, ModuleKind][]) {
     const value = defaults[name];
-    const ids = typeof value === 'string' ? [value] : (value ?? []).map((l) => l.type);
+    const ids =
+      typeof value === 'string'
+        ? [value]
+        : Array.isArray(value)
+          ? value.map((l) => (l as { type?: unknown }).type)
+          : Object.values(value ?? {});
     for (const id of ids) {
       if (typeof id !== 'string' || !byKey.has(key(kind, id)))
         throw new Error(`default ${name} names ${kind} "${String(id)}", which no pack defines`);
     }
   }
+
+  const hints: Record<string, string> = {};
+  for (const pack of [...packs].reverse()) Object.assign(hints, pack.hints ?? {});
 
   const sorted = [...byKey.values()].sort(
     (x, y) =>
@@ -312,5 +373,6 @@ export function createRegistry(packs: readonly Pack[]): Registry {
         ...(module.planned ? { planned: module.planned } : {}),
       })),
     defaults: () => defaults,
+    hints: () => hints,
   };
 }

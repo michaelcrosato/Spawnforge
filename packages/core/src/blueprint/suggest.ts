@@ -30,10 +30,15 @@ export function didYouMean(input: string, candidates: Iterable<string>): string 
   for (const c of candidates) {
     const cl = c.toLowerCase();
     let score = editDistance(lower, cl);
-    // Ids like "horn.curved" also match on a segment ("hron" → "horn").
+    // Ids like "horn.curved" also match on a segment ("hron" → "horn"), and a dotted guess on
+    // its own segments ("wing.feathered" → "membrane.feather").
     if (cl.includes('.')) {
-      for (const segment of cl.split('.'))
+      for (const segment of cl.split('.')) {
         score = Math.min(score, editDistance(lower, segment) + 0.5);
+        if (lower.includes('.'))
+          for (const own of lower.split('.'))
+            if (own.length >= 4) score = Math.min(score, editDistance(own, segment) + 1);
+      }
     }
     // An abbreviation ("len" -> "length") is a stronger hint than a one-letter typo ("lean").
     if (lower.length >= 3 && cl.startsWith(lower)) score = Math.min(score, 0.5);

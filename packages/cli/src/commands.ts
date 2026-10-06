@@ -233,6 +233,11 @@ export interface ValidateResult {
   species?: boolean;
   /** For a species: the individuals checked (both ends of every range, then a few seeds). */
   checked?: string[];
+  /**
+   * What the blueprint uses that is in the format but not built yet, with the plan milestone
+   * that builds it. Keep these: they validate, and appear once built.
+   */
+  notBuilt?: readonly Issue[];
 }
 
 /** Validates a blueprint: errors and warnings with id-based paths and fixes, plus the minimal form. */
@@ -256,6 +261,7 @@ export function validate(
     ok: result.ok,
     errors: result.errors,
     warnings: result.warnings,
+    ...(result.notBuilt ? { notBuilt: result.notBuilt } : {}),
     ...(result.blueprint ? { blueprint: result.blueprint } : {}),
     ...(options.expanded && result.creature ? { creature: result.creature } : {}),
   };

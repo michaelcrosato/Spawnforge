@@ -17,9 +17,9 @@ Every field outside the modules, generated from the schema. Fields with a defaul
 | `format` | string |  |  | Format id and version |
 | `name` | string |  | `"Unnamed creature"` |  |
 | `seed` | integer | 0–4294967295 | `1` | Same blueprint and seed, same monster |
-| `extends` | "biped" \| "hexapod" \| "quadruped" \| "serpent" |  |  | Body-plan preset to start from |
+| `extends` | "biped" \| "centaur" \| "fish" \| "hexapod" \| "octopod" \| "quadruped" \| "serpent" \| "wyvern" |  |  | Body-plan preset to start from |
 | `scale` | number | 0.05–20 | `1` | Torso length in metres; every other length is a multiple of it |
-| `limbs` | list of object |  | `[]` | Legs and arms. Lists merge with the preset by id |
+| `limbs` | list of any |  | `[]` | Legs and arms. Lists merge with the preset by id |
 | `parts` | list of object |  | `[]` | Hard parts. Lists merge with the preset by id |
 
 ### `body.torso`
@@ -45,6 +45,9 @@ Joins the head to the front of the torso.
 | `pitch` | number | -60–90 | `20` | Degrees the neck rises above horizontal |
 | `crossSection` | "round" \| "tall" \| "wide" |  | `"round"` | Shape across the neck |
 | `segments` | integer | 1–8 | `3` | Bones in the neck |
+| `count` | integer | 1–9 | `1` | Necks, each with its own head shaped like body.head (a hydra has several) |
+| `spread` | number | 0–170 |  | Degrees between the outermost necks as they fan out; default 25 per extra neck |
+| `curve` | number | -90–90 | `0` | Degrees of S-bend: forward at the base and back below the head (a swan) |
 
 ### `body.head`
 
@@ -58,6 +61,9 @@ The head. `at` runs from the snout tip (0) to the back of the skull (1).
 | `jaw` | boolean |  | `true` | A hinged lower jaw, needed for bite, roar and teeth |
 | `pitch` | number | -60–60 | `0` | Degrees the snout points above horizontal |
 | `crossSection` | "round" \| "tall" \| "wide" |  | `"round"` | Shape across the head |
+| `lips` | number | 0–1 | `0.3` | Thickness of the lips along the mouth |
+| `tongue` | "none" \| "flat" \| "forked" |  | `"flat"` | The tongue in the mouth |
+| `brow` | number | 0–1 | `0.2` | How heavy the brow ridge is |
 
 ### `body.tail`
 
@@ -72,37 +78,16 @@ Runs back from the torso. `at` runs from the root (0) to the tip (1).
 | `crossSection` | "round" \| "tall" \| "wide" |  | `"round"` | Shape across the tail |
 | `pitch` | number | -90–60 | `-10` | Degrees the tail root points above horizontal; negative droops |
 | `segments` | integer | 2–24 | `8` | Bones in the tail |
-
-### `limbs[]`
-
-| Field | Type | Range | Default | Description |
-| --- | --- | --- | --- | --- |
-| `id` | string |  |  | Unique id; mirrored copies get .L and .R |
-| `role` | "leg" \| "arm" |  | `"leg"` | "leg" limbs carry the body; "arm" limbs are free |
-| `attach` | object (below) |  | `{}` |  |
-| `length` | number | 0.05–3 | `0.5` | Total limb length in torso lengths |
-| `segments` | integer | 2–4 | `3` | Bones from hip or shoulder to ankle |
-| `radius` | number or list of number | 0.005–0.5 | `[0.06, 0.03]` | Radius from root to tip, in torso lengths |
-| `splay` | number | -30–90 | `0` | Degrees the limb swings out from under the body; about 50 for sprawlers |
-| `lift` | number | 0–150 | `0` | Arms only: degrees the arm is raised forward from hanging; 90 holds it straight out (pincers) |
-| `foot` | object or null |  | `{}` | Foot part at the limb tip (default { "type": "foot.claw" }), or null for none |
-| `remove` | boolean |  |  | Delete an inherited limb with this id |
-
-### `limbs[].attach`
-
-| Field | Type | Range | Default | Description |
-| --- | --- | --- | --- | --- |
-| `on` | string |  | `"torso"` | Body section the limb grows from |
-| `at` | number | 0–1 | `0.5` | Where along the section: 0 is the snout end, 1 the tail end |
-| `side` | "both" \| "left" \| "right" \| "center" |  | `"both"` | "both" makes a mirrored pair with ids ending .L and .R |
-| `angle` | number | 0–180 | `100` | Degrees around the section from the top: 90 is the side, 180 the belly |
+| `count` | integer | 1–9 | `1` | Tails, each shaped like this one (a two-tailed fox has 2) |
+| `spread` | number | 0–170 |  | Degrees between the outermost tails as they fan out; default 20 per extra tail |
+| `forkAt` | number | 0–0.95 | `0` | Where along the tail several tails branch: 0 leaves the torso separately, 0.7 forks near the tip |
 
 ### `parts[]`
 
 | Field | Type | Range | Default | Description |
 | --- | --- | --- | --- | --- |
 | `id` | string |  |  | Unique id; mirrored copies get .L and .R |
-| `type` | "ear.pointed" \| "eye.basic" \| "horn.curved" \| "spikes.row" \| "teeth.row" |  |  | Part module id |
+| `type` | "antenna" \| "armor.bands" \| "beak" \| "ear.pointed" \| "eye.basic" \| "fin.dorsal" \| "fin.tail" \| "frill" \| "hood" \| "horn.curved" \| "mandible" \| "plates.row" \| "quills" \| "sail" \| "shell" \| "spikes.row" \| "teeth.row" |  |  | Part module id |
 | `attach` | object (below) |  | `{}` |  |
 | `params` | object |  | `{}` | The part module's parameters |
 | `remove` | boolean |  |  | Delete an inherited part with this id |
@@ -117,13 +102,15 @@ Runs back from the torso. `at` runs from the root (0) to the tip (1).
 | `to` | number | 0–1 |  | End of a row |
 | `angle` | number | 0–180 |  | Degrees around the section from the top: 0 dorsal, 90 side, 180 belly |
 | `side` | "both" \| "left" \| "right" \| "center" |  |  | Defaults to "both", or "center" when angle is 0 or 180 |
+| `area` | "back" \| "belly" \| "sides" \| "all" |  |  | Area-slot parts only: which area of "on" they cover (back, belly, sides, all) |
 
 ### `skin`
 
 | Field | Type | Range | Default | Description |
 | --- | --- | --- | --- | --- |
 | `palette` | object |  | `{}` | Named colours. base, belly and accent always exist; add any others by name |
-| `material` | "skin" \| "scales" \| "chitin" |  | `"skin"` | Base surface under the patterns |
+| `material` | "skin" \| "scales" \| "chitin" \| "hide" |  | `"skin"` | Base surface under the patterns |
+| `fur` | object (below) |  |  | Fur over the skin, where its region says; null removes an inherited coat |
 | `layers` | list of object |  | `[{ "type": "countershade" }]` | Pattern stack, bottom first |
 
 ### `skin.layers[] (every layer)`
@@ -134,7 +121,7 @@ One pattern layer; its parameters sit beside `type`
 | --- | --- | --- | --- | --- |
 | `type` | "bands" \| "bioluminescence" \| "countershade" \| "grime" \| "mottle" \| "rosettes" \| "scales" \| "scars" \| "slime" \| "spots" \| "stripes" \| "veins" \| "warts" |  |  | Pattern module id |
 | `id` | string |  |  | Optional id; keys the layer random stream |
-| `region` | "all" \| "back" \| "belly" \| "head" \| "torso" \| "limbs" \| "tail" |  | `"all"` | Where the layer shows |
+| `region` | "all" \| "back" \| "belly" \| "head" \| "torso" \| "limbs" \| "tail" \| "wings" |  | `"all"` | Where the layer shows |
 | `strength` | number | 0–1 | `1` | Layer opacity |
 
 ### `motion`
@@ -142,8 +129,9 @@ One pattern layer; its parameters sit beside `type`
 | Field | Type | Range | Default | Description |
 | --- | --- | --- | --- | --- |
 | `temperament` | "calm" \| "stalking" \| "skittish" \| "aggressive" \| "lumbering" |  | `"calm"` | Sets pace, posture and idle behaviour |
-| `gaits` | list of "slither" \| "tripod" \| "trot" \| "walk" or object |  |  | Gaits it may use; by default every gait that suits its legs |
-| `actions` | list of "bite" \| "idle" \| "look" \| "roar" or object |  |  | Actions it can perform; by default every action its body allows |
+| `gaits` | list of "bound" \| "fly" \| "gallop" \| "glide" \| "hover" \| "run" \| "slither" \| "swim.flap" \| "swim.paddle" \| "swim.undulate" \| "tripod" \| "trot" \| "walk" or object |  |  | Gaits it may use; by default every gait that suits its body; a list replaces the defaults only for the media its gaits serve |
+| `actions` | list of "bite" \| "display" \| "idle" \| "jump" \| "lash" \| "look" \| "pinch" \| "pounce" \| "roar" or object |  |  | Actions it can perform; by default every action its body allows |
+| `media` | object (below) |  |  | Where it moves; each switch left out follows the body (land with legs, water with fins or tentacles and no legs, air with wings) |
 
 ## Body plans
 
@@ -197,7 +185,127 @@ Ids you can override: limb `leg`, limb `arm`, part `eyes`.
     "palette": { "base": "#6f7a4a", "belly": "#c9c39a", "accent": "#2f3320" },
     "layers": [{ "type": "countershade" }]
   },
-  "motion": { "temperament": "calm", "gaits": ["walk"] }
+  "motion": { "temperament": "calm" }
+}
+```
+
+</details>
+
+### `centaur`
+
+A horse-like body on four legs with an upright, torso-like neck carrying two arms and the head.
+
+Start a blueprint with "extends": "centaur"; override preset limbs and parts by id.
+
+Ids you can override: limb `foreleg`, limb `hindleg`, limb `arm`, part `eyes`.
+
+<details><summary>Preset</summary>
+
+```json
+{
+  "scale": 1,
+  "body": {
+    "torso": { "radius": [0.15, 0.17, 0.16, 0.13], "arch": 0.04, "pitch": 0, "segments": 6 },
+    "neck": {
+      "length": 0.7,
+      "radius": [0.08, 0.15, 0.13, 0.12],
+      "pitch": 84,
+      "segments": 4,
+      "crossSection": "wide"
+    },
+    "head": { "shape": "round", "length": 0.24, "radius": 0.1, "jaw": true, "pitch": 0 },
+    "tail": { "length": 0.6, "radius": [0.05, 0.02], "pitch": -40, "segments": 8 }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "role": "leg",
+      "attach": { "on": "torso", "at": 0.12, "side": "both", "angle": 115 },
+      "length": 0.8,
+      "segments": 3,
+      "radius": [0.06, 0.028],
+      "foot": { "type": "foot.claw", "toes": 2 }
+    },
+    {
+      "id": "hindleg",
+      "role": "leg",
+      "attach": { "on": "torso", "at": 0.88, "side": "both", "angle": 115 },
+      "length": 0.85,
+      "segments": 3,
+      "radius": [0.07, 0.028],
+      "foot": { "type": "foot.claw", "toes": 2 }
+    },
+    {
+      "id": "arm",
+      "role": "arm",
+      "attach": { "on": "neck", "at": 0.3, "side": "both", "angle": 90 },
+      "length": 0.75,
+      "segments": 2,
+      "radius": [0.055, 0.035],
+      "foot": { "type": "foot.claw", "toes": 4 }
+    }
+  ],
+  "parts": [{ "id": "eyes", "type": "eye.basic", "attach": { "on": "head", "at": 0.3, "angle": 62 } }],
+  "skin": {
+    "palette": { "base": "#7a5a3a", "belly": "#c8b090", "accent": "#3a2a1a" },
+    "layers": [{ "type": "countershade" }]
+  },
+  "motion": { "temperament": "calm" }
+}
+```
+
+</details>
+
+### `fish`
+
+A legless, deep-bodied swimmer with pectoral fins, a dorsal fin and a tail fin; lives in water.
+
+Start a blueprint with "extends": "fish"; override preset limbs and parts by id.
+
+Ids you can override: limb `pectoral`, part `eyes`, part `dorsal`, part `tailfin`.
+
+<details><summary>Preset</summary>
+
+```json
+{
+  "scale": 0.8,
+  "body": {
+    "torso": { "radius": [0.12, 0.17, 0.16, 0.11], "pitch": 0, "segments": 6, "crossSection": "tall" },
+    "neck": { "length": 0 },
+    "head": {
+      "shape": "wedge",
+      "length": 0.3,
+      "radius": 0.12,
+      "jaw": true,
+      "pitch": 0,
+      "crossSection": "tall"
+    },
+    "tail": { "length": 0.8, "radius": [0.1, 0.03], "pitch": 0, "segments": 8, "crossSection": "tall" }
+  },
+  "limbs": [
+    {
+      "id": "pectoral",
+      "role": "fin",
+      "attach": { "on": "torso", "at": 0.15, "side": "both", "angle": 120 },
+      "length": 0.3
+    }
+  ],
+  "parts": [
+    {
+      "id": "eyes",
+      "type": "eye.basic",
+      "attach": { "on": "head", "at": 0.3, "angle": 70 },
+      "params": { "size": 0.025 }
+    },
+    { "id": "dorsal", "type": "fin.dorsal", "attach": { "on": "torso", "at": 0.4, "angle": 0 } },
+    { "id": "tailfin", "type": "fin.tail" }
+  ],
+  "skin": {
+    "palette": { "base": "#506a80", "belly": "#e0e8e8", "accent": "#203040" },
+    "material": "scales",
+    "layers": [{ "type": "countershade" }]
+  },
+  "motion": { "temperament": "calm" }
 }
 ```
 
@@ -272,7 +380,98 @@ Ids you can override: limb `frontleg`, limb `midleg`, limb `hindleg`, part `eyes
     "material": "chitin",
     "layers": [{ "type": "countershade", "softness": 0.2 }]
   },
-  "motion": { "temperament": "skittish", "gaits": ["tripod", "walk"] }
+  "motion": { "temperament": "skittish" }
+}
+```
+
+</details>
+
+### `octopod`
+
+Eight sprawled legs on a small front body and a big round abdomen, like a spider or a scorpion.
+
+Start a blueprint with "extends": "octopod"; override preset limbs and parts by id.
+
+Ids you can override: limb `leg1`, limb `leg2`, limb `leg3`, limb `leg4`, part `eyes`, part `side-eyes`.
+
+<details><summary>Preset</summary>
+
+```json
+{
+  "scale": 0.7,
+  "body": {
+    "torso": {
+      "radius": [0.11, 0.13, 0.1, 0.07, 0.19, 0.22, 0.16],
+      "pitch": 0,
+      "segments": 8,
+      "crossSection": "wide"
+    },
+    "neck": { "length": 0.03, "radius": [0.07, 0.08], "pitch": 0, "segments": 1 },
+    "head": { "shape": "round", "length": 0.16, "radius": 0.08, "jaw": true, "pitch": -5 },
+    "tail": { "length": 0 }
+  },
+  "limbs": [
+    {
+      "id": "leg1",
+      "role": "leg",
+      "attach": { "on": "torso", "at": 0.06, "side": "both", "angle": 115 },
+      "length": 0.95,
+      "segments": 3,
+      "radius": [0.03, 0.012],
+      "splay": 60,
+      "foot": { "type": "foot.claw", "toes": 1 }
+    },
+    {
+      "id": "leg2",
+      "role": "leg",
+      "attach": { "on": "torso", "at": 0.14, "side": "both", "angle": 115 },
+      "length": 0.9,
+      "segments": 3,
+      "radius": [0.03, 0.012],
+      "splay": 65,
+      "foot": { "type": "foot.claw", "toes": 1 }
+    },
+    {
+      "id": "leg3",
+      "role": "leg",
+      "attach": { "on": "torso", "at": 0.22, "side": "both", "angle": 115 },
+      "length": 0.9,
+      "segments": 3,
+      "radius": [0.03, 0.012],
+      "splay": 65,
+      "foot": { "type": "foot.claw", "toes": 1 }
+    },
+    {
+      "id": "leg4",
+      "role": "leg",
+      "attach": { "on": "torso", "at": 0.3, "side": "both", "angle": 115 },
+      "length": 1,
+      "segments": 3,
+      "radius": [0.03, 0.012],
+      "splay": 60,
+      "foot": { "type": "foot.claw", "toes": 1 }
+    }
+  ],
+  "parts": [
+    {
+      "id": "eyes",
+      "type": "eye.basic",
+      "attach": { "on": "head", "at": 0.25, "angle": 35 },
+      "params": { "size": 0.022, "scleraColor": "#140c10", "irisColor": "#401020" }
+    },
+    {
+      "id": "side-eyes",
+      "type": "eye.basic",
+      "attach": { "on": "head", "at": 0.4, "angle": 70 },
+      "params": { "size": 0.014, "scleraColor": "#140c10", "irisColor": "#401020" }
+    }
+  ],
+  "skin": {
+    "palette": { "base": "#3a3030", "belly": "#6a5a50", "accent": "#1a1414" },
+    "material": "chitin",
+    "layers": [{ "type": "countershade", "softness": 0.2 }]
+  },
+  "motion": { "temperament": "stalking" }
 }
 ```
 
@@ -322,7 +521,7 @@ Ids you can override: limb `foreleg`, limb `hindleg`, part `eyes`.
     "palette": { "base": "#7a6a50", "belly": "#d9cdb0", "accent": "#3b2e22" },
     "layers": [{ "type": "countershade" }]
   },
-  "motion": { "temperament": "calm", "gaits": ["walk", "trot"] }
+  "motion": { "temperament": "calm" }
 }
 ```
 
@@ -361,13 +560,144 @@ Ids you can override: part `eyes`.
     "material": "scales",
     "layers": [{ "type": "countershade" }, { "type": "scales", "size": 0.025 }]
   },
-  "motion": { "temperament": "stalking", "gaits": ["slither"] }
+  "motion": { "temperament": "stalking" }
+}
+```
+
+</details>
+
+### `wyvern`
+
+Two legs under a horizontal body, wings for forelimbs, a long neck and tail; for bats and wyverns.
+
+Start a blueprint with "extends": "wyvern"; override preset limbs and parts by id.
+
+Ids you can override: limb `leg`, limb `wing`, part `eyes`, part `teeth`.
+
+<details><summary>Preset</summary>
+
+```json
+{
+  "scale": 1,
+  "body": {
+    "torso": { "radius": [0.13, 0.15, 0.13, 0.1], "arch": 0.06, "pitch": 10, "segments": 6 },
+    "neck": { "length": 0.5, "radius": [0.06, 0.09], "pitch": 35, "segments": 4 },
+    "head": { "shape": "wedge", "length": 0.32, "radius": 0.09, "jaw": true, "pitch": -5 },
+    "tail": { "length": 1.6, "radius": [0.09, 0.012], "pitch": -5, "curl": 15, "segments": 14 }
+  },
+  "limbs": [
+    {
+      "id": "leg",
+      "role": "leg",
+      "attach": { "on": "torso", "at": 0.62, "side": "both", "angle": 125 },
+      "length": 0.75,
+      "segments": 3,
+      "radius": [0.08, 0.035],
+      "foot": { "type": "foot.claw", "toes": 3 }
+    },
+    {
+      "id": "wing",
+      "role": "wing",
+      "attach": { "on": "torso", "at": 0.15, "side": "both", "angle": 45 },
+      "length": 1.6,
+      "segments": 3,
+      "radius": [0.05, 0.015],
+      "membrane": { "type": "membrane.bat", "fingers": 4 }
+    }
+  ],
+  "parts": [
+    {
+      "id": "eyes",
+      "type": "eye.basic",
+      "attach": { "on": "head", "at": 0.35, "angle": 55 },
+      "params": { "pupil": "slit" }
+    },
+    { "id": "teeth", "type": "teeth.row", "params": { "count": 12, "fangs": 2 } }
+  ],
+  "skin": {
+    "palette": { "base": "#5a3a3a", "belly": "#c0a080", "accent": "#2a1a1a" },
+    "material": "scales",
+    "layers": [{ "type": "countershade" }]
+  },
+  "motion": { "temperament": "aggressive" }
 }
 ```
 
 </details>
 
 ## Parts
+
+### `antenna`
+
+A jointed antenna that sways on springs: thread-like, clubbed or feathery; side "both" for a pair.
+
+Add to "parts" with "type": "antenna"; parameters go in "params".
+
+**Not built yet** (plan milestone 9.4): it validates, but compile skips it and warns `not_built`.
+
+slot: `"surface"` · material: `"chitin"` · defaultAttach: `{"on":"head","at":0.3,"angle":30}`
+
+| Parameter | Type | Range | Default | Description |
+| --- | --- | --- | --- | --- |
+| `length` | number | 0.05–2 | `0.5` | Length in torso lengths |
+| `segments` | integer | 2–12 | `6` | Jointed segments |
+| `shape` | "thread" \| "club" \| "feather" |  | `"thread"` | "thread" plain, "club" thickened at the tip (a butterfly), "feather" combed (a moth) |
+| `curve` | number | -180–180 | `40` | Degrees it curves back at rest |
+| `stiffness` | number | 0–1 | `0.5` | How little it sways |
+| `color` | string |  | `"accent"` | Colour: a palette name or a colour |
+
+```json
+{
+  "id": "antennae",
+  "type": "antenna",
+  "attach": { "on": "head", "at": 0.3, "angle": 30, "side": "both" },
+  "params": { "length": 0.6, "shape": "feather" }
+}
+```
+
+### `armor.bands`
+
+Overlapping bands of armour across an area of the body, like an armadillo or a pangolin.
+
+Add to "parts" with "type": "armor.bands"; parameters go in "params".
+
+**Not built yet** (plan milestone 9.5): it validates, but compile skips it and warns `not_built`.
+
+slot: `"area"` · material: `"horn"` · defaultAttach: `{"on":"torso","area":"back","from":0,"to":1}`
+
+| Parameter | Type | Range | Default | Description |
+| --- | --- | --- | --- | --- |
+| `bands` | integer | 2–30 | `9` | Bands from front to back |
+| `thickness` | number | 0.005–0.15 | `0.025` | Thickness in torso lengths |
+| `overlap` | number | 0–0.8 | `0.3` | How much each band overlaps the next |
+| `scales` | boolean |  | `false` | Break the bands into scales, like a pangolin |
+| `color` | string |  | `"base"` | Armour colour: a palette name or a colour |
+
+```json
+{ "id": "armor", "type": "armor.bands", "params": { "bands": 11 } }
+```
+
+### `beak`
+
+A horny beak in two halves, upper on the head and lower on the jaw, for birds and griffins.
+
+Add to "parts" with "type": "beak"; parameters go in "params".
+
+**Not built yet** (plan milestone 8.3): it validates, but compile skips it and warns `not_built`.
+
+slot: `"mouth"` · material: `"horn"` · defaultAttach: `{"on":"head"}`
+
+| Parameter | Type | Range | Default | Description |
+| --- | --- | --- | --- | --- |
+| `shape` | "hooked" \| "straight" \| "broad" |  | `"hooked"` | "hooked" like an eagle, "straight" like a heron, "broad" like a duck |
+| `length` | number | 0.2–2 | `1` | Beak length relative to the snout |
+| `depth` | number | 0.2–2 | `1` | How deep and heavy the beak is |
+| `color` | string |  | `"#d8b040"` | Beak colour: a palette name or a colour |
+| `tipColor` | string |  | `"#3a3020"` | Colour at the tip |
+
+```json
+{ "id": "beak", "type": "beak", "params": { "shape": "hooked" } }
+```
 
 ### `ear.pointed`
 
@@ -423,6 +753,54 @@ slot: `"surface"` · material: `"eye"` · defaultAttach: `{"on":"head","at":0.4,
 }
 ```
 
+### `fin.dorsal`
+
+One fin standing on the midline of the back (or belly, at angle 180), like a shark's.
+
+Add to "parts" with "type": "fin.dorsal"; parameters go in "params".
+
+**Not built yet** (plan milestone 9.3): it validates, but compile skips it and warns `not_built`.
+
+slot: `"surface"` · material: `"skin"` · defaultAttach: `{"on":"torso","at":0.45,"angle":0}`
+
+| Parameter | Type | Range | Default | Description |
+| --- | --- | --- | --- | --- |
+| `height` | number | 0.02–1 | `0.25` | Height in torso lengths |
+| `length` | number | 0.02–1 | `0.25` | Length along the body at its base |
+| `sweep` | number | 0–80 | `35` | Degrees the fin leans back |
+| `shape` | "triangle" \| "sail" \| "rounded" |  | `"triangle"` | "triangle" like a shark, "sail" tall and straight, "rounded" like a carp |
+| `color` | string |  | `"base"` | Fin colour: a palette name or a colour |
+
+```json
+{
+  "id": "dorsal",
+  "type": "fin.dorsal",
+  "attach": { "on": "torso", "at": 0.4, "angle": 0 },
+  "params": { "height": 0.3 }
+}
+```
+
+### `fin.tail`
+
+A tail fin at the tail tip: forked like a shark, rounded like a carp, or flat like a whale.
+
+Add to "parts" with "type": "fin.tail"; parameters go in "params".
+
+**Not built yet** (plan milestone 9.3): it validates, but compile skips it and warns `not_built`.
+
+slot: `"surface"` · material: `"skin"` · defaultAttach: `{"on":"tail","at":1,"angle":0}`
+
+| Parameter | Type | Range | Default | Description |
+| --- | --- | --- | --- | --- |
+| `shape` | "forked" \| "crescent" \| "rounded" \| "flukes" |  | `"forked"` | "forked", "crescent" (a tuna), "rounded" or "flukes" (flat, like a whale) |
+| `size` | number | 0.05–1.5 | `0.35` | Fin height in torso lengths |
+| `upper` | number | 0–1 | `0.6` | Share of the fin above the tail line |
+| `color` | string |  | `"base"` | Fin colour: a palette name or a colour |
+
+```json
+{ "id": "tailfin", "type": "fin.tail", "params": { "shape": "forked", "size": 0.4 } }
+```
+
 ### `foot.claw`
 
 Foot or hand of short toes, each tipped with a curved claw; set it as a limb's "foot".
@@ -443,6 +821,177 @@ slot: `"foot"` · material: `"horn"` · defaultAttach: `{"on":"limb"}`
 
 ```json
 { "type": "foot.claw", "toes": 3, "clawLength": 0.05 }
+```
+
+### `foot.hoof`
+
+A hoof, single (a horse) or cloven (a goat or boar); set it as a leg's "foot".
+
+Set as a limb's foot: { "foot": { "type": "foot.hoof", ...params } }.
+
+**Not built yet** (plan milestone 8.2): it validates, but compile skips it and warns `not_built`.
+
+slot: `"foot"` · material: `"horn"` · defaultAttach: `{"on":"limb"}`
+
+| Parameter | Type | Range | Default | Description |
+| --- | --- | --- | --- | --- |
+| `cloven` | boolean |  | `false` | Split into two toes, like a goat or a boar |
+| `size` | number | 0.5–2 | `1` | Hoof size relative to the leg tip |
+| `height` | number | 0.2–2 | `1` | How tall the hoof wall is |
+| `color` | string |  | `"#2a221c"` | Hoof colour: a palette name or a colour |
+
+```json
+{ "type": "foot.hoof", "cloven": true }
+```
+
+### `foot.pad`
+
+A broad column foot with blunt nails, for heavy creatures like elephants and trolls.
+
+Set as a limb's foot: { "foot": { "type": "foot.pad", ...params } }.
+
+**Not built yet** (plan milestone 8.2): it validates, but compile skips it and warns `not_built`.
+
+slot: `"foot"` · material: `"skin"` · defaultAttach: `{"on":"limb"}`
+
+| Parameter | Type | Range | Default | Description |
+| --- | --- | --- | --- | --- |
+| `width` | number | 0.5–2.5 | `1.3` | Foot width relative to the leg tip |
+| `nails` | integer | 0–5 | `4` | Blunt nails around the front |
+| `nailColor` | string |  | `"#d8ccb0"` | Nail colour: a palette name or a colour |
+
+```json
+{ "type": "foot.pad", "width": 1.5, "nails": 3 }
+```
+
+### `foot.paw`
+
+A padded paw with toes and visible or hidden claws, like a dog or a big cat.
+
+Set as a limb's foot: { "foot": { "type": "foot.paw", ...params } }.
+
+**Not built yet** (plan milestone 8.2): it validates, but compile skips it and warns `not_built`.
+
+slot: `"foot"` · material: `"skin"` · defaultAttach: `{"on":"limb"}`
+
+| Parameter | Type | Range | Default | Description |
+| --- | --- | --- | --- | --- |
+| `toes` | integer | 3–5 | `4` | Toes on the ground |
+| `size` | number | 0.5–2 | `1` | Paw size relative to the leg tip |
+| `claws` | "hidden" \| "short" \| "long" |  | `"short"` | "hidden" like a cat at rest, "short" like a dog, "long" like a bear |
+| `padColor` | string |  | `"#3a2e2a"` | Colour of the pads: a palette name or a colour |
+| `clawColor` | string |  | `"#2a221c"` | Claw colour |
+
+```json
+{ "type": "foot.paw", "toes": 4, "claws": "short" }
+```
+
+### `foot.talon`
+
+A bird-like foot: three long toes forward, one back, each with a hooked talon.
+
+Set as a limb's foot: { "foot": { "type": "foot.talon", ...params } }.
+
+**Not built yet** (plan milestone 8.2): it validates, but compile skips it and warns `not_built`.
+
+slot: `"foot"` · material: `"horn"` · defaultAttach: `{"on":"limb"}`
+
+| Parameter | Type | Range | Default | Description |
+| --- | --- | --- | --- | --- |
+| `toeLength` | number | 0.02–0.5 | `0.12` | Toe length in torso lengths |
+| `talonLength` | number | 0–0.3 | `0.05` | Talon length in torso lengths |
+| `grip` | number | 0–1 | `0.3` | How curled the toes are at rest |
+| `color` | string |  | `"#c8a040"` | Scaly toe colour: a palette name or a colour |
+| `talonColor` | string |  | `"#1e1a16"` | Talon colour |
+
+```json
+{ "type": "foot.talon", "toeLength": 0.14, "talonLength": 0.06 }
+```
+
+### `frill`
+
+A fan of spines with skin between them around the neck, folded at rest and opened in display.
+
+Add to "parts" with "type": "frill"; parameters go in "params".
+
+**Not built yet** (plan milestone 9.5): it validates, but compile skips it and warns `not_built`.
+
+slot: `"surface"` · material: `"skin"` · defaultAttach: `{"on":"neck","at":0.1,"angle":0}`
+
+| Parameter | Type | Range | Default | Description |
+| --- | --- | --- | --- | --- |
+| `radius` | number | 0.05–1 | `0.3` | Frill radius when open, in torso lengths |
+| `spines` | integer | 4–30 | `12` | Spines in the fan |
+| `open` | number | 0–1 | `0.2` | How open it is at rest |
+| `color` | string |  | `"accent"` | Membrane colour: a palette name or a colour |
+| `spineColor` | string |  | `"base"` | Spine colour |
+
+```json
+{ "id": "frill", "type": "frill", "params": { "radius": 0.35, "spines": 14 } }
+```
+
+### `hand.grasp`
+
+A grasping hand: fingers and an opposed thumb, with nails or claws; set it as "foot".
+
+Set as a limb's foot: { "foot": { "type": "hand.grasp", ...params } }.
+
+**Not built yet** (plan milestone 8.2): it validates, but compile skips it and warns `not_built`.
+
+slot: `"foot"` · material: `"skin"` · defaultAttach: `{"on":"limb"}`
+
+| Parameter | Type | Range | Default | Description |
+| --- | --- | --- | --- | --- |
+| `fingers` | integer | 2–5 | `4` | Fingers beside the thumb |
+| `fingerLength` | number | 0.02–0.5 | `0.1` | Finger length in torso lengths |
+| `claws` | number | 0–0.2 | `0.01` | Claw length in torso lengths; 0 for nails |
+| `clawColor` | string |  | `"#2a221c"` | Claw or nail colour: a palette name or a colour |
+
+```json
+{ "type": "hand.grasp", "fingers": 4, "claws": 0.03 }
+```
+
+### `hand.pincer`
+
+A crab or scorpion pincer: a heavy claw with one hinged finger that snaps shut.
+
+Set as a limb's foot: { "foot": { "type": "hand.pincer", ...params } }.
+
+**Not built yet** (plan milestone 9.4): it validates, but compile skips it and warns `not_built`.
+
+slot: `"foot"` · material: `"chitin"` · defaultAttach: `{"on":"limb"}`
+
+| Parameter | Type | Range | Default | Description |
+| --- | --- | --- | --- | --- |
+| `size` | number | 0.03–0.8 | `0.2` | Pincer length in torso lengths |
+| `width` | number | 0.2–1.5 | `0.6` | How bulky the claw is |
+| `teeth` | integer | 0–12 | `4` | Serrations along the inner edge |
+| `color` | string |  | `"base"` | Claw colour: a palette name or a colour |
+| `tipColor` | string |  | `"#1e1a16"` | Colour at the finger tips |
+
+```json
+{ "type": "hand.pincer", "size": 0.25 }
+```
+
+### `hood`
+
+A cobra's hood: neck ribs that spread the skin into a flat shield in display.
+
+Add to "parts" with "type": "hood"; parameters go in "params".
+
+**Not built yet** (plan milestone 9.5): it validates, but compile skips it and warns `not_built`.
+
+slot: `"surface"` · material: `"skin"` · defaultAttach: `{"on":"neck","at":0.3,"angle":0}`
+
+| Parameter | Type | Range | Default | Description |
+| --- | --- | --- | --- | --- |
+| `width` | number | 0.05–1 | `0.25` | Hood width when spread, in torso lengths |
+| `length` | number | 0.1–1 | `0.5` | Share of the neck the hood covers |
+| `open` | number | 0–1 | `0.3` | How spread it is at rest |
+| `markColor` | string |  | `"belly"` | Colour of the eye marks on the back of the hood |
+
+```json
+{ "id": "hood", "type": "hood", "params": { "width": 0.3 } }
 ```
 
 ### `horn.curved`
@@ -473,6 +1022,242 @@ slot: `"surface"` · material: `"horn"` · defaultAttach: `{"on":"head","at":0.7
   "attach": { "on": "head", "at": 0.75, "angle": 40, "side": "both" },
   "params": { "length": 0.25, "curve": 60 }
 }
+```
+
+### `mandible`
+
+A pair of hinged mandibles or fangs at the mouth corners that close with the bite.
+
+Add to "parts" with "type": "mandible"; parameters go in "params".
+
+**Not built yet** (plan milestone 9.4): it validates, but compile skips it and warns `not_built`.
+
+slot: `"mouth"` · material: `"chitin"` · defaultAttach: `{"on":"head"}`
+
+| Parameter | Type | Range | Default | Description |
+| --- | --- | --- | --- | --- |
+| `length` | number | 0.02–0.6 | `0.15` | Mandible length in torso lengths |
+| `curve` | number | 0–180 | `70` | Degrees each mandible curves inward |
+| `teeth` | integer | 0–8 | `2` | Teeth along the inner edge |
+| `shape` | "mandible" \| "fang" |  | `"mandible"` | "mandible" like an ant, "fang" like a spider's chelicerae |
+| `color` | string |  | `"#2a2018"` | Colour: a palette name or a colour |
+| `tipColor` | string |  | `"#100a06"` | Colour at the tips |
+
+```json
+{ "id": "mandibles", "type": "mandible", "params": { "length": 0.2 } }
+```
+
+### `membrane.bat`
+
+Leathery skin stretched between long finger bones, the body and the hind leg: bat and dragon wings.
+
+Add to "parts" with "type": "membrane.bat"; parameters go in "params".
+
+**Not built yet** (plan milestone 9.3): it validates, but compile skips it and warns `not_built`.
+
+slot: `"membrane"` · material: `"skin"` · defaultAttach: `{"on":"limb"}`
+
+| Parameter | Type | Range | Default | Description |
+| --- | --- | --- | --- | --- |
+| `fingers` | integer | 3–5 | `4` | Finger bones spanning the membrane |
+| `span` | number | 0.5–2 | `1` | Finger length relative to the arm: larger spreads a bigger wing |
+| `trailing` | "leg" \| "body" |  | `"leg"` | Where the trailing edge runs: to the nearest leg behind the wing, or to the body |
+| `scallop` | number | 0–1 | `0.4` | How deeply the edge dips between fingers |
+| `color` | string |  | `"base"` | Membrane colour: a palette name or a colour |
+| `translucency` | number | 0–1 | `0.4` | How much light shows through |
+
+```json
+{ "type": "membrane.bat", "fingers": 4, "span": 1.2 }
+```
+
+### `membrane.case`
+
+A beetle's hard wing case (elytron): a shell that covers the same-side wing behind it and lifts in flight.
+
+Add to "parts" with "type": "membrane.case"; parameters go in "params".
+
+**Not built yet** (plan milestone 9.3): it validates, but compile skips it and warns `not_built`.
+
+slot: `"membrane"` · material: `"chitin"` · defaultAttach: `{"on":"limb"}`
+
+| Parameter | Type | Range | Default | Description |
+| --- | --- | --- | --- | --- |
+| `dome` | number | 0–1 | `0.6` | How domed the case is |
+| `ridges` | integer | 0–12 | `3` | Ridges along the case |
+| `color` | string |  | `"base"` | Case colour: a palette name or a colour |
+| `sheen` | number | 0–1 | `0.6` | How glossy the case is |
+
+```json
+{ "type": "membrane.case", "dome": 0.7 }
+```
+
+### `membrane.feather`
+
+Overlapping flight feathers along the wing bones, for birds and griffins.
+
+Add to "parts" with "type": "membrane.feather"; parameters go in "params".
+
+**Not built yet** (plan milestone 9.3): it validates, but compile skips it and warns `not_built`.
+
+slot: `"membrane"` · material: `"skin"` · defaultAttach: `{"on":"limb"}`
+
+| Parameter | Type | Range | Default | Description |
+| --- | --- | --- | --- | --- |
+| `feathers` | integer | 6–40 | `18` | Flight feathers per wing |
+| `length` | number | 0.3–2 | `1` | Feather length relative to the wing bones: larger makes a broader wing |
+| `tips` | "rounded" \| "pointed" \| "fingered" |  | `"fingered"` | Wing tip: rounded, pointed (a falcon) or fingered (an eagle) |
+| `color` | string |  | `"base"` | Feather colour: a palette name or a colour |
+| `tipColor` | string |  | `"accent"` | Colour at the feather tips |
+
+```json
+{ "type": "membrane.feather", "feathers": 20, "tips": "fingered" }
+```
+
+### `membrane.fin`
+
+A fin of thin rays with skin between them, on a fin limb (pectoral and pelvic fins).
+
+Add to "parts" with "type": "membrane.fin"; parameters go in "params".
+
+**Not built yet** (plan milestone 9.3): it validates, but compile skips it and warns `not_built`.
+
+slot: `"membrane"` · material: `"skin"` · defaultAttach: `{"on":"limb"}`
+
+| Parameter | Type | Range | Default | Description |
+| --- | --- | --- | --- | --- |
+| `rays` | integer | 3–16 | `7` | Rays spanning the fin |
+| `width` | number | 0.2–2 | `0.8` | Fin width relative to its length |
+| `color` | string |  | `"base"` | Fin colour: a palette name or a colour |
+| `translucency` | number | 0–1 | `0.5` | How much light shows through |
+
+```json
+{ "type": "membrane.fin", "rays": 8 }
+```
+
+### `membrane.insect`
+
+A thin, veined insect wing on a hinge, for flies, dragonflies, moths and bees.
+
+Add to "parts" with "type": "membrane.insect"; parameters go in "params".
+
+**Not built yet** (plan milestone 9.3): it validates, but compile skips it and warns `not_built`.
+
+slot: `"membrane"` · material: `"chitin"` · defaultAttach: `{"on":"limb"}`
+
+| Parameter | Type | Range | Default | Description |
+| --- | --- | --- | --- | --- |
+| `shape` | "narrow" \| "broad" \| "round" |  | `"narrow"` | "narrow" like a dragonfly, "broad" like a moth, "round" like a beetle |
+| `width` | number | 0.1–1.5 | `0.4` | Wing width relative to its length |
+| `veins` | number | 0–1 | `0.6` | How strongly the veins show |
+| `color` | string |  | `"#d8e0e8"` | Wing colour: a palette name or a colour |
+| `translucency` | number | 0–1 | `0.7` | How much light shows through |
+
+```json
+{ "type": "membrane.insect", "shape": "broad", "width": 0.8 }
+```
+
+### `plates.row`
+
+Upright bony plates along the back, in one row or two alternating rows like a stegosaur.
+
+Add to "parts" with "type": "plates.row"; parameters go in "params".
+
+**Not built yet** (plan milestone 9.5): it validates, but compile skips it and warns `not_built`.
+
+slot: `"row"` · material: `"bone"` · defaultAttach: `{"on":"spine","from":0.2,"to":0.8,"angle":0}`
+
+| Parameter | Type | Range | Default | Description |
+| --- | --- | --- | --- | --- |
+| `count` | integer | 2–40 | `12` | Plates in the row |
+| `height` | number or list of number | 0.01–0.8 | `[0.08, 0.2, 0.08]` | Height in torso lengths, as one number or a profile along the row |
+| `alternate` | boolean |  | `true` | Two staggered rows, left and right |
+| `shape` | "kite" \| "round" \| "spike" |  | `"kite"` | Plate outline |
+| `color` | string |  | `"#c8b090"` | Plate colour: a palette name or a colour |
+| `edgeColor` | string |  | `"accent"` | Colour at the plate edges |
+
+```json
+{
+  "id": "plates",
+  "type": "plates.row",
+  "attach": { "on": "spine", "from": 0.2, "to": 0.85 },
+  "params": { "count": 14, "height": [0.1, 0.25, 0.1] }
+}
+```
+
+### `quills`
+
+Long sharp quills scattered over an area of the body, raised in display, like a porcupine.
+
+Add to "parts" with "type": "quills"; parameters go in "params".
+
+**Not built yet** (plan milestone 9.5): it validates, but compile skips it and warns `not_built`.
+
+slot: `"area"` · material: `"horn"` · defaultAttach: `{"on":"spine","area":"back","from":0.3,"to":0.9}`
+
+| Parameter | Type | Range | Default | Description |
+| --- | --- | --- | --- | --- |
+| `density` | number | 0–1 | `0.5` | How closely the quills grow |
+| `length` | number | 0.02–1 | `0.2` | Quill length in torso lengths |
+| `lie` | number | 0–90 | `60` | Degrees the quills lie back at rest |
+| `color` | string |  | `"#e8e0d0"` | Quill colour: a palette name or a colour |
+| `tipColor` | string |  | `"#2a2018"` | Colour at the tips |
+
+```json
+{
+  "id": "quills",
+  "type": "quills",
+  "attach": { "on": "spine", "area": "back", "from": 0.3, "to": 0.9 },
+  "params": { "length": 0.25 }
+}
+```
+
+### `sail`
+
+A tall sail of skin stretched over long spines along the back, like a dimetrodon.
+
+Add to "parts" with "type": "sail"; parameters go in "params".
+
+**Not built yet** (plan milestone 9.5): it validates, but compile skips it and warns `not_built`.
+
+slot: `"row"` · material: `"skin"` · defaultAttach: `{"on":"spine","from":0.25,"to":0.6,"angle":0}`
+
+| Parameter | Type | Range | Default | Description |
+| --- | --- | --- | --- | --- |
+| `height` | number or list of number | 0.02–1 | `[0.1, 0.4, 0.1]` | Height in torso lengths, as one number or a profile along the sail |
+| `spines` | integer | 3–40 | `12` | Spines holding the sail |
+| `color` | string |  | `"accent"` | Membrane colour: a palette name or a colour |
+| `spineColor` | string |  | `"base"` | Spine colour |
+
+```json
+{
+  "id": "sail",
+  "type": "sail",
+  "attach": { "on": "spine", "from": 0.25, "to": 0.6 },
+  "params": { "height": [0.1, 0.45, 0.1] }
+}
+```
+
+### `shell`
+
+A domed shell over an area of the body, divided into scutes, like a turtle or a tortoise.
+
+Add to "parts" with "type": "shell"; parameters go in "params".
+
+**Not built yet** (plan milestone 9.5): it validates, but compile skips it and warns `not_built`.
+
+slot: `"area"` · material: `"horn"` · defaultAttach: `{"on":"torso","area":"back","from":0,"to":1}`
+
+| Parameter | Type | Range | Default | Description |
+| --- | --- | --- | --- | --- |
+| `dome` | number | 0–1 | `0.6` | How domed: 0 flat, 1 a high tortoise shell |
+| `thickness` | number | 0.005–0.2 | `0.03` | Thickness in torso lengths |
+| `overhang` | number | 0–0.5 | `0.12` | How far the rim reaches past the body |
+| `scutes` | integer | 0–30 | `13` | Plates on the shell; 0 for smooth |
+| `color` | string |  | `"base"` | Shell colour: a palette name or a colour |
+| `seamColor` | string |  | `"accent"` | Colour of the seams between scutes |
+
+```json
+{ "id": "shell", "type": "shell", "params": { "dome": 0.7 } }
 ```
 
 ### `spikes.row`
@@ -775,6 +1560,121 @@ Add to skin.layers as { "type": "warts", ...params }; every layer also takes "re
 
 ## Gaits
 
+### `bound`
+
+Small quadrupeds leaping with both hind legs, then both front legs, like a rabbit or a weasel.
+
+List in motion.gaits as "bound", or { "type": "bound", ...params }.
+
+**Not built yet** (plan milestone 10.1): it validates, but compile skips it and warns `not_built`.
+
+legPairs: `[2]` · duty: `0.3` · froude: `[1,5]` · wave: `0.5`
+
+| Parameter | Type | Range | Default | Description |
+| --- | --- | --- | --- | --- |
+| `flex` | number | 0–1 | `0.7` | How much the spine flexes each bound |
+| `stride` | number | 0.2–2 | `1` | Stride length multiplier |
+
+```json
+{ "motion": { "gaits": ["bound"] } }
+```
+
+### `fly`
+
+Flapping flight: power strokes on the way down, wings folded on the way up.
+
+List in motion.gaits as "fly", or { "type": "fly", ...params }.
+
+**Not built yet** (plan milestone 10.4): it validates, but compile skips it and warns `not_built`.
+
+legPairs: `"any"` · duty: `0` · froude: `[0.5,8]` · wave: `[{"pairs":1,"wave":0},{"pairs":2,"wave":0},{"pairs":3,"wave":0}]`
+
+| Parameter | Type | Range | Default | Description |
+| --- | --- | --- | --- | --- |
+| `stroke` | number | 0.2–2 | `1` | Wingbeat amplitude multiplier |
+| `bank` | number | 0–90 | `40` | Most degrees it banks into a turn |
+
+```json
+{ "motion": { "gaits": ["fly"] } }
+```
+
+### `gallop`
+
+Fast four-legged gait with a leading leg and a moment in the air, like a horse.
+
+List in motion.gaits as "gallop", or { "type": "gallop", ...params }.
+
+**Not built yet** (plan milestone 10.1): it validates, but compile skips it and warns `not_built`.
+
+legPairs: `[2]` · duty: `0.3` · froude: `[2,6]` · wave: `0.1`
+
+| Parameter | Type | Range | Default | Description |
+| --- | --- | --- | --- | --- |
+| `style` | "transverse" \| "rotary" |  | `"transverse"` | "transverse" like a horse, "rotary" like a cheetah or a dog |
+| `lead` | "left" \| "right" |  | `"left"` | Which front leg leads |
+| `flex` | number | 0–1 | `0.4` | How much the spine flexes each stride |
+| `stride` | number | 0.2–2 | `1` | Stride length multiplier |
+
+```json
+{ "motion": { "gaits": ["gallop"] } }
+```
+
+### `glide`
+
+Soaring and gliding on spread wings between flaps.
+
+List in motion.gaits as "glide", or { "type": "glide", ...params }.
+
+**Not built yet** (plan milestone 10.4): it validates, but compile skips it and warns `not_built`.
+
+legPairs: `"any"` · duty: `0` · froude: `[0.5,8]` · wave: `[{"pairs":1,"wave":0},{"pairs":2,"wave":0},{"pairs":3,"wave":0}]`
+
+| Parameter | Type | Range | Default | Description |
+| --- | --- | --- | --- | --- |
+| `sink` | number | 0–1 | `0.3` | How fast it loses height while gliding |
+
+```json
+{ "motion": { "gaits": ["glide"] } }
+```
+
+### `hover`
+
+Hovering in place on fast figure-eight wingbeats, like an insect or a hummingbird.
+
+List in motion.gaits as "hover", or { "type": "hover", ...params }.
+
+**Not built yet** (plan milestone 10.4): it validates, but compile skips it and warns `not_built`.
+
+legPairs: `"any"` · duty: `0` · froude: `[0,0.5]` · wave: `[{"pairs":1,"wave":0},{"pairs":2,"wave":0},{"pairs":3,"wave":0}]`
+
+| Parameter | Type | Range | Default | Description |
+| --- | --- | --- | --- | --- |
+| `rate` | number | 0.5–2 | `1` | Wingbeat rate multiplier |
+
+```json
+{ "motion": { "gaits": ["hover"] } }
+```
+
+### `run`
+
+Two-legged running with a moment in the air each stride, for raptors and runners.
+
+List in motion.gaits as "run", or { "type": "run", ...params }.
+
+**Not built yet** (plan milestone 10.1): it validates, but compile skips it and warns `not_built`.
+
+legPairs: `[1]` · duty: `0.35` · froude: `[0.5,3]` · wave: `0.5`
+
+| Parameter | Type | Range | Default | Description |
+| --- | --- | --- | --- | --- |
+| `duty` | number | 0.2–0.5 |  | Share of the cycle each foot is planted |
+| `stride` | number | 0.2–2 | `1` | Stride length multiplier |
+| `lean` | number | 0–45 | `15` | Degrees the body leans forward at speed |
+
+```json
+{ "motion": { "gaits": ["run"] } }
+```
+
 ### `slither`
 
 Legless travelling wave down the spine; each segment follows the path of the one ahead.
@@ -790,6 +1690,61 @@ legPairs: `[0]` · duty: `1` · froude: `[0,3]` · wave: `0`
 
 ```json
 { "motion": { "gaits": ["slither"] } }
+```
+
+### `swim.flap`
+
+Swims by beating fins or flippers like wings, like a turtle or a penguin.
+
+List in motion.gaits as "swim.flap", or { "type": "swim.flap", ...params }.
+
+**Not built yet** (plan milestone 10.3): it validates, but compile skips it and warns `not_built`.
+
+legPairs: `"any"` · duty: `0.5` · froude: `[0,1]` · wave: `[{"pairs":1,"wave":0},{"pairs":2,"wave":0},{"pairs":3,"wave":0}]`
+
+| Parameter | Type | Range | Default | Description |
+| --- | --- | --- | --- | --- |
+| `stroke` | number | 0.2–2 | `1` | Stroke size multiplier |
+
+```json
+{ "motion": { "gaits": ["swim.flap"] } }
+```
+
+### `swim.paddle`
+
+Swims at the surface by paddling its legs, like a dog or a bear.
+
+List in motion.gaits as "swim.paddle", or { "type": "swim.paddle", ...params }.
+
+**Not built yet** (plan milestone 10.3): it validates, but compile skips it and warns `not_built`.
+
+legPairs: `"any"` · duty: `0.5` · froude: `[0,0.5]` · wave: `[{"pairs":1,"wave":0.5},{"pairs":2,"wave":0.5},{"pairs":3,"wave":0.5}]`
+
+| Parameter | Type | Range | Default | Description |
+| --- | --- | --- | --- | --- |
+| `stroke` | number | 0.2–2 | `1` | Stroke length multiplier |
+
+```json
+{ "motion": { "gaits": ["swim.paddle"] } }
+```
+
+### `swim.undulate`
+
+Swims with a body wave that grows toward the tail, like a fish, an eel or a crocodile.
+
+List in motion.gaits as "swim.undulate", or { "type": "swim.undulate", ...params }.
+
+**Not built yet** (plan milestone 10.3): it validates, but compile skips it and warns `not_built`.
+
+legPairs: `"any"` · duty: `1` · froude: `[0,1]` · wave: `[{"pairs":1,"wave":0},{"pairs":2,"wave":0},{"pairs":3,"wave":0}]`
+
+| Parameter | Type | Range | Default | Description |
+| --- | --- | --- | --- | --- |
+| `amplitude` | number | 0–1 | `0.2` | Tail-beat width as a share of body length |
+| `waves` | number | 0.5–3 | `1` | Body waves along the length |
+
+```json
+{ "motion": { "gaits": ["swim.undulate"] } }
 ```
 
 ### `tripod`
@@ -865,6 +1820,25 @@ needs: `["jaw"]`
 { "motion": { "actions": ["bite"] } }
 ```
 
+### `display`
+
+Threat display: opens frills and hoods, raises quills and sails, spreads wings.
+
+List in motion.actions as "display", or { "type": "display", ...params }.
+
+**Not built yet** (plan milestone 9.5): it validates, but compile skips it and warns `not_built`.
+
+needs: `["display"]`
+
+| Parameter | Type | Range | Default | Description |
+| --- | --- | --- | --- | --- |
+| `duration` | number | 0.5–8 | `2.5` | Seconds for a creature with 1 m hips; scales with size |
+| `intensity` | number | 0–1 | `1` | How far everything opens |
+
+```json
+{ "motion": { "actions": ["display"] } }
+```
+
 ### `idle`
 
 Breathing, weight shifts, glances, tail swish and blinks while standing.
@@ -882,6 +1856,44 @@ needs: `[]`
 { "motion": { "actions": ["idle"] } }
 ```
 
+### `jump`
+
+Crouches, leaps to a target point or over a height and lands on its legs; fires takeoff and land events.
+
+List in motion.actions as "jump", or { "type": "jump", ...params }.
+
+**Not built yet** (plan milestone 10.2): it validates, but compile skips it and warns `not_built`.
+
+needs: `["legs"]`
+
+| Parameter | Type | Range | Default | Description |
+| --- | --- | --- | --- | --- |
+| `power` | number | 0–1 | `0.6` | How hard it springs, 0 to 1 |
+| `crouch` | number | 0–1 | `0.5` | How deep it crouches first |
+
+```json
+{ "motion": { "actions": ["jump"] } }
+```
+
+### `lash`
+
+Whips the tail or a tentacle at a target; fires a lash-contact event.
+
+List in motion.actions as "lash", or { "type": "lash", ...params }.
+
+**Not built yet** (plan milestone 9.4): it validates, but compile skips it and warns `not_built`.
+
+needs: `[["tail","tentacle"]]`
+
+| Parameter | Type | Range | Default | Description |
+| --- | --- | --- | --- | --- |
+| `speed` | number | 0.25–3 | `1` | Speed multiplier |
+| `arc` | number | 20–180 | `90` | Degrees the strike sweeps |
+
+```json
+{ "motion": { "actions": ["lash"] } }
+```
+
 ### `look`
 
 Turns eyes, head and neck toward a target within limits.
@@ -897,6 +1909,44 @@ needs: `["head"]`
 
 ```json
 { "motion": { "actions": ["look"] } }
+```
+
+### `pinch`
+
+Snaps a pincer shut on a target; fires a pinch-contact event.
+
+List in motion.actions as "pinch", or { "type": "pinch", ...params }.
+
+**Not built yet** (plan milestone 9.4): it validates, but compile skips it and warns `not_built`.
+
+needs: `["pincer"]`
+
+| Parameter | Type | Range | Default | Description |
+| --- | --- | --- | --- | --- |
+| `speed` | number | 0.25–3 | `1` | Speed multiplier |
+| `both` | boolean |  | `false` | Snap both pincers together |
+
+```json
+{ "motion": { "actions": ["pinch"] } }
+```
+
+### `pounce`
+
+A jump that ends in a bite on the target; fires takeoff, land and bite-contact events.
+
+List in motion.actions as "pounce", or { "type": "pounce", ...params }.
+
+**Not built yet** (plan milestone 10.2): it validates, but compile skips it and warns `not_built`.
+
+needs: `["legs","jaw"]`
+
+| Parameter | Type | Range | Default | Description |
+| --- | --- | --- | --- | --- |
+| `power` | number | 0–1 | `0.7` | How hard it springs, 0 to 1 |
+| `reach` | number | 0–1 | `0.8` | How far the head lunges at the end |
+
+```json
+{ "motion": { "actions": ["pounce"] } }
 ```
 
 ### `roar`

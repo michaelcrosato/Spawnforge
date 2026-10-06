@@ -31,6 +31,7 @@ export function renderIndex(): string {
     '// add a module file, then run `pnpm generate`.',
     "import { definePack } from '@spawnforge/core';",
     "import defaults from './defaults.ts';",
+    "import hints from './hints.ts';",
     ...entries.map((e) => `import ${e.name} from '${e.path}';`),
     '',
     '/** The first pack: body plans, parts, patterns, gaits and actions for the proof of concept. */',
@@ -40,6 +41,7 @@ export function renderIndex(): string {
     ...entries.map((e) => `    ${e.name},`),
     '  ],',
     '  defaults,',
+    '  hints,',
     '});',
     '',
   ].join('\n');

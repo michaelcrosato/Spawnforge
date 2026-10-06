@@ -37,17 +37,23 @@ function checkMesh(name: string, mesh: MeshData) {
 describe('compiling', () => {
   it.each(registry.ids('bodyPlan'))('%s compiles on the same code', (plan) => {
     const c = compile({ format: FORMAT, extends: plan });
+    const preset = registry.get('bodyPlan', plan)?.preset as {
+      limbs: { role?: string; splay?: number }[];
+      parts: { type: string }[];
+    };
+    const legs = preset.limbs.filter((l) => (l.role ?? 'leg') === 'leg');
     expect(c.stats.triangles.skin).toBeGreaterThan(500);
     expect(c.rig.posture).toBe(
-      plan === 'serpent' ? 'legless' : plan === 'hexapod' ? 'sprawl' : 'upright',
+      legs.length === 0 ? 'legless' : legs.some((l) => (l.splay ?? 0) >= 35) ? 'sprawl' : 'upright',
     );
-    expect(c.rig.legs.length).toBe({ biped: 2, quadruped: 4, hexapod: 6, serpent: 0 }[plan]);
-    expect(c.rig.eyes.length).toBe(2);
+    expect(c.rig.legs.length).toBe(legs.length * 2);
+    expect(c.rig.eyes.length).toBe(preset.parts.filter((p) => p.type === 'eye.basic').length * 2);
     checkMesh(`${plan} skin`, c.skin);
     checkMesh(`${plan} parts`, c.parts);
     // Feet rest on the ground: nothing far below it.
     expect(c.bounds.min[1]).toBeGreaterThan(-0.05 * c.scale);
-    expect(c.warnings).toEqual([]);
+    // Wings and fins are in the format before they are built (milestone 9.3).
+    expect(c.warnings.filter((w) => w.code !== 'not_built')).toEqual([]);
   });
 
   it.each(examples)('%s compiles within budget at medium quality', (_, blueprint) => {
@@ -119,7 +125,8 @@ describe('compiling', () => {
 });
 
 describe('module harness', () => {
-  const parts = registry.list('part');
+  // Stubs have no geometry yet; stubs.test.ts covers them.
+  const parts = registry.list('part').filter((m) => !m.planned);
 
   it.each(parts.map((m) => [m.id, m] as const))(
     '%s builds with its defaults and its example',

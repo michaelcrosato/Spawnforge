@@ -63,6 +63,6 @@ export default defineBodyPlan({
       material: 'chitin',
       layers: [{ type: 'countershade', softness: 0.2 }],
     },
-    motion: { temperament: 'skittish', gaits: ['tripod', 'walk'] },
+    motion: { temperament: 'skittish' },
   },
 });

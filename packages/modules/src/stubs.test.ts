@@ -23,14 +23,33 @@ function using(module: ModuleDefinition): Record<string, unknown> {
   switch (module.kind) {
     case 'pattern':
       return { ...base, skin: { layers: [example] } };
-    case 'gait':
-      return { ...base, motion: { gaits: [module.id] } };
+    case 'gait': {
+      // A body that suits every stub gait: its legs, bat and insect wings and fins, everywhere.
+      const pairs = module.legPairs === 'any' ? 2 : (module.legPairs[0] ?? 2);
+      const plan = ['serpent', 'biped', 'quadruped', 'hexapod', 'octopod'][pairs] ?? 'quadruped';
+      return {
+        ...base,
+        extends: plan,
+        limbs: [
+          { id: 'wing', role: 'wing' },
+          { id: 'wing2', role: 'wing', membrane: 'membrane.insect' },
+          { id: 'fin', role: 'fin' },
+        ],
+        motion: { media: { water: true }, gaits: [module.id] },
+      };
+    }
     case 'action':
-      return { ...base, motion: { actions: [module.id] } };
+      return {
+        ...base,
+        limbs: [{ id: 'foreleg', foot: 'hand.pincer' }],
+        parts: [{ id: 'frill', type: 'frill' }],
+        motion: { actions: [module.id] },
+      };
     case 'part':
-      return module.slot === 'foot'
-        ? { ...base, limbs: [{ id: 'foreleg', foot: example }] }
-        : { ...base, parts: [example] };
+      if (module.slot === 'foot') return { ...base, limbs: [{ id: 'foreleg', foot: example }] };
+      if (module.slot === 'membrane')
+        return { ...base, limbs: [{ id: 'wing', role: 'wing', membrane: example }] };
+      return { ...base, parts: [example] };
     default:
       return base;
   }
@@ -47,8 +66,9 @@ describe('stub modules', () => {
     (_, module) => {
       const result = validateBlueprint(using(module), registry, { minimal: false });
       expect(result.errors).toEqual([]);
-      const warning = result.warnings.find((w) => w.code === 'not_built');
-      expect(warning?.message).toContain(`plan milestone ${module.planned}`);
+      const listed = result.notBuilt?.find((w) => w.message.startsWith(`"${module.id}"`));
+      expect(listed?.message).toContain(`plan milestone ${module.planned}`);
+      expect(result.warnings.some((w) => w.code === 'not_built')).toBe(false);
       if (!result.creature) return;
       const compiled = compileCreature(result.creature, registry, { quality: 'low' });
       expect(compiled.warnings.some((w) => w.code === 'not_built')).toBe(true);

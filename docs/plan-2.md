@@ -199,8 +199,10 @@ Follow [eval/README.md](../eval/README.md), as plan 1 did:
 **Versions, goldens and looks**
 
 - The format becomes `spawnforge/0.2` in milestone 7.3. It stays open until 12.3 freezes it: until
-  then, additions go in, and changes to 0.1 fields extend the one 0.1 → 0.2 migration. After 12.3,
-  any schema change bumps the format and adds a migration.
+  then, additions go in. No value a blueprint can write changes meaning in plan 2: new behaviour
+  comes as new fields, modules and defaults, so files saved as 0.1 or early 0.2 stay correct. A
+  milestone that must change a meaning bumps the format and adds a step that runs on 0.2 files.
+  After 12.3, any schema change bumps the format and adds a migration.
 - In 0.x the pipeline may change how a blueprint looks. A milestone that moves vertices re-records
   the golden fingerprints once (`UPDATE_GOLDEN=1 pnpm test`), re-renders the examples
   (`pnpm render:examples`) and says why in the commit and the changelog.
@@ -590,8 +592,9 @@ decide it first, as a max step.
   that follows the jaw, and an inner mouth that darkens toward the throat.
 - **Teeth**: seated in the gums, sized along the row (incisors, canines, molars), and dense by
   default; `teeth.row` gets parameters for fangs and spacing. Tooth sizes follow the head rather
-  than the torso, so a long serpent's fangs stop reading as planks; the 0.1 → 0.2 migration
-  converts saved sizes so old creatures keep their teeth.
+  than the torso, so a long serpent's fangs stop reading as planks: new head-relative size
+  parameters with defaults, while sizes a blueprint already writes keep meaning torso lengths
+  (no value changes meaning in plan 2; see 7.3's design).
 - **Eyes**: smaller defaults and softer gloss; eyelids that close to blink (exported as lid
   bones, not squashed eyeballs); brow ridges.
 - **Skull**: nostrils, cheekbones and a brow, as SDF details at the head's scale.
@@ -599,7 +602,7 @@ decide it first, as a max step.
 
 **Done when** the PR shows head views (`render --views head`) of every example, the bite and roar
 filmstrips show the lips and tongue moving with the jaw, exported blinks use the lids, the
-corpus test passes with the extended migration, and the goldens are re-recorded.
+corpus test passes, and the goldens are re-recorded.
 
 ### 8.4 Materials and new pattern layers
 

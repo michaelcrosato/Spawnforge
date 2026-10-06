@@ -122,7 +122,7 @@ export interface ToeContext {
   /** Horizontal unit vector toward the limb's own side. */
   readonly outward: Vector3;
   readonly groundY: number;
-  readonly role: 'leg' | 'arm';
+  readonly role: import('../blueprint/creature.ts').LimbRole;
   /** Limb radius at the tip (metres). */
   readonly tipRadius: number;
   /** Metres per torso length. */

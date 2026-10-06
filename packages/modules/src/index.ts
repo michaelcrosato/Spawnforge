@@ -2,14 +2,42 @@
 // add a module file, then run `pnpm generate`.
 import { definePack } from '@spawnforge/core';
 import defaults from './defaults.ts';
+import hints from './hints.ts';
 import bodyPlansBiped from './body-plans/biped.ts';
+import bodyPlansCentaur from './body-plans/centaur.ts';
+import bodyPlansFish from './body-plans/fish.ts';
 import bodyPlansHexapod from './body-plans/hexapod.ts';
+import bodyPlansOctopod from './body-plans/octopod.ts';
 import bodyPlansQuadruped from './body-plans/quadruped.ts';
 import bodyPlansSerpent from './body-plans/serpent.ts';
+import bodyPlansWyvern from './body-plans/wyvern.ts';
+import partsAntenna from './parts/antenna.ts';
+import partsArmorBands from './parts/armor.bands.ts';
+import partsBeak from './parts/beak.ts';
 import partsEarPointed from './parts/ear.pointed.ts';
 import partsEyeBasic from './parts/eye.basic.ts';
+import partsFinDorsal from './parts/fin.dorsal.ts';
+import partsFinTail from './parts/fin.tail.ts';
 import partsFootClaw from './parts/foot.claw.ts';
+import partsFootHoof from './parts/foot.hoof.ts';
+import partsFootPad from './parts/foot.pad.ts';
+import partsFootPaw from './parts/foot.paw.ts';
+import partsFootTalon from './parts/foot.talon.ts';
+import partsFrill from './parts/frill.ts';
+import partsHandGrasp from './parts/hand.grasp.ts';
+import partsHandPincer from './parts/hand.pincer.ts';
+import partsHood from './parts/hood.ts';
 import partsHornCurved from './parts/horn.curved.ts';
+import partsMandible from './parts/mandible.ts';
+import partsMembraneBat from './parts/membrane.bat.ts';
+import partsMembraneCase from './parts/membrane.case.ts';
+import partsMembraneFeather from './parts/membrane.feather.ts';
+import partsMembraneFin from './parts/membrane.fin.ts';
+import partsMembraneInsect from './parts/membrane.insect.ts';
+import partsPlatesRow from './parts/plates.row.ts';
+import partsQuills from './parts/quills.ts';
+import partsSail from './parts/sail.ts';
+import partsShell from './parts/shell.ts';
 import partsSpikesRow from './parts/spikes.row.ts';
 import partsTeethRow from './parts/teeth.row.ts';
 import patternsBands from './patterns/bands.ts';
@@ -25,13 +53,27 @@ import patternsSpots from './patterns/spots.ts';
 import patternsStripes from './patterns/stripes.ts';
 import patternsVeins from './patterns/veins.ts';
 import patternsWarts from './patterns/warts.ts';
+import gaitsBound from './gaits/bound.ts';
+import gaitsFly from './gaits/fly.ts';
+import gaitsGallop from './gaits/gallop.ts';
+import gaitsGlide from './gaits/glide.ts';
+import gaitsHover from './gaits/hover.ts';
+import gaitsRun from './gaits/run.ts';
 import gaitsSlither from './gaits/slither.ts';
+import gaitsSwimFlap from './gaits/swim.flap.ts';
+import gaitsSwimPaddle from './gaits/swim.paddle.ts';
+import gaitsSwimUndulate from './gaits/swim.undulate.ts';
 import gaitsTripod from './gaits/tripod.ts';
 import gaitsTrot from './gaits/trot.ts';
 import gaitsWalk from './gaits/walk.ts';
 import actionsBite from './actions/bite.ts';
+import actionsDisplay from './actions/display.ts';
 import actionsIdle from './actions/idle.ts';
+import actionsJump from './actions/jump.ts';
+import actionsLash from './actions/lash.ts';
 import actionsLook from './actions/look.ts';
+import actionsPinch from './actions/pinch.ts';
+import actionsPounce from './actions/pounce.ts';
 import actionsRoar from './actions/roar.ts';
 import themesDemon from './themes/demon.ts';
 import themesInsect from './themes/insect.ts';
@@ -43,13 +85,40 @@ export const basicPack = definePack({
   id: 'basic',
   modules: [
     bodyPlansBiped,
+    bodyPlansCentaur,
+    bodyPlansFish,
     bodyPlansHexapod,
+    bodyPlansOctopod,
     bodyPlansQuadruped,
     bodyPlansSerpent,
+    bodyPlansWyvern,
+    partsAntenna,
+    partsArmorBands,
+    partsBeak,
     partsEarPointed,
     partsEyeBasic,
+    partsFinDorsal,
+    partsFinTail,
     partsFootClaw,
+    partsFootHoof,
+    partsFootPad,
+    partsFootPaw,
+    partsFootTalon,
+    partsFrill,
+    partsHandGrasp,
+    partsHandPincer,
+    partsHood,
     partsHornCurved,
+    partsMandible,
+    partsMembraneBat,
+    partsMembraneCase,
+    partsMembraneFeather,
+    partsMembraneFin,
+    partsMembraneInsect,
+    partsPlatesRow,
+    partsQuills,
+    partsSail,
+    partsShell,
     partsSpikesRow,
     partsTeethRow,
     patternsBands,
@@ -65,13 +134,27 @@ export const basicPack = definePack({
     patternsStripes,
     patternsVeins,
     patternsWarts,
+    gaitsBound,
+    gaitsFly,
+    gaitsGallop,
+    gaitsGlide,
+    gaitsHover,
+    gaitsRun,
     gaitsSlither,
+    gaitsSwimFlap,
+    gaitsSwimPaddle,
+    gaitsSwimUndulate,
     gaitsTripod,
     gaitsTrot,
     gaitsWalk,
     actionsBite,
+    actionsDisplay,
     actionsIdle,
+    actionsJump,
+    actionsLash,
     actionsLook,
+    actionsPinch,
+    actionsPounce,
     actionsRoar,
     themesDemon,
     themesInsect,
@@ -79,4 +162,5 @@ export const basicPack = definePack({
     statsRpg,
   ],
   defaults,
+  hints,
 });

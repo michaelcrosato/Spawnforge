@@ -4,8 +4,9 @@ import { cloneJson, isRecord } from './merge.ts';
 
 /**
  * Turns friendly forms into canonical ones, without validating: colour names and `#rgb` become
- * `#rrggbb`, and `{ "type": "walk" }` with no parameters becomes `"walk"`. Anything it does not
- * recognize is left alone for validation to report.
+ * `#rrggbb`, `{ "type": "walk" }` with no parameters becomes `"walk"`, and a limb's `"foot":
+ * "foot.hoof"` becomes `{ "type": "foot.hoof" }`. Anything it does not recognize is left alone
+ * for validation to report.
  */
 export function normalizeBlueprint(doc: Record<string, unknown>): Record<string, unknown> {
   const out = cloneJson(doc);
@@ -23,6 +24,16 @@ export function normalizeBlueprint(doc: Record<string, unknown>): Record<string,
   if (Array.isArray(out.parts)) {
     for (const part of out.parts) {
       if (isRecord(part) && isRecord(part.params)) normalizeColorFields(part.params);
+    }
+  }
+  // A limb's foot or membrane may be just its module id.
+  if (Array.isArray(out.limbs)) {
+    for (const limb of out.limbs) {
+      if (!isRecord(limb)) continue;
+      for (const key of ['foot', 'membrane']) {
+        if (typeof limb[key] === 'string') limb[key] = { type: limb[key] };
+        if (isRecord(limb[key])) normalizeColorFields(limb[key] as Record<string, unknown>);
+      }
     }
   }
   const motion = out.motion;
@@ -77,7 +88,8 @@ export function normalizeModules(doc: Record<string, unknown>, registry: Registr
     });
   }
   for (const limb of Array.isArray(doc.limbs) ? doc.limbs : [])
-    if (isRecord(limb) && isRecord(limb.foot)) fields(limb.foot, 'part', ['type']);
+    for (const key of ['foot', 'membrane'])
+      if (isRecord(limb) && isRecord(limb[key])) fields(limb[key], 'part', ['type']);
   const skin = doc.skin;
   if (isRecord(skin) && Array.isArray(skin.layers))
     for (const layer of skin.layers)

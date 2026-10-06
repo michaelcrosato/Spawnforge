@@ -120,10 +120,10 @@ export function randomBlueprint(registry: Registry, rng: Rng, name = 'Random'): 
   const presetLimbs = Array.isArray(preset.limbs) ? (preset.limbs as Json[]) : [];
   for (const limb of presetLimbs) {
     if (!rng.chance(0.5)) continue;
-    limbs.push({
-      id: limb.id,
-      ...some(limbSchema, ['length', 'radius', 'splay', 'segments'], rng),
-    });
+    // Each role takes its own fields (wings and fins have no splay).
+    const role = typeof limb.role === 'string' ? limb.role : 'leg';
+    const own = role === 'leg' || role === 'arm' ? ['splay', 'segments'] : [];
+    limbs.push({ id: limb.id, ...some(limbSchema, ['length', 'radius', ...own], rng) });
   }
   const feet = registry.list('part').filter((p) => p.slot === 'foot');
   if (rng.chance(0.3)) {
@@ -164,7 +164,7 @@ export function randomBlueprint(registry: Registry, rng: Rng, name = 'Random'): 
   ];
   const modules = registry
     .list('part')
-    .filter((p) => p.slot !== 'foot' && (p.slot !== 'mouth' || jaw));
+    .filter((p) => p.slot !== 'foot' && p.slot !== 'membrane' && (p.slot !== 'mouth' || jaw));
   const parts: Json[] = [];
   const count = rng.int(0, 5);
   for (let i = 0; i < count && modules.length > 0; i++) {

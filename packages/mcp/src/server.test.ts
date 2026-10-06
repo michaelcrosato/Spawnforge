@@ -46,9 +46,13 @@ describe('MCP server', () => {
     );
     expect(out.modules.map((m: { id: string }) => m.id)).toEqual([
       'biped',
+      'centaur',
+      'fish',
       'hexapod',
+      'octopod',
       'quadruped',
       'serpent',
+      'wyvern',
     ]);
   });
 

@@ -61,7 +61,7 @@ describe('the core', () => {
       registry,
       { minimal: false },
     );
-    expect(result.creature?.limbs[0]?.foot?.type).toBe(basicPack.defaults.foot);
+    expect(result.creature?.limbs[0]?.foot?.type).toBe(basicPack.defaults.foot.leg);
     expect(result.creature?.skin.layers.map((l) => l.type)).toEqual(
       basicPack.defaults.layers.map((l) => l.type),
     );

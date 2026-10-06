@@ -149,7 +149,10 @@ function palette(rng: Rng, bias: ThemeBias['palette']): Record<string, string> {
 /** Features each required action needs. */
 function neededFeatures(registry: Registry, actions: readonly string[]): Set<Feature> {
   const out = new Set<Feature>();
-  for (const id of actions) for (const f of registry.get('action', id)?.needs ?? []) out.add(f);
+  // Needs with alternatives (`['tail', 'tentacle']`) are met by any; generate asks for the first.
+  for (const id of actions)
+    for (const need of registry.get('action', id)?.needs ?? [])
+      out.add(typeof need === 'string' ? need : (need[0] ?? ''));
   return out;
 }
 

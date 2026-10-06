@@ -9,6 +9,7 @@ import {
   parsePath,
   type Step,
 } from '../blueprint/patch.ts';
+import { roleFieldsOnly } from '../blueprint/schema.ts';
 import { blueprintSchemaFor, resolveDocument } from '../blueprint/validate.ts';
 import { type ModuleKind, paramsJsonSchema, type Registry } from '../registry.ts';
 import type { Rng } from '../rng.ts';
@@ -60,6 +61,11 @@ const FIXED = new Set([
   'on',
   'side',
   'region',
+  // Format 0.2: counts and media stay as written until 9.6 designs breeding across them.
+  'count',
+  'forkAt',
+  'media',
+  'area',
 ]);
 
 const options = (node: Schema | undefined): Schema[] =>
@@ -118,7 +124,11 @@ export function expand(blueprint: unknown, registry: Registry): { doc?: Json; er
     for (const [k, v] of Object.entries(out)) if (v === undefined) delete out[k];
     return out;
   };
-  for (const limb of (doc.limbs as Json[] | undefined) ?? []) limb.foot = inline(limb.foot);
+  for (const limb of (doc.limbs as Json[] | undefined) ?? []) {
+    roleFieldsOnly(limb);
+    if ('foot' in limb) limb.foot = inline(limb.foot);
+    if ('membrane' in limb) limb.membrane = inline(limb.membrane);
+  }
   const skin = doc.skin as Json | undefined;
   if (skin && Array.isArray(skin.layers)) skin.layers = skin.layers.map(inline);
   const motion = doc.motion as Json | undefined;
