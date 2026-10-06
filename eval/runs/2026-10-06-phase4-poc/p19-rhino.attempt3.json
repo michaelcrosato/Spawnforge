@@ -1,0 +1,160 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Rhino Beast",
+  "seed": 1904,
+  "extends": "quadruped",
+  "scale": 2,
+  "body": {
+    "torso": {
+      "radius": [0.18, 0.25, 0.24, 0.2],
+      "arch": 0.05
+    },
+    "neck": {
+      "length": 0.2,
+      "radius": [0.17, 0.24],
+      "pitch": 10
+    },
+    "head": {
+      "shape": "wedge",
+      "length": 0.45,
+      "radius": 0.17,
+      "pitch": -20
+    },
+    "tail": {
+      "length": 0.5,
+      "radius": [0.04, 0.012],
+      "pitch": -30,
+      "curl": 0
+    }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "length": 0.45,
+      "radius": [0.085, 0.065],
+      "foot": {
+        "type": "foot.claw",
+        "toes": 3,
+        "toeLength": 0.06,
+        "clawLength": 0.02,
+        "clawColor": "#3a3a3e"
+      },
+      "attach": {
+        "angle": 95,
+        "at": 0.16
+      },
+      "splay": 14
+    },
+    {
+      "id": "hindleg",
+      "length": 0.47,
+      "radius": [0.12, 0.07],
+      "foot": {
+        "type": "foot.claw",
+        "toes": 3,
+        "toeLength": 0.06,
+        "clawLength": 0.02,
+        "clawColor": "#3a3a3e"
+      },
+      "attach": {
+        "angle": 95
+      },
+      "splay": 14
+    }
+  ],
+  "parts": [
+    {
+      "id": "nosehorn",
+      "type": "horn.curved",
+      "attach": {
+        "on": "head",
+        "at": 0.12,
+        "angle": 0
+      },
+      "params": {
+        "length": 0.3,
+        "width": 0.07,
+        "curve": 25,
+        "color": "#a09580",
+        "tipColor": "#4a4238",
+        "lean": 12
+      }
+    },
+    {
+      "id": "browhorn",
+      "type": "horn.curved",
+      "attach": {
+        "on": "head",
+        "at": 0.4,
+        "angle": 0
+      },
+      "params": {
+        "length": 0.14,
+        "width": 0.05,
+        "curve": 20,
+        "color": "#a09580",
+        "tipColor": "#4a4238",
+        "lean": 6
+      }
+    },
+    {
+      "id": "ears",
+      "type": "ear.pointed",
+      "attach": {
+        "on": "head",
+        "at": 0.88,
+        "angle": 50
+      },
+      "params": {
+        "length": 0.1,
+        "width": 0.05,
+        "curve": 5
+      }
+    },
+    {
+      "id": "eyes",
+      "attach": {
+        "on": "head",
+        "at": 0.5,
+        "angle": 70
+      },
+      "params": {
+        "size": 0.022,
+        "irisColor": "#2a1c10"
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#80808a",
+      "belly": "#a4a4ac",
+      "accent": "#4a4a54"
+    },
+    "material": "scales",
+    "layers": [
+      {
+        "type": "countershade",
+        "strength": 0.5
+      },
+      {
+        "type": "mottle",
+        "scale": 0.25,
+        "strength": 0.4
+      },
+      {
+        "type": "scales",
+        "size": 0.04,
+        "bump": 0.5,
+        "gap": 0.4
+      },
+      {
+        "type": "grime",
+        "amount": 0.3
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "lumbering",
+    "actions": ["bite", "roar", "look", "idle"]
+  }
+}

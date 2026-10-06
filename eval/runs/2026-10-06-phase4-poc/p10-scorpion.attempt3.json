@@ -1,0 +1,117 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Dune Scorpion",
+  "seed": 1010,
+  "extends": "hexapod",
+  "scale": 0.3,
+  "body": {
+    "torso": {
+      "radius": [0.12, 0.17, 0.2, 0.17, 0.14, 0.1]
+    },
+    "head": {
+      "shape": "flat",
+      "length": 0.2,
+      "radius": 0.1,
+      "crossSection": "wide"
+    },
+    "tail": {
+      "length": 2.4,
+      "radius": [0.1, 0.07, 0.05, 0.045],
+      "pitch": 40,
+      "curl": 235,
+      "segments": 14
+    }
+  },
+  "limbs": [
+    {
+      "id": "pincer",
+      "role": "arm",
+      "attach": {
+        "on": "torso",
+        "at": 0.04,
+        "angle": 85
+      },
+      "length": 0.7,
+      "segments": 2,
+      "radius": [0.07, 0.05],
+      "lift": 70,
+      "foot": {
+        "type": "foot.claw",
+        "toes": 2,
+        "toeLength": 0.22,
+        "spread": 35,
+        "clawLength": 0.08,
+        "clawCurve": 50,
+        "clawWidth": 2
+      },
+      "splay": 25
+    },
+    {
+      "id": "frontleg",
+      "radius": [0.045, 0.02]
+    },
+    {
+      "id": "midleg",
+      "radius": [0.045, 0.02]
+    },
+    {
+      "id": "hindleg",
+      "radius": [0.045, 0.02]
+    }
+  ],
+  "parts": [
+    {
+      "id": "stinger",
+      "type": "horn.curved",
+      "attach": {
+        "on": "tail",
+        "at": 0.97,
+        "angle": 0
+      },
+      "params": {
+        "length": 0.2,
+        "width": 0.045,
+        "curve": 85,
+        "color": "#8a5a2a",
+        "tipColor": "#2a1a10"
+      }
+    },
+    {
+      "id": "eyes",
+      "params": {
+        "size": 0.025,
+        "irisColor": "#201810"
+      },
+      "attach": {
+        "on": "head",
+        "at": 0.4,
+        "angle": 38
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#d8c08a",
+      "belly": "#eadcb4",
+      "accent": "#9a7a42"
+    },
+    "material": "chitin",
+    "layers": [
+      {
+        "type": "countershade",
+        "softness": 0.2
+      },
+      {
+        "type": "mottle",
+        "scale": 0.1,
+        "coverage": 0.4,
+        "contrast": 0.3,
+        "strength": 0.6
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "skittish",
+    "actions": ["bite", "look", "idle"]
+  }
+}

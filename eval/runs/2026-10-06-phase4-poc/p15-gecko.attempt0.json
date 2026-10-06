@@ -1,0 +1,67 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Wall Gecko",
+  "seed": 1501,
+  "extends": "quadruped",
+  "scale": 0.4,
+  "body": {
+    "torso": { "radius": [0.1, 0.15, 0.14, 0.09], "arch": 0, "crossSection": "wide" },
+    "neck": { "length": 0.1, "radius": [0.08, 0.1], "pitch": 0, "crossSection": "wide" },
+    "head": { "shape": "flat", "length": 0.3, "radius": 0.1, "pitch": 0, "crossSection": "wide" },
+    "tail": { "length": 1.0, "radius": [0.08, 0.01], "pitch": 0, "crossSection": "wide", "curl": 0 }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "attach": { "at": 0.12, "angle": 115 },
+      "length": 0.5,
+      "radius": [0.045, 0.025],
+      "splay": 55,
+      "foot": {
+        "type": "foot.claw",
+        "toes": 5,
+        "toeLength": 0.16,
+        "spread": 130,
+        "clawLength": 0.02,
+        "clawCurve": 60
+      }
+    },
+    {
+      "id": "hindleg",
+      "attach": { "at": 0.88, "angle": 115 },
+      "length": 0.55,
+      "radius": [0.05, 0.025],
+      "splay": 55,
+      "foot": {
+        "type": "foot.claw",
+        "toes": 5,
+        "toeLength": 0.16,
+        "spread": 130,
+        "clawLength": 0.02,
+        "clawCurve": 60
+      }
+    }
+  ],
+  "parts": [
+    {
+      "id": "eyes",
+      "attach": { "on": "head", "at": 0.4, "angle": 45 },
+      "params": { "size": 0.045, "pupil": "slit", "irisColor": "#d8b030", "bulge": 0.9 }
+    },
+    { "id": "teeth", "type": "teeth.row", "params": { "count": 10, "length": 0.012, "fangs": 0 } }
+  ],
+  "skin": {
+    "palette": { "base": "#7f8b52", "belly": "#d9d7b4", "accent": "#4a5630", "pale": "#c9cf94" },
+    "material": "scales",
+    "layers": [
+      { "type": "countershade", "height": -0.1 },
+      { "type": "mottle", "color": "accent", "scale": 0.12, "coverage": 0.5 },
+      { "type": "spots", "color": "pale", "size": 0.02, "density": 0.5, "region": "back" },
+      { "type": "scales", "size": 0.015, "bump": 0.3, "gap": 0.15 }
+    ]
+  },
+  "motion": {
+    "temperament": "skittish",
+    "actions": ["bite", "look", "idle"]
+  }
+}

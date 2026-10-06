@@ -9,7 +9,7 @@ is the contract.
 
 ## Status
 
-Phases 0 to 3 are done.
+Phases 0 to 4 are done, and so is the proof of concept ([docs/poc.md](docs/poc.md)).
 
 - Phase 0: the blueprint format, the module registry and first pack, the CLI and MCP tools, the
   generated catalogue and the format eval.
@@ -21,10 +21,12 @@ Phases 0 to 3 are done.
 - Phase 3: actions as modules (bite, roar, look, idle with breathing and blinks), look-at,
   events, action filmstrips, and the sandbox editor (sliders, JSON panel, gallery, live
   `creatures/` folder).
+- Phase 4: `patch`, `analyze` (measurements, motion checks, plausibility warnings, a
+  description), the 1,000-blueprint fuzz, golden determinism in Node and Chrome, budgets, and the
+  PoC gate.
 
-Every gate so far scored 20/20 on the prompt suite and 20/20 in blind review (`eval/runs/`).
-Next is phase 4: `patch`, `analyze` (measurements, motion checks, plausibility warnings,
-`describe`), the 1,000-blueprint fuzz, golden determinism, budgets and the PoC checklist.
+Every gate scored 20/20 on the prompt suite and 20/20 in blind review (`eval/runs/`). Next is
+phase 5: species with ranges, `mutate`, `crossbreed`, themes and `generate`.
 
 ## Repo map
 

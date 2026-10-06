@@ -1,0 +1,145 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Cave Bear",
+  "seed": 1301,
+  "extends": "quadruped",
+  "scale": 1.6,
+  "body": {
+    "torso": {
+      "radius": [0.19, 0.25, 0.25, 0.2],
+      "arch": 0.1
+    },
+    "neck": {
+      "length": 0.28,
+      "radius": [0.11, 0.17],
+      "pitch": 15
+    },
+    "head": {
+      "shape": "snout",
+      "length": 0.36,
+      "radius": 0.115,
+      "pitch": -25
+    },
+    "tail": {
+      "length": 0.12,
+      "radius": [0.06, 0.03],
+      "pitch": -20,
+      "curl": 0
+    }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "attach": {
+        "at": 0.14,
+        "angle": 118
+      },
+      "length": 0.52,
+      "radius": [0.13, 0.08],
+      "foot": {
+        "type": "foot.claw",
+        "toes": 5,
+        "toeLength": 0.1,
+        "spread": 60,
+        "clawLength": 0.13,
+        "clawCurve": 55,
+        "clawWidth": 1.6,
+        "clawColor": "#d8ccb0"
+      },
+      "splay": 6
+    },
+    {
+      "id": "hindleg",
+      "attach": {
+        "at": 0.86,
+        "angle": 118
+      },
+      "length": 0.55,
+      "radius": [0.15, 0.085],
+      "foot": {
+        "type": "foot.claw",
+        "toes": 5,
+        "toeLength": 0.1,
+        "spread": 60,
+        "clawLength": 0.11,
+        "clawCurve": 55,
+        "clawWidth": 1.6,
+        "clawColor": "#d8ccb0"
+      },
+      "splay": 6
+    }
+  ],
+  "parts": [
+    {
+      "id": "eyes",
+      "attach": {
+        "on": "head",
+        "at": 0.4,
+        "angle": 58
+      },
+      "params": {
+        "size": 0.009,
+        "irisColor": "#201408"
+      }
+    },
+    {
+      "id": "ears",
+      "type": "ear.pointed",
+      "attach": {
+        "on": "head",
+        "at": 0.85,
+        "angle": 50
+      },
+      "params": {
+        "length": 0.06,
+        "width": 0.05,
+        "thickness": 1,
+        "curve": 0,
+        "color": "base",
+        "tipColor": "base"
+      }
+    },
+    {
+      "id": "teeth",
+      "type": "teeth.row",
+      "params": {
+        "count": 8,
+        "length": 0.03,
+        "fangs": 1,
+        "fangLength": 0.06
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#7b5a37",
+      "belly": "#9a7b52",
+      "accent": "#43301c",
+      "dirt": "#5c4630"
+    },
+    "layers": [
+      {
+        "type": "countershade",
+        "strength": 0.4
+      },
+      {
+        "type": "mottle",
+        "color": "accent",
+        "scale": 0.18,
+        "coverage": 0.45,
+        "contrast": 0.4
+      },
+      {
+        "type": "grime",
+        "color": "dirt",
+        "amount": 0.65,
+        "creases": 0.8,
+        "feet": 0.8
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "lumbering",
+    "actions": ["bite", "roar", "look", "idle"]
+  }
+}

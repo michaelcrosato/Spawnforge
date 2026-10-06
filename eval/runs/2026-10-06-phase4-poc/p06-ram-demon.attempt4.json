@@ -1,0 +1,110 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Ram Demon",
+  "seed": 666,
+  "extends": "biped",
+  "scale": 0.8,
+  "body": {
+    "torso": {
+      "radius": [0.15, 0.27, 0.21, 0.16],
+      "crossSection": "wide"
+    },
+    "head": {
+      "shape": "wedge",
+      "length": 0.34,
+      "radius": 0.15
+    },
+    "tail": {
+      "length": 0.6,
+      "pitch": -35,
+      "radius": [0.07, 0.012]
+    },
+    "neck": {
+      "length": 0.24,
+      "radius": [0.09, 0.12]
+    }
+  },
+  "limbs": [
+    {
+      "id": "leg",
+      "length": 1.35,
+      "radius": [0.12, 0.07],
+      "foot": {
+        "type": "foot.claw",
+        "toes": 3,
+        "clawLength": 0.05
+      },
+      "attach": {
+        "angle": 105
+      },
+      "segments": 3,
+      "splay": 4
+    },
+    {
+      "id": "arm",
+      "length": 1.1,
+      "radius": [0.09, 0.05]
+    }
+  ],
+  "parts": [
+    {
+      "id": "horns",
+      "type": "horn.curved",
+      "attach": {
+        "on": "head",
+        "at": 0.6,
+        "angle": 85,
+        "side": "both"
+      },
+      "params": {
+        "length": 0.75,
+        "width": 0.065,
+        "curve": 400,
+        "turn": -65,
+        "lean": 10,
+        "ridges": 12,
+        "color": "#2a1a14",
+        "tipColor": "#d8c8a0"
+      }
+    },
+    {
+      "id": "teeth",
+      "type": "teeth.row",
+      "params": {
+        "count": 8,
+        "fangs": 2
+      }
+    },
+    {
+      "id": "eyes",
+      "params": {
+        "irisColor": "#ffcc00",
+        "pupil": "goat",
+        "size": 0.03
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#b0201a",
+      "belly": "#d9694a",
+      "accent": "#120808"
+    },
+    "layers": [
+      {
+        "type": "countershade",
+        "strength": 0.5
+      },
+      {
+        "type": "stripes",
+        "color": "accent",
+        "count": 14,
+        "width": 0.3
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "aggressive",
+    "actions": ["bite", "roar", "look", "idle"]
+  }
+}

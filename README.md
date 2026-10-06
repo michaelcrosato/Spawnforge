@@ -38,8 +38,9 @@ locomotion: creatures walk, trot, scuttle and slither over uneven ground, and `r
 --filmstrip` draws a gait cycle with its footfalls. Phase 3 added actions (bite, roar, look,
 and an idle with breathing and blinks) and the sandbox editor: run `pnpm dev`, pick a creature,
 drag sliders or edit its JSON, press its action buttons, and save blueprints in `creatures/` to
-see them appear live. Phase 4 (analysis and the proof-of-concept gate) is next; see
-[docs/plan.md](docs/plan.md) for the milestones.
+see them appear live. Phase 4 added `patch` and `analyze` and passed the proof-of-concept gate
+([evidence](docs/poc.md)). Phase 5 (variation: species, mutate, crossbreed, generate) is next;
+see [docs/plan.md](docs/plan.md) for the milestones.
 
 ![Ridgeback stalker](examples/ridgeback-stalker.png)
 

@@ -1,0 +1,130 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Stilt Strider",
+  "seed": 909,
+  "extends": "quadruped",
+  "scale": 1.4,
+  "body": {
+    "torso": {
+      "radius": [0.13, 0.18, 0.17, 0.12],
+      "pitch": 8,
+      "arch": 0.05
+    },
+    "neck": {
+      "length": 1.2,
+      "radius": [0.045, 0.1],
+      "pitch": 72,
+      "segments": 8
+    },
+    "head": {
+      "shape": "wedge",
+      "length": 0.26,
+      "radius": 0.06,
+      "pitch": 0
+    },
+    "tail": {
+      "length": 1.1,
+      "radius": [0.07, 0.01],
+      "pitch": -25,
+      "curl": 15
+    }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "attach": {
+        "on": "torso",
+        "at": 0.08,
+        "angle": 105
+      },
+      "length": 1.1,
+      "radius": [0.06, 0.03],
+      "foot": {
+        "type": "foot.claw",
+        "toes": 3,
+        "toeLength": 0.06,
+        "clawLength": 0.02
+      },
+      "splay": 6
+    },
+    {
+      "id": "hindleg",
+      "attach": {
+        "on": "torso",
+        "at": 0.93,
+        "angle": 105
+      },
+      "length": 1.15,
+      "radius": [0.07, 0.03],
+      "foot": {
+        "type": "foot.claw",
+        "toes": 3,
+        "toeLength": 0.06,
+        "clawLength": 0.02
+      },
+      "splay": 6
+    }
+  ],
+  "parts": [
+    {
+      "id": "eyes",
+      "params": {
+        "size": 0.022,
+        "pupil": "slit"
+      }
+    },
+    {
+      "id": "ears",
+      "type": "ear.pointed",
+      "attach": {
+        "on": "head",
+        "at": 0.85,
+        "angle": 50
+      },
+      "params": {
+        "length": 0.08,
+        "width": 0.03
+      }
+    },
+    {
+      "id": "ossicones",
+      "type": "horn.curved",
+      "attach": {
+        "on": "head",
+        "at": 0.8,
+        "angle": 20
+      },
+      "params": {
+        "length": 0.07,
+        "width": 0.016,
+        "curve": 15,
+        "color": "#8a6a3a",
+        "tipColor": "#3a2a18"
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#c89a50",
+      "belly": "#efe0b0",
+      "accent": "#5a3a1c"
+    },
+    "material": "scales",
+    "layers": [
+      {
+        "type": "countershade"
+      },
+      {
+        "type": "spots",
+        "color": "accent",
+        "size": 0.09,
+        "density": 0.9,
+        "jitter": 0.6
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "calm",
+    "actions": ["look", "idle"]
+  }
+}

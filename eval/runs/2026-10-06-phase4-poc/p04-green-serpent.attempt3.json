@@ -1,0 +1,80 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Jade Serpent",
+  "seed": 404,
+  "extends": "serpent",
+  "scale": 2,
+  "body": {
+    "torso": {
+      "radius": [0.09, 0.115, 0.125, 0.115]
+    },
+    "neck": {
+      "length": 0.6,
+      "radius": [0.07, 0.08],
+      "pitch": 45,
+      "segments": 4
+    },
+    "head": {
+      "shape": "wedge",
+      "length": 0.22,
+      "radius": 0.09
+    },
+    "tail": {
+      "length": 2.4,
+      "radius": [0.1, 0.01]
+    }
+  },
+  "parts": [
+    {
+      "id": "fangs",
+      "type": "teeth.row",
+      "params": {
+        "count": 3,
+        "fangs": 1,
+        "fangLength": 0.07,
+        "length": 0.012,
+        "lower": false
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#2f7a2a",
+      "belly": "#d9d58a",
+      "accent": "#f0d020"
+    },
+    "material": "scales",
+    "layers": [
+      {
+        "type": "countershade",
+        "height": -0.5
+      },
+      {
+        "type": "stripes",
+        "color": "accent",
+        "count": 22,
+        "width": 0.3,
+        "jitter": 0.2,
+        "region": "all",
+        "fade": 0.25
+      },
+      {
+        "type": "scales",
+        "size": 0.03
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "stalking",
+    "actions": [
+      {
+        "type": "bite",
+        "reach": 1,
+        "speed": 1.5
+      },
+      "look",
+      "idle",
+      "roar"
+    ]
+  }
+}

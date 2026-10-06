@@ -1,0 +1,111 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Pebble Lizard",
+  "seed": 707,
+  "extends": "quadruped",
+  "scale": 0.08,
+  "body": {
+    "torso": {
+      "radius": [0.12, 0.16, 0.15, 0.1],
+      "arch": 0,
+      "crossSection": "wide"
+    },
+    "neck": {
+      "length": 0.12,
+      "radius": [0.08, 0.1],
+      "pitch": 5
+    },
+    "head": {
+      "shape": "wedge",
+      "length": 0.34,
+      "radius": 0.1,
+      "pitch": 0
+    },
+    "tail": {
+      "length": 3.2,
+      "radius": [0.1, 0.008],
+      "pitch": -5,
+      "curl": 0,
+      "segments": 14
+    }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "attach": {
+        "on": "torso",
+        "at": 0.15,
+        "angle": 115
+      },
+      "length": 0.62,
+      "radius": [0.045, 0.02],
+      "splay": 55,
+      "foot": {
+        "type": "foot.claw",
+        "toes": 4,
+        "clawLength": 0.03
+      }
+    },
+    {
+      "id": "hindleg",
+      "attach": {
+        "on": "torso",
+        "at": 0.85,
+        "angle": 115
+      },
+      "length": 0.7,
+      "radius": [0.055, 0.02],
+      "splay": 55,
+      "foot": {
+        "type": "foot.claw",
+        "toes": 4,
+        "clawLength": 0.03
+      }
+    }
+  ],
+  "parts": [
+    {
+      "id": "eyes",
+      "params": {
+        "size": 0.03,
+        "pupil": "round",
+        "irisColor": "#d8a020"
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#7a8a3c",
+      "belly": "#e0d8a8",
+      "accent": "#1f1a0a"
+    },
+    "material": "scales",
+    "layers": [
+      {
+        "type": "countershade",
+        "height": -0.2
+      },
+      {
+        "type": "spots",
+        "color": "accent",
+        "size": 0.055,
+        "density": 1,
+        "region": "back",
+        "jitter": 0.6
+      },
+      {
+        "type": "spots",
+        "color": "accent",
+        "size": 0.12,
+        "density": 1,
+        "jitter": 0.7,
+        "region": "back",
+        "id": "bigspots"
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "calm",
+    "actions": ["look", "idle"]
+  }
+}
