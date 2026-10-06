@@ -121,12 +121,18 @@ export class MotionController {
   private events: MotionEvent[] = [];
   private readonly restBodyY: number;
   private readonly halfStride: number;
+  /** A legless body whose neck rises well above it in the rest pose. */
+  private readonly rearing: boolean;
 
-  constructor(compiled: CompiledCreature, motion: MotionData) {
+  constructor(compiled: CompiledCreature, motion: MotionData = compiled.motion) {
     this.compiled = compiled;
     this.motion = motion;
     this.pose = new Pose(compiled.bones);
-    this.hipHeight = Math.max(0.05 * compiled.scale, compiled.rig.hipHeight);
+    // Legless bodies have no hips; their pace scales with body length instead.
+    this.hipHeight =
+      compiled.rig.posture === 'legless'
+        ? Math.max(0.05 * compiled.scale, 0.12 * this.spineLength())
+        : Math.max(0.05 * compiled.scale, compiled.rig.hipHeight);
     const spine0 = compiled.rig.spine[0] as number;
     this.restBodyY = (this.pose.restPos[spine0] as Vector3).y;
     this.bodyY = this.restBodyY;
@@ -156,13 +162,24 @@ export class MotionController {
       0.05 * compiled.scale,
       Math.min(
         ...this.legs.map((leg) => {
-          const hipY =
-            (this.pose.restWorldPos[leg.rig.bones[0] as number] as Vector3).y - leg.neutral.y;
-          return Math.sqrt(Math.max(0, (0.93 * leg.rig.reach) ** 2 - hipY * hipY)) * 0.8;
+          // Room fore and aft of the rest foot within the leg's reach, allowing for how far the
+          // foot sits out to the side and ahead of or behind the hip.
+          const hip = this.pose.restWorldPos[leg.rig.bones[0] as number] as Vector3;
+          const dx = leg.neutral.x - hip.x;
+          const dy = hip.y - leg.neutral.y;
+          const across = Math.sqrt(Math.max(0, (0.93 * leg.rig.reach) ** 2 - dx * dx - dy * dy));
+          return Math.max(0, across - Math.abs(leg.neutral.z - hip.z)) * 0.85;
         }),
         Number.POSITIVE_INFINITY,
       ),
     );
+    const neckRoot = compiled.rig.neck[0];
+    this.rearing =
+      compiled.rig.posture === 'legless' &&
+      neckRoot !== undefined &&
+      (this.pose.restWorldPos[compiled.rig.head] as Vector3).y -
+        (this.pose.restWorldPos[neckRoot] as Vector3).y >
+        3 * (compiled.bones.radii[neckRoot] ?? 0);
     this.springs = [];
     if (compiled.rig.tail.length > 1) this.springs.push(this.makeSpring(compiled.rig.tail, 0.35));
     this.pose.solve();
@@ -203,6 +220,31 @@ export class MotionController {
 
   stop(): void {
     this.moveTo(null);
+  }
+
+  /** Use only this gait (by id) whatever the speed, or `null` to choose by speed again. */
+  lockGait(id: string | null): void {
+    this.lockedGait = id ? this.motion.gaits.find((g) => g.id === id) : undefined;
+    if (id && !this.lockedGait) throw new Error(`no gait "${id}" for this creature`);
+    if (this.lockedGait && this.lockedGait !== this.gait) {
+      this.gait = this.lockedGait;
+      this.retimeLegs();
+    }
+  }
+  private lockedGait: GaitInfo | undefined;
+
+  /** Speed (m/s) at which a gait looks typical: mid-range of its Froude numbers, capped at 1. */
+  gaitSpeed(id: string): number {
+    const gait = this.motion.gaits.find((g) => g.id === id);
+    if (!gait) throw new Error(`no gait "${id}" for this creature`);
+    const [lo, hi] = gait.froude;
+    const fr = Math.max(lo + 0.05, Math.min((lo + hi) / 2, 1, hi));
+    return Math.sqrt(fr * G * this.hipHeight);
+  }
+
+  /** Each leg's foot: where it is and whether it is planted. */
+  feet(): { leg: string; planted: boolean; position: Vector3 }[] {
+    return this.legs.map((l) => ({ leg: l.rig.id, planted: !l.swinging, position: l.planted }));
   }
 
   lookAt(point: { x: number; y: number; z: number } | null): void {
@@ -274,7 +316,7 @@ export class MotionController {
     // Gait from speed (Froude number), switching walk to trot near 0.5.
     const froude = (this.speed * this.speed) / (G * this.hipHeight);
     const legGaits = this.motion.gaits.filter((g) => !g.spine);
-    if (legGaits.length > 1) {
+    if (legGaits.length > 1 && !this.lockedGait) {
       const best = legGaits.reduce((a, g) =>
         froude >= g.froude[0] &&
         froude <= g.froude[1] &&
@@ -321,14 +363,26 @@ export class MotionController {
     const restless = turning || this.legs.some((l) => l.swinging || this.footError(l) > 0.12 * h);
     const minimum = (0.25 * Math.sqrt(G / h)) / Math.PI;
     if (restless) frequency = Math.max(frequency, minimum);
+    // Step faster when a planted foot would fall out of reach before its lift-off (starting
+    // off, speeding up): it has `halfStride` behind its rest spot plus however far ahead it is.
+    const unhurried = frequency;
+    for (const leg of this.legs) {
+      if (leg.swinging) continue;
+      const local = (((this.phase - leg.offset) % 1) + 1) % 1;
+      if (local >= duty) continue;
+      const budget = Math.max(0.05 * this.halfStride, this.halfStride + this.footAhead(leg));
+      frequency = Math.max(frequency, (this.speed * (duty - local)) / budget);
+    }
+    frequency = Math.min(frequency, Math.max(unhurried * 3, minimum));
     const previous = this.phase;
     this.phase = (this.phase + frequency * dt) % 1;
     const advanced = frequency > 0;
 
     for (const leg of this.legs) {
       if (!advanced) break;
-      const before = (((previous + leg.offset) % 1) + 1) % 1;
-      const now = (((this.phase + leg.offset) % 1) + 1) % 1;
+      // A leg's cycle starts `offset` after the creature's: φ = (i·w + 0.5·s) mod 1.
+      const before = (((previous - leg.offset) % 1) + 1) % 1;
+      const now = (((this.phase - leg.offset) % 1) + 1) % 1;
       const crossedLand = now < before;
       // A leg lifts once per cycle, when its phase is in the swing window after a stance.
       if (now < duty) leg.armed = true;
@@ -339,7 +393,8 @@ export class MotionController {
         leg.liftoff.copy(leg.planted);
       }
       if (leg.swinging) {
-        const u = Math.min(1, Math.max(0, (now - duty) / (1 - duty)));
+        // Swing progress; on the step the phase wraps past 1 the swing is complete.
+        const u = crossedLand ? 1 : Math.min(1, Math.max(0, (now - duty) / (1 - duty)));
         // Aim where the hip will be at landing, half a stance ahead.
         const timeToLand = ((1 - u) * (1 - duty)) / Math.max(frequency, 1e-3);
         const stanceTime = duty / Math.max(frequency, 1e-3);
@@ -441,6 +496,15 @@ export class MotionController {
     return Math.hypot(leg.planted.x - n.x, leg.planted.z - n.z);
   }
 
+  /** How far a planted foot is ahead of its rest spot, along the heading. */
+  private footAhead(leg: LegState): number {
+    const n = this.neutralAt(leg, this.heading, scratch1);
+    return (
+      (leg.planted.x - n.x) * Math.sin(this.heading) +
+      (leg.planted.z - n.z) * Math.cos(this.heading)
+    );
+  }
+
   /** Where a leg's foot rests relative to the body, for a given heading. */
   private neutralAt(leg: LegState, heading: number, out: Vector3): Vector3 {
     const c = Math.cos(heading);
@@ -468,12 +532,13 @@ export class MotionController {
     const side = new Vector3(forward.z, 0, -forward.x);
     const head = this.position
       .clone()
-      .addScaledVector(side, Math.sin(this.phase * Math.PI * 2) * amplitude * 0.5);
+      .addScaledVector(side, Math.sin(this.phase * Math.PI * 2) * amplitude);
     head.y = ground(head.x, head.z).height;
-    const last = this.trail[0];
-    if (!last || last.distanceTo(head) > bodyLength / 200 || this.trail.length < 2)
-      this.trail.unshift(head);
-    else last.copy(head);
+    // The newest point follows the head; a new one is laid down each time the head gets a
+    // spacing away from the last fixed point.
+    const anchor = this.trail[1];
+    if (!anchor || anchor.distanceTo(head) > bodyLength / 100) this.trail.unshift(head);
+    else (this.trail[0] as Vector3).copy(head);
     // Keep enough trail for the whole body.
     let acc = 0;
     for (let i = 1; i < this.trail.length; i++) {
@@ -581,7 +646,7 @@ export class MotionController {
     rig.arms.forEach((arm, i) => {
       const first = arm.bones[0] as number;
       const swing =
-        Math.sin(this.phase * Math.PI * 2 + (arm.side === 'left' ? Math.PI : 0)) * 0.35 * moving;
+        Math.sin(this.phase * Math.PI * 2 + (arm.side === 'left' ? Math.PI : 0)) * 0.25 * moving;
       (pose.rot[first] as Quaternion).premultiply(
         scratchQ.setFromAxisAngle(new Vector3(1, 0, 0), swing * (i % 2 ? 1 : 1)),
       );
@@ -610,13 +675,16 @@ export class MotionController {
       desired.copy(angle > limit ? desired.lerp(to, limit / angle) : to);
     }
     desired.normalize();
-    // Bend the neck partway, then aim the head.
+    // Turn the neck by part of the rotation the head needs, keeping its shape (a raised neck
+    // stays raised), then aim the head.
     const neck = rig.neck;
+    pose.solveBone(head);
+    const turn = scratchQ2.setFromUnitVectors(pose.direction(head, scratch1), desired);
     neck.forEach((b, k) => {
       pose.solveBone(b);
-      const current = pose.direction(b, scratch1);
-      const share = ((k + 1) / (neck.length + 1)) * 0.5;
-      pose.aim(b, scratch2.copy(current).lerp(desired, share).normalize());
+      const share = (k + 1) / (neck.length + 1) / neck.length;
+      const part = scratchQ.identity().slerp(turn, share);
+      pose.aim(b, pose.direction(b, scratch2).applyQuaternion(part));
     });
     pose.solveBone(head);
     pose.aim(head, desired);
@@ -653,8 +721,10 @@ export class MotionController {
   private applySlither(ground: Ground): void {
     const pose = this.pose;
     const rig = this.compiled.rig;
-    // Bones from the head end back: neck (reversed), torso (reversed), tail.
-    const chain = [...[...rig.neck].reverse(), ...[...rig.spine].reverse(), ...rig.tail];
+    // Bones from the head end back: neck (reversed), torso (reversed), tail. A rearing neck (a
+    // cobra) keeps its raised pose on the front of the body instead of following the trail.
+    const lead = this.rearing ? [] : [...rig.neck].reverse();
+    const chain = [...lead, ...[...rig.spine].reverse(), ...rig.tail];
     if (this.trail.length < 2) {
       pose.solve();
       return;
@@ -690,7 +760,7 @@ export class MotionController {
       j.y = ground(j.x, j.z).height + (pose.restWorldPos[rig.spine[0] as number] as Vector3).y;
     // Torso and neck bones point toward the head; tail bones away from it.
     const spine0 = rig.spine[0] as number;
-    const hipIndex = rig.neck.length + rig.spine.length;
+    const hipIndex = lead.length + rig.spine.length;
     const hip = joints[hipIndex] as Vector3;
     (pose.pos[spine0] as Vector3)
       .copy(hip)
@@ -703,12 +773,15 @@ export class MotionController {
       pose.solveBone(b);
       pose.aim(b, scratch1.subVectors(to, from));
     });
-    rig.neck.forEach((b, k) => {
-      const from = joints[rig.neck.length - k] as Vector3;
-      const to = joints[rig.neck.length - k - 1] as Vector3;
-      pose.solveBone(b);
-      pose.aim(b, scratch1.subVectors(to, from));
-    });
+    lead
+      .slice()
+      .reverse()
+      .forEach((b, k) => {
+        const from = joints[lead.length - k] as Vector3;
+        const to = joints[lead.length - k - 1] as Vector3;
+        pose.solveBone(b);
+        pose.aim(b, scratch1.subVectors(to, from));
+      });
     pose.solveSubtree(rig.head);
     this.applyHead();
     rig.tail.forEach((b, k) => {

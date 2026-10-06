@@ -12,11 +12,42 @@ export interface RenderRequest {
   readonly anonymous?: boolean;
   /** Panels to draw, in order (default all six). */
   readonly views?: readonly View[];
+  /**
+   * Render one gait cycle as a filmstrip instead of the contact sheet: frames of the creature
+   * walking, with a footfall diagram below.
+   */
+  readonly filmstrip?: FilmstripRequest;
   /** Debugging switches. */
   readonly debug?: {
     readonly hide?: readonly ('skin' | 'parts' | 'eyes')[];
     readonly shadows?: boolean;
   };
+}
+
+export interface FilmstripRequest {
+  /** Gait id to show (default: whichever the creature uses at `speed`). */
+  readonly gait?: string;
+  /** Metres per second (default: typical for the gait, or the temperament's walking pace). */
+  readonly speed?: number;
+  /** Frames across one cycle, 2 to 16 (default 8). */
+  readonly frames?: number;
+  /** Camera (default side). */
+  readonly view?: 'side' | 'three-quarter' | 'top';
+}
+
+/** What a filmstrip measured over the cycle it drew. */
+export interface MotionInfo {
+  readonly gait: string;
+  /** Metres per second. */
+  readonly speed: number;
+  /** Seconds per gait cycle. */
+  readonly cycle: number;
+  /** Metres travelled per cycle. */
+  readonly stride: number;
+  /** Share of the cycle each foot is planted, by leg id. */
+  readonly duty: Readonly<Record<string, number>>;
+  /** Largest distance a planted foot slid during the cycle (metres). */
+  readonly footSlide: number;
 }
 
 export interface RenderInfo {
@@ -30,6 +61,8 @@ export interface RenderInfo {
   readonly renderMs: number;
   readonly backend: string;
   readonly warnings: readonly string[];
+  /** Filmstrips only. */
+  readonly motion?: MotionInfo;
 }
 
 export interface RenderResponse {

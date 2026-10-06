@@ -33,8 +33,10 @@ blueprint into a textured, skinned monster with a six-view render. On the 20-pro
 using only the docs and tools wrote a valid blueprint for every prompt, and a blind reviewer
 matched all 20 renders to their prompts
 ([phase 0](eval/runs/2026-10-06-phase0-format/notes.md),
-[phase 1](eval/runs/2026-10-06-phase1-render/notes.md)). Phase 2 (procedural locomotion) is in
-progress; see [docs/plan.md](docs/plan.md) for the milestones.
+[phase 1](eval/runs/2026-10-06-phase1-render/notes.md)). Phase 2 added procedural
+locomotion: creatures walk, trot, scuttle and slither over uneven ground in the sandbox
+(`pnpm dev`), and `render --filmstrip` draws a gait cycle with its footfalls. Phase 3 (actions
+and the sandbox editor) is next; see [docs/plan.md](docs/plan.md) for the milestones.
 
 ![Ridgeback stalker](examples/ridgeback-stalker.png)
 

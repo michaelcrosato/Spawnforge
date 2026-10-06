@@ -254,12 +254,14 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
     // Sprawled legs fan out along the body, front feet forward and hind feet back (further, to
     // carry the abdomen), as insects and lizards stand.
     const u = lastPair > 0 ? ((limb.pair ?? 0) / lastPair) * 2 - 1 : 0;
-    let fore = sw * R * (u > 0 ? 0.3 : 0.5) * u;
+    let fore = sw * R * (u > 0 ? 0.25 : 0.4) * u;
+    // Sprawlers keep more slack in the leg, so a foot can travel fore and aft while planted.
+    const most = lerp(0.96, 0.84, sw) * R;
     const len = Math.hypot(v, h, fore);
-    if (len > 0.96 * R) {
-      v *= (0.96 * R) / len;
-      h *= (0.96 * R) / len;
-      fore *= (0.96 * R) / len;
+    if (len > most) {
+      v *= most / len;
+      h *= most / len;
+      fore *= most / len;
     }
     return { R, sw, footH, v, h, fore, tipR };
   };

@@ -2,6 +2,8 @@ import { Matrix4, Quaternion, Vector3 } from 'three';
 import type { CreatureSpec } from '../blueprint/creature.ts';
 import type { Issue } from '../blueprint/issues.ts';
 import { sweep } from '../geometry/kit.ts';
+import type { MotionData } from '../motion/controller.ts';
+import { motionData } from '../motion/gaits.ts';
 import type { Registry } from '../registry.ts';
 import { type SkinMaterialSpec, skinMaterialSpec } from '../shading/compose.ts';
 import { cutMouth, innerMouth, type MouthLine, mouthLine } from './mouth.ts';
@@ -128,6 +130,8 @@ export interface CompiledCreature {
   readonly eyes: EyeMeshData;
   readonly material: SkinMaterialSpec;
   readonly rig: RigData;
+  /** Gait timing and temperament for the motion controller. */
+  readonly motion: MotionData;
   readonly sockets: readonly GameSocket[];
   readonly bounds: { readonly min: Vec3; readonly max: Vec3 };
   /** Labelled points for debug renders: every part and limb by id, and the body sections. */
@@ -548,6 +552,7 @@ export function compileCreature(
       spec.seed,
     ),
     rig,
+    motion: motionData(spec, registry),
     sockets,
     markers,
     bounds: { min: v3(min), max: v3(max) },

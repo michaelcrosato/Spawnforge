@@ -8,7 +8,8 @@ import {
 import { basicPack } from '@spawnforge/modules';
 import { createCreatureObject, createRenderer } from '@spawnforge/three';
 import * as THREE from 'three';
-import type { RenderRequest, RenderResponse, View } from './protocol.ts';
+import { diagramHeight, drawFilmstrip } from './filmstrip.ts';
+import type { MotionInfo, RenderRequest, RenderResponse, View } from './protocol.ts';
 
 const registry = createRegistry([basicPack]);
 const ALL_VIEWS: View[] = ['three-quarter', 'side', 'head', 'front', 'top', 'rear'];
@@ -103,13 +104,16 @@ window.spawnforgeRender = async (request) => {
   grid.position.y = 0.001;
   scene.add(ground, grid);
 
-  renderer.setSize(size, size, false);
+  const film = request.filmstrip;
+  const frames = film ? Math.max(2, Math.min(16, Math.round(film.frames ?? 8))) : 0;
+  const panelSize = film ? (request.size ?? 320) : size;
+  renderer.setSize(panelSize, panelSize, false);
   const sheet = document.createElement('canvas');
   const header = 44;
-  const cols = views.length >= 5 ? 3 : views.length >= 2 ? 2 : 1;
-  const rows = Math.ceil(views.length / cols);
-  sheet.width = cols * size;
-  sheet.height = rows * size + header;
+  const cols = film ? Math.min(frames, 4) : views.length >= 5 ? 3 : views.length >= 2 ? 2 : 1;
+  const rows = Math.ceil((film ? frames : views.length) / cols);
+  sheet.width = cols * panelSize;
+  sheet.height = rows * panelSize + header + (film ? diagramHeight(compiled.rig.legs.length) : 0);
   const ctx = sheet.getContext('2d') as CanvasRenderingContext2D;
   ctx.fillStyle = '#16181c';
   ctx.fillRect(0, 0, sheet.width, sheet.height);
@@ -120,16 +124,35 @@ window.spawnforgeRender = async (request) => {
   const nameWidth = title ? ctx.measureText(title).width : -18;
   ctx.font = '13px system-ui, sans-serif';
   ctx.fillStyle = '#aab';
-  ctx.fillText(
+  const sizeLine =
     // Upright creatures read better height first, with their depth as "deep".
     max.y > extent.z
       ? `${fmt(max.y)} tall · ${fmt(extent.x)} wide · ${fmt(extent.z)} deep`
-      : `${fmt(extent.z)} long · ${fmt(max.y)} tall · ${fmt(extent.x)} wide`,
-    14 + nameWidth + 18,
-    28,
-  );
+      : `${fmt(extent.z)} long · ${fmt(max.y)} tall · ${fmt(extent.x)} wide`;
 
   const r0 = performance.now();
+  let motion: MotionInfo | undefined;
+  if (film) {
+    const gridCell = (span * 5) / Math.round((span * 5) / niceBar(span / 4));
+    motion = await drawFilmstrip(
+      compiled,
+      creature,
+      { renderer, scene, key, ground, grid, gridCell, centre, extent, span },
+      film,
+      ctx,
+      { top: header, size: panelSize, cols },
+    );
+    ctx.font = '13px system-ui, sans-serif';
+    ctx.fillStyle = '#aab';
+    ctx.fillText(
+      `${motion.gait} · ${motion.speed.toFixed(2)} m/s · cycle ${motion.cycle.toFixed(2)} s · stride ${fmt(motion.stride)} · ${sizeLine}`,
+      14 + nameWidth + 18,
+      28,
+    );
+  } else {
+    ctx.fillText(sizeLine, 14 + nameWidth + 18, 28);
+  }
+
   // The head close-up frames everything skinned mostly to the head or jaw: skin, teeth, eyes,
   // horns.
   const headBones = new Set([compiled.rig.head, compiled.rig.jaw, ...compiled.rig.eyes]);
@@ -148,7 +171,7 @@ window.spawnforgeRender = async (request) => {
   const headCentre = headSphere.center;
   const headSize = headSphere.radius;
 
-  for (const [index, view] of views.entries()) {
+  for (const [index, view] of (film ? [] : views).entries()) {
     let camera: THREE.Camera;
     let half = span * 0.6;
     if (view === 'three-quarter' || view === 'rear' || view === 'head') {
@@ -278,6 +301,7 @@ window.spawnforgeRender = async (request) => {
       renderMs,
       backend,
       warnings: compiled.warnings.map(formatIssue),
+      ...(motion ? { motion } : {}),
     },
   };
 };

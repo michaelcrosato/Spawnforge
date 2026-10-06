@@ -13,9 +13,11 @@ Phases 0 and 1 are done. Phase 0: the blueprint format, the module registry and 
 CLI and MCP tools, the generated catalogue and the format eval (20/20). Phase 1: the compile
 pipeline (skeleton, SDF skin, surface nets, skin weights, mouth cut, parts, eyes, TSL materials),
 the Three.js adapter, compiling in a worker, and headless six-view contact sheets through the CLI
-and MCP `render` tool; its eval scored 20/20 valid and 20/20 in blind review. Phase 2
-(procedural locomotion) is in progress: the motion controller and pose sync exist in `core` and
-`three`; the sandbox terrain course and filmstrip renders are next.
+and MCP `render` tool; its eval scored 20/20 valid and 20/20 in blind review. Phase 2 is done:
+procedural locomotion (gaits from leg pairs, foot planting with IK on uneven ground, body
+posture, turning, tail springs, slither), pose sync, the sandbox's terrain course with walking
+creatures, and filmstrip renders with footfall diagrams. Next is phase 3: actions (bite, roar,
+look, idle), look-at, events, and the sandbox editor (sliders, JSON panel, gallery).
 
 ## Repo map
 
