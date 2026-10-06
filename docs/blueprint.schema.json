@@ -148,6 +148,16 @@
               "minimum": -60,
               "maximum": 90
             },
+            "crossSection": {
+              "default": "round",
+              "description": "Shape across the neck",
+              "type": "string",
+              "enum": [
+                "round",
+                "tall",
+                "wide"
+              ]
+            },
             "segments": {
               "default": 3,
               "description": "Bones in the neck",
@@ -255,6 +265,23 @@
               "type": "number",
               "minimum": -360,
               "maximum": 360
+            },
+            "curlStart": {
+              "default": 0,
+              "description": "Share of the tail that stays straight before the curl begins; 0.6 curls only the end",
+              "type": "number",
+              "minimum": 0,
+              "maximum": 0.95
+            },
+            "crossSection": {
+              "default": "round",
+              "description": "Shape across the tail",
+              "type": "string",
+              "enum": [
+                "round",
+                "tall",
+                "wide"
+              ]
             },
             "pitch": {
               "default": -10,
@@ -733,9 +760,22 @@
         },
         "irisColor": {
           "default": "#c8a030",
-          "description": "A palette name such as \"accent\", or a colour such as \"#2a1e14\"",
+          "description": "Iris colour: a palette name or a colour",
           "type": "string",
           "minLength": 1
+        },
+        "scleraColor": {
+          "default": "#e8e2cc",
+          "description": "Colour of the eyeball around the iris",
+          "type": "string",
+          "minLength": 1
+        },
+        "iris": {
+          "default": 0.7,
+          "description": "Iris size as a share of the visible eye",
+          "type": "number",
+          "minimum": 0.2,
+          "maximum": 1
         },
         "bulge": {
           "default": 0.5,
@@ -883,6 +923,13 @@
           "type": "number",
           "minimum": -90,
           "maximum": 90
+        },
+        "jitter": {
+          "default": 0,
+          "description": "Irregular heights and angles, for jagged rows",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
         }
       },
       "additionalProperties": false

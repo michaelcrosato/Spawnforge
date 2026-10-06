@@ -1,0 +1,23 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Goblin",
+  "seed": 17,
+  "extends": "biped",
+  "scale": 0.5,
+  "body": {
+    "head": { "shape": "round", "length": 0.34, "radius": 0.2 }
+  },
+  "parts": [
+    {
+      "id": "eyes",
+      "attach": { "on": "head", "at": 0.3, "angle": 62 },
+      "params": { "size": 0.06, "bulge": 0.7, "irisColor": "#ffd21a" }
+    }
+  ],
+  "skin": {
+    "palette": { "base": "#4f9a3a", "belly": "#a6cf7a", "accent": "#2d5a22" },
+    "material": "skin",
+    "layers": [{ "type": "countershade" }]
+  },
+  "motion": { "temperament": "skittish", "actions": ["idle", "look"] }
+}

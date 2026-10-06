@@ -1,0 +1,40 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Dune Scorpion",
+  "seed": 1010,
+  "extends": "hexapod",
+  "scale": 0.4,
+  "body": {
+    "torso": { "radius": [0.12, 0.16, 0.18, 0.14] },
+    "tail": { "length": 1.4, "radius": [0.08, 0.02], "pitch": 10, "curl": 220, "segments": 14 }
+  },
+  "limbs": [
+    {
+      "id": "pincer",
+      "role": "arm",
+      "attach": { "on": "torso", "at": 0.05, "side": "both", "angle": 100 },
+      "length": 0.5,
+      "segments": 2,
+      "radius": [0.04, 0.03],
+      "splay": 30,
+      "foot": { "type": "foot.claw", "toes": 2, "toeLength": 0.12, "clawLength": 0.08 }
+    }
+  ],
+  "parts": [
+    {
+      "id": "stinger",
+      "type": "horn.curved",
+      "attach": { "on": "tail", "at": 0.98, "angle": 0 },
+      "params": { "length": 0.1, "width": 0.025, "curve": 70 }
+    }
+  ],
+  "skin": {
+    "palette": { "base": "#d8c08a", "belly": "#efe0b8", "accent": "#8a6a3a" },
+    "material": "chitin",
+    "layers": [
+      { "type": "countershade", "softness": 0.2 },
+      { "type": "mottle", "color": "accent", "scale": 0.1, "coverage": 0.3 }
+    ]
+  },
+  "motion": { "temperament": "stalking", "actions": ["bite", "idle"] }
+}

@@ -1,0 +1,54 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Spiked Lizard",
+  "seed": 202,
+  "extends": "quadruped",
+  "scale": 1.6,
+  "body": {
+    "torso": { "radius": [0.2, 0.26, 0.25, 0.2], "arch": 0.04, "crossSection": "wide" },
+    "neck": { "length": 0.18, "radius": [0.12, 0.17], "pitch": 10 },
+    "head": { "shape": "wedge", "length": 0.3, "radius": 0.13, "jaw": true, "pitch": -5 },
+    "tail": { "length": 0.9, "radius": [0.16, 0.1, 0.09, 0.2, 0.24], "pitch": -5, "curl": 0 }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "length": 0.4,
+      "radius": [0.1, 0.06],
+      "splay": 40,
+      "foot": { "type": "foot.claw", "toes": 5, "clawLength": 0.04 }
+    },
+    {
+      "id": "hindleg",
+      "length": 0.42,
+      "radius": [0.11, 0.06],
+      "splay": 40,
+      "foot": { "type": "foot.claw", "toes": 5, "clawLength": 0.04 }
+    }
+  ],
+  "parts": [
+    {
+      "id": "dorsal",
+      "type": "spikes.row",
+      "attach": { "on": "torso", "from": 0.05, "to": 0.95, "angle": 0 },
+      "params": { "count": 12, "height": [0.08, 0.14, 0.1], "width": 0.035 }
+    },
+    {
+      "id": "tailspikes",
+      "type": "spikes.row",
+      "attach": { "on": "tail", "from": 0.75, "to": 1, "angle": 90 },
+      "params": { "count": 4, "height": 0.1, "width": 0.04 }
+    },
+    { "id": "teeth", "type": "teeth.row", "params": { "count": 8, "fangs": 0 } }
+  ],
+  "skin": {
+    "palette": { "base": "#5a5f44", "belly": "#a39a78", "accent": "#2b2d20" },
+    "material": "scales",
+    "layers": [
+      { "type": "countershade", "strength": 0.6 },
+      { "type": "scales", "size": 0.04, "bump": 0.6 },
+      { "type": "grime", "amount": 0.4 }
+    ]
+  },
+  "motion": { "temperament": "lumbering", "gaits": ["walk"], "actions": ["bite", "roar", "idle"] }
+}

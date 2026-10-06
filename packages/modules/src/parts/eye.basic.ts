@@ -11,7 +11,14 @@ export default definePart({
   params: z.strictObject({
     size: z.number().min(0.005).max(0.2).default(0.022).describe('Eyeball radius in torso lengths'),
     pupil: z.enum(['round', 'slit', 'goat']).default('round').describe('Pupil shape'),
-    irisColor: colorRef('#c8a030'),
+    irisColor: colorRef('#c8a030').describe('Iris colour: a palette name or a colour'),
+    scleraColor: colorRef('#e8e2cc').describe('Colour of the eyeball around the iris'),
+    iris: z
+      .number()
+      .min(0.2)
+      .max(1)
+      .default(0.7)
+      .describe('Iris size as a share of the visible eye'),
     bulge: z.number().min(0).max(1).default(0.5).describe('How far the eye stands out of the skin'),
   }),
   example: {

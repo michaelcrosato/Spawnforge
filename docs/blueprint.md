@@ -57,13 +57,25 @@ Four sections make the main axis, from snout to tail: `head`, `neck`, `torso`, `
 | `neck` | head end | torso end | `length: 0` removes the neck. |
 | `torso` | neck end (front) | tail end (back) | Its length is `scale`. `pitch` tilts it up: 0 is horizontal, about 75–85 for an upright biped. |
 | `tail` | root | tip | `length: 0` removes the tail. `curl` bends it along its length. |
+| `spine` | head end of the neck | tail tip | Not a real section: a path through neck, torso and tail for rows "along the whole back". |
 
 `pitch` on the neck, head and tail is measured from horizontal, whatever the torso does: a neck
 with `"pitch": 30` rises at 30°, and a head with `"pitch": 0` looks straight ahead. On an upright
 biped, give the neck a pitch near the torso's (about 80) and keep the head near 0.
 
-`crossSection` makes a section `round`, `tall` (narrow and deep, like a fish) or `wide` (flat and
-broad, like a beetle).
+`crossSection` (on the torso, neck, head and tail) makes a section `round`, `tall` (narrow and
+deep, like a fish) or `wide` (flat and broad, like a beetle or a cobra's hood).
+
+**Tails.** The tail leaves the torso at `pitch`, then bends upward by `curl` degrees in total,
+spread evenly along it; negative `curl` bends down. `curlStart` keeps the first part straight:
+`"curlStart": 0.6` curls only the last 40%. A scorpion tail arching over the back is about
+`"pitch": 20, "curl": 200`; a tail curled at the tip is `"curl": 160, "curlStart": 0.6`.
+
+**Upright and horizontal bodies.** Legs attach along the torso with `at`, so when you change the
+torso's `pitch`, move the legs with it. On an upright biped (pitch 70–85) legs sit at the back end
+(`at` 0.9). On a horizontal biped such as a raptor (pitch 5–20, with a tail as counterweight), put
+the legs near the middle (`at` about 0.6) so the body balances over the hips, and arms near the
+front (`at` about 0.1).
 
 ## Attaching things
 
@@ -154,7 +166,13 @@ Each part has a default anchor, so `{ "id": "teeth", "type": "teeth.row" }` is c
 - **`layers`** is the pattern stack, bottom first: `countershade`, `stripes`, `spots`, `mottle`,
   `scales` and `grime`. A layer's parameters sit beside its `type`. Every layer also takes
   **`region`** (`all`, `back`, `belly`, `head`, `torso`, `limbs` or `tail`) and **`strength`**
-  (0 to 1).
+  (0 to 1). A region only masks where the layer shows; the pattern itself is laid out over the
+  whole body, so `stripes.count` counts stripes from snout to tail tip whatever the region.
+- The base colour is `palette.base`. `countershade` blends toward its `color` (the belly colour by
+  default) below its `height`: -1 is the belly midline, 0 the flank, 1 the spine.
+- `material` and layers do different jobs: `"material": "scales"` gives the whole skin a fine
+  scaly sheen, while a `scales` layer adds visible scale shapes with gaps and relief at a size you
+  choose. Use either or both.
 - Colour parameters (`color`, and any field ending in `Color`) take a palette name such as
   `"accent"` or a colour.
 
@@ -165,6 +183,9 @@ when the creature moves.
 
 - **`temperament`**: `calm`, `stalking`, `skittish`, `aggressive` or `lumbering`. It sets pace,
   posture and idle behaviour.
+- **Speed is chosen at run time** by whatever moves the creature (a game, or the sandbox).
+  Stride length and timing scale with leg length and speed, so `walk` also covers running on two
+  legs; four-legged creatures switch from walk to trot as they speed up.
 - **`gaits`** are worked out from the legs, so you rarely need to list them. Each suits a leg
   count: `walk` (any legs), `trot` (2 pairs), `tripod` (3 pairs), `slither` (no legs). Leave the
   field out to use every gait that suits the body.
@@ -173,7 +194,8 @@ when the creature moves.
 ## Validation
 
 `validate` returns `ok`, `errors`, `warnings` and the **minimal blueprint**: the same creature
-with every value that equals the preset or a default removed. Each issue has:
+with every value that equals the preset or a default removed. Validation never changes your file;
+the minimal blueprint is there to show what actually differs from the preset. Each issue has:
 
 - `path`, id-based, e.g. `limbs[id=hindleg].attach.at`
 - `message`, e.g. `1.4 is outside 0–1`

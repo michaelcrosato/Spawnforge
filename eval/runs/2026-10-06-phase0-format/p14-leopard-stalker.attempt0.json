@@ -1,0 +1,29 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Leopard Stalker",
+  "seed": 1404,
+  "extends": "quadruped",
+  "scale": 1,
+  "body": {
+    "torso": { "radius": [0.12, 0.15, 0.14, 0.11], "arch": 0.05 },
+    "neck": { "length": 0.25, "radius": [0.07, 0.1], "pitch": 15 },
+    "head": { "shape": "round", "length": 0.24, "radius": 0.1, "pitch": -5 },
+    "tail": { "length": 1.1, "radius": [0.06, 0.02], "pitch": -15, "curl": 160, "segments": 12 }
+  },
+  "parts": [{ "id": "eyes", "params": { "size": 0.022, "pupil": "slit", "irisColor": "#d8c030" } }],
+  "skin": {
+    "palette": { "base": "#c9a05a", "belly": "#efe4c4", "accent": "#2a1c10" },
+    "layers": [
+      { "type": "countershade" },
+      {
+        "type": "spots",
+        "color": "accent",
+        "size": 0.03,
+        "density": 0.7,
+        "jitter": 0.6,
+        "ring": 0.8
+      }
+    ]
+  },
+  "motion": { "temperament": "stalking", "actions": ["bite", "look", "idle"] }
+}

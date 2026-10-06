@@ -9,6 +9,8 @@ import { isColor } from './colors.ts';
  */
 
 export const SECTIONS = ['torso', 'neck', 'head', 'tail'] as const;
+/** `spine` runs from the head end of the neck (0) through the torso to the tail tip (1). */
+export const VIRTUAL_SECTIONS = ['spine'] as const;
 export type Section = (typeof SECTIONS)[number];
 export const SIDES = ['both', 'left', 'right', 'center'] as const;
 export type Side = (typeof SIDES)[number];
@@ -99,6 +101,7 @@ export function buildBlueprintSchema(ids: ModuleIds = NO_IDS) {
         'Radius from the head end to the torso end, in torso lengths',
       ).default([0.07, 0.09]),
       pitch: range(-60, 90).default(20).describe('Degrees the neck rises above horizontal'),
+      crossSection: z.enum(CROSS_SECTIONS).default('round').describe('Shape across the neck'),
       segments: z.number().int().min(1).max(8).default(3).describe('Bones in the neck'),
     })
     .describe('Joins the head to the front of the torso.');
@@ -126,6 +129,12 @@ export function buildBlueprintSchema(ids: ModuleIds = NO_IDS) {
       curl: range(-360, 360)
         .default(0)
         .describe('Total degrees the tail bends upward along its length; negative curls down'),
+      curlStart: range(0, 0.95)
+        .default(0)
+        .describe(
+          'Share of the tail that stays straight before the curl begins; 0.6 curls only the end',
+        ),
+      crossSection: z.enum(CROSS_SECTIONS).default('round').describe('Shape across the tail'),
       pitch: range(-90, 60)
         .default(-10)
         .describe('Degrees the tail root points above horizontal; negative droops'),

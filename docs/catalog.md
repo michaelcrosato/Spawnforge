@@ -43,6 +43,7 @@ Joins the head to the front of the torso.
 | `length` | number | 0–1.5 | `0.3` | Neck length in torso lengths; 0 for no neck |
 | `radius` | number or list of number | 0.01–0.6 | `[0.07, 0.09]` | Radius from the head end to the torso end, in torso lengths |
 | `pitch` | number | -60–90 | `20` | Degrees the neck rises above horizontal |
+| `crossSection` | "round" \| "tall" \| "wide" |  | `"round"` | Shape across the neck |
 | `segments` | integer | 1–8 | `3` | Bones in the neck |
 
 ### `body.head`
@@ -67,6 +68,8 @@ Runs back from the torso. `at` runs from the root (0) to the tip (1).
 | `length` | number | 0–4 | `0.6` | Tail length in torso lengths; 0 for no tail |
 | `radius` | number or list of number | 0.005–0.6 | `[0.08, 0.012]` | Radius from the root to the tip, in torso lengths |
 | `curl` | number | -360–360 | `0` | Total degrees the tail bends upward along its length; negative curls down |
+| `curlStart` | number | 0–0.95 | `0` | Share of the tail that stays straight before the curl begins; 0.6 curls only the end |
+| `crossSection` | "round" \| "tall" \| "wide" |  | `"round"` | Shape across the tail |
 | `pitch` | number | -90–60 | `-10` | Degrees the tail root points above horizontal; negative droops |
 | `segments` | integer | 2–24 | `8` | Bones in the tail |
 
@@ -372,7 +375,9 @@ slot: `"surface"` · material: `"eye"` · defaultAttach: `{"on":"head","at":0.4,
 | --- | --- | --- | --- | --- |
 | `size` | number | 0.005–0.2 | `0.022` | Eyeball radius in torso lengths |
 | `pupil` | "round" \| "slit" \| "goat" |  | `"round"` | Pupil shape |
-| `irisColor` | string |  | `"#c8a030"` | A palette name such as "accent", or a colour such as "#2a1e14" |
+| `irisColor` | string |  | `"#c8a030"` | Iris colour: a palette name or a colour |
+| `scleraColor` | string |  | `"#e8e2cc"` | Colour of the eyeball around the iris |
+| `iris` | number | 0.2–1 | `0.7` | Iris size as a share of the visible eye |
 | `bulge` | number | 0–1 | `0.5` | How far the eye stands out of the skin |
 
 ```json
@@ -444,6 +449,7 @@ slot: `"row"` · material: `"bone"` · defaultAttach: `{"on":"torso","angle":0}`
 | `height` | number or list of number | 0.01–0.5 | `0.08` | Height in torso lengths, as one number or a profile along the row |
 | `width` | number | 0.005–0.2 | `0.025` | Base radius in torso lengths |
 | `curve` | number | -90–90 | `20` | Degrees each spike sweeps back toward the tail |
+| `jitter` | number | 0–1 | `0` | Irregular heights and angles, for jagged rows |
 
 ```json
 {

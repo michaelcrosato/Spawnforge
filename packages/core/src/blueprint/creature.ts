@@ -47,6 +47,7 @@ export interface BodySpec {
     readonly length: number;
     readonly radius: readonly number[];
     readonly pitch: number;
+    readonly crossSection: CrossSection;
     readonly segments: number;
   };
   readonly head: {
@@ -61,7 +62,9 @@ export interface BodySpec {
     readonly length: number;
     readonly radius: readonly number[];
     readonly curl: number;
+    readonly curlStart: number;
     readonly pitch: number;
+    readonly crossSection: CrossSection;
     readonly segments: number;
   };
 }

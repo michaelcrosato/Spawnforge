@@ -62,12 +62,24 @@ const rows: Row[] = prompts.map(({ id }) => {
 
 const passed = rows.filter((r) => r.passed).length;
 const firstTry = rows.filter((r) => r.validAt === 0).length;
-const summary = { run: dir, prompts: rows.length, passed, firstTry, threshold: 18, gate: passed >= 18, rows };
+const summary = {
+  run: dir,
+  prompts: rows.length,
+  passed,
+  firstTry,
+  threshold: 18,
+  gate: passed >= 18,
+  rows,
+};
 writeFileSync(join(dir, 'score.json'), `${JSON.stringify(summary, null, 2)}\n`);
 
 console.log('| Prompt | Attempts | Valid at round | Errors per attempt |');
 console.log('| --- | --- | --- | --- |');
 for (const r of rows) {
-  console.log(`| ${r.id} | ${r.attempts} | ${r.validAt ?? 'never'} | ${r.errorsPerAttempt.join(', ')} |`);
+  console.log(
+    `| ${r.id} | ${r.attempts} | ${r.validAt ?? 'never'} | ${r.errorsPerAttempt.join(', ')} |`,
+  );
 }
-console.log(`\n${passed}/${rows.length} valid within ${MAX_FIX_ROUNDS} fix rounds (${firstTry} on the first try). Gate (≥ 18): ${summary.gate ? 'PASS' : 'FAIL'}`);
+console.log(
+  `\n${passed}/${rows.length} valid within ${MAX_FIX_ROUNDS} fix rounds (${firstTry} on the first try). Gate (≥ 18): ${summary.gate ? 'PASS' : 'FAIL'}`,
+);

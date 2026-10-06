@@ -28,9 +28,11 @@ The full example is [examples/ridgeback-stalker.json](examples/ridgeback-stalker
 
 ## Status
 
-Repository scaffold. The design is in [docs/plan.md](docs/plan.md); phase 0 (blueprint format,
-registry, `validate`, format eval) is next. The sandbox currently shows a placeholder body to
-prove the Three.js and TSL setup end to end.
+Phase 0 is done: the blueprint format, validation with errors written for models, the module
+catalogue, the `spawnforge` CLI and an MCP server. On the 20-prompt format eval, a model using only
+the docs and tools wrote a valid blueprint for every prompt on its first try
+([eval](eval/runs/2026-10-06-phase0-format/notes.md)). Phase 1 (bodies, skin, parts, textures and
+renders) is in progress; see [docs/plan.md](docs/plan.md) for the milestones.
 
 ## Getting started
 
@@ -40,6 +42,16 @@ Needs Node 22.18 or later and pnpm 10 (`corepack enable` selects the pinned vers
 pnpm install
 pnpm dev        # sandbox at http://localhost:5173
 pnpm check      # lint, typecheck and tests
+pnpm spawnforge validate examples/ridgeback-stalker.json
+```
+
+### Using it from an LLM
+
+The MCP server exposes `list_modules`, `describe_module` and `validate`, plus the docs as
+resources. With Claude Code:
+
+```sh
+claude mcp add spawnforge -- node packages/mcp/src/bin.ts
 ```
 
 ## Layout
@@ -63,3 +75,5 @@ docs/        plan, architecture, blueprint format
 - [docs/plan.md](docs/plan.md): the design and milestones
 - [docs/architecture.md](docs/architecture.md): layers, package boundaries and data flow
 - [docs/blueprint.md](docs/blueprint.md): the blueprint format
+- [docs/catalog.md](docs/catalog.md): every field and module (generated)
+- [eval/](eval/README.md): the agent eval and its results

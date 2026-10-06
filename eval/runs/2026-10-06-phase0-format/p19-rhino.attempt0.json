@@ -1,0 +1,55 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Rhino Beast",
+  "seed": 19,
+  "extends": "quadruped",
+  "scale": 2.4,
+  "body": {
+    "torso": { "radius": [0.2, 0.26, 0.26, 0.2], "arch": 0.04 },
+    "neck": { "length": 0.2, "radius": [0.12, 0.17], "pitch": 10 },
+    "head": { "shape": "snout", "length": 0.38, "radius": 0.13, "pitch": -15 },
+    "tail": { "length": 0.35, "radius": [0.04, 0.012] }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "length": 0.45,
+      "radius": [0.1, 0.07],
+      "foot": { "type": "foot.claw", "toes": 3 }
+    },
+    {
+      "id": "hindleg",
+      "length": 0.45,
+      "radius": [0.1, 0.07],
+      "foot": { "type": "foot.claw", "toes": 3 }
+    }
+  ],
+  "parts": [
+    {
+      "id": "nosehorn",
+      "type": "horn.curved",
+      "attach": { "on": "head", "at": 0.1, "angle": 0 },
+      "params": { "length": 0.25, "width": 0.05, "curve": 25 }
+    },
+    {
+      "id": "browhorn",
+      "type": "horn.curved",
+      "attach": { "on": "head", "at": 0.4, "angle": 0 },
+      "params": { "length": 0.12, "width": 0.035, "curve": 20 }
+    },
+    {
+      "id": "eyes",
+      "attach": { "on": "head", "at": 0.5, "angle": 70 },
+      "params": { "size": 0.012 }
+    }
+  ],
+  "skin": {
+    "palette": { "base": "#7d7d80", "belly": "#a8a8aa", "accent": "#4a4a4e" },
+    "material": "scales",
+    "layers": [
+      { "type": "countershade", "strength": 0.4 },
+      { "type": "scales", "size": 0.04, "bump": 0.3 }
+    ]
+  },
+  "motion": { "temperament": "lumbering", "actions": ["roar", "look", "idle"] }
+}

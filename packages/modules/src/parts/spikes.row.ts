@@ -21,6 +21,12 @@ export default definePart({
       .max(90)
       .default(20)
       .describe('Degrees each spike sweeps back toward the tail'),
+    jitter: z
+      .number()
+      .min(0)
+      .max(1)
+      .default(0)
+      .describe('Irregular heights and angles, for jagged rows'),
   }),
   example: {
     id: 'dorsal',

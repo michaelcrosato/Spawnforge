@@ -377,7 +377,7 @@ function partParamHints(
 
 // --- Cross-reference checks ---------------------------------------------------------------------
 
-const SECTION_NAMES = ['torso', 'neck', 'head', 'tail', 'jaw'];
+const SECTION_NAMES = ['torso', 'neck', 'head', 'tail', 'jaw', 'spine'];
 
 function semanticChecks(doc: ResolvedDoc, registry: Registry): Issue[] {
   const issues: Issue[] = [];
@@ -391,6 +391,7 @@ function semanticChecks(doc: ResolvedDoc, registry: Registry): Issue[] {
   const sections = [
     'torso',
     'head',
+    'spine',
     ...(hasNeck ? ['neck'] : []),
     ...(hasTail ? ['tail'] : []),
     ...(doc.body.head.jaw ? ['jaw'] : []),
