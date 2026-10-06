@@ -98,6 +98,7 @@ export {
   type GenerateOptions,
   type GenerateResult,
   generate,
+  measureBody,
   type Range,
   type ThemeBias,
 } from './variation/generate.ts';

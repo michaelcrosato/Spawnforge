@@ -325,7 +325,7 @@ export function generate(options: GenerateOptions, registry: Registry): Generate
       continue;
     }
     // Height scales with `scale`, so one rescale meets a height limit exactly.
-    let size = bodySize(result.creature, registry);
+    let size = measureBody(result.creature, registry);
     const target = clamp(size.height, minHeight, maxHeight);
     if (target !== size.height && size.height > 0) {
       const scale = blueprint.scale as number | undefined;
@@ -336,7 +336,7 @@ export function generate(options: GenerateOptions, registry: Registry): Generate
         last = [...result.errors];
         continue;
       }
-      size = bodySize(result.creature, registry);
+      size = measureBody(result.creature, registry);
     }
     const has = new Set(result.creature.motion.actions.map((a) => a.type));
     const missing = (constraints.actions ?? []).filter((a) => !has.has(a));
@@ -375,8 +375,11 @@ export function generate(options: GenerateOptions, registry: Registry): Generate
   return { ok: false, blueprint: {}, errors: last, warnings: [], attempts: ATTEMPTS };
 }
 
-/** Height and length of the body from its skeleton: skin bones and their radii. */
-function bodySize(
+/**
+ * Height and length of the body (metres) from its skeleton: skin bones and their radii, not horns
+ * or spikes. Cheap: no meshing.
+ */
+export function measureBody(
   spec: NonNullable<ReturnType<typeof validateBlueprint>['creature']>,
   registry: Registry,
 ) {

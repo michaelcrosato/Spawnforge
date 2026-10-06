@@ -1,0 +1,37 @@
+{
+  "description": "Phase 5 variation eval: tasks that need species, mutate, crossbreed and generate. Each names the files to save in the run folder; eval/variation.ts checks them.",
+  "tasks": [
+    {
+      "id": "v01-wolf-species",
+      "task": "Write a species file for a pack of grey wolves whose individuals vary in size (torso length 0.9 to 1.3 m), leg length, ear size and coat colour shade. Save it as v01.species.json. Then make three individuals of it with seeds 1, 2 and 3 and save them as v01.a.json, v01.b.json and v01.c.json."
+    },
+    {
+      "id": "v02-small-demon",
+      "task": "Generate a demon whose body is no taller than 1 m and which can both bite and roar. Save it as v02.json."
+    },
+    {
+      "id": "v03-locked-mutant",
+      "task": "Make a mutant of examples/ridgeback-stalker.json: other genes may drift, but its horns must end up clearly longer than the parent's (at least 15% longer) and its skin (palette, material and pattern layers) must stay exactly the parent's. Save it as v03.json."
+    },
+    {
+      "id": "v04-troll-beetle",
+      "task": "Crossbreed examples/bog-troll.json with examples/ember-beetle.json so that the child is mostly troll and keeps the troll's upright two-legged body, but visibly inherits something from the beetle. Save it as v04.json."
+    },
+    {
+      "id": "v05-horned-insect",
+      "task": "Use the insect theme to find a generated insect that has a horn. Then edit it so the horn is longer (horn length at least 0.3 torso lengths) and the body colour is near black. Save the final blueprint as v05.json."
+    },
+    {
+      "id": "v06-serpent-species",
+      "task": "Write a species of serpents whose size (scale) varies between 0.6 and 1.2 m and whose tail length varies between 2 and 3 torso lengths; every individual must be valid. Save it as v06.species.json."
+    },
+    {
+      "id": "v07-viper-litter",
+      "task": "Make three different mutants of examples/reed-viper.json that all keep its stripes (a stripes layer). Save them as v07.a.json, v07.b.json and v07.c.json."
+    },
+    {
+      "id": "v08-tall-raptor",
+      "task": "Generate a reptile that walks on two legs and whose body is at least 1.5 m tall. Save it as v08.json."
+    }
+  ]
+}
