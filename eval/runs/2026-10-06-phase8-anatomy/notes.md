@@ -57,6 +57,7 @@ Gate 8 reviews the look again after 8.2–8.4.
 | `muscle: 0` | Plan 1's mesh exactly | Every example matches the pre-8.1 fingerprints at low and medium (`golden-muscle0.json`) |
 | What anatomy leaves alone | Meshed as before | The ridgeback's and the beetle's heads match muscle 0 vertex for vertex |
 | Skin stretch | Within muscle 0's | 99th-percentile edge stretch over a walk and a turn within 10% of muscle 0 (ridgeback, troll) |
-| Compile, Chrome, medium | ≤ 500 ms | Medians of 15 at round 4: troll 259 ms (232 at muscle 0), beetle 368 (332), ridgeback 189 (152), viper 51 (59) |
+| Compile, Chrome, medium | ≤ 500 ms, skin ≤ 30k triangles | Medians of 15, final code (muscle 0 in brackets): troll 278 ms (272), beetle 337 (325), ridgeback 179 (180), viper 52 (54); skins 20.7k, 26.7k, 11.8k, 3.9k triangles |
+| Fuzz, 1,000 blueprints | Runs clean | 976 valid, all compiled, no failures; median 315 ms in Node (266 before 8.1 on the same blueprints), p95 765 ms |
 | `analyze` on the examples | No new warnings | None |
 | Motion and harness tests | Pass | Pass |
