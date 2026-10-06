@@ -242,7 +242,7 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
     legs.length === 0 && sBody > 0 ? [c[0] * (1 + 0.06 * sBody), c[1] * (1 - 0.1 * sBody)] : c;
   const torsoCross = flatten(CROSS_SCALE[spec.body.torso.crossSection]);
   const torsoRadius = (t: number) => sampleProfile(spec.body.torso.radius, t) * L;
-  // Upright torsos (bipeds standing tall) get no waist and no keel, which read as a sag on them.
+  // Upright torsos (bipeds standing tall) get no waist, which reads as a sag on them.
   const upright = Math.abs(spec.body.torso.pitch) >= 45;
   const plan = torsoPlan(
     spec.limbs.filter((l) => l.on === 'torso'),
@@ -377,37 +377,6 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
         }
       : {};
   };
-  /** The ribcage's depth: a keel below the chest, when the torso has a chest. */
-  const chestKeel = (): MassDef[] => {
-    if (plan.chest === undefined || sBody <= 0 || chitin || upright) return [];
-    const at = (t: number) => sampleTorso(clamp01(t));
-    const [sx, sy] = torsoCross;
-    const ends = [at(plan.chest - 0.1), at(plan.chest + 0.14)].map((f) => {
-      const r = f.radius * sy;
-      const o = 0.3 * sBody * r;
-      return { point: f.point.clone().addScaledVector(f.up, -o), up: f.up, r, o };
-    });
-    const [a, c] = ends as [(typeof ends)[number], (typeof ends)[number]];
-    const extent = (e: (typeof ends)[number]) =>
-      Math.max(0.4 * e.r, e.r * (1 + 0.18 * sBody) - e.o);
-    const owner = spine.find((id) => {
-      const bone = b.bones[id] as BoneDef;
-      const t = plan.chest as number;
-      return t <= Math.max(bone.t0, bone.t1) && t >= Math.min(bone.t0, bone.t1);
-    });
-    return [
-      {
-        bone: owner ?? (spine.at(-1) as number),
-        a: a.point,
-        b: c.point,
-        ra: extent(a),
-        rb: extent(c),
-        up: a.up.clone(),
-        cross: [(0.75 * sx) / sy, 1],
-        blend: 0.4 * a.r * Math.min(1, sBody),
-      },
-    ];
-  };
 
   // --- Bones ---------------------------------------------------------------------------------
   const b = new Builder();
@@ -468,7 +437,7 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
       owner: 'torso',
       parentBone: -1,
       blend: 0,
-      masses: chestKeel(),
+      masses: [],
     },
     spine,
   );

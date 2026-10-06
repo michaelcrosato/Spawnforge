@@ -71,10 +71,10 @@ describe('anatomy', () => {
       build(example(name))
         .bones.filter((b) => b.shaped)
         .map((b) => b.name);
-    // A quadruped: a chest keel and a neck muscle; each leg's root sphere; torso, tail and legs
-    // shaped (the legs' muscle is in their profiles).
+    // A quadruped: a neck muscle and each leg's root sphere; torso, tail and legs shaped (the
+    // legs' muscle is in their profiles).
     expect(masses('ridgeback-stalker')).toMatchObject({
-      torso: 1,
+      torso: 0,
       neck: 1,
       'foreleg.L': 1,
       'hindleg.R': 1,
@@ -82,7 +82,7 @@ describe('anatomy', () => {
     expect(shaped('ridgeback-stalker')).toEqual(
       expect.arrayContaining(['spine.0', 'tail.0', 'hindleg.L.1']),
     );
-    // An upright biped: no keel on its upright torso (its chest comes from the profile).
+    // An upright biped.
     expect(masses('bog-troll')).toMatchObject({ torso: 0, neck: 1, 'leg.L': 1, 'arm.R': 1 });
     expect(shaped('bog-troll')).toEqual(expect.arrayContaining(['leg.L.0', 'arm.R.1']));
     // A chitin hexapod: its root spheres only; the segments swell through their profiles, and the

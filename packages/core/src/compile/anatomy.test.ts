@@ -47,7 +47,7 @@ describe('anatomy rules', () => {
     expect(limbFactor(1, n, 2, false)).toBeCloseTo(1, 6);
     expect(limbFactor(1, n, 2, true)).toBeCloseTo(1, 6);
     // Chitin segments swell in the middle and pinch at the joints.
-    expect(limbFactor(0.5 / 3, n, 1, true)).toBeGreaterThan(1.15);
+    expect(limbFactor(0.5 / 3, n, 1, true)).toBeGreaterThan(1.1);
     expect(limbFactor(1 / 3, n, 1, true)).toBeLessThan(0.95);
     // On two segments the one joint is a knee, narrowed like one.
     expect(limbFactor(1 / 2, 2, 1, false)).toBeCloseTo(limbFactor(1 / 3, n, 1, false), 2);

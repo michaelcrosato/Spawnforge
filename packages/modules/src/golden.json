@@ -1,18 +1,18 @@
 {
   "bog-troll": {
-    "low": "c1b9d500",
-    "medium": "7b96c61d"
+    "low": "fd4b53fb",
+    "medium": "b32206d0"
   },
   "ember-beetle": {
-    "low": "bc8212b5",
-    "medium": "ae2feca9"
+    "low": "baeb93df",
+    "medium": "868fbe1e"
   },
   "reed-viper": {
     "low": "3f654ec0",
     "medium": "3df20c66"
   },
   "ridgeback-stalker": {
-    "low": "bcb9ee20",
-    "medium": "6664e3df"
+    "low": "ea4950cc",
+    "medium": "2641d0c7"
   }
 }

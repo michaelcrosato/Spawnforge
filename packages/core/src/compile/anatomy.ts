@@ -1,7 +1,7 @@
 /**
  * Anatomy from rules (docs/design/8.1-anatomy.md): radius multipliers for limbs (muscle swell and
  * narrow joints, or chitin segments), the torso, the neck and tails, which the skeleton puts in
- * its bones' profiles; the masses (a chest keel, a neck muscle, the limb roots) are its own.
+ * its bones' profiles; the masses (a neck muscle, the limb roots) are its own.
  * Everything scales with `s = 2 × muscle` (0 to 2) and vanishes at s = 0, where a creature
  * compiles to exactly the mesh it had before.
  */
@@ -52,14 +52,14 @@ export function limbFactor(
   const t = T * n - k;
   if (chitin) {
     const swell = Math.sin(Math.PI * t);
-    const f = 0.22 * s * swell - 0.1 * s * (1 - swell);
+    const f = 0.13 * s * swell - 0.06 * s * (1 - swell);
     // The last segment's far end is the tip: keep it.
     return 1 + f * (k === n - 1 ? 1 - smoothstep(0.6, 1, t) : 1);
   }
   const joint = shape.joint ?? (() => 1);
   let f = 0;
   for (let j = 1; j < n; j++)
-    f -= (j === n - 1 && n >= 3 ? 0.26 : 0.18) * s * joint(j) * bump(T, j / n, 0.07);
+    f -= (j === n - 1 && n >= 3 ? 0.26 : 0.14) * s * joint(j) * bump(T, j / n, 0.07);
   // The swell peaks 40% down the segment and is gone at both of its joints.
   f += s * (shape.swell?.(k) ?? 0) * Math.sin(Math.PI * t ** 0.75);
   return 1 + f * keepTip;
@@ -132,8 +132,8 @@ export function torsoPlan(
 export function torsoFactor(t: number, plan: TorsoPlan, s: number): number {
   if (s <= 0) return 1;
   let f = 1;
-  if (plan.chest !== undefined) f += 0.08 * s * bump(t, plan.chest, 0.14);
-  if (plan.pelvis !== undefined) f += 0.08 * s * bump(t, plan.pelvis, 0.12);
+  if (plan.chest !== undefined) f += 0.04 * s * bump(t, plan.chest, 0.14);
+  if (plan.pelvis !== undefined) f += 0.04 * s * bump(t, plan.pelvis, 0.12);
   if (plan.waist !== undefined) f -= 0.09 * s * bump(t, plan.waist, 0.12);
   return f;
 }
