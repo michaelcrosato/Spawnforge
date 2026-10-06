@@ -44,7 +44,9 @@ maps and levels of detail in exports, installable packages, and editing tools. I
 tracks each milestone. Done so far: 7.1 (carry-overs), 7.2 (`migrate` and the corpus test) and
 7.3 (format 0.2, which holds all of plan 2's vocabulary as stub modules before it is built; its
 format eval scored 20/20 on suite B, `eval/runs/2026-10-06-phase7-format/`) and 7.4 (the
-compiled rig holds lists of heads, tails and driven chains, with goldens unchanged).
+compiled rig holds lists of heads, tails and driven chains, with goldens unchanged) and 7.5
+(scenarios for `render` and `analyze`, the module harness for every kind, visual regression for
+every example, and the quality and motion reviews, `eval/README.md`).
 
 ## Repo map
 
@@ -60,7 +62,7 @@ compiled rig holds lists of heads, tails and driven chains, with goldens unchang
 | `examples/`        | Blueprints beside their renders; also the golden test set                                        |                                  |
 | `eval/`            | The 20-prompt agent eval: prompts, scorer and one folder per run                                  |                                  |
 | `scripts/`         | `generate.ts`: writes every generated file (pack index, catalogue, JSON Schema)                  |                                  |
-| `docs/`            | `plan.md` (design), `plan-2.md` (current plan), `architecture.md`, `blueprint.md` (format), `catalog.md` (generated) |                                  |
+| `docs/`            | `plan.md` (design), `plan-2.md` (current plan), `architecture.md`, `blueprint.md` (format), `scenarios.md`, `catalog.md` (generated) |                                  |
 
 ## Commands
 
@@ -78,11 +80,15 @@ pnpm spawnforge <command>     # the CLI from source: list-modules, describe-modu
 pnpm spawnforge generate --theme reptile --seed 4 --out creatures/lizard.json   # a new creature from a theme
 pnpm spawnforge export examples/bog-troll.json --stats rpg   # a .glb with baked clips, for any engine
 pnpm spawnforge render examples/ridgeback-stalker.json --labels   # PNG contact sheet next to the file
+pnpm spawnforge analyze examples/ridgeback-stalker.json --scenario examples/scenarios/stalk-and-bite.json
+                              # scripted motion (targets, a course, timed calls); render takes it too
 pnpm render:examples          # re-render examples/*.png after changing a blueprint or the pipeline
 pnpm fuzz [count] [quality]   # compile random blueprints from the schema (the PoC gate runs 1,000)
 pnpm budgets                  # compile time, triangles, draw calls and motion cost of the examples
 node packages/mcp/src/bin.ts  # the MCP server over stdio
 node eval/score.ts <run>      # score an eval run from its saved attempts
+node eval/quality.ts prepare <out> --base <commit>   # the same blueprints at two commits, blind pairs
+node eval/motion.ts prepare <out>                    # filmstrips shown blind, matched to their tasks
 ```
 
 To use the MCP server from Claude Code: `claude mcp add spawnforge -- node packages/mcp/src/bin.ts`.
@@ -172,8 +178,9 @@ From the plan. Follow them unless the plan changes.
 
 - Tests sit beside the code as `*.test.ts` and run in Node under Vitest. They are typechecked by
   `tsconfig.tests.json` (with Node types), not by the package that holds them.
-- New behaviour comes with tests. Modules will also get the automatic defaults, examples and fuzz
-  harness the plan describes.
+- New behaviour comes with tests. Every built module also goes through the module harness
+  (`compile.test.ts` for parts, `harness.test.ts` for every other kind): its defaults and
+  example, its time and size budgets, and the same result twice.
 
 **Scope**
 

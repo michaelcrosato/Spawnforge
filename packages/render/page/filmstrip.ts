@@ -1,4 +1,11 @@
-import { type CompiledCreature, MotionController, mainHead, type Registry } from '@spawnforge/core';
+import {
+  type CompiledCreature,
+  MotionController,
+  mainHead,
+  parseScenario,
+  type Registry,
+  ScenarioRun,
+} from '@spawnforge/core';
 import { applyPose, type CreatureObject } from '@spawnforge/three';
 import * as THREE from 'three';
 import type { WebGPURenderer } from 'three/webgpu';
@@ -31,9 +38,23 @@ export async function drawFilmstrip(
   ctx: CanvasRenderingContext2D,
   layout: { top: number; size: number; cols: number },
   registry: Registry,
+  /** For blind reviews: leave gait, action and event names off the sheet. */
+  anonymous = false,
 ): Promise<MotionInfo> {
+  if (request.scenario !== undefined)
+    return drawScenario(compiled, creature, stage, request, ctx, layout, registry, anonymous);
   if (request.action)
-    return drawAction(compiled, creature, stage, request, ctx, layout, registry, request.action);
+    return drawAction(
+      compiled,
+      creature,
+      stage,
+      request,
+      ctx,
+      layout,
+      registry,
+      request.action,
+      anonymous,
+    );
   const controller = new MotionController(compiled, { registry });
   if (request.gait) controller.lockGait(request.gait);
   const speed =
@@ -107,7 +128,11 @@ export async function drawFilmstrip(
   ctx.fillText('footfalls over one cycle (filled = planted)', 14, rowsTop + 12);
   const duty: Record<string, number> = {};
   if (legs.length === 0) {
-    ctx.fillText('no legs: the body follows its own trail (slither)', 14, rowsTop + 32);
+    ctx.fillText(
+      `no legs: the body follows its own trail${anonymous ? '' : ' (slither)'}`,
+      14,
+      rowsTop + 32,
+    );
   }
   legs.forEach((leg, k) => {
     const y = rowsTop + 22 + k * 16;
@@ -137,9 +162,134 @@ export async function drawFilmstrip(
   return { gait: controller.gait?.id ?? 'none', speed, cycle, stride, duty, footSlide };
 }
 
-/** Height of the footfall diagram (or action timeline) below the frames. */
-export function diagramHeight(legCount: number, action: boolean): number {
-  return action ? 64 : 22 + Math.max(1, legCount) * 16 + 24;
+/** Height of the footfall diagram (or action or scenario timeline) below the frames. */
+export function diagramHeight(legCount: number, action: boolean, scenario = false): number {
+  return scenario ? 96 : action ? 64 : 22 + Math.max(1, legCount) * 16 + 24;
+}
+
+/**
+ * Runs a scenario and draws frames evenly spaced over its duration, with its targets marked
+ * and, on uneven ground, the course itself; its events go on a timeline below.
+ */
+async function drawScenario(
+  compiled: CompiledCreature,
+  creature: CreatureObject,
+  stage: Stage,
+  request: FilmstripRequest,
+  ctx: CanvasRenderingContext2D,
+  layout: { top: number; size: number; cols: number },
+  registry: Registry,
+  anonymous: boolean,
+): Promise<MotionInfo> {
+  const { scenario, issues } = parseScenario(request.scenario);
+  if (!scenario)
+    throw new Error(`invalid scenario: ${issues.map((i) => `${i.path}: ${i.message}`).join('; ')}`);
+  const run = new ScenarioRun(compiled, registry, scenario);
+  const added: THREE.Object3D[] = [];
+  // Targets: small amber balls, sized to the creature.
+  const ball = new THREE.SphereGeometry(Math.max(0.03, compiled.scale * 0.04), 16, 12);
+  const amber = new THREE.MeshStandardMaterial({ color: '#ffb000', emissive: '#553300' });
+  for (const p of run.targetPoints().values()) {
+    const marker = new THREE.Mesh(ball, amber);
+    marker.position.copy(p);
+    added.push(marker);
+  }
+  // Uneven ground: a mesh of the course over everywhere the scenario goes.
+  if (scenario.ground === 'course') {
+    const points = [
+      new THREE.Vector3(scenario.start.x, 0, scenario.start.z),
+      ...run.targetPoints().values(),
+      ...scenario.calls
+        .flatMap((c) => (c.do === 'moveTo' ? [c.to] : c.do === 'follow' ? c.path : []))
+        .filter((p): p is [number, number] => typeof p !== 'string')
+        .map(([x, z]) => new THREE.Vector3(x, 0, z)),
+    ];
+    const box = new THREE.Box3().setFromPoints(points).expandByScalar(stage.span * 2);
+    const size = box.getSize(new THREE.Vector3());
+    const cells = 160;
+    const geometry = new THREE.PlaneGeometry(size.x, size.z, cells, cells);
+    geometry.rotateX(-Math.PI / 2);
+    const centre = box.getCenter(new THREE.Vector3());
+    const position = geometry.attributes.position as THREE.BufferAttribute;
+    for (let i = 0; i < position.count; i++) {
+      const x = position.getX(i) + centre.x;
+      const z = position.getZ(i) + centre.z;
+      position.setXYZ(i, x, run.ground(x, z).height, z);
+    }
+    geometry.computeVertexNormals();
+    const terrain = new THREE.Mesh(
+      geometry,
+      new THREE.MeshStandardMaterial({ color: '#4a5058', roughness: 1, flatShading: true }),
+    );
+    terrain.receiveShadow = true;
+    added.push(terrain);
+  }
+  stage.scene.add(...added);
+  const fixedGround = scenario.ground === 'course';
+  const frames = scenario.frames;
+  const { cols, size, top } = layout;
+  let next = 0;
+  while (next < frames) {
+    if (run.time >= (next / (frames - 1)) * scenario.duration - 1e-9 || run.done) {
+      await drawFrame(
+        run.controller,
+        creature,
+        stage,
+        request,
+        ctx,
+        {
+          x: (next % cols) * size,
+          y: top + Math.floor(next / cols) * size,
+          size,
+          label: `${next + 1}  t = ${run.time.toFixed(2)} s`,
+        },
+        undefined,
+        fixedGround,
+      );
+      next++;
+      continue;
+    }
+    run.step();
+  }
+  while (!run.done) run.step();
+  stage.scene.remove(...added);
+  const result = run.result();
+
+  // Timeline: the duration, frame ticks, then events (staggered so labels do not overlap).
+  const y = top + Math.ceil(frames / cols) * size + 10;
+  const width = cols * size;
+  const x0 = 90;
+  const barW = width - x0 - 20;
+  ctx.font = '11px ui-monospace, monospace';
+  ctx.fillStyle = '#aab';
+  ctx.fillText(
+    `scenario: ${scenario.duration.toFixed(1)} s, walked ${result.distance.toFixed(2)} m, events`,
+    14,
+    y + 12,
+  );
+  ctx.fillStyle = '#2c3038';
+  ctx.fillRect(x0, y + 22, barW, 6);
+  const shown = result.events.filter((e) => e.type !== 'action-start' && e.type !== 'action-end');
+  shown.forEach((e, i) => {
+    const x = x0 + Math.min(1, e.time / scenario.duration) * barW;
+    ctx.fillStyle = '#ffd166';
+    ctx.fillRect(x - 1, y + 16, 3, 18);
+    const label = anonymous
+      ? `${e.time.toFixed(2)} s`
+      : `${e.type}${e.action ? ` ${e.action}` : ''} ${e.time.toFixed(2)} s`;
+    ctx.fillText(label, Math.min(x + 4, width - 170), y + 46 + (i % 3) * 14);
+  });
+  const last = result.gaits.at(-1)?.gait ?? 'none';
+  return {
+    gait: last,
+    speed: result.end.speed,
+    cycle: scenario.duration,
+    stride: result.distance,
+    duty: {},
+    footSlide: result.footSlide,
+    events: result.events.map((e) => ({ type: e.type, time: e.time })),
+    scenario: result,
+  };
 }
 
 /** The creature stands and performs one action; frames span it, events on a timeline below. */
@@ -152,6 +302,7 @@ async function drawAction(
   layout: { top: number; size: number; cols: number },
   registry: Registry,
   action: string,
+  anonymous: boolean,
 ): Promise<MotionInfo> {
   const controller = new MotionController(compiled, { registry });
   for (let i = 0; i < 120; i++) controller.update(STEP);
@@ -214,7 +365,7 @@ async function drawAction(
   const barW = width - x0 - 20;
   ctx.font = '11px ui-monospace, monospace';
   ctx.fillStyle = '#aab';
-  ctx.fillText(`${action}: ${duration.toFixed(2)} s, events`, 14, y + 12);
+  ctx.fillText(`${anonymous ? 'action' : action}: ${duration.toFixed(2)} s, events`, 14, y + 12);
   ctx.fillStyle = '#2c3038';
   ctx.fillRect(x0, y + 22, barW, 6);
   for (const e of events) {
@@ -222,7 +373,8 @@ async function drawAction(
     const x = x0 + Math.min(1, e.time / duration) * barW;
     ctx.fillStyle = '#ffd166';
     ctx.fillRect(x - 1, y + 16, 3, 18);
-    ctx.fillText(`${e.type} ${e.time.toFixed(2)} s`, Math.min(x + 4, width - 150), y + 46);
+    const label = anonymous ? `${e.time.toFixed(2)} s` : `${e.type} ${e.time.toFixed(2)} s`;
+    ctx.fillText(label, Math.min(x + 4, width - 150), y + 46);
   }
   return {
     action,
@@ -245,6 +397,8 @@ async function drawFrame(
   at: { x: number; y: number; size: number; label: string },
   /** Frame this sphere (world space) instead of the whole creature, e.g. the head for actions. */
   closeUp?: { centre: THREE.Vector3; radius: number },
+  /** Ground drawn in the world (a course): leave the stage's flat ground hidden. */
+  fixedGround = false,
 ): Promise<void> {
   const { renderer, scene, key, ground, grid, gridCell, centre, extent } = stage;
   const span = closeUp ? closeUp.radius * 2 : stage.span;
@@ -256,7 +410,8 @@ async function drawFrame(
   const bones = new THREE.Box3().setFromPoints(controller.pose.worldPos);
   const mid = bones.getCenter(new THREE.Vector3());
   const p = controller.position;
-  const focus = closeUp ? closeUp.centre.clone() : new THREE.Vector3(mid.x, centre.y, mid.z);
+  // On uneven ground the body rides the bumps, so the camera follows the ground's height too.
+  const focus = closeUp ? closeUp.centre.clone() : new THREE.Vector3(mid.x, centre.y + p.y, mid.z);
   ground.position.set(p.x, 0, p.z);
   grid.position.set(
     Math.round(p.x / gridCell) * gridCell,
@@ -294,7 +449,9 @@ async function drawFrame(
     ortho.lookAt(focus);
     camera = ortho;
   }
-  ground.visible = view !== 'top';
+  ground.visible = view !== 'top' && !fixedGround;
+  // The course's own facets show the ground; a flat grid would cut through its bumps.
+  grid.visible = !fixedGround;
   scene.background = new THREE.Color('#262a30');
   camera.updateMatrixWorld();
   // Three.js re-skins once per animation frame, so let one pass before drawing the new pose.

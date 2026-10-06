@@ -373,6 +373,11 @@ when the creature moves.
   few pixels across on the default sheet; check them with `--views top,3/4 --size 900 --quality
   high`. Pattern sizes are in torso lengths, so on a creature with a very long tail a few large
   spots can land mostly on the tail: use smaller spots, or a second layer with `region`.
+- **Script motion with a scenario**: `render` and `analyze` take `--scenario s.json` (MCP:
+  `filmstrip.scenario` and `scenario`): ground (flat or the uneven course), named targets and
+  timed calls (`moveTo`, `follow` a course, `act` at a target, `lookAt`, `stop`, `drive`,
+  `gait`). `analyze` reports the events, the distance walked, how close a snout came to each
+  target and foot slide; `render` draws it. See [scenarios](scenarios.md).
 - **Check everything else with `analyze`**: it measures the creature (size, mass, centre of mass,
   hip height, speeds per gait, bite reach, balance over the feet), runs two gait cycles on flat
   and rough ground, and warns, with a path and a fix, about sliding feet, a body or tail in the

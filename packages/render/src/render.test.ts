@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { FORMAT } from '@spawnforge/core';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { Renderer } from './index.ts';
@@ -93,8 +93,13 @@ describe('headless renders', () => {
   }, 120_000);
 
   it('renders the examples like their approved images (visual regression)', async () => {
-    // Same settings as `pnpm render:examples`, which writes the approved images.
-    for (const name of ['ridgeback-stalker', 'reed-viper']) {
+    // Every example, with the same settings as `pnpm render:examples`, which writes the approved
+    // images.
+    const names = readdirSync(new URL('../../../examples/', import.meta.url))
+      .filter((f) => f.endsWith('.json'))
+      .map((f) => f.replace(/\.json$/, ''));
+    expect(names.length).toBeGreaterThanOrEqual(4);
+    for (const name of names) {
       const blueprint = JSON.parse(
         readFileSync(new URL(`../../../examples/${name}.json`, import.meta.url), 'utf8'),
       );

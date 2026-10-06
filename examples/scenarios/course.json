@@ -1,0 +1,8 @@
+{
+  "ground": "course",
+  "duration": 12,
+  "calls": [
+    { "at": 0, "do": "follow", "path": [[0, 2.5], [2, 5], [0, 7.5], [-1.5, 10]], "speed": 1.4 }
+  ],
+  "frames": 8
+}

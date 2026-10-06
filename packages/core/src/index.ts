@@ -105,6 +105,15 @@ export {
 } from './motion/controller.ts';
 export { motionData } from './motion/gaits.ts';
 export { Pose } from './motion/pose.ts';
+export {
+  checkScenario,
+  parseScenario,
+  type Scenario,
+  type ScenarioCall,
+  type ScenarioResult,
+  ScenarioRun,
+  ScenarioSchema,
+} from './motion/scenario.ts';
 export { testCourse } from './motion/terrain.ts';
 export * from './registry.ts';
 export { createRng, deriveSeed, type Rng } from './rng.ts';

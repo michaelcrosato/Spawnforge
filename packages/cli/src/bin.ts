@@ -18,6 +18,7 @@ import {
   mutate,
   needIndividual,
   patch,
+  prepareScenarioFor,
   validate,
 } from './commands.ts';
 
@@ -35,9 +36,16 @@ Commands:
                                         prints cycle, stride, duty and foot slide
   render <file|-> --filmstrip --action <id> [--frames n] [--view side|3/4|top|front]
                                         One action (bite, roar, look…) as frames with its events
-  analyze <file|-> [--stats id]         Measurements, mass, speeds, motion checks on flat and
+  render <file|-> --scenario s.json [--view side|3/4|top|front]
+                                        A scripted scene (ground, targets, timed calls: moveTo,
+                                        follow, act, lookAt…) as frames with its events; prints
+                                        what it measured (see docs/scenarios.md)
+  analyze <file|-> [--stats id] [--scenario s.json]
+                                        Measurements, mass, speeds, motion checks on flat and
                                         rough ground, plausibility warnings and a description;
-                                        --stats adds a game's numbers (e.g. rpg)
+                                        --stats adds a game's numbers (e.g. rpg); --scenario runs
+                                        a scripted scene (targets, a course, timed calls) and
+                                        reports its events, distances and foot slide
   migrate <file|-> [--out file] [--dry-run]
                                         Upgrades an older blueprint or species to the current
                                         format and writes it back (or to --out)
@@ -122,6 +130,7 @@ function parseOptions() {
       mix: { type: 'string' },
       base: { type: 'string' },
       stats: { type: 'string' },
+      scenario: { type: 'string' },
       clips: { type: 'string' },
       fps: { type: 'string' },
     },
@@ -195,16 +204,34 @@ async function render(): Promise<{ output: unknown; exitCode?: number }> {
     );
   const speed = number('speed', values.speed);
   const frames = number('frames', values.frames);
-  const filmstrip = values.filmstrip
-    ? {
-        ...(values.action ? { action: values.action } : {}),
-        ...(values.gait ? { gait: values.gait } : {}),
-        ...(speed !== undefined ? { speed } : {}),
-        ...(frames !== undefined ? { frames } : {}),
-        ...(filmView ? { view: filmView as 'side' | 'three-quarter' | 'top' | 'front' } : {}),
-      }
-    : undefined;
-  const suffix = filmstrip ? (values.action ? `.${values.action}.png` : '.walk.png') : '.png';
+  // A scenario is a filmstrip of its own; check it first, so mistakes come back with fixes.
+  const scenario = values.scenario === undefined ? undefined : readInput(values.scenario);
+  if (scenario !== undefined) {
+    const prepared = prepareScenarioFor(blueprint, scenario);
+    if (!prepared.ok) return { output: { ok: false, errors: prepared.errors }, exitCode: 1 };
+  }
+  const filmstrip =
+    values.filmstrip || scenario !== undefined
+      ? {
+          ...(scenario !== undefined ? { scenario } : {}),
+          ...(values.action ? { action: values.action } : {}),
+          ...(values.gait ? { gait: values.gait } : {}),
+          ...(speed !== undefined ? { speed } : {}),
+          ...(frames !== undefined ? { frames } : {}),
+          ...(filmView ? { view: filmView as 'side' | 'three-quarter' | 'top' | 'front' } : {}),
+        }
+      : undefined;
+  const scenarioName = values.scenario
+    ?.split(/[\\/]/)
+    .at(-1)
+    ?.replace(/\.json$/i, '');
+  const suffix = scenarioName
+    ? `.${scenarioName}.png`
+    : filmstrip
+      ? values.action
+        ? `.${values.action}.png`
+        : '.walk.png'
+      : '.png';
   const out =
     values.out ?? (arg === '-' ? `creature${suffix}` : `${arg.replace(/\.json$/i, '')}${suffix}`);
   const { renderBlueprint } = await import('@spawnforge/render');
@@ -295,6 +322,7 @@ const commands: Record<
     const result = analyze({
       blueprint: readInput(arg),
       ...(values.stats ? { stats: values.stats } : {}),
+      ...(values.scenario ? { scenario: readInput(values.scenario) } : {}),
     });
     return { output: result, exitCode: result.ok ? 0 : 1 };
   },

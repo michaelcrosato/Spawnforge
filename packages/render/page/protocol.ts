@@ -1,3 +1,5 @@
+import type { ScenarioResult } from '@spawnforge/core';
+
 /** Shared between the Node launcher and the page. */
 export type View = 'front' | 'side' | 'top' | 'three-quarter' | 'head' | 'rear' | 'underside';
 
@@ -8,7 +10,7 @@ export interface RenderRequest {
   readonly size?: number;
   /** Label every part and limb by id. */
   readonly labels?: boolean;
-  /** Leave the creature's name out of the header (for blind reviews). */
+  /** For blind reviews: leave out the creature's name and, on filmstrips, gait, action and event names. */
   readonly anonymous?: boolean;
   /** Panels to draw, in order (default the six views; `underside` only when asked). */
   readonly views?: readonly View[];
@@ -38,6 +40,11 @@ export interface FilmstripRequest {
   readonly frames?: number;
   /** Camera (default side; top for legless bodies; 3/4 close on the head for actions). */
   readonly view?: 'side' | 'three-quarter' | 'top' | 'front';
+  /**
+   * A scenario (see `ScenarioSchema` in core) to draw instead of a gait cycle: frames evenly
+   * spaced over its duration, its targets marked, its events on a timeline.
+   */
+  readonly scenario?: unknown;
 }
 
 /** What a filmstrip measured over the cycle (or action) it drew. */
@@ -57,6 +64,8 @@ export interface MotionInfo {
   readonly duty: Readonly<Record<string, number>>;
   /** Largest distance a planted foot slid during the cycle (metres). */
   readonly footSlide: number;
+  /** Scenario filmstrips: what the run measured. */
+  readonly scenario?: ScenarioResult;
 }
 
 export interface RenderInfo {

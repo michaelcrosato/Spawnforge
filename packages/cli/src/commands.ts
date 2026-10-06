@@ -4,6 +4,9 @@ import {
   applyPatch,
   blueprintSchemaFor,
   type CatalogEntry,
+  type CreatureSpec,
+  checkScenario,
+  compileCreature,
   computeStats,
   createRegistry,
   crossbreed as crossbreedBlueprints,
@@ -20,11 +23,16 @@ import {
   MODULE_KINDS,
   type ModuleKind,
   migrate as migrateBlueprint,
+  motionData,
   mutate as mutateBlueprint,
   type Pack,
   type PatchOp,
   paramsJsonSchema,
+  parseScenario,
   type Registry,
+  type Scenario,
+  type ScenarioResult,
+  ScenarioRun,
   validateBlueprint,
   validateSpecies,
 } from '@spawnforge/core';
@@ -441,7 +449,46 @@ export function diff(options: { a: unknown; b: unknown }, registry = getRegistry
 
 export type AnalyzeResult =
   | { ok: false; errors: readonly Issue[] }
-  | ({ ok: true; stats?: { module: string; values: Record<string, number> } } & Analysis);
+  | ({
+      ok: true;
+      stats?: { module: string; values: Record<string, number> };
+      /** With a scenario: what running it measured. */
+      scenario?: ScenarioResult;
+    } & Analysis);
+
+/** Scenario issues as `analyze` and `render` report them: paths start at `scenario`. */
+export function scenarioIssues(issues: readonly Issue[]): Issue[] {
+  return issues.map((i) => ({ ...i, path: i.path ? `scenario.${i.path}` : 'scenario' }));
+}
+
+/**
+ * Parses a scenario and checks it against a creature (its actions and gaits), for `analyze`
+ * and `render`. Issues carry `scenario.` paths.
+ */
+export function prepareScenario(
+  input: unknown,
+  creature: CreatureSpec,
+  registry = getRegistry(),
+):
+  | { ok: true; scenario: Scenario; warnings: readonly Issue[] }
+  | { ok: false; errors: readonly Issue[] } {
+  const parsed = parseScenario(input);
+  if (!parsed.scenario) return { ok: false, errors: scenarioIssues(parsed.issues) };
+  const problems = checkScenario(parsed.scenario, motionData(creature, registry), registry);
+  if (problems.length > 0) return { ok: false, errors: scenarioIssues(problems) };
+  return { ok: true, scenario: parsed.scenario, warnings: scenarioIssues(parsed.issues) };
+}
+
+/** `prepareScenario` for a blueprint as written (which must be valid). */
+export function prepareScenarioFor(
+  blueprint: unknown,
+  scenario: unknown,
+  registry = getRegistry(),
+): ReturnType<typeof prepareScenario> {
+  const checked = validateBlueprint(blueprint, registry, { minimal: false });
+  if (!checked.ok || !checked.creature) return { ok: false, errors: checked.errors };
+  return prepareScenario(scenario, checked.creature, registry);
+}
 
 /**
  * Measures a valid blueprint, runs its motion for two gait cycles on flat and rough ground and
@@ -454,6 +501,8 @@ export function analyze(
     /** A stats module id, to add that game's numbers. */
     stats?: string;
     statsParams?: Record<string, unknown>;
+    /** A scenario to run as well (see `ScenarioSchema`): ground, targets and timed calls. */
+    scenario?: unknown;
   },
   registry = getRegistry(),
 ): AnalyzeResult {
@@ -465,6 +514,21 @@ export function analyze(
     );
   const checked = validateBlueprint(options.blueprint, registry, { minimal: false });
   if (!checked.ok || !checked.creature) return { ok: false, errors: checked.errors };
+  let scenario: { result: ScenarioResult; warnings: Issue[] } | undefined;
+  if (options.scenario !== undefined) {
+    const prepared = prepareScenario(options.scenario, checked.creature, registry);
+    if (!prepared.ok) return { ok: false, errors: prepared.errors };
+    const compiled = compileCreature(checked.creature, registry, { quality: 'low' });
+    const result = new ScenarioRun(compiled, registry, prepared.scenario).run();
+    const failed: Issue[] = result.failed.map((f) => ({
+      severity: 'warning',
+      path: `calls[${f.call}]`,
+      code: 'call_failed',
+      message: f.reason,
+      fix: 'call it when the creature can do it (one action at a time), or drop it',
+    }));
+    scenario = { result, warnings: [...prepared.warnings, ...scenarioIssues(failed)] };
+  }
   const analysis = analyzeCreature(checked.creature, registry, {
     ...(options.terrainSeed !== undefined ? { terrainSeed: options.terrainSeed } : {}),
   });
@@ -491,10 +555,11 @@ export function analyze(
     ok: true,
     ...rounded,
     // Compile repeats a few validation warnings (`not_built`); each is said once.
-    warnings: [...checked.warnings, ...analysis.warnings].filter(
+    warnings: [...checked.warnings, ...analysis.warnings, ...(scenario?.warnings ?? [])].filter(
       (w, i, all) => all.findIndex((o) => o.path === w.path && o.code === w.code) === i,
     ),
     ...(stats ? { stats } : {}),
+    ...(scenario ? { scenario: scenario.result } : {}),
   };
 }
 

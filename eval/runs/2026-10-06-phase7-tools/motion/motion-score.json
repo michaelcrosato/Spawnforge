@@ -1,0 +1,68 @@
+{
+  "correct": 10,
+  "total": 10,
+  "threshold": 8,
+  "gate": true,
+  "rows": [
+    {
+      "film": "m01",
+      "truth": "stalk-and-bite",
+      "answer": "stalk-and-bite",
+      "correct": true
+    },
+    {
+      "film": "m02",
+      "truth": "quadruped-walk",
+      "answer": "quadruped-walk",
+      "correct": true
+    },
+    {
+      "film": "m03",
+      "truth": "quadruped-trot",
+      "answer": "quadruped-trot",
+      "correct": true
+    },
+    {
+      "film": "m04",
+      "truth": "tripod",
+      "answer": "tripod",
+      "correct": true
+    },
+    {
+      "film": "m05",
+      "truth": "roar",
+      "answer": "roar",
+      "correct": true
+    },
+    {
+      "film": "m06",
+      "truth": "look",
+      "answer": "look",
+      "correct": true
+    },
+    {
+      "film": "m07",
+      "truth": "slither",
+      "answer": "slither",
+      "correct": true
+    },
+    {
+      "film": "m08",
+      "truth": "course",
+      "answer": "course",
+      "correct": true
+    },
+    {
+      "film": "m09",
+      "truth": "bite",
+      "answer": "bite",
+      "correct": true
+    },
+    {
+      "film": "m10",
+      "truth": "biped-walk",
+      "answer": "biped-walk",
+      "correct": true
+    }
+  ]
+}
