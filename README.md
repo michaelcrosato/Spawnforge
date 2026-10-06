@@ -47,7 +47,9 @@ All seven phases of [the plan](docs/plan.md) are done, and the proof of concept 
 
 At every gate a model using only the docs and tools did the prompt suite: 20/20 valid blueprints
 and 20/20 renders matched in blind review, then 8/8 variation tasks ([eval/runs](eval/runs)).
-What comes next is in the plan's "Later" column.
+What comes next is [plan 2](docs/plan-2.md): better anatomy and surfaces, wings, fins, tentacles,
+shells and extra heads, running, swimming and flight, texture maps for game engines, and
+installable packages.
 
 ![Ridgeback stalker](examples/ridgeback-stalker.png)
 
@@ -83,13 +85,15 @@ packages/
 apps/
   sandbox/   viewer, sliders, JSON panel, terrain test course, gallery
 examples/    blueprints beside their renders (also the golden test set)
-docs/        plan, architecture, blueprint format
+docs/        plans, architecture, blueprint format
 ```
 
 ## Docs
 
 - [AGENTS.md](AGENTS.md): repo map, commands and rules, for agents and people
 - [docs/plan.md](docs/plan.md): the design and milestones
+- [docs/plan-2.md](docs/plan-2.md): the next plan (phases 7 to 12), with an effort level per
+  milestone
 - [docs/architecture.md](docs/architecture.md): layers, package boundaries and data flow
 - [docs/blueprint.md](docs/blueprint.md): the blueprint format
 - [docs/catalog.md](docs/catalog.md): every field and module (generated)

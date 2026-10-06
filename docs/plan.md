@@ -2,7 +2,7 @@
 
 Oct 5, 2026 · @Michael Crosato
 
-> **Repository note.** This is the founding design, imported as written. The project is now called **Spawnforge**; "Bestiary" below was its working name, so packages are `@spawnforge/*` and the blueprint format id is `spawnforge/0.1`. The architecture diagram and the roadmap were embedded objects in the original document and did not survive the export; their captions are kept where they stood.
+> **Repository note.** This is the founding design, imported as written. The project is now called **Spawnforge**; "Bestiary" below was its working name, so packages are `@spawnforge/*` and the blueprint format id is `spawnforge/0.1`. The architecture diagram and the roadmap were embedded objects in the original document and did not survive the export; their captions are kept where they stood. All seven phases below are done; the work continues in [plan 2](plan-2.md) (phases 7 to 12), which takes over this plan's scope table and "Later" column.
 
 ## Summary
 
