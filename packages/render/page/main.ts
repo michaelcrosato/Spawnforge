@@ -5,6 +5,7 @@ import {
   fingerprint,
   formatIssue,
   mainHead,
+  parseScenario,
   resolveBlueprint,
   validateBlueprint,
 } from '@spawnforge/core';
@@ -204,7 +205,12 @@ window.spawnforgeRender = async (request) => {
   scene.add(ground, grid);
 
   const film = request.filmstrip;
-  const frames = film ? Math.max(2, Math.min(16, Math.round(film.frames ?? 8))) : 0;
+  // A scenario says its own frame count.
+  const scenarioFrames =
+    film?.scenario === undefined ? undefined : parseScenario(film.scenario).scenario?.frames;
+  const frames = film
+    ? Math.max(2, Math.min(16, Math.round(scenarioFrames ?? film.frames ?? 8)))
+    : 0;
   const panelSize = film ? (request.size ?? 320) : size;
   renderer.setSize(panelSize, panelSize, false);
   const sheet = document.createElement('canvas');
@@ -215,7 +221,13 @@ window.spawnforgeRender = async (request) => {
   sheet.height =
     rows * panelSize +
     header +
-    (film ? diagramHeight(compiled.rig.legs.length, film.action !== undefined) : 0);
+    (film
+      ? diagramHeight(
+          compiled.rig.legs.length,
+          film.action !== undefined,
+          film.scenario !== undefined,
+        )
+      : 0);
   const ctx = sheet.getContext('2d') as CanvasRenderingContext2D;
   ctx.fillStyle = '#16181c';
   ctx.fillRect(0, 0, sheet.width, sheet.height);
@@ -244,13 +256,18 @@ window.spawnforgeRender = async (request) => {
       ctx,
       { top: header, size: panelSize, cols },
       registry,
+      request.anonymous ?? false,
     );
     ctx.font = '13px system-ui, sans-serif';
     ctx.fillStyle = '#aab';
+    // Blind reviews keep the measurements but not the gait or action names.
+    const named = (label: string) => (request.anonymous ? '' : `${label} · `);
     ctx.fillText(
-      motion.action
-        ? `${motion.action} · ${motion.cycle.toFixed(2)} s · ${sizeLine}`
-        : `${motion.gait} · ${motion.speed.toFixed(2)} m/s · cycle ${motion.cycle.toFixed(2)} s · stride ${fmt(motion.stride)} · ${sizeLine}`,
+      motion.scenario
+        ? `${named('scenario')}${motion.cycle.toFixed(1)} s · walked ${fmt(motion.stride)} · ${sizeLine}`
+        : motion.action
+          ? `${named(motion.action)}${motion.cycle.toFixed(2)} s · ${sizeLine}`
+          : `${named(motion.gait)}${motion.speed.toFixed(2)} m/s · cycle ${motion.cycle.toFixed(2)} s · stride ${fmt(motion.stride)} · ${sizeLine}`,
       14 + nameWidth + 18,
       28,
     );

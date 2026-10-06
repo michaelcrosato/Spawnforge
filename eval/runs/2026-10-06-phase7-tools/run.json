@@ -1,0 +1,8 @@
+{
+  "phase": 7,
+  "kind": "dry runs of the quality and motion reviews (milestone 7.5)",
+  "date": "2026-10-06",
+  "model": "Claude Sonnet (Claude Code subagent, model alias \"sonnet\"), one reviewer per review",
+  "quality": "node eval/quality.ts prepare quality --base d101c06 --head d101c06; the phase 4 run's 20 final blueprints",
+  "motion": "node eval/motion.ts prepare motion --tasks eval/motion-dry.json"
+}

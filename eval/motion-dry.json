@@ -1,0 +1,74 @@
+[
+  {
+    "id": "quadruped-walk",
+    "task": "A four-legged creature walking slowly",
+    "blueprint": "examples/ridgeback-stalker.json",
+    "filmstrip": {
+      "gait": "walk"
+    }
+  },
+  {
+    "id": "quadruped-trot",
+    "task": "A four-legged creature trotting: diagonal legs move together",
+    "blueprint": "examples/ridgeback-stalker.json",
+    "filmstrip": {
+      "gait": "trot"
+    }
+  },
+  {
+    "id": "tripod",
+    "task": "A six-legged creature in a tripod gait: three feet down at a time",
+    "blueprint": "examples/ember-beetle.json",
+    "filmstrip": {
+      "gait": "tripod"
+    }
+  },
+  {
+    "id": "slither",
+    "task": "A legless creature slithering in S-curves",
+    "blueprint": "examples/reed-viper.json",
+    "filmstrip": {}
+  },
+  {
+    "id": "biped-walk",
+    "task": "A two-legged creature walking",
+    "blueprint": "examples/bog-troll.json",
+    "filmstrip": {}
+  },
+  {
+    "id": "bite",
+    "task": "Standing and biting at something just in front of it",
+    "blueprint": "examples/ridgeback-stalker.json",
+    "filmstrip": {
+      "action": "bite"
+    }
+  },
+  {
+    "id": "roar",
+    "task": "Standing and roaring with its head raised",
+    "blueprint": "examples/ridgeback-stalker.json",
+    "filmstrip": {
+      "action": "roar"
+    }
+  },
+  {
+    "id": "look",
+    "task": "Holding still and turning its head to look to one side",
+    "blueprint": "examples/reed-viper.json",
+    "filmstrip": {
+      "action": "look"
+    }
+  },
+  {
+    "id": "stalk-and-bite",
+    "task": "Walking up to a marked point and biting it",
+    "blueprint": "examples/ridgeback-stalker.json",
+    "scenario": "examples/scenarios/stalk-and-bite.json"
+  },
+  {
+    "id": "course",
+    "task": "Walking a winding route over bumpy ground",
+    "blueprint": "examples/ridgeback-stalker.json",
+    "scenario": "examples/scenarios/course.json"
+  }
+]

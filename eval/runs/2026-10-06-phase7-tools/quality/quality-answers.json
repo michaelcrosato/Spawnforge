@@ -1,0 +1,46 @@
+{
+  "p01": {
+    "pick": "same",
+    "why": "Quadruped with grey blotched skin looks identical in all six views."
+  },
+  "p02": {
+    "pick": "same",
+    "why": "Spiked armoured lizard with tail club is identical in both renders."
+  },
+  "p03": {
+    "pick": "same",
+    "why": "Black horned beetle with orange spots is identical on both sides."
+  },
+  "p04": {
+    "pick": "same",
+    "why": "Green and yellow banded fanged snake is identical in every view."
+  },
+  "p05": { "pick": "same", "why": "Camouflage biped with side horns is identical in every view." },
+  "p06": { "pick": "same", "why": "Red striped ram-horned biped is identical in every view." },
+  "p07": { "pick": "same", "why": "Small green lizard is identical in every view." },
+  "p08": {
+    "pick": "same",
+    "why": "Brown tusked beast with dorsal spikes is identical in every view."
+  },
+  "p09": { "pick": "same", "why": "Long-necked spotted runner is identical in every view." },
+  "p10": {
+    "pick": "same",
+    "why": "Sand-coloured scorpion with curled tail is identical in every view."
+  },
+  "p11": { "pick": "same", "why": "Blue spined serpent is identical in every view." },
+  "p12": { "pick": "same", "why": "Brown striped theropod is identical in every view." },
+  "p13": { "pick": "same", "why": "Brown clawed bear is identical in every view." },
+  "p14": { "pick": "same", "why": "Spotted cat with curled tail is identical in every view." },
+  "p15": {
+    "pick": "same",
+    "why": "Green salamander with splayed toes is identical in every view."
+  },
+  "p16": { "pick": "same", "why": "Red ant with mandibles is identical in every view." },
+  "p17": { "pick": "same", "why": "Green goblin biped is identical in every view." },
+  "p18": { "pick": "same", "why": "Banded brown cobra-like snake is identical in every view." },
+  "p19": { "pick": "same", "why": "Grey rhino-like beast is identical in every view." },
+  "p20": {
+    "pick": "same",
+    "why": "Dark spined quadruped with red eyes is identical in every view."
+  }
+}

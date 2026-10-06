@@ -15,11 +15,15 @@ import {
   needIndividual,
   patch,
   patchOpsSchema,
+  prepareScenarioFor,
   validate,
 } from '@spawnforge/cli';
 import { MODULE_KINDS } from '@spawnforge/core';
 import type { Renderer } from '@spawnforge/render';
 import { z } from 'zod';
+
+const SCENARIO_HELP =
+  'A scenario: { "ground": "flat" | "course", "duration": seconds, "start": { "x", "z", "heading" }, "targets": { "prey": [x, y, z] }, "calls": [{ "at": 0, "do": "moveTo", "to": [x, z] | "prey" }, { "at": 0, "do": "follow", "path": [[x, z], …] }, { "at": 2, "do": "act", "action": "bite", "target": "prey" }, { "at": 1, "do": "lookAt", "target": … }, { "at": 3, "do": "stop" }, { "at": 0, "do": "drive", "speed": 1, "heading": 90 }, { "at": 0, "do": "gait", "gait": "trot" }], "frames": 8 }. Metres and seconds; heading 0 faces +Z. Returns its events, the distance walked, how close a head came to each target, courses reached and foot slide.';
 
 const docsDir = new URL('../../../docs/', import.meta.url);
 
@@ -139,7 +143,7 @@ export function createServer(): McpServer {
     {
       title: 'Analyze a blueprint',
       description:
-        'Builds the creature and checks it: measurements (length, height, width, mass, centre of mass, hip height), speeds per gait, bite reach, balance over its feet, and motion run for two gait cycles on flat and rough ground (foot slide, ground penetration, legs stretched past their reach, limbs passing through each other or the body, each with the limb and time). Returns plausibility warnings with id-based paths and fixes, and a plain-text description of the creature. Use it after validate and before render to catch problems you cannot see in a still image.',
+        'Builds the creature and checks it: measurements (length, height, width, mass, centre of mass, hip height), speeds per gait, bite reach, balance over its feet, and motion run for two gait cycles on flat and rough ground (foot slide, ground penetration, legs stretched past their reach, limbs passing through each other or the body, each with the limb and time). Returns plausibility warnings with id-based paths and fixes, and a plain-text description of the creature. With a scenario it also runs that scripted scene and reports its events, distance walked, how close a snout came to each target, courses reached and foot slide. Use it after validate and before render to catch problems you cannot see in a still image.',
       inputSchema: z.object({
         blueprint: z
           .record(z.string(), z.unknown())
@@ -153,6 +157,7 @@ export function createServer(): McpServer {
           .string()
           .optional()
           .describe('A stats module id (list_modules kind "stats"), to add that game\'s numbers'),
+        scenario: z.record(z.string(), z.unknown()).optional().describe(SCENARIO_HELP),
       }),
       annotations: { readOnlyHint: true },
     },
@@ -161,6 +166,7 @@ export function createServer(): McpServer {
         analyze({
           blueprint: readBlueprint(input),
           ...(input.stats ? { stats: input.stats } : {}),
+          ...(input.scenario ? { scenario: input.scenario } : {}),
         }),
       ),
   );
@@ -447,7 +453,7 @@ export function createServer(): McpServer {
     {
       title: 'Render a blueprint',
       description:
-        'Renders the creature as a PNG contact sheet: three-quarter, side, head close-up, front, top and rear views with scale bars (add an underside view through views). With labels, every part and limb is tagged by id, so you can check placement. With filmstrip, it renders one gait cycle as frames plus a footfall diagram and returns the gait, speed, cycle time, stride, duty per leg and foot slide, so you can check how the creature moves; with filmstrip.action it shows one action (bite, roar, look) and the events it fires. Use it to see whether a blueprint looks and moves like what you meant.',
+        'Renders the creature as a PNG contact sheet: three-quarter, side, head close-up, front, top and rear views with scale bars (add an underside view through views). With labels, every part and limb is tagged by id, so you can check placement. With filmstrip, it renders one gait cycle as frames plus a footfall diagram and returns the gait, speed, cycle time, stride, duty per leg and foot slide, so you can check how the creature moves; with filmstrip.action it shows one action (bite, roar, look) and the events it fires; with filmstrip.scenario it plays a scripted scene (targets, a course, timed calls) and returns what it measured. Use it to see whether a blueprint looks and moves like what you meant.',
       inputSchema: z.object({
         blueprint: z
           .record(z.string(), z.unknown())
@@ -494,6 +500,10 @@ export function createServer(): McpServer {
               .describe(
                 'Camera (default side; top for legless bodies; 3/4 on the head for actions)',
               ),
+            scenario: z
+              .record(z.string(), z.unknown())
+              .optional()
+              .describe(`Draw a scenario instead of a gait cycle: ${SCENARIO_HELP}`),
           })
           .optional()
           .describe('Render one gait cycle instead of the contact sheet'),
@@ -515,6 +525,10 @@ export function createServer(): McpServer {
           needIndividual(blueprint, 'render');
         });
       if (!checked.ok) return reply(() => ({ ok: false, errors: checked.errors }));
+      if (input.filmstrip?.scenario) {
+        const prepared = prepareScenarioFor(blueprint, input.filmstrip.scenario);
+        if (!prepared.ok) return reply(() => ({ ok: false, errors: prepared.errors }));
+      }
       try {
         const r = await getRenderer();
         const result = await r.render({

@@ -127,3 +127,43 @@ describe('migrate', () => {
     expect(instantiate({ species, seed: 1 }).blueprint.format).toBe(FORMAT);
   });
 });
+
+describe('analyze with a scenario', () => {
+  const blueprint = { format: FORMAT, extends: 'quadruped' };
+
+  it('runs it and reports what it measured', () => {
+    const result = analyze({
+      blueprint,
+      scenario: {
+        duration: 4,
+        targets: { post: [0, 0, 1.5] },
+        calls: [
+          { at: 0, do: 'moveTo', to: 'post' },
+          { at: 0.5, do: 'act', action: 'look', target: 'post' },
+          { at: 1, do: 'act', action: 'roar' },
+        ],
+      },
+    });
+    if (!result.ok) throw new Error(JSON.stringify(result.errors));
+    expect(result.scenario?.events.map((e) => e.type)).toContain('arrive');
+    expect(result.scenario?.distance).toBeGreaterThan(0.8);
+    // The roar replaces the running look, so nothing fails.
+    expect(result.scenario?.failed).toEqual([]);
+  });
+
+  it('reports scenario mistakes under "scenario", checked against the creature', () => {
+    const shape = analyze({ blueprint, scenario: { calls: [{ at: 0, do: 'walk' }] } });
+    expect(shape.ok).toBe(false);
+    if (shape.ok) return;
+    expect(shape.errors.map((e) => e.path)).toEqual(['scenario.calls[0].do']);
+    const action = analyze({
+      blueprint,
+      scenario: { calls: [{ at: 0, do: 'act', action: 'pounce' }] },
+    });
+    expect(action.ok).toBe(false);
+    if (action.ok) return;
+    expect(action.errors.map((e) => [e.path, e.code])).toEqual([
+      ['scenario.calls[0].action', 'unknown_action'],
+    ]);
+  });
+});

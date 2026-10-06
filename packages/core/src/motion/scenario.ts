@@ -1,0 +1,463 @@
+import { Vector3 } from 'three';
+import { z } from 'zod';
+import { formatPath, fromZodIssues, type Issue } from '../blueprint/issues.ts';
+import type { CompiledCreature } from '../compile/compile.ts';
+import type { ActionModule, Registry } from '../registry.ts';
+import { type Ground, MotionController, type MotionEvent } from './controller.ts';
+import { testCourse } from './terrain.ts';
+
+/**
+ * Scenarios script a creature's motion for `render` and `analyze`: the ground, named targets,
+ * where it starts and timed calls (walk to a point, follow a course, start an action, look
+ * at something), so an agent can check motion with only the CLI. Positions are metres in the
+ * world (glTF: Y up, +Z ahead of a creature with heading 0); `analyze` gives the creature's
+ * size to place them by.
+ */
+
+const range = (min: number, max: number) => z.number().min(min).max(max);
+const time = range(0, 60).describe('Seconds from the start');
+const point2 = z
+  .tuple([range(-1000, 1000), range(-1000, 1000)])
+  .describe('A point on the ground in metres, [x, z]');
+const point3 = z
+  .tuple([range(-1000, 1000), range(-100, 100), range(-1000, 1000)])
+  .describe('A point in metres, [x, y, z]');
+const NAME = /^[a-z][a-z0-9]*([.-][a-z0-9]+)*$/;
+const name = z
+  .string()
+  .regex(NAME, 'names are lowercase words joined by dots or dashes')
+  .describe("The name of one of the scenario's targets");
+const where2 = z.union([point2, name]);
+const where3 = z.union([point3, name]);
+const speed = range(0, 30).describe('Metres a second (default: its walking pace)');
+
+const call = z.discriminatedUnion('do', [
+  z
+    .strictObject({ at: time, do: z.literal('moveTo'), to: where2, speed: speed.optional() })
+    .describe('Walk to a point (or a target, on the ground below it) and stop there'),
+  z
+    .strictObject({
+      at: time,
+      do: z.literal('follow'),
+      path: z.array(where2).min(1).max(32),
+      speed: speed.optional(),
+    })
+    .describe('Walk through the points in order, stopping at the last: a course'),
+  z
+    .strictObject({
+      at: time,
+      do: z.literal('drive'),
+      speed: range(0, 30).describe('Metres a second'),
+      heading: range(-360, 360).optional().describe('Degrees: 0 is +Z, 90 is +X'),
+    })
+    .describe('Keep moving at a speed (and heading) with no destination'),
+  z.strictObject({ at: time, do: z.literal('stop') }).describe('Stop moving'),
+  z
+    .strictObject({
+      at: time,
+      do: z.literal('act'),
+      action: z.string().describe("One of the creature's actions, e.g. bite"),
+      target: where3.optional(),
+    })
+    .describe('Start an action, aimed at a point or target'),
+  z
+    .strictObject({ at: time, do: z.literal('lookAt'), target: z.union([where3, z.null()]) })
+    .describe('Turn the head toward a point or target; null looks ahead again'),
+  z
+    .strictObject({
+      at: time,
+      do: z.literal('gait'),
+      gait: z.union([z.string(), z.null()]).describe("One of the creature's gaits, or null"),
+    })
+    .describe('Keep to one gait whatever the speed; null lets speed choose again'),
+]);
+
+export const ScenarioSchema = z.strictObject({
+  ground: z
+    .enum(['flat', 'course'])
+    .default('flat')
+    .describe(
+      '"flat", or "course": uneven ground with bumps up to 25 cm, flat within 1.5 m of the origin',
+    ),
+  seed: z.number().int().min(0).max(2147483647).default(1).describe("Seed of the course's bumps"),
+  duration: range(0.5, 60).default(6).describe('Seconds to run'),
+  start: z
+    .strictObject({
+      x: range(-1000, 1000).default(0).describe('Metres'),
+      z: range(-1000, 1000).default(0).describe('Metres'),
+      heading: range(-360, 360).default(0).describe('Degrees: 0 faces +Z, 90 faces +X'),
+    })
+    .default({ x: 0, z: 0, heading: 0 }),
+  targets: z
+    .record(z.string().regex(NAME, 'names are lowercase words joined by dots or dashes'), point3)
+    .default({})
+    .describe('Named points calls can aim at, e.g. { "prey": [0, 0.4, 2] }; renders mark them'),
+  calls: z.array(call).max(64).default([]).describe('What happens when, in any order'),
+  frames: z
+    .number()
+    .int()
+    .min(2)
+    .max(16)
+    .default(8)
+    .describe('Frames in the filmstrip, evenly spaced over the duration'),
+});
+
+export type Scenario = z.output<typeof ScenarioSchema>;
+export type ScenarioCall = Scenario['calls'][number];
+
+/** Parses a scenario; on failure, issues with paths, ranges and fixes as blueprints get. */
+export function parseScenario(input: unknown): { scenario?: Scenario; issues: Issue[] } {
+  const parsed = ScenarioSchema.safeParse(input);
+  if (parsed.success) {
+    const issues = checkNames(parsed.data);
+    return issues.some((i) => i.severity === 'error')
+      ? { issues }
+      : { scenario: parsed.data, issues };
+  }
+  return {
+    issues: fromZodIssues(parsed.error.issues, ScenarioSchema, input, (path) =>
+      formatPath(path, input),
+    ),
+  };
+}
+
+/** Every name a call uses must be a target; calls past the end never happen. */
+function checkNames(scenario: Scenario): Issue[] {
+  const issues: Issue[] = [];
+  const names = Object.keys(scenario.targets);
+  const check = (where: unknown, path: string) => {
+    if (typeof where === 'string' && !names.includes(where))
+      issues.push({
+        severity: 'error',
+        path,
+        code: 'unknown_target',
+        message: `no target named "${where}"`,
+        ...(names.length > 0 ? { expected: names.map((n) => `"${n}"`).join(', ') } : {}),
+        fix:
+          names.length > 0
+            ? `use one of the targets, or add "${where}" to "targets"`
+            : `add "targets": { "${where}": [x, y, z] }, or give the point itself`,
+      });
+  };
+  scenario.calls.forEach((c, i) => {
+    const at = `calls[${i}]`;
+    if (c.do === 'moveTo') check(c.to, `${at}.to`);
+    if (c.do === 'follow') for (const [k, p] of c.path.entries()) check(p, `${at}.path[${k}]`);
+    if ((c.do === 'act' || c.do === 'lookAt') && c.target !== undefined)
+      check(c.target, `${at}.target`);
+    if (c.at > scenario.duration)
+      issues.push({
+        severity: 'warning',
+        path: `${at}.at`,
+        code: 'after_end',
+        message: `${c.at} s is after the scenario ends (${scenario.duration} s), so it never happens`,
+        fix: `raise "duration" above ${c.at}, or call it earlier`,
+      });
+  });
+  return issues;
+}
+
+/**
+ * Checks a scenario against a creature: the actions it can start (not those that run by
+ * themselves, such as idle) and its gaits.
+ */
+export function checkScenario(
+  scenario: Scenario,
+  motion: {
+    readonly gaits: readonly { id: string }[];
+    readonly actions: readonly { id: string }[];
+  },
+  registry: Registry,
+): Issue[] {
+  const issues: Issue[] = [];
+  const ambient = (id: string) =>
+    (registry.get('action', id) as ActionModule | undefined)?.hooks?.ambient === true;
+  const actions = motion.actions.map((a) => a.id).filter((id) => !ambient(id));
+  const gaits = motion.gaits.map((g) => g.id);
+  scenario.calls.forEach((c, i) => {
+    if (c.do === 'act' && !actions.includes(c.action))
+      issues.push({
+        severity: 'error',
+        path: `calls[${i}].action`,
+        code: 'unknown_action',
+        message: `"${c.action}" is not one the creature can start`,
+        expected: actions.map((a) => `"${a}"`).join(', ') || 'none',
+        fix:
+          actions.length > 0
+            ? `use one of its actions, or add "${c.action}" to the blueprint's motion.actions`
+            : `add "${c.action}" to the blueprint's motion.actions`,
+      });
+    if (c.do === 'gait' && c.gait !== null && !gaits.includes(c.gait))
+      issues.push({
+        severity: 'error',
+        path: `calls[${i}].gait`,
+        code: 'unknown_gait',
+        message: `"${c.gait}" is not one of the creature's gaits`,
+        expected: gaits.map((g) => `"${g}"`).join(', ') || 'none',
+        fix: 'use one of its gaits, or null to let speed choose',
+      });
+  });
+  return issues;
+}
+
+/** What a run of a scenario measured. */
+export interface ScenarioResult {
+  readonly duration: number;
+  /** Where the creature ended: metres, heading in degrees, speed in m/s. */
+  readonly end: {
+    readonly x: number;
+    readonly z: number;
+    readonly heading: number;
+    readonly speed: number;
+  };
+  /** Metres walked along the ground. */
+  readonly distance: number;
+  /** Events other than footsteps, with seconds from the start. */
+  readonly events: readonly {
+    readonly type: string;
+    readonly time: number;
+    readonly action?: string;
+    readonly gait?: string;
+    readonly position?: readonly [number, number, number];
+  }[];
+  readonly footsteps: number;
+  /** Gaits in the order used, with when each began. */
+  readonly gaits: readonly { readonly gait: string; readonly from: number }[];
+  /** Per target: the closest any snout came (metres) and when. */
+  readonly targets: Readonly<Record<string, { readonly closest: number; readonly time: number }>>;
+  /** `follow` calls: how many of their points it reached. */
+  readonly courses: readonly {
+    readonly call: number;
+    readonly reached: number;
+    readonly of: number;
+  }[];
+  /** Largest distance a planted foot slid (metres). */
+  readonly footSlide: number;
+  /** Calls the creature refused, with why. */
+  readonly failed: readonly { readonly call: number; readonly reason: string }[];
+}
+
+const STEP = 1 / 120;
+const DEG = Math.PI / 180;
+
+/**
+ * Runs a scenario step by step, so a renderer can draw frames between steps. Deterministic:
+ * the same creature and scenario give the same result.
+ */
+export class ScenarioRun {
+  readonly controller: MotionController;
+  readonly ground: Ground;
+  readonly scenario: Scenario;
+  time = 0;
+  private readonly compiled: CompiledCreature;
+  private readonly pending: { call: ScenarioCall; index: number }[];
+  private readonly targets: Map<string, Vector3>;
+  private course: { index: number; points: Vector3[]; next: number; speed?: number } | null = null;
+  private readonly courses: { call: number; reached: number; of: number }[] = [];
+  private readonly events: ScenarioResult['events'][number][] = [];
+  private readonly gaits: { gait: string; from: number }[] = [];
+  private readonly closest = new Map<string, { closest: number; time: number }>();
+  private readonly anchors = new Map<number, Vector3>();
+  private readonly failed: { call: number; reason: string }[] = [];
+  private footsteps = 0;
+  private footSlide = 0;
+  private distance = 0;
+  private readonly last = new Vector3();
+
+  constructor(compiled: CompiledCreature, registry: Registry, scenario: Scenario) {
+    this.compiled = compiled;
+    this.scenario = scenario;
+    this.ground = scenario.ground === 'course' ? testCourse(scenario.seed) : () => ({ height: 0 });
+    this.controller = new MotionController(compiled, { registry });
+    const { x, z, heading } = scenario.start;
+    this.controller.place(x, z, heading * DEG, this.ground);
+    this.last.copy(this.controller.position);
+    this.targets = new Map(
+      Object.entries(scenario.targets).map(([n, p]) => [n, new Vector3(p[0], p[1], p[2])]),
+    );
+    // Calls in time order; ties keep the file's order.
+    this.pending = scenario.calls
+      .map((call, index) => ({ call, index }))
+      .sort((a, b) => a.call.at - b.call.at || a.index - b.index);
+    this.fire();
+    this.measure();
+  }
+
+  get done(): boolean {
+    return this.time >= this.scenario.duration - 1e-9;
+  }
+
+  /** Target positions by name (metres), for drawing markers. */
+  targetPoints(): ReadonlyMap<string, Vector3> {
+    return this.targets;
+  }
+
+  /** Advances one fixed step (1/120 s); returns the events it fired. */
+  step(): MotionEvent[] {
+    if (this.done) return [];
+    const events = this.controller.update(STEP, { ground: this.ground });
+    this.time = Math.round((this.time + STEP) * 1e6) / 1e6;
+    for (const e of events) {
+      if (e.type === 'footstep') {
+        this.footsteps++;
+        continue;
+      }
+      this.events.push({
+        type: e.type,
+        time: round(this.time),
+        ...(e.action ? { action: e.action } : {}),
+        ...(e.gait ? { gait: e.gait } : {}),
+        ...(e.position ? { position: e.position.map(round) as [number, number, number] } : {}),
+      });
+      if (e.type === 'arrive' && this.course) this.nextPoint();
+    }
+    this.fire();
+    this.measure();
+    return events;
+  }
+
+  /** Runs to the end and returns the result. */
+  run(): ScenarioResult {
+    while (!this.done) this.step();
+    return this.result();
+  }
+
+  result(): ScenarioResult {
+    const c = this.controller;
+    return {
+      duration: this.scenario.duration,
+      end: {
+        x: round(c.position.x),
+        z: round(c.position.z),
+        heading: round(c.heading / DEG),
+        speed: round(c.speed),
+      },
+      distance: round(this.distance),
+      events: this.events,
+      footsteps: this.footsteps,
+      gaits: this.gaits,
+      targets: Object.fromEntries(
+        [...this.closest].map(([n, v]) => [n, { closest: round(v.closest), time: round(v.time) }]),
+      ),
+      courses: this.courses,
+      footSlide: round(this.footSlide),
+      failed: this.failed,
+    };
+  }
+
+  /** Makes every call that is due. */
+  private fire(): void {
+    while (this.pending.length > 0 && (this.pending[0]?.call.at ?? Infinity) <= this.time + 1e-9) {
+      const { call, index } = this.pending.shift() as { call: ScenarioCall; index: number };
+      try {
+        this.apply(call, index);
+      } catch (error) {
+        this.failed.push({ call: index, reason: (error as Error).message });
+      }
+    }
+  }
+
+  private apply(call: ScenarioCall, index: number): void {
+    const c = this.controller;
+    // A new destination ends a course in progress.
+    if (call.do === 'moveTo' || call.do === 'drive' || call.do === 'stop') this.course = null;
+    switch (call.do) {
+      case 'moveTo': {
+        const p = this.point(call.to);
+        c.moveTo({ x: p.x, z: p.z }, call.speed === undefined ? {} : { speed: call.speed });
+        return;
+      }
+      case 'follow': {
+        const points = call.path.map((p) => this.point(p));
+        this.course = {
+          index: this.courses.length,
+          points,
+          next: 0,
+          ...(call.speed === undefined ? {} : { speed: call.speed }),
+        };
+        this.courses.push({ call: index, reached: 0, of: points.length });
+        this.nextPoint(true);
+        return;
+      }
+      case 'drive':
+        c.drive(call.speed, call.heading === undefined ? undefined : call.heading * DEG);
+        return;
+      case 'stop':
+        c.stop();
+        return;
+      case 'act':
+        c.act(call.action, call.target === undefined ? {} : { target: this.point(call.target) });
+        return;
+      case 'lookAt':
+        c.lookAt(call.target === null ? null : this.point(call.target));
+        return;
+      case 'gait':
+        c.lockGait(call.gait);
+        return;
+    }
+  }
+
+  /** Heads for the course's next point; `first` starts it. */
+  private nextPoint(first = false): void {
+    const course = this.course;
+    if (!course) return;
+    if (!first) {
+      course.next++;
+      const entry = this.courses[course.index];
+      if (entry) this.courses[course.index] = { ...entry, reached: course.next };
+    }
+    const p = course.points[course.next];
+    if (!p) {
+      this.course = null;
+      return;
+    }
+    this.controller.moveTo(
+      { x: p.x, z: p.z },
+      course.speed === undefined ? {} : { speed: course.speed },
+    );
+  }
+
+  private point(where: string | readonly number[]): Vector3 {
+    if (typeof where === 'string') {
+      const p = this.targets.get(where);
+      if (!p) throw new Error(`no target named "${where}"`);
+      return p.clone();
+    }
+    const [x = 0, a = 0, b] = where;
+    // [x, z] on the ground, or [x, y, z].
+    return b === undefined ? new Vector3(x, this.ground(x, a).height, a) : new Vector3(x, a, b);
+  }
+
+  /** Distance walked, foot slide, gaits used and how close each head came to each target. */
+  private measure(): void {
+    const c = this.controller;
+    this.distance += Math.hypot(c.position.x - this.last.x, c.position.z - this.last.z);
+    this.last.copy(c.position);
+    const gait = c.gait?.id;
+    if (gait && this.gaits.at(-1)?.gait !== gait) this.gaits.push({ gait, from: round(this.time) });
+    const feet = c.feet();
+    this.compiled.rig.legs.forEach((leg, k) => {
+      const foot = feet[k];
+      if (!foot) return;
+      const ankle = c.pose.tail(leg.bones.at(-1) as number);
+      const anchor = this.anchors.get(k);
+      if (!foot.planted) this.anchors.delete(k);
+      else if (!anchor) this.anchors.set(k, ankle);
+      else
+        this.footSlide = Math.max(
+          this.footSlide,
+          Math.hypot(ankle.x - anchor.x, ankle.z - anchor.z),
+        );
+    });
+    for (const [n, p] of this.targets) {
+      // From the snout: the far end of each head bone.
+      let best = Infinity;
+      for (const h of this.compiled.rig.heads)
+        best = Math.min(best, c.pose.tail(h.head).distanceTo(p));
+      const seen = this.closest.get(n);
+      if (!seen || best < seen.closest) this.closest.set(n, { closest: best, time: this.time });
+    }
+  }
+}
+
+const round = (v: number) => Math.round(v * 1000) / 1000;
