@@ -1,0 +1,112 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Sillith",
+  "seed": 719910175,
+  "extends": "biped",
+  "scale": 1.305,
+  "body": {
+    "torso": {
+      "radius": [0.11, 0.181, 0.18, 0.109],
+      "pitch": 12,
+      "crossSection": "round",
+      "segments": 6
+    },
+    "neck": {
+      "length": 0.347,
+      "radius": [0.06, 0.09],
+      "pitch": 36
+    },
+    "head": {
+      "shape": "snout",
+      "length": 0.346,
+      "radius": 0.095,
+      "pitch": -5
+    },
+    "tail": {
+      "length": 1.61,
+      "radius": [0.106, 0.012],
+      "pitch": 0,
+      "segments": 10
+    }
+  },
+  "limbs": [
+    {
+      "id": "leg",
+      "attach": {
+        "at": 0.6,
+        "angle": 104
+      },
+      "length": 1.1,
+      "segments": 3,
+      "radius": [0.115, 0.055, 0.03],
+      "splay": 8,
+      "foot": {
+        "toeLength": 0.12,
+        "clawLength": 0.05,
+        "spread": 40
+      }
+    },
+    {
+      "id": "arm",
+      "attach": {
+        "at": 0.1,
+        "angle": 100
+      },
+      "length": 0.361,
+      "radius": [0.04, 0.022],
+      "lift": 45,
+      "foot": {
+        "toes": 3,
+        "toeLength": 0.05,
+        "clawLength": 0.04
+      }
+    }
+  ],
+  "parts": [
+    {
+      "id": "eyes",
+      "params": {
+        "pupil": "slit",
+        "size": 0.0258
+      }
+    },
+    {
+      "id": "teeth",
+      "type": "teeth.row",
+      "params": {
+        "count": 12,
+        "fangs": 0
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#887344",
+      "belly": "#cacab0",
+      "accent": "#3d2e1f"
+    },
+    "material": "scales",
+    "layers": [
+      {
+        "type": "countershade"
+      },
+      {
+        "type": "scales",
+        "size": 0.0304
+      },
+      {
+        "type": "grime",
+        "amount": 0.467
+      },
+      {
+        "type": "stripes",
+        "region": "back",
+        "count": 17,
+        "width": 0.32
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "stalking"
+  }
+}

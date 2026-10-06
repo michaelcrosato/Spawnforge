@@ -1,0 +1,113 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Bog Troll × Ember Beetle",
+  "seed": 1305194748,
+  "extends": "biped",
+  "scale": 0.741,
+  "body": {
+    "torso": {
+      "radius": [0.172, 0.212, 0.213, 0.182],
+      "arch": 0.0762,
+      "pitch": 70
+    },
+    "head": {
+      "shape": "round",
+      "length": 0.246,
+      "radius": 0.13,
+      "pitch": -7.52
+    },
+    "neck": {
+      "length": 0.149,
+      "radius": [0.0664, 0.0764],
+      "pitch": 76.9
+    }
+  },
+  "limbs": [
+    {
+      "id": "leg",
+      "length": 0.944,
+      "radius": [0.109, 0.0628],
+      "attach": {
+        "at": 0.847,
+        "angle": 128
+      },
+      "segments": 3,
+      "splay": 5.56
+    },
+    {
+      "id": "arm",
+      "length": 1.3,
+      "radius": [0.09, 0.06],
+      "foot": {
+        "toes": 3,
+        "clawLength": 0.06
+      }
+    }
+  ],
+  "parts": [
+    {
+      "id": "tusks",
+      "type": "horn.curved",
+      "attach": {
+        "on": "jaw",
+        "at": 0.269,
+        "angle": 43.7
+      },
+      "params": {
+        "length": 0.167,
+        "curve": -57.4,
+        "width": 0.024,
+        "color": "#e6dabd",
+        "tipColor": "#8b7e66",
+        "ridges": 1
+      }
+    },
+    {
+      "id": "eyes",
+      "attach": {
+        "angle": 61
+      },
+      "params": {
+        "size": 0.0244,
+        "irisColor": "#d4902c"
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#484a34",
+      "belly": "#9d926d",
+      "accent": "#7a4926"
+    },
+    "layers": [
+      {
+        "type": "countershade",
+        "softness": 0.325
+      },
+      {
+        "type": "mottle",
+        "scale": 0.25
+      },
+      {
+        "type": "grime",
+        "amount": 0.6
+      }
+    ],
+    "material": "chitin"
+  },
+  "motion": {
+    "temperament": "lumbering",
+    "actions": [
+      {
+        "type": "roar",
+        "duration": 2,
+        "intensity": 0.8
+      },
+      {
+        "type": "bite",
+        "reach": 0.7,
+        "speed": 1
+      }
+    ]
+  }
+}

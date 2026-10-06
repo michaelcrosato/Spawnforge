@@ -39,8 +39,10 @@ locomotion: creatures walk, trot, scuttle and slither over uneven ground, and `r
 and an idle with breathing and blinks) and the sandbox editor: run `pnpm dev`, pick a creature,
 drag sliders or edit its JSON, press its action buttons, and save blueprints in `creatures/` to
 see them appear live. Phase 4 added `patch` and `analyze` and passed the proof-of-concept gate
-([evidence](docs/poc.md)). Phase 5 (variation: species, mutate, crossbreed, generate) is next;
-see [docs/plan.md](docs/plan.md) for the milestones.
+([evidence](docs/poc.md)). Phase 5 added variation: species with ranges, `mutate`,
+`crossbreed`, and `generate` from a theme (`spawnforge generate --theme demon --seed 3`), also in
+the sandbox's breed tab. Phase 6 (export and the game runtime) is next; see
+[docs/plan.md](docs/plan.md) for the milestones.
 
 ![Ridgeback stalker](examples/ridgeback-stalker.png)
 

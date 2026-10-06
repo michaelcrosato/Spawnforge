@@ -4,8 +4,10 @@ import {
   FORMAT,
   formatIssue,
   type Issue,
+  isSpecies,
   minimalBlueprint,
   validateBlueprint,
+  validateSpecies,
 } from '@spawnforge/core';
 import { describe, expect, it } from 'vitest';
 import { basicPack } from './index.ts';
@@ -286,7 +288,11 @@ describe('docs', () => {
   it.each(blocks.filter((b) => b.format !== undefined).map((b, i) => [i, b] as const))(
     'blueprint example %i in docs/blueprint.md is valid',
     (_, blueprint) => {
-      expect(validateBlueprint(blueprint, registry).errors.map(formatIssue)).toEqual([]);
+      // A species example (with ranges) is checked at both ends of every range.
+      const result = isSpecies(blueprint)
+        ? validateSpecies(blueprint, registry)
+        : validateBlueprint(blueprint, registry);
+      expect(result.errors.map(formatIssue)).toEqual([]);
     },
   );
 });

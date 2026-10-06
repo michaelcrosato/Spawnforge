@@ -87,3 +87,28 @@ export * from './shading/compose.ts';
 export { cpuKit, hash3u } from './shading/cpu.ts';
 export type { Kit, LayerOutput, PatternHooks, Surface } from './shading/kit.ts';
 export { cells, fbm, valueNoise } from './shading/noise.ts';
+export {
+  type CrossbreedOptions,
+  type CrossbreedResult,
+  crossbreed,
+} from './variation/crossbreed.ts';
+export {
+  type ColorRange,
+  type GenerateConstraints,
+  type GenerateOptions,
+  type GenerateResult,
+  generate,
+  measureBody,
+  type Range,
+  type ThemeBias,
+} from './variation/generate.ts';
+export { expand, type Gene, genesOf, type VariationResult } from './variation/genes.ts';
+export { type MutateOptions, mutate } from './variation/mutate.ts';
+export {
+  instantiate,
+  isRange,
+  isSpecies,
+  resolveSpecies,
+  type Species,
+  validateSpecies,
+} from './variation/species.ts';

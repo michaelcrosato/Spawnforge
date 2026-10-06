@@ -6,6 +6,7 @@ import { type CompiledCreature, compileCreature, type Quality } from '../compile
 import { type Ground, MotionController } from '../motion/controller.ts';
 import { testCourse } from '../motion/terrain.ts';
 import type { PartModule, PatternModule, Registry } from '../registry.ts';
+import { measureBody } from '../variation/generate.ts';
 
 const G = 9.81;
 /** Flesh is about as dense as water. */
@@ -38,7 +39,10 @@ export interface Analysis {
   /** Metres and kilograms, from the rest pose. */
   readonly measurements: {
     readonly length: number;
+    /** Top of everything, horns and spikes included. */
     readonly height: number;
+    /** Top of the body alone, as `generate`'s height limits measure it. */
+    readonly bodyHeight: number;
     readonly width: number;
     readonly torsoLength: number;
     readonly hipHeight: number;
@@ -103,6 +107,8 @@ export function analyzeCreature(
   const measurements = {
     length: z1 - z0,
     height: y1,
+    // The body alone (no horns or spikes), measured as generate's height limits are.
+    bodyHeight: measureBody(spec, registry).height,
     width: x1 - x0,
     torsoLength: L,
     hipHeight: compiled.rig.hipHeight,

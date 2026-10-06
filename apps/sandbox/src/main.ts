@@ -16,6 +16,7 @@ import {
 } from '@spawnforge/three';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { createBreeder } from './breed.ts';
 import { createEditor } from './editor.ts';
 import { FootstepRings, terrainMesh } from './terrain.ts';
 
@@ -106,6 +107,8 @@ async function main(): Promise<void> {
   let walkers: Walker[] = [];
   let focus: Walker | undefined;
   let generation = 0;
+  /** Creatures shown together by the breed tab (a litter, or parents and child). */
+  let cast: string[] | undefined;
 
   const spawn = async (
     name: string,
@@ -124,7 +127,7 @@ async function main(): Promise<void> {
   const show = async () => {
     const run = ++generation;
     status.textContent = 'Compiling…';
-    const names = herd.checked ? [...byName.keys()] : [picker.value];
+    const names = cast ?? (herd.checked ? [...byName.keys()] : [picker.value]);
     const spawned = await Promise.all(
       names.map((name, i) => {
         const angle = (i / names.length) * Math.PI * 2;
@@ -334,11 +337,38 @@ async function main(): Promise<void> {
     });
   });
 
+  createBreeder(registry, $<HTMLElement>('#tab-breed'), {
+    current: () => {
+      const blueprint = focus ? byName.get(focus.name) : undefined;
+      return focus && blueprint && typeof blueprint === 'object'
+        ? { name: focus.name, blueprint: blueprint as Record<string, unknown> }
+        : undefined;
+    },
+    names: () => [...byName.keys()],
+    blueprintOf: (name) => byName.get(name) as Record<string, unknown> | undefined,
+    add: (name, blueprint) => {
+      byName.set(name, blueprint);
+      refreshPicker();
+      return name;
+    },
+    show: (names) => {
+      cast = names.length > 1 ? names : undefined;
+      picker.value = names[0] ?? picker.value;
+      void show();
+    },
+  });
+
   refreshPicker();
   picker.value = params.get('creature') ?? 'ridgeback-stalker';
   herd.checked = params.has('herd');
-  picker.addEventListener('change', () => void show());
-  herd.addEventListener('change', () => void show());
+  picker.addEventListener('change', () => {
+    cast = undefined;
+    void show();
+  });
+  herd.addEventListener('change', () => {
+    cast = undefined;
+    void show();
+  });
   await show();
 
   const resize = () => {

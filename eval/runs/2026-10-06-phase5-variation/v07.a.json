@@ -1,0 +1,80 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Reed Viper",
+  "seed": 314,
+  "extends": "serpent",
+  "parts": [
+    {
+      "id": "fangs",
+      "type": "teeth.row",
+      "params": {
+        "count": 3,
+        "fangs": 0,
+        "fangLength": 0.0611,
+        "lower": false
+      }
+    },
+    {
+      "id": "eyes",
+      "params": {
+        "irisColor": "#cfba58",
+        "iris": 0.613
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#6b7a2e",
+      "belly": "#e0d8a0",
+      "accent": "#2c3314"
+    },
+    "layers": [
+      {
+        "type": "countershade",
+        "strength": 0.947,
+        "softness": 0.369
+      },
+      {
+        "type": "stripes",
+        "count": 24,
+        "width": 0.25,
+        "jitter": 0.2,
+        "region": "back"
+      },
+      {
+        "type": "scales",
+        "size": 0.0184
+      }
+    ]
+  },
+  "motion": {
+    "actions": [
+      {
+        "type": "bite",
+        "reach": 0.7,
+        "speed": 1.08
+      },
+      {
+        "type": "look",
+        "speed": 1,
+        "range": 100
+      }
+    ]
+  },
+  "scale": 0.981,
+  "body": {
+    "torso": {
+      "radius": [0.0613, 0.0892, 0.0869, 0.0859],
+      "segments": 9
+    },
+    "neck": {
+      "length": 0.127
+    },
+    "head": {
+      "radius": 0.0728
+    },
+    "tail": {
+      "length": 1.76
+    }
+  }
+}

@@ -771,3 +771,29 @@ needs: `["jaw"]`
 ```json
 { "motion": { "actions": ["roar"] } }
 ```
+
+## Themes
+
+### `demon`
+
+Horned fiends and hellhounds: heavy shoulders, big curled or swept horns, fangs, spine rows, goat or slit pupils, blood reds and soot blacks.
+
+Generate creatures with it: spawnforge generate --theme demon --seed 1 (MCP: generate { "theme": "demon", "seed": 1 }).
+
+bodyPlans: `{"biped":3,"quadruped":2}` · parts: `[{"chance":1,"id":"eyes"},{"chance":1,"id":"teeth","type":"teeth.row"},{"chance":0.8,"id":"horns","type":"horn.curved"},{"chance":0.5,"id":"spines","type":"spikes.row","plans":["quadruped"]},{"chance":0.4,"id":"ears","type":"ear.pointed"}]` · materials: `{"skin":3,"scales":1}` · temperaments: `{"aggressive":4,"stalking":2}`
+
+### `insect`
+
+Six-legged beetles and ants: glossy chitin, a thorax and abdomen with a narrow waist, thin legs, horns or pincers, dark or warning colours.
+
+Generate creatures with it: spawnforge generate --theme insect --seed 1 (MCP: generate { "theme": "insect", "seed": 1 }).
+
+bodyPlans: `{"hexapod":1}` · parts: `[{"chance":1,"id":"eyes"},{"chance":0.4,"id":"horn","type":"horn.curved"},{"chance":0.35,"id":"pincers","type":"horn.curved"}]` · materials: `{"chitin":1}` · temperaments: `{"skittish":3,"aggressive":2,"calm":1}`
+
+### `reptile`
+
+Scaled lizards, raptors and snakes: low sprawling bodies, long tails, wedge or snout heads, slit pupils, greens and browns.
+
+Generate creatures with it: spawnforge generate --theme reptile --seed 1 (MCP: generate { "theme": "reptile", "seed": 1 }).
+
+bodyPlans: `{"quadruped":5,"biped":2,"serpent":3}` · parts: `[{"chance":1,"id":"eyes"},{"chance":0.8,"id":"teeth","type":"teeth.row","plans":["quadruped","biped"]},{"chance":0.7,"id":"fangs","type":"teeth.row","plans":["serpent"]},{"chance":0.45,"id":"dorsal","type":"spikes.row","plans":["quadruped","biped"]},{"chance":0.25,"id":"brow","type":"horn.curved","plans":["quadruped"]}]` · materials: `{"scales":1}` · temperaments: `{"stalking":3,"calm":1,"aggressive":2}`
