@@ -1,4 +1,4 @@
-import type { CompiledCreature, MeshData, Registry } from '@spawnforge/core';
+import { allEyes, type CompiledCreature, type MeshData, type Registry } from '@spawnforge/core';
 import {
   Bone,
   BufferAttribute,
@@ -150,7 +150,7 @@ export function createCreatureObject(
     bones,
     meshes: { skin, parts, eyes },
     signals: { breath },
-    eyeBones: compiled.rig.eyes,
+    eyeBones: allEyes(compiled.rig),
     rest: { positions: restPositions, rotations: restRotations },
     dispose() {
       for (const mesh of [skin, parts, eyes]) {

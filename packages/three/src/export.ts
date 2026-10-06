@@ -1,4 +1,5 @@
 import {
+  allEyes,
   type BakedClip,
   type BakedColors,
   bakeVertexColors,
@@ -83,7 +84,7 @@ function clipOf(clip: BakedClip, compiled: CompiledCreature): AnimationClip {
   }
   // Blinks squash the eyes top to bottom (their local Z is up), as the live renderer does.
   if (clip.blink.some((v) => v > 0.001))
-    for (const eye of compiled.rig.eyes) {
+    for (const eye of allEyes(compiled.rig)) {
       const scale = new Float32Array(clip.frames * 3);
       for (let f = 0; f < clip.frames; f++)
         scale.set([1, 1, 1 - 0.92 * (clip.blink[f] as number)], f * 3);

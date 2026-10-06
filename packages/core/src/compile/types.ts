@@ -87,24 +87,84 @@ export interface ArmRig {
   readonly toes: readonly (readonly number[])[];
 }
 
+/** One head with its neck, jaw and eyes. */
+export interface HeadRig {
+  /** `head` for the main (middle) head at every count; the others `head.L1`, `head.R1`, … */
+  readonly id: string;
+  /** Neck bones from the torso to the head (empty with no neck). */
+  readonly neck: readonly number[];
+  readonly head: number;
+  /** -1 without a jaw. */
+  readonly jaw: number;
+  /** Eye bones on this head. */
+  readonly eyes: readonly number[];
+}
+
+/** One tail. */
+export interface TailRig {
+  /** `tail` for the main tail; the others `tail.L1`, `tail.R1`, … */
+  readonly id: string;
+  /** Root to tip; a forked tail's branches share the trunk's bones. */
+  readonly bones: readonly number[];
+  /** Index in `bones` of the first bone after the shared trunk (0 when the tails are separate). */
+  readonly branch: number;
+}
+
+/**
+ * A chain of bones something drives: springs (tails today; tentacles, antennae and ears from
+ * phase 9), the blink (eyelids), the jaw (mandibles close with it) or a flare (frills open,
+ * quills rise).
+ */
+export interface DrivenChain {
+  readonly owner: string;
+  readonly bones: readonly number[];
+  readonly drive: 'spring' | 'blink' | 'jaw' | 'flare';
+  /** Springs: how hard each point is pulled back toward its rest place per step (0 to 1). */
+  readonly stiffness?: number;
+  /** Springs: whether the action goals' `swish` swings it (tails). */
+  readonly swish?: boolean;
+  /** Other drives: relative joint angles per named pose (`rest`, `open`, …). */
+  readonly poses?: Readonly<Record<string, readonly number[]>>;
+}
+
+/** A limb chain of one of the new roles (wings, fins, tentacles), from phase 9. */
+export interface LimbChainRig {
+  readonly id: string;
+  readonly side: 'left' | 'right' | 'center';
+  readonly bones: readonly number[];
+}
+
 /** What the motion controller needs to know about a skeleton. */
 export interface Rig {
   readonly root: number;
   /** Torso bones from the back (hips) to the front (chest). */
   readonly spine: readonly number[];
-  /** Neck bones from the torso to the head. */
-  readonly neck: readonly number[];
-  readonly head: number;
-  readonly jaw: number;
-  readonly tail: readonly number[];
+  /** Every head, from the creature's left to its right. */
+  readonly heads: readonly HeadRig[];
+  /** Index into `heads` of the main head. */
+  readonly main: number;
+  /** Every tail, from left to right; empty without a tail. */
+  readonly tails: readonly TailRig[];
+  /** Chains the controller drives (springs, blinks, jaws, flares). */
+  readonly chains: readonly DrivenChain[];
   readonly legs: readonly LegRig[];
   readonly arms: readonly ArmRig[];
-  readonly eyes: readonly number[];
+  readonly wings: readonly LimbChainRig[];
+  readonly fins: readonly LimbChainRig[];
+  readonly tentacles: readonly LimbChainRig[];
   /** Hip height above the ground in the rest pose (metres). */
   readonly hipHeight: number;
   /** Whether the creature is a sprawler (insect, lizard) or legless. */
   readonly posture: 'upright' | 'sprawl' | 'legless';
 }
+
+/** The main head of a rig. */
+export const mainHead = (rig: { readonly heads: readonly HeadRig[]; readonly main: number }) =>
+  rig.heads[rig.main] as HeadRig;
+
+/** Every eye bone, on every head. */
+export const allEyes = (rig: { readonly heads: readonly HeadRig[] }): number[] =>
+  rig.heads.flatMap((h) => h.eyes);
 
 export interface Skeleton {
   readonly bones: BoneDef[];

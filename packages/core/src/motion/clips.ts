@@ -1,4 +1,5 @@
 import type { CompiledCreature } from '../compile/compile.ts';
+import { mainHead } from '../compile/types.ts';
 import type { Registry } from '../registry.ts';
 import { MotionController, type MotionEvent } from './controller.ts';
 
@@ -227,7 +228,7 @@ function bakeAction(
 ): BakedClip {
   const controller = new MotionController(compiled, { registry });
   for (let i = 0; i < 120; i++) controller.update(STEP);
-  const head = controller.pose.worldPos[compiled.rig.head];
+  const head = controller.pose.worldPos[mainHead(compiled.rig).head];
   const target = head
     ? { x: head.x, y: head.y, z: head.z + compiled.scale * 0.6 }
     : { x: 0, y: compiled.scale * 0.5, z: compiled.scale * 2 };

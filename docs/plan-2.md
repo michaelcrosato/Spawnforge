@@ -110,7 +110,7 @@ since anatomy comes before the new vocabulary.
 | [7.1 Carry-overs](#71-carry-overs-and-tidying) | high (lowered) | Small, local fixes, each specified here and testable | | Done ([#10](https://github.com/michaelcrosato/Spawnforge/pull/10)) |
 | [7.2 Migrations](#72-migrations-a-command-and-a-corpus-test) | high (lowered) | The migration chain exists; this adds a command, writers and a corpus test | | Done ([#11](https://github.com/michaelcrosato/Spawnforge/pull/11)) |
 | [7.3 Format 0.2](#73-format-02-the-new-vocabulary-and-a-format-eval) | **max (raised)** | The format is the contract for models, saved files and phases 8–12 | 7.2 | Done ([#12](https://github.com/michaelcrosato/Spawnforge/pull/12)) |
-| [7.4 Rig lists](#74-rig-lists-without-a-visible-change) | xhigh (confirmed) | A wide refactor, but unchanged goldens are a strict oracle | 7.3 | Not started |
+| [7.4 Rig lists](#74-rig-lists-without-a-visible-change) | xhigh (confirmed) | A wide refactor, but unchanged goldens are a strict oracle | 7.3 | Done ([#13](https://github.com/michaelcrosato/Spawnforge/pull/13)) |
 | [7.5 Eval and test tools](#75-eval-and-test-tools) | high (lowered) | Scripts and harnesses in the style of plan 1's, with clear outputs | | Not started |
 | [7.6 Buildable packages](#76-buildable-packages) | high (lowered) | Standard tooling; an install test is the oracle | | Not started |
 | [8.1 Muscle and body shape](#81-muscle-masses-joints-and-body-shape) | **max (raised)** | Changes every creature, judged by eye; the rules must fit every body | 7.4, 7.5 | Not started |

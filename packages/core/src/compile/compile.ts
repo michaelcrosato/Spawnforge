@@ -21,7 +21,14 @@ import {
   weightsAt,
 } from './skin.ts';
 import { fitGrid, surfaceNets } from './surface-nets.ts';
-import type { BoneDef } from './types.ts';
+import {
+  allEyes,
+  type BoneDef,
+  type DrivenChain,
+  type HeadRig,
+  type LimbChainRig,
+  type TailRig,
+} from './types.ts';
 
 declare const performance: { now(): number };
 
@@ -97,16 +104,20 @@ export interface ArmRigData extends Omit<LegRigData, 'pair' | 'restFoot' | 'side
   readonly side: 'left' | 'right' | 'center';
 }
 
+/** The rig as plain data (see `Rig` in types.ts): lists of heads, tails and driven chains. */
 export interface RigData {
   readonly root: number;
   readonly spine: readonly number[];
-  readonly neck: readonly number[];
-  readonly head: number;
-  readonly jaw: number;
-  readonly tail: readonly number[];
-  readonly eyes: readonly number[];
+  readonly heads: readonly HeadRig[];
+  /** Index into `heads` of the main head. */
+  readonly main: number;
+  readonly tails: readonly TailRig[];
+  readonly chains: readonly DrivenChain[];
   readonly legs: readonly LegRigData[];
   readonly arms: readonly ArmRigData[];
+  readonly wings: readonly LimbChainRig[];
+  readonly fins: readonly LimbChainRig[];
+  readonly tentacles: readonly LimbChainRig[];
   readonly helpers: readonly (readonly [number, number, number])[];
   readonly hipHeight: number;
   readonly posture: 'upright' | 'sprawl' | 'legless';
@@ -250,13 +261,12 @@ export function compileCreature(
   let table = computeWeights(positions, indices, weightOptions);
   lap('weights');
 
-  // 5. Mouth: cut the closed head along the mouth line; lower copies follow the jaw.
-  const head = skeleton.rig.head;
-  const jaw = skeleton.rig.jaw;
-  let mouth: MouthLine | undefined;
-  let lowerFlags: Uint8Array | undefined;
-  if (jaw >= 0) {
-    mouth = mouthLine(bones[head] as BoneDef, bones[jaw] as BoneDef);
+  // 5. Mouths: cut each head with a jaw along its mouth line; lower copies follow its jaw.
+  const mouths: (MouthLine | undefined)[] = skeleton.rig.heads.map(() => undefined);
+  for (const [i, { head, jaw }] of skeleton.rig.heads.entries()) {
+    if (jaw < 0) continue;
+    const mouth = mouthLine(bones[head] as BoneDef, bones[jaw] as BoneDef);
+    mouths[i] = mouth;
     const cut = cutMouth(positions, normals, indices, table, head, jaw, mouth);
     const next = new WeightTable(cut.source.length);
     for (let v = 0; v < cut.source.length; v++) {
@@ -273,7 +283,6 @@ export function compileCreature(
     normals = cut.normals;
     indices = cut.indices;
     table = next;
-    lowerFlags = cut.lower;
   }
   lap('mouth');
 
@@ -339,7 +348,9 @@ export function compileCreature(
     }
     flush();
   }
-  if (mouth) {
+  for (const [i, { head, jaw }] of skeleton.rig.heads.entries()) {
+    const mouth = mouths[i];
+    if (!mouth) continue;
     const pouch = innerMouth(mouth);
     const base = (positions.length + extraPos.length) / 3;
     extraPos.push(...pouch.positions);
@@ -376,7 +387,6 @@ export function compileCreature(
   extraFlag.forEach((f, i) => {
     mouthInside[vertexCount - extraFlag.length + i] = f;
   });
-  void lowerFlags;
   lap('tubes');
 
   // 7. Body coordinates, read by textures and part placement instead of UVs.
@@ -421,9 +431,13 @@ export function compileCreature(
       paths: skeleton.paths as Map<string, readonly import('./skeleton.ts').PathSegment[]>,
       sdf,
       weightOptions,
-      mouth,
-      head,
-      jaw,
+      heads: skeleton.rig.heads.map((h, i) => ({
+        id: h.id,
+        head: h.head,
+        jaw: h.jaw,
+        mouth: mouths[i],
+      })),
+      main: skeleton.rig.main,
       palette: spec.skin.palette,
       scale: L,
       seed: spec.seed,
@@ -455,36 +469,50 @@ export function compileCreature(
 
   // 10. Bones as plain data.
   const bonesData = bonesToData(bones);
+  const headOf = (bone: number): number => {
+    for (let b = bone, n = 0; b >= 0 && n < bones.length; b = bones[b]?.parent ?? -1, n++) {
+      const i = skeleton.rig.heads.findIndex((h) => h.head === b || h.jaw === b);
+      if (i >= 0) return i;
+    }
+    return skeleton.rig.main;
+  };
   const rig: RigData = {
     root: skeleton.rig.root,
     spine: skeleton.rig.spine,
-    neck: skeleton.rig.neck,
-    head,
-    jaw,
-    tail: skeleton.rig.tail,
-    eyes: builtParts.eyeBones,
+    // Each eye belongs to the head whose bones it hangs from (the main head's when none).
+    heads: skeleton.rig.heads.map((h, i) => ({
+      ...h,
+      eyes: builtParts.eyeBones.filter((eye) => headOf(eye) === i),
+    })),
+    main: skeleton.rig.main,
+    tails: skeleton.rig.tails,
+    chains: skeleton.rig.chains,
     legs: skeleton.rig.legs.map((l) => ({ ...l, restFoot: v3(l.restFoot), pole: v3(l.pole) })),
     arms: skeleton.rig.arms.map((a) => ({ ...a, pole: v3(a.pole) })),
+    wings: skeleton.rig.wings,
+    fins: skeleton.rig.fins,
+    tentacles: skeleton.rig.tentacles,
     helpers: skeleton.helpers,
     hipHeight: skeleton.rig.hipHeight,
     posture: skeleton.rig.posture,
   };
 
-  const sockets = gameSockets(bones, rig, mouth);
+  const sockets = gameSockets(bones, rig, mouths);
   const markers: CompiledCreature['markers'][number][] = [];
   const mid = (id: number) =>
     v3((bones[id] as BoneDef).head.clone().lerp((bones[id] as BoneDef).tail, 0.5));
-  markers.push({ id: 'head', kind: 'section', position: v3((bones[head] as BoneDef).tail) });
+  for (const h of skeleton.rig.heads)
+    markers.push({ id: h.id, kind: 'section', position: v3((bones[h.head] as BoneDef).tail) });
   markers.push({
     id: 'torso',
     kind: 'section',
     position: mid(skeleton.rig.spine[Math.floor(skeleton.rig.spine.length / 2)] as number),
   });
-  if (skeleton.rig.tail.length > 0)
+  for (const tail of skeleton.rig.tails)
     markers.push({
-      id: 'tail',
+      id: tail.id,
       kind: 'section',
-      position: v3((bones[skeleton.rig.tail.at(-1) as number] as BoneDef).tail),
+      position: v3((bones[tail.bones.at(-1) as number] as BoneDef).tail),
     });
   for (const limb of [...skeleton.rig.legs, ...skeleton.rig.arms]) {
     markers.push({
@@ -622,7 +650,7 @@ function bonesToData(bones: readonly BoneDef[]): BonesData {
 function gameSockets(
   bones: readonly BoneDef[],
   rig: RigData,
-  mouth: MouthLine | undefined,
+  mouths: readonly (MouthLine | undefined)[],
 ): GameSocket[] {
   const local = (bone: number, p: Vector3): Vec3 => {
     const b = bones[bone] as BoneDef;
@@ -635,18 +663,28 @@ function gameSockets(
     return [o.dot(x), o.dot(y), o.dot(z)];
   };
   const sockets: GameSocket[] = [];
-  const head = bones[rig.head] as BoneDef;
-  sockets.push({ name: 'head', bone: rig.head, offset: [0, 0, 0] });
-  if (mouth && rig.jaw >= 0) {
-    const tip = mouth.origin
-      .clone()
-      .addScaledVector(mouth.forward, mouth.tip)
-      .addScaledVector(mouth.up, mouth.tipY);
-    sockets.push({ name: 'mouth', bone: rig.jaw, offset: local(rig.jaw, tip) });
-  } else {
-    sockets.push({ name: 'mouth', bone: rig.head, offset: local(rig.head, head.tail.clone()) });
+  // The main head answers to plain `head` and `mouth`; the others add their instance
+  // (`head.L1`, `mouth.L1`) from 9.1.
+  for (const [i, h] of rig.heads.entries()) {
+    const suffix = i === rig.main ? '' : h.id.slice('head'.length);
+    const head = bones[h.head] as BoneDef;
+    const mouth = mouths[i];
+    sockets.push({ name: `head${suffix}`, bone: h.head, offset: [0, 0, 0] });
+    if (mouth && h.jaw >= 0) {
+      const tip = mouth.origin
+        .clone()
+        .addScaledVector(mouth.forward, mouth.tip)
+        .addScaledVector(mouth.up, mouth.tipY);
+      sockets.push({ name: `mouth${suffix}`, bone: h.jaw, offset: local(h.jaw, tip) });
+    } else {
+      sockets.push({
+        name: `mouth${suffix}`,
+        bone: h.head,
+        offset: local(h.head, head.tail.clone()),
+      });
+    }
   }
-  rig.eyes.forEach((id) => {
+  allEyes(rig).forEach((id) => {
     sockets.push({ name: (bones[id] as BoneDef).name, bone: id, offset: [0, 0, 0] });
   });
   for (const limb of [...rig.legs, ...rig.arms]) {

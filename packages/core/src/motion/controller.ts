@@ -2,6 +2,7 @@ import { Euler, Quaternion, Vector3 } from 'three';
 import type { Temperament } from '../blueprint/creature.ts';
 import type { CompiledCreature, LegRigData } from '../compile/compile.ts';
 import { type PreparedLimb, prepareLimb, solvePrepared } from '../compile/ik.ts';
+import { type HeadRig, mainHead } from '../compile/types.ts';
 import type { ActionModule, Registry } from '../registry.ts';
 import { createRng, type Rng } from '../rng.ts';
 import type { ActionContext, ActionGoals, ActionHooks } from './actions.ts';
@@ -92,6 +93,8 @@ interface Spring {
   readonly previous: Vector3[];
   readonly lengths: number[];
   readonly stiffness: number;
+  /** Swung by the `swish` goal and the sprawling wave (tails). */
+  readonly swish: boolean;
 }
 
 export interface MotionOptions {
@@ -225,11 +228,12 @@ export class MotionController {
         Number.POSITIVE_INFINITY,
       ),
     );
-    const neckRoot = compiled.rig.neck[0];
+    const main = mainHead(compiled.rig);
+    const neckRoot = main.neck[0];
     this.rearing =
       compiled.rig.posture === 'legless' &&
       neckRoot !== undefined &&
-      (this.pose.restWorldPos[compiled.rig.head] as Vector3).y -
+      (this.pose.restWorldPos[main.head] as Vector3).y -
         (this.pose.restWorldPos[neckRoot] as Vector3).y >
         3 * (compiled.bones.radii[neckRoot] ?? 0);
     this.timeScale = Math.sqrt(this.hipHeight / 1);
@@ -247,12 +251,19 @@ export class MotionController {
           rng: rng.stream(`action.${action.id}`),
         });
     }
-    this.springs = [];
-    if (compiled.rig.tail.length > 1) this.springs.push(this.makeSpring(compiled.rig.tail, 0.35));
+    this.springs = compiled.rig.chains
+      .filter((c) => c.drive === 'spring' && c.bones.length > 1)
+      .map((c) => this.makeSpring(c.bones, c.stiffness ?? 0.35, c.swish ?? false));
     this.pose.solve();
   }
 
-  private makeSpring(bones: readonly number[], stiffness: number): Spring {
+  /** The main tail's bones, root to tip (empty without a tail). */
+  private get tailBones(): readonly number[] {
+    const tails = this.compiled.rig.tails;
+    return (tails.find((t) => t.id === 'tail') ?? tails[0])?.bones ?? [];
+  }
+
+  private makeSpring(bones: readonly number[], stiffness: number, swish: boolean): Spring {
     const points = [
       ...bones.map((b) => (this.pose.worldPos[b] as Vector3).clone()),
       this.pose.tail(bones.at(-1) as number),
@@ -263,6 +274,7 @@ export class MotionController {
       previous: points.map((p) => p.clone()),
       lengths: bones.map((b) => this.pose.lengths[b] as number),
       stiffness,
+      swish,
     };
   }
 
@@ -292,7 +304,7 @@ export class MotionController {
     }
     this.applyPose(ground);
     for (const [i, spring] of this.springs.entries())
-      this.springs[i] = this.makeSpring(spring.bones, spring.stiffness);
+      this.springs[i] = this.makeSpring(spring.bones, spring.stiffness, spring.swish);
   }
 
   /** Walk toward a point on the ground. `speed` in m/s (default: the temperament's pace). */
@@ -503,7 +515,11 @@ export class MotionController {
   private updateGoals(): void {
     const goals: ActionGoals = {};
     const rig = this.compiled.rig;
-    const head = this.pose.worldPos[rig.head] as Vector3;
+    // The main head speaks for the creature; an action aimed at a target uses the nearest head.
+    const c = this.current;
+    const head = this.pose.worldPos[
+      (rig.heads[this.nearestHead(c?.target ?? null)] ?? mainHead(rig)).head
+    ] as Vector3;
     const forward = scratch3.set(Math.sin(this.heading), 0, Math.cos(this.heading));
     const base = {
       timeScale: this.timeScale,
@@ -524,7 +540,6 @@ export class MotionController {
       };
       a.hooks.goals(ctx, goals);
     }
-    const c = this.current;
     if (c) {
       const before = c.progress;
       c.progress = Math.min(1, (this.time - c.start) / c.duration);
@@ -799,7 +814,8 @@ export class MotionController {
   private spineLength(): number {
     const r = this.compiled.rig;
     let len = 0;
-    for (const b of [...r.neck, ...r.spine, ...r.tail]) len += this.pose.lengths[b] as number;
+    for (const b of [...mainHead(r).neck, ...r.spine, ...this.tailBones])
+      len += this.pose.lengths[b] as number;
     return Math.max(len, 1e-3);
   }
 
@@ -839,7 +855,7 @@ export class MotionController {
         this.compiled.rig.posture === 'sprawl'
           ? Math.sin(this.phase * Math.PI * 2 - 1.2) * 0.15 * moving
           : 0;
-      const rest = this.restChain(spring.bones, (this.goals.swish ?? 0) + wave);
+      const rest = this.restChain(spring.bones, spring.swish ? (this.goals.swish ?? 0) + wave : 0);
       for (let i = 1; i < pts.length; i++) {
         const p = pts[i] as Vector3;
         const prev = spring.previous[i] as Vector3;
@@ -898,7 +914,7 @@ export class MotionController {
     );
     (pose.rot[spine0] as Quaternion).premultiply(tilt);
     const sprawl = rig.posture === 'sprawl';
-    const bendBones = [...rig.spine.slice(1), ...rig.neck];
+    const bendBones = [...rig.spine.slice(1), ...mainHead(rig).neck];
     bendBones.forEach((b, k) => {
       const wave = sprawl ? Math.sin(this.phase * Math.PI * 2 - k * 0.6) * 0.06 * moving : 0;
       const yaw = this.bend / Math.max(1, bendBones.length) + wave;
@@ -906,8 +922,8 @@ export class MotionController {
     });
     pose.solve();
 
-    // Head: keep it level, facing the way it walks (or toward a look target); jaw.
-    this.applyHead();
+    // Heads: keep them level, facing the way it walks (or toward a look target); jaws.
+    this.applyHeads();
     this.applyJaw();
 
     // Legs: IK from the posed hips to the planted feet.
@@ -946,11 +962,34 @@ export class MotionController {
     pose.solve();
   }
 
-  private applyHead(): void {
-    const pose = this.pose;
+  /** Index of the head nearest a point (the main head without one). */
+  private nearestHead(point: Vector3 | null): number {
     const rig = this.compiled.rig;
+    let best = rig.main;
+    if (!point || rig.heads.length < 2) return best;
+    let closest = Infinity;
+    rig.heads.forEach((h, i) => {
+      const d = (this.pose.worldPos[h.head] as Vector3).distanceToSquared(point);
+      if (d < closest) {
+        closest = d;
+        best = i;
+      }
+    });
+    return best;
+  }
+
+  private applyHeads(): void {
+    // Every head turns to a look; only the nearest one lunges at it.
+    const reacher = this.nearestHead(this.goals.look ?? this.lookTarget);
+    this.compiled.rig.heads.forEach((h, i) => {
+      this.applyHead(h, i === reacher);
+    });
+  }
+
+  private applyHead(h: HeadRig, reaches: boolean): void {
+    const pose = this.pose;
     const g = this.goals;
-    const head = rig.head;
+    const head = h.head;
     const restDir = scratch1.set(0, 1, 0).applyQuaternion(pose.restWorldRot[head] as Quaternion);
     const desired = scratch5.copy(restDir).applyAxisAngle(UP, this.heading);
     const drop = TEMPERAMENTS[this.motion.temperament].headDrop;
@@ -982,7 +1021,7 @@ export class MotionController {
     desired.normalize();
     // Turn the neck by part of the rotation the head needs, keeping its shape (a raised neck
     // stays raised), then aim the head.
-    const neck = rig.neck;
+    const neck = h.neck;
     pose.solveBone(head);
     const turn = scratchQ2.setFromUnitVectors(pose.direction(head, scratch1), desired);
     neck.forEach((b, k) => {
@@ -994,20 +1033,20 @@ export class MotionController {
     pose.solveBone(head);
     pose.aim(head, desired);
     pose.solveSubtree(head);
-    if (g.reach && look) this.lunge(look, g.reach, desired);
+    if (g.reach && look && reaches) this.lunge(look, g.reach, desired, h);
   }
 
   /**
    * Stretches the neck (or the front of the spine) so the head moves toward `point` by `amount`
    * of what it can reach, then re-aims the head (cyclic coordinate descent).
    */
-  private lunge(point: Vector3, amount: number, facing: Vector3): void {
+  private lunge(point: Vector3, amount: number, facing: Vector3, h: HeadRig): void {
     const pose = this.pose;
     const rig = this.compiled.rig;
-    const chain = rig.neck.length > 0 ? rig.neck : rig.spine.slice(-2);
+    const chain = h.neck.length > 0 ? h.neck : rig.spine.slice(-2);
     let length = 0;
     for (const b of chain) length += pose.lengths[b] as number;
-    const start = pose.worldPos[rig.head] as Vector3;
+    const start = pose.worldPos[h.head] as Vector3;
     const toward = scratch2.subVectors(point, start);
     const distance = toward.length();
     if (distance < 1e-6) return;
@@ -1018,7 +1057,7 @@ export class MotionController {
       for (let k = chain.length - 1; k >= 0; k--) {
         const b = chain[k] as number;
         const base = pose.worldPos[b] as Vector3;
-        const a = scratch1.subVectors(pose.worldPos[rig.head] as Vector3, base).normalize();
+        const a = scratch1.subVectors(pose.worldPos[h.head] as Vector3, base).normalize();
         const c = scratch4.subVectors(goal, base).normalize();
         const turn = scratchQ.setFromUnitVectors(a, c);
         scratchQ2.identity().slerp(turn, 0.6);
@@ -1026,22 +1065,24 @@ export class MotionController {
         pose.solveSubtree(b);
       }
     }
-    pose.aim(rig.head, facing);
-    pose.solveSubtree(rig.head);
+    pose.aim(h.head, facing);
+    pose.solveSubtree(h.head);
   }
 
-  /** Opens the jaw by the action's `jaw` goal, about its hinge. */
+  /** Opens every jaw by the action's `jaw` goal, about its hinge. */
   private applyJaw(): void {
-    const rig = this.compiled.rig;
     const open = this.goals.jaw ?? 0;
     const pose = this.pose;
     pose.breath = this.goals.breath ?? 0;
     pose.blink = this.goals.blink ?? 0;
-    if (rig.jaw < 0 || open <= 0) return;
-    (pose.rot[rig.jaw] as Quaternion)
-      .copy(pose.restRot[rig.jaw] as Quaternion)
-      .multiply(scratchQ.setFromAxisAngle(X_AXIS, -open * 0.65));
-    pose.solveSubtree(rig.jaw);
+    if (open <= 0) return;
+    for (const { jaw } of this.compiled.rig.heads) {
+      if (jaw < 0) continue;
+      (pose.rot[jaw] as Quaternion)
+        .copy(pose.restRot[jaw] as Quaternion)
+        .multiply(scratchQ.setFromAxisAngle(X_AXIS, -open * 0.65));
+      pose.solveSubtree(jaw);
+    }
   }
 
   private applySprings(): void {
@@ -1076,8 +1117,9 @@ export class MotionController {
     const rig = this.compiled.rig;
     // Bones from the head end back: neck (reversed), torso (reversed), tail. A rearing neck (a
     // cobra) keeps its raised pose on the front of the body instead of following the trail.
-    const lead = this.rearing ? [] : [...rig.neck].reverse();
-    const chain = [...lead, ...[...rig.spine].reverse(), ...rig.tail];
+    const main = mainHead(rig);
+    const lead = this.rearing ? [] : [...main.neck].reverse();
+    const chain = [...lead, ...[...rig.spine].reverse(), ...this.tailBones];
     if (this.trail.length < 2) {
       pose.solve();
       return;
@@ -1143,10 +1185,10 @@ export class MotionController {
         pose.solveBone(b);
         pose.aim(b, scratch1.subVectors(to, from));
       });
-    pose.solveSubtree(rig.head);
-    this.applyHead();
+    pose.solveSubtree(main.head);
+    this.applyHeads();
     this.applyJaw();
-    rig.tail.forEach((b, k) => {
+    this.tailBones.forEach((b, k) => {
       const from = joints[hipIndex + k] as Vector3;
       const to = joints[hipIndex + k + 1] as Vector3;
       pose.solveBone(b);

@@ -75,6 +75,7 @@ export type {
 export { buildSdf, type Sdf, SdfEvaluator } from './compile/sdf.ts';
 export { buildSkeleton, type SkeletonBuild } from './compile/skeleton.ts';
 export type * from './compile/types.ts';
+export { allEyes, mainHead } from './compile/types.ts';
 export {
   type BakedColors,
   bakeEyeColors,

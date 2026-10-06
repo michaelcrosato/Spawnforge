@@ -48,9 +48,10 @@ interface DrivenChain {
   readonly owner: string;
   readonly bones: readonly number[];
   readonly drive: 'spring' | 'blink' | 'jaw' | 'flare';
-  /** For springs: natural frequency (Hz, at 1 m size) and damping ratio, scaled by size. */
-  readonly frequency?: number;
-  readonly damping?: number;
+  /** For springs: how hard each point is pulled back toward its rest place per step (0 to 1). */
+  readonly stiffness?: number;
+  /** For springs: whether the action goals' `swish` swings it (tails). */
+  readonly swish?: boolean;
   /** For the others: joint angles per pose, e.g. `rest`, `open`, `closed`. */
   readonly poses?: Readonly<Record<string, readonly number[]>>;
 }
@@ -111,8 +112,7 @@ bones?(ctx: PartBuildContext, params): {
     readonly points: readonly Vector3[]; // in socket space, root first
     readonly radii: readonly number[];
     readonly drive?: 'spring' | 'blink' | 'jaw' | 'flare';
-    readonly frequency?: number;
-    readonly damping?: number;
+    readonly stiffness?: number;
     readonly poses?: Readonly<Record<string, readonly number[]>>;
   }[];
 };
@@ -158,3 +158,11 @@ bones?(ctx: PartBuildContext, params): {
 
 **Done when** (7.4): the goldens, the motion tests and the render baselines are unchanged, and the
 motion cost is within 15% of today's.
+
+**Built in 7.4** as above, with these choices: springs keep today's per-step `stiffness` (and a
+`swish` flag for tails) rather than a frequency and damping; mouth-slot parts use the mouth of
+the head their `on` names (`head.L1`, `jaw.L1`), else the main head's; each eye belongs to the
+head whose bones it hangs from; an action aimed at a target uses the nearest head, and only that
+head lunges, while every head turns to look; `analyze` adds `reach.heads` (main first) when
+there are several, and stats modules get `heads`. Glances still come from one stream for all
+heads; 9.1 keys them per head when heads differ.

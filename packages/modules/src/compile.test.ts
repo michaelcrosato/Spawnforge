@@ -1,12 +1,16 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import {
+  allEyes,
+  analyzeCreature,
   type CompiledCreature,
   compileCreature,
   createRegistry,
   FORMAT,
   fingerprint,
   type MeshData,
+  mainHead,
   resolveBlueprint,
+  statsInput,
   validateBlueprint,
 } from '@spawnforge/core';
 import { describe, expect, it } from 'vitest';
@@ -47,7 +51,9 @@ describe('compiling', () => {
       legs.length === 0 ? 'legless' : legs.some((l) => (l.splay ?? 0) >= 35) ? 'sprawl' : 'upright',
     );
     expect(c.rig.legs.length).toBe(legs.length * 2);
-    expect(c.rig.eyes.length).toBe(preset.parts.filter((p) => p.type === 'eye.basic').length * 2);
+    expect(allEyes(c.rig).length).toBe(
+      preset.parts.filter((p) => p.type === 'eye.basic').length * 2,
+    );
     checkMesh(`${plan} skin`, c.skin);
     checkMesh(`${plan} parts`, c.parts);
     // Feet rest on the ground: nothing far below it.
@@ -113,7 +119,7 @@ describe('compiling', () => {
 
   it('cuts the mouth so the jaw can open', () => {
     const c = compile(examples.find(([n]) => n === 'ridgeback-stalker')?.[1]);
-    const jaw = c.rig.jaw;
+    const { jaw } = mainHead(c.rig);
     let jawOnly = 0;
     for (let v = 0; v < c.skin.positions.length / 3; v++) {
       if (c.skin.skinIndex[v * 4] === jaw && (c.skin.skinWeight[v * 4] as number) > 0.999)
@@ -121,6 +127,35 @@ describe('compiling', () => {
     }
     expect(jawOnly).toBeGreaterThan(20);
     expect(c.sockets.map((s) => s.name)).toContain('mouth');
+  });
+
+  it('keeps heads, tails and driven chains in lists, the main head first in what reads them', () => {
+    const blueprint = examples.find(([n]) => n === 'ridgeback-stalker')?.[1];
+    const c = compile(blueprint);
+    expect(c.rig.heads.map((h) => h.id)).toEqual(['head']);
+    expect(c.rig.main).toBe(0);
+    const head = mainHead(c.rig);
+    expect(c.bones.names[head.head]).toBe('head');
+    expect(c.bones.names[head.jaw]).toBe('jaw');
+    expect(head.neck.map((b) => c.bones.names[b])).toEqual(head.neck.map((_, i) => `neck.${i}`));
+    // Every eye hangs from its head, so the head owns them all.
+    expect(head.eyes).toEqual(allEyes(c.rig));
+    expect(head.eyes.length).toBeGreaterThan(0);
+    // The tail is one list entry and the one spring chain, swung by the swish goal.
+    const [tail] = c.rig.tails;
+    expect(tail?.id).toBe('tail');
+    expect(tail?.branch).toBe(0);
+    expect(c.rig.chains).toEqual([
+      { owner: 'tail', bones: tail?.bones, drive: 'spring', stiffness: 0.35, swish: true },
+    ]);
+    expect([c.rig.wings, c.rig.fins, c.rig.tentacles]).toEqual([[], [], []]);
+    // One head reports one reach; stats count heads and only arm limbs as arms.
+    const spec = resolveBlueprint(blueprint, registry);
+    const analysis = analyzeCreature(spec, registry);
+    expect(analysis.reach.heads).toBeUndefined();
+    const input = statsInput(spec, analysis, registry);
+    expect(input.heads).toBe(1);
+    expect(input.arms).toBe(spec.limbs.filter((l) => l.role === 'arm').length);
   });
 });
 
