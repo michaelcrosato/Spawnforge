@@ -662,6 +662,12 @@ phase 4 run's 20 blueprints at `d101c06` against the gate's commit, in both orde
 8.1 left the review tool). Re-render the examples and
 re-record the goldens with reasons.
 
+**Passed (2026-10-06, [#20](https://github.com/michaelcrosato/Spawnforge/pull/20)):** suite A
+20/20 valid and 20/20 matched blind; suite B re-scored 20/20 valid and 20/20 meeting `expects`;
+the quality review preferred the new look in 20 of 20 pairs (15 in a first round, before a fix
+to 8.4's scale relief); budgets met, with the fur adding its one draw call. The goldens are
+unchanged since 8.3. See `eval/runs/2026-10-06-gate8/notes.md`.
+
 ## Phase 9: New bodies, limbs and parts
 
 Everything plan 1's "Later" column held for bodies, limbs and parts, on the format from 7.3, the

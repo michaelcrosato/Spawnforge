@@ -1,0 +1,82 @@
+{
+  "p01": {
+    "pick": "B",
+    "why": "B's head shows a defined mouth line with small teeth and tusks plus broader shoulder and chest mass; A's teeth are star-shaped spikes floating on the lip and the chest and legs are plainer."
+  },
+  "p02": {
+    "pick": "A",
+    "why": "A's overlapping smooth scales are clean and the head has a clear mouth line with a row of teeth; B's cracked polygon pattern is noisy and its teeth are a few jagged bits with no clear mouth."
+  },
+  "p03": {
+    "pick": "B",
+    "why": "Same silhouette, but B adds segment lines on the back and jointed legs that read as insect plates; A is a smooth blob with plain tube legs."
+  },
+  "p04": {
+    "pick": "B",
+    "why": "B's overlapping scales and rounder head read as a clean snake; A's faceted polygon scales look noisy and low-res on the head and neck. Both have the same fangs and eyes. Weak preference."
+  },
+  "p05": {
+    "pick": "A",
+    "why": "Body and horns are identical, but A has a visible toothy mouth line across the head while B's face has no readable mouth at all."
+  },
+  "p06": {
+    "pick": "B",
+    "why": "B has an actual mouth opening along the muzzle with a row of small teeth behind the fangs; A just has fangs poking out of a dark muzzle with no mouth line. Same body, horns and stripes."
+  },
+  "p07": {
+    "pick": "B",
+    "why": "B's fine smooth scales, lip line and denser spots over body and tail read as a salamander; A's head has blocky square scales and a chunky chin block."
+  },
+  "p08": {
+    "pick": "B",
+    "why": "B has a clean smile line under the snout and a cleaner jaw; A has a ragged, jagged colour edge on the chin and no defined mouth. Same tusks and spine."
+  },
+  "p09": {
+    "pick": "B",
+    "why": "B's head has soft overlapping scales and a clear smiling mouth line; A's head has blocky croc-style tiles and a chunky lower lip. Body and legs are the same."
+  },
+  "p10": {
+    "pick": "A",
+    "why": "A has banded segments on tail and legs and a grinning toothed mouth on the head; B is a smooth featureless tube body with no mouth."
+  },
+  "p11": {
+    "pick": "A",
+    "why": "A has tidy overlapping scales and a neat row of teeth along the jawline; B's cracked voronoi scales look noisy and its mouth is a dark hole with irregular star-shaped teeth."
+  },
+  "p12": {
+    "pick": "A",
+    "why": "A's overlapping scales are clean, the mouth has a lip line with teeth, and the thighs taper from the hips; B has crackle-patterned skin, star-shaped teeth and straight stilt legs in the front view."
+  },
+  "p13": {
+    "pick": "B",
+    "why": "B has a proper lip line with teeth along the jaw, a slit eye, and more shaped shoulder and haunch masses; A's teeth are star-shaped specks and the head is plainer."
+  },
+  "p14": {
+    "pick": "B",
+    "why": "B's head has a defined mouth line and smooth jaw, with spots covering the legs and tail; A has a jagged zigzag colour edge on the jaw and no visible mouth."
+  },
+  "p15": {
+    "pick": "B",
+    "why": "B has a toothed mouth line, eyelid rims around the eyes and fine scales with small dots; A's face has croc tiles, big pale blotches and no readable mouth."
+  },
+  "p16": {
+    "pick": "A",
+    "why": "A has segmented abdomen and thorax lines and dark bands at the leg joints, so it reads as an ant; B is smooth and plain with a ragged jagged edge on the lower head."
+  },
+  "p17": {
+    "pick": "A",
+    "why": "A has a stitched grin line and eyelid brows on the eyes, so the face reads clearly; B's mouth is a ragged jagged smear and the eyes are bare bulbs."
+  },
+  "p18": {
+    "pick": "A",
+    "why": "A's scales are clean overlapping discs on the head and belly; B's cracked polygon skin looks noisy, and the belly shows crackle lines in the front view."
+  },
+  "p19": {
+    "pick": "A",
+    "why": "Silhouette is identical, but A shows a mouth with small teeth under the snout and has cleaner skin; B has no readable mouth and its crackle pattern is noisier on the body."
+  },
+  "p20": {
+    "pick": "B",
+    "why": "B has a mouth line along the jaw with teeth and lidded red eyes; A's eyes are bare red balls and its teeth are star-shaped specks with no mouth line."
+  }
+}

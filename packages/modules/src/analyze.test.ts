@@ -60,6 +60,23 @@ describe('analyze', () => {
     expect(codes).toContain('body.tail below_ground');
     expect(codes.some((c) => c.endsWith('limb_intersection'))).toBe(true);
     for (const w of a.warnings) expect(w.fix).toBeTruthy();
+    // Front and hind legs crowded together meet in the stride, and the fix says so.
+    const hit = a.warnings.find((w) => w.code === 'limb_intersection');
+    expect(hit?.message).toMatch(/segment\)/);
+    expect(hit?.fix).toMatch(/stride/);
+  });
+
+  it('tells two legs of a pair meeting under the body to attach higher, not splay (gate 8)', () => {
+    const a = analyze({
+      extends: 'quadruped',
+      limbs: [
+        { id: 'hindleg', attach: { angle: 175 }, radius: [0.12, 0.08] },
+        { id: 'foreleg', attach: { angle: 175 }, radius: [0.12, 0.08] },
+      ],
+    });
+    const hit = a.warnings.find((w) => w.code === 'limb_intersection');
+    expect(hit?.message).toMatch(/(fore|hind)leg\.[LR] .* into (fore|hind)leg\.[LR]/);
+    expect(hit?.fix).toMatch(/attach both higher/);
   });
 
   it('warns about a part buried in the body', () => {

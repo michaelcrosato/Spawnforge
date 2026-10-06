@@ -1,0 +1,74 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Mire Troll",
+  "seed": 505,
+  "extends": "biped",
+  "scale": 0.95,
+  "body": {
+    "muscle": 0.7,
+    "torso": {
+      "radius": [0.2, 0.26, 0.24, 0.2],
+      "arch": 0.1,
+      "pitch": 72,
+      "crossSection": "round"
+    },
+    "neck": { "length": 0.15, "radius": [0.11, 0.15], "pitch": 62 },
+    "head": {
+      "shape": "flat",
+      "length": 0.3,
+      "radius": 0.14,
+      "pitch": -8,
+      "lips": 0.4,
+      "brow": 0.8
+    }
+  },
+  "limbs": [
+    {
+      "id": "leg",
+      "length": 1.0,
+      "radius": [0.14, 0.08],
+      "foot": { "type": "foot.pad", "width": 1.4, "nails": 3 }
+    },
+    {
+      "id": "arm",
+      "length": 1.5,
+      "radius": [0.1, 0.065],
+      "attach": { "at": 0.1, "angle": 95 },
+      "foot": { "type": "hand.grasp", "fingers": 4, "fingerLength": 0.18, "claws": 0.04 }
+    }
+  ],
+  "parts": [
+    {
+      "id": "tusks",
+      "type": "horn.curved",
+      "attach": { "on": "jaw", "at": 0.25, "angle": 60 },
+      "params": {
+        "length": 0.16,
+        "width": 0.028,
+        "curve": -55,
+        "color": "#e6dcc0",
+        "tipColor": "#b8a888"
+      }
+    },
+    { "id": "teeth", "type": "teeth.row", "params": { "fangs": 0, "scale": 1.2, "spacing": 0.5 } },
+    {
+      "id": "ears",
+      "type": "ear.pointed",
+      "attach": { "on": "head", "at": 0.9, "angle": 70 },
+      "params": { "length": 0.14, "width": 0.05, "droop": 0.6, "angle": 0 }
+    },
+    { "id": "eyes", "params": { "squint": 0.5, "irisColor": "#d8c030" } }
+  ],
+  "skin": {
+    "palette": { "base": "#5e7f3c", "belly": "#a9b078", "accent": "#2e4220", "moss": "#7e9a48" },
+    "material": "hide",
+    "layers": [
+      { "type": "countershade" },
+      { "type": "mottle", "color": "accent", "scale": 0.18, "coverage": 0.55, "contrast": 0.5 },
+      { "type": "mottle", "color": "moss", "scale": 0.08, "coverage": 0.4, "contrast": 0.4 },
+      { "type": "warts", "color": "#6f8a40", "size": 0.02, "density": 0.5, "region": "back" },
+      { "type": "grime", "amount": 0.5 }
+    ]
+  },
+  "motion": { "temperament": "lumbering", "actions": ["bite", "roar", "look", "idle"] }
+}

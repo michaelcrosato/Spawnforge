@@ -1,0 +1,144 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Armoured Rhino",
+  "seed": 1901,
+  "extends": "quadruped",
+  "scale": 2,
+  "body": {
+    "torso": {
+      "radius": [0.18, 0.24, 0.25, 0.2],
+      "arch": 0.04
+    },
+    "neck": {
+      "length": 0.15,
+      "radius": [0.16, 0.24],
+      "pitch": 5
+    },
+    "head": {
+      "shape": "snout",
+      "length": 0.5,
+      "radius": 0.16,
+      "pitch": -25,
+      "lips": 0.2
+    },
+    "tail": {
+      "length": 0.35,
+      "radius": [0.05, 0.015],
+      "pitch": -30,
+      "curl": 5
+    }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "length": 0.5,
+      "radius": [0.1, 0.07],
+      "foot": {
+        "type": "foot.pad",
+        "width": 1.4,
+        "nails": 3
+      },
+      "attach": {
+        "angle": 100
+      },
+      "splay": 28
+    },
+    {
+      "id": "hindleg",
+      "length": 0.52,
+      "radius": [0.11, 0.07],
+      "foot": {
+        "type": "foot.pad",
+        "width": 1.4,
+        "nails": 3
+      },
+      "attach": {
+        "angle": 100
+      },
+      "splay": 28
+    }
+  ],
+  "parts": [
+    {
+      "id": "horn-big",
+      "type": "horn.curved",
+      "attach": {
+        "on": "head",
+        "at": 0.12,
+        "angle": 0
+      },
+      "params": {
+        "length": 0.45,
+        "width": 0.07,
+        "curve": 35,
+        "color": "#7a7468",
+        "tipColor": "#2e2a26"
+      }
+    },
+    {
+      "id": "horn-small",
+      "type": "horn.curved",
+      "attach": {
+        "on": "head",
+        "at": 0.4,
+        "angle": 0
+      },
+      "params": {
+        "length": 0.2,
+        "width": 0.05,
+        "curve": 20,
+        "color": "#7a7468",
+        "tipColor": "#2e2a26"
+      }
+    },
+    {
+      "id": "ears",
+      "type": "ear.pointed",
+      "attach": {
+        "on": "head",
+        "at": 0.9,
+        "angle": 50
+      },
+      "params": {
+        "length": 0.1,
+        "width": 0.05
+      }
+    },
+    {
+      "id": "eyes",
+      "params": {
+        "scale": 0.7,
+        "squint": 0.3
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#8a8d90",
+      "belly": "#a9aaa8",
+      "accent": "#4a4c50"
+    },
+    "material": "hide",
+    "layers": [
+      {
+        "type": "countershade",
+        "strength": 0.5
+      },
+      {
+        "type": "scales",
+        "size": 0.05,
+        "bump": 0.5,
+        "gapColor": "accent",
+        "gap": 0.35
+      },
+      {
+        "type": "grime",
+        "amount": 0.3
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "lumbering",
+    "actions": ["bite", "roar", "look", "idle"]
+  }
+}

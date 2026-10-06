@@ -36,6 +36,16 @@ Every field outside the modules, generated from the schema. Fields with a defaul
 | `limbs` | list of any |  | `[]` | Legs and arms. Lists merge with the preset by id |
 | `parts` | list of object |  | `[]` | Hard parts. Lists merge with the preset by id |
 
+### `body`
+
+| Field | Type | Range | Default | Description |
+| --- | --- | --- | --- | --- |
+| `torso` | object (below) |  | `{}` | The main body. Its length is the blueprint `scale`. |
+| `neck` | object (below) |  | `{}` | Joins the head to the front of the torso. |
+| `head` | object (below) |  | `{}` | The head. `at` runs from the snout tip (0) to the back of the skull (1). |
+| `tail` | object (below) |  | `{}` | Runs back from the torso. `at` runs from the root (0) to the tip (1). |
+| `muscle` | number | 0–1 | `0.5` | How muscled the body is, 0 (smooth tubes) to 1 (heavily built) |
+
 ### `body.torso`
 
 The main body. Its length is the blueprint `scale`.

@@ -1,0 +1,38 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Jade Constrictor",
+  "seed": 404,
+  "extends": "serpent",
+  "scale": 1.4,
+  "body": {
+    "torso": { "radius": [0.1, 0.125, 0.135, 0.12] },
+    "neck": { "length": 0.5, "radius": [0.08, 0.1], "pitch": 40, "curve": 30, "segments": 4 },
+    "head": { "shape": "wedge", "length": 0.22, "radius": 0.085, "pitch": -15 },
+    "tail": { "length": 2.0, "radius": [0.12, 0.012] }
+  },
+  "parts": [
+    {
+      "id": "fangs",
+      "type": "teeth.row",
+      "params": { "incisors": 0, "fangs": 1, "fangScale": 2.4, "lower": false, "scale": 0.8 }
+    },
+    { "id": "eyes", "params": { "scale": 1.2, "irisColor": "#e8d020" } }
+  ],
+  "skin": {
+    "palette": { "base": "#2f7a2a", "belly": "#d6d27a", "accent": "#f2d41c" },
+    "material": "scales",
+    "layers": [
+      { "type": "countershade", "softness": 0.25 },
+      {
+        "type": "stripes",
+        "color": "accent",
+        "count": 34,
+        "width": 0.3,
+        "jitter": 0.2,
+        "fade": 0.4
+      },
+      { "type": "scales", "size": 0.03 }
+    ]
+  },
+  "motion": { "temperament": "stalking", "actions": ["bite", "roar", "look", "idle"] }
+}

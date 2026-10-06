@@ -1,0 +1,171 @@
+{
+  "run": "eval/runs/2026-10-06-phase7-format (re-scored at gate 8)",
+  "prompts": 20,
+  "passed": 20,
+  "firstTry": 19,
+  "threshold": 18,
+  "expectsMet": 20,
+  "gate": true,
+  "rows": [
+    {
+      "id": "b01-dragon",
+      "attempts": 1,
+      "validAt": 0,
+      "passed": true,
+      "errorsPerAttempt": [0],
+      "missing": []
+    },
+    {
+      "id": "b02-wyvern",
+      "attempts": 1,
+      "validAt": 0,
+      "passed": true,
+      "errorsPerAttempt": [0],
+      "missing": []
+    },
+    {
+      "id": "b03-giant-bat",
+      "attempts": 1,
+      "validAt": 0,
+      "passed": true,
+      "errorsPerAttempt": [0],
+      "missing": []
+    },
+    {
+      "id": "b04-hydra",
+      "attempts": 1,
+      "validAt": 0,
+      "passed": true,
+      "errorsPerAttempt": [0],
+      "missing": []
+    },
+    {
+      "id": "b05-cerberus",
+      "attempts": 1,
+      "validAt": 0,
+      "passed": true,
+      "errorsPerAttempt": [0],
+      "missing": []
+    },
+    {
+      "id": "b06-kraken",
+      "attempts": 1,
+      "validAt": 0,
+      "passed": true,
+      "errorsPerAttempt": [0],
+      "missing": []
+    },
+    {
+      "id": "b07-reef-shark",
+      "attempts": 1,
+      "validAt": 0,
+      "passed": true,
+      "errorsPerAttempt": [0],
+      "missing": []
+    },
+    {
+      "id": "b08-cave-spider",
+      "attempts": 1,
+      "validAt": 0,
+      "passed": true,
+      "errorsPerAttempt": [0],
+      "missing": []
+    },
+    {
+      "id": "b09-scorpion-king",
+      "attempts": 1,
+      "validAt": 0,
+      "passed": true,
+      "errorsPerAttempt": [0],
+      "missing": []
+    },
+    {
+      "id": "b10-centaur",
+      "attempts": 1,
+      "validAt": 0,
+      "passed": true,
+      "errorsPerAttempt": [0],
+      "missing": []
+    },
+    {
+      "id": "b11-sea-turtle",
+      "attempts": 1,
+      "validAt": 0,
+      "passed": true,
+      "errorsPerAttempt": [0],
+      "missing": []
+    },
+    {
+      "id": "b12-quillback-boar",
+      "attempts": 1,
+      "validAt": 0,
+      "passed": true,
+      "errorsPerAttempt": [0],
+      "missing": []
+    },
+    {
+      "id": "b13-frilled-lizard",
+      "attempts": 1,
+      "validAt": 0,
+      "passed": true,
+      "errorsPerAttempt": [0],
+      "missing": []
+    },
+    {
+      "id": "b14-stegosaur",
+      "attempts": 1,
+      "validAt": 0,
+      "passed": true,
+      "errorsPerAttempt": [0],
+      "missing": []
+    },
+    {
+      "id": "b15-sail-back",
+      "attempts": 1,
+      "validAt": 0,
+      "passed": true,
+      "errorsPerAttempt": [0],
+      "missing": []
+    },
+    {
+      "id": "b16-giant-moth",
+      "attempts": 1,
+      "validAt": 0,
+      "passed": true,
+      "errorsPerAttempt": [0],
+      "missing": []
+    },
+    {
+      "id": "b17-two-tailed-fox",
+      "attempts": 1,
+      "validAt": 0,
+      "passed": true,
+      "errorsPerAttempt": [0],
+      "missing": []
+    },
+    {
+      "id": "b18-griffin",
+      "attempts": 2,
+      "validAt": 1,
+      "passed": true,
+      "errorsPerAttempt": [1, 0],
+      "missing": []
+    },
+    {
+      "id": "b19-armoured-burrower",
+      "attempts": 1,
+      "validAt": 0,
+      "passed": true,
+      "errorsPerAttempt": [0],
+      "missing": []
+    },
+    {
+      "id": "b20-glow-slug",
+      "attempts": 1,
+      "validAt": 0,
+      "passed": true,
+      "errorsPerAttempt": [0],
+      "missing": []
+    }
+  ]
+}

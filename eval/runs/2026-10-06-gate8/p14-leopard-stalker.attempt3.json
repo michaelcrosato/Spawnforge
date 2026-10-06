@@ -1,0 +1,134 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Leopard Stalker",
+  "seed": 1401,
+  "extends": "quadruped",
+  "scale": 1,
+  "body": {
+    "torso": {
+      "radius": [0.13, 0.16, 0.15, 0.11],
+      "arch": 0.05
+    },
+    "neck": {
+      "length": 0.2,
+      "radius": [0.08, 0.1],
+      "pitch": 20
+    },
+    "head": {
+      "shape": "round",
+      "length": 0.24,
+      "radius": 0.085,
+      "pitch": -5
+    },
+    "tail": {
+      "length": 1.3,
+      "radius": [0.06, 0.035],
+      "pitch": -10,
+      "curl": 170,
+      "curlStart": 0.6
+    }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "attach": {
+        "angle": 95
+      },
+      "length": 0.55,
+      "radius": [0.065, 0.035],
+      "splay": 14,
+      "foot": {
+        "type": "foot.paw",
+        "claws": "hidden"
+      }
+    },
+    {
+      "id": "hindleg",
+      "attach": {
+        "angle": 108
+      },
+      "length": 0.6,
+      "radius": [0.075, 0.035],
+      "foot": {
+        "type": "foot.paw",
+        "claws": "hidden"
+      }
+    }
+  ],
+  "parts": [
+    {
+      "id": "eyes",
+      "params": {
+        "pupil": "slit",
+        "irisColor": "#c8d830",
+        "squint": 0.3
+      }
+    },
+    {
+      "id": "ears",
+      "type": "ear.pointed",
+      "attach": {
+        "on": "head",
+        "at": 0.85,
+        "angle": 45
+      },
+      "params": {
+        "length": 0.07,
+        "width": 0.05,
+        "thickness": 0.6
+      }
+    },
+    {
+      "id": "teeth",
+      "type": "teeth.row",
+      "params": {
+        "fangs": 1
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#c89a4a",
+      "belly": "#efe2c4",
+      "accent": "#2a1a0e"
+    },
+    "fur": {
+      "length": 0.015
+    },
+    "layers": [
+      {
+        "type": "countershade"
+      },
+      {
+        "type": "countershade",
+        "color": "base",
+        "height": 1,
+        "region": "tail"
+      },
+      {
+        "type": "spots",
+        "color": "accent",
+        "size": 0.022,
+        "density": 0.8,
+        "region": "limbs"
+      },
+      {
+        "type": "rosettes",
+        "color": "accent",
+        "size": 0.04,
+        "density": 0.9
+      },
+      {
+        "type": "bands",
+        "color": "accent",
+        "count": 14,
+        "width": 0.4,
+        "region": "tail"
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "stalking",
+    "actions": ["bite", "roar", "look", "idle"]
+  }
+}

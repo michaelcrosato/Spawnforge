@@ -51,6 +51,17 @@ Work in progress toward 0.2, phase by phase (see the plan's status table).
   and CPU backends of the pattern kit agree. Meshes and goldens are unchanged.
 - **Examples:** the grey wolf has fur, the tusk boar hide and claw scars, the bog troll hide and
   warts, and the ember beetle glowing spots.
+- **Gate 8:** passed (suite A 20/20 valid and matched; suite B 20/20; the new look preferred in
+  all 20 quality pairs). From its feedback:
+  - Overlapping scales no longer speckle along their rims: their relief is continuous.
+  - `analyze`'s `limb_intersection` advice depends on what meets (a leg in the body, a pair under
+    it, or fore against hind legs) and names the segment.
+  - `validate --quiet` prints the verdict without the blueprint, and `catalog.md` lists `body`'s
+    own fields (`muscle`).
+  - New recipes: a flat head, forward goblin eyes, a club tail, a bushy tail, a beetle's horn,
+    a tail-only colour and a rearing cobra's belly. `patch set` replacing whole objects is
+    documented.
+  - Masses under 100 g read in grams.
 
 ## 0.1.0
 

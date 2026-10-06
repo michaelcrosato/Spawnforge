@@ -58,7 +58,9 @@ tongue and a throat; eyelids blink on bones of their own; brows, cheekbones and 
 and eyes sized to the head; `beak`; `render --jaw --blink`, `docs/design/8.3-heads.md`) and 8.4
 (materials with their own surface and light, shell fur in one draw call, seven new pattern
 layers including glow, and a CPU–GPU parity test of the pattern kit,
-`docs/design/8.4-materials.md`).
+`docs/design/8.4-materials.md`). Gate 8 passed: suite A 20/20 valid and matched, suite B
+re-scored 20/20, the new look preferred in 20 of 20 quality pairs, budgets met
+(`eval/runs/2026-10-06-gate8/`).
 
 ## Repo map
 
@@ -89,7 +91,7 @@ pnpm dev                      # sandbox at http://localhost:5173 (add ?webgl to 
 pnpm build                    # production build of the sandbox
 pnpm build:packages           # each package's dist/ (for publishing; the workspace runs src/)
 pnpm smoke                    # pack the packages, install them into scripts/smoke-game, build and run it
-pnpm spawnforge <command>     # the CLI from source: list-modules, describe-module, validate, analyze, patch, diff,
+pnpm spawnforge <command>     # the CLI from source: list-modules, describe-module, validate (--quiet), analyze, patch, diff,
                               # migrate, render, generate, mutate, crossbreed, instantiate, export, schema
 pnpm spawnforge generate --theme reptile --seed 4 --out creatures/lizard.json   # a new creature from a theme
 pnpm spawnforge export examples/bog-troll.json --stats rpg   # a .glb with baked clips, for any engine

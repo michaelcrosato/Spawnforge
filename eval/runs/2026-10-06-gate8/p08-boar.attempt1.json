@@ -1,0 +1,159 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Boar Beast",
+  "seed": 88,
+  "extends": "quadruped",
+  "scale": 1.2,
+  "body": {
+    "torso": {
+      "radius": [0.22, 0.3, 0.25, 0.18],
+      "arch": 0.1
+    },
+    "neck": {
+      "length": 0.12,
+      "radius": [0.18, 0.26],
+      "pitch": 10
+    },
+    "head": {
+      "shape": "snout",
+      "length": 0.55,
+      "radius": 0.22,
+      "pitch": -15,
+      "brow": 0.5
+    },
+    "tail": {
+      "length": 0.12,
+      "radius": [0.035, 0.01],
+      "pitch": 30,
+      "curl": 60
+    }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "attach": {
+        "at": 0.17,
+        "angle": 85
+      },
+      "length": 0.45,
+      "radius": [0.1, 0.05],
+      "splay": 25,
+      "foot": {
+        "type": "foot.hoof",
+        "cloven": true
+      }
+    },
+    {
+      "id": "hindleg",
+      "attach": {
+        "at": 0.86,
+        "angle": 100
+      },
+      "length": 0.47,
+      "radius": [0.11, 0.05],
+      "splay": 20,
+      "foot": {
+        "type": "foot.hoof",
+        "cloven": true
+      }
+    }
+  ],
+  "parts": [
+    {
+      "id": "tusks",
+      "type": "horn.curved",
+      "attach": {
+        "on": "jaw",
+        "at": 0.25,
+        "angle": 60
+      },
+      "params": {
+        "length": 0.2,
+        "width": 0.03,
+        "curve": -60,
+        "color": "#efe6cc",
+        "tipColor": "#d8ccaa"
+      }
+    },
+    {
+      "id": "ears",
+      "type": "ear.pointed",
+      "attach": {
+        "on": "head",
+        "at": 0.85,
+        "angle": 45
+      },
+      "params": {
+        "length": 0.12,
+        "width": 0.06,
+        "droop": 0.3
+      }
+    },
+    {
+      "id": "teeth",
+      "type": "teeth.row",
+      "params": {
+        "fangs": 0,
+        "scale": 1
+      }
+    },
+    {
+      "id": "eyes",
+      "params": {
+        "scale": 0.8,
+        "squint": 0.4
+      }
+    },
+    {
+      "id": "bristles",
+      "type": "spikes.row",
+      "attach": {
+        "on": "spine",
+        "from": 0.12,
+        "to": 0.65,
+        "angle": 0
+      },
+      "params": {
+        "count": 16,
+        "height": [0.04, 0.07, 0.04],
+        "width": 0.02,
+        "color": "#1e1510",
+        "tipColor": "#1e1510"
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#5a4636",
+      "belly": "#8a7460",
+      "accent": "#2a1e16"
+    },
+    "material": "hide",
+    "fur": {
+      "length": 0.02,
+      "density": 0.9,
+      "region": ["torso", "limbs", "tail"]
+    },
+    "layers": [
+      {
+        "type": "countershade",
+        "strength": 0.5
+      },
+      {
+        "type": "mottle",
+        "scale": 0.12,
+        "coverage": 0.5,
+        "contrast": 0.3,
+        "strength": 0.6
+      },
+      {
+        "type": "grime",
+        "amount": 0.4
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "lumbering",
+    "actions": ["bite", "roar", "look", "idle"]
+  }
+}

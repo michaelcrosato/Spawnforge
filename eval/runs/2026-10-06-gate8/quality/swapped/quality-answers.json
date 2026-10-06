@@ -1,0 +1,82 @@
+{
+  "p01": {
+    "pick": "A",
+    "why": "A's head has a clean lip line with a row of tiny teeth and two fangs along the jaw; B's teeth are spiky star shapes stuck on the lower jaw outside any clear mouth line. Bodies are otherwise the same."
+  },
+  "p02": {
+    "pick": "B",
+    "why": "B's overlapping scales and a visible mouth line with a row of teeth read as a reptile; A's cracked-cell skin is faceted and noisy on the head and legs, and its teeth float with no clear mouth edge."
+  },
+  "p03": {
+    "pick": "A",
+    "why": "A's beetle body has fine segment grooves across the shell, which reads as insect; B is a smooth glossy blob with the same spots and horn. A small edge for A."
+  },
+  "p04": {
+    "pick": "A",
+    "why": "A's snake has smooth overlapping scales on the head and neck; B's cell-pattern skin looks blocky and faceted on the neck and head, which reads as noise."
+  },
+  "p05": {
+    "pick": "B",
+    "why": "B's head has a visible mouth slit with a row of small teeth; A's head has no readable mouth at all, only a smooth seam under the jaw. Bodies are identical."
+  },
+  "p06": {
+    "pick": "A",
+    "why": "A's demon has a mouth line with small teeth along the lip under the fangs; in B the fangs sit on the dark muzzle with no clear mouth, so they look pasted on."
+  },
+  "p07": {
+    "pick": "A",
+    "why": "A's salamander has fine overlapping scales and a clear mouth line along the jaw, and its legs are rounded; B's head has blocky rectangular scales and a boxy chin, and its limbs are angular."
+  },
+  "p08": {
+    "pick": "A",
+    "why": "A has a clean smiling mouth line under the muzzle; B has a jagged, dithered edge between the brown and the dark chin, most visible in the front view, and no clear mouth."
+  },
+  "p09": {
+    "pick": "A",
+    "why": "A's long-necked creature has round scales and a clear lip line with the eye set in the head; B has blocky cobbled skin, a boxy jaw and eyes that bulge like googly eyes."
+  },
+  "p10": {
+    "pick": "B",
+    "why": "B's scorpion has segment bands on the tail, legs and claw arms, and a mouth with tiny teeth, so it reads as an arthropod with a face; A is a smooth tube with no mouth."
+  },
+  "p11": {
+    "pick": "B",
+    "why": "B's eel-like creature has clean overlapping scales and a mouth with a row of teeth plus fangs; A's cracked-cell skin is noisy and its star-shaped teeth hang in a dark gap."
+  },
+  "p12": {
+    "pick": "B",
+    "why": "B's raptor has smooth scales and a clear mouth line along the jaw lined with teeth; A's cell-pattern skin looks faceted and its teeth are spiky stars with no real mouth."
+  },
+  "p13": {
+    "pick": "A",
+    "why": "A's bear has a clean mouth line along the jaw with a row of teeth and two fangs; B shows only a few star-shaped teeth with no lip line, so it looks pasted on."
+  },
+  "p14": {
+    "pick": "A",
+    "why": "A's leopard has bold rosettes and a visible mouth line with a pale lip; B's spots are faint and the head has a jagged zig-zag edge between tan and cream fur, with no clear mouth."
+  },
+  "p15": {
+    "pick": "A",
+    "why": "A's lizard has a clear mouth line with tiny teeth and neat scales; B has no readable mouth and a reticulated chin with blotchy camouflage and spots stuck on the head."
+  },
+  "p16": {
+    "pick": "B",
+    "why": "B's ant has segment grooves on the abdomen and thorax and dark joint bands on the legs, so it reads as an insect; A is a smooth, flat red shell. B's seam lines are slightly rough at the waist."
+  },
+  "p17": {
+    "pick": "B",
+    "why": "B's goblin has eyelids, brow bumps and nostrils, and a stitched mouth line with teeth; A's head has a jagged sawtooth dark band where the mouth should be, and plain eyeballs."
+  },
+  "p18": {
+    "pick": "B",
+    "why": "B's cobra has smooth overlapping scales on the head and hood and bands that stay clean; A's cracked-cell skin looks faceted and noisy, and its mouth and fangs are less clear."
+  },
+  "p19": {
+    "pick": "B",
+    "why": "Weak pick. The rhino's body and horns are identical, and B shows a faint mouth line and small teeth at the muzzle. A's polygon hide reads as armour but has no mouth, and B's disc scales look slightly pangolin-like."
+  },
+  "p20": {
+    "pick": "A",
+    "why": "A's creature has a clear mouth line along the jaw with big fangs and small teeth, and its eyes sit in the head with a slit pupil; B has spiky star teeth with no mouth line, and its eyes look like bulging balls."
+  }
+}

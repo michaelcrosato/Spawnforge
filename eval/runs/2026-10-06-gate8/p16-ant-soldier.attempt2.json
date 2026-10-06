@@ -1,0 +1,85 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Ant Soldier",
+  "seed": 1601,
+  "extends": "hexapod",
+  "scale": 0.5,
+  "body": {
+    "head": {
+      "length": 0.4,
+      "radius": 0.21,
+      "tongue": "none",
+      "lips": 0
+    }
+  },
+  "parts": [
+    {
+      "id": "mandibles",
+      "type": "horn.curved",
+      "attach": {
+        "on": "head",
+        "at": 0.06,
+        "angle": 125,
+        "side": "both"
+      },
+      "params": {
+        "length": 0.36,
+        "width": 0.04,
+        "curve": 60,
+        "aim": "forward",
+        "color": "#2a1410",
+        "tipColor": "#100806",
+        "ridges": 0
+      }
+    },
+    {
+      "id": "eyes",
+      "params": {
+        "irisColor": "#1a0a08",
+        "scale": 0.85
+      }
+    },
+    {
+      "id": "antennae",
+      "type": "antenna",
+      "attach": {
+        "on": "head",
+        "at": 0.3,
+        "angle": 30,
+        "side": "both"
+      },
+      "params": {
+        "length": 0.5,
+        "segments": 6,
+        "curve": 50
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#b01c14",
+      "belly": "#7a1410",
+      "accent": "#4a0c08"
+    },
+    "material": "chitin",
+    "layers": [
+      {
+        "type": "countershade",
+        "softness": 0.2
+      },
+      {
+        "type": "mottle",
+        "color": "accent",
+        "scale": 0.3,
+        "coverage": 1,
+        "contrast": 0.2,
+        "strength": 0.5,
+        "region": "limbs"
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "aggressive",
+    "actions": ["bite", "look", "idle"]
+  }
+}

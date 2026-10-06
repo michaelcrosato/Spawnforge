@@ -269,7 +269,13 @@ All lengths are in torso lengths.
 | Look | Part |
 | --- | --- |
 | Ram horns, coiled beside the head | `horn.curved` on `head`, `at` 0.8, `angle` 40; `length` 0.65, `width` 0.05, `curve` 400, `turn` -35, `lean` -10, `ridges` 12 (on an upright biped's head: `at` 0.6, `angle` 85, `turn` -70, `lean` 10) |
-| A cobra rearing up | `serpent` with `neck` `pitch` 75 and `length` about 1, and `torso` and `tail` `pitch` 0–1 so the body lies flat (higher values lift the tail tip off the ground and sink the torso). For a hood give the neck `crossSection` "wide" and a radius profile that swells and narrows, such as `[0.09, 0.15, 0.07]`, starting no wider than the torso's first radius |
+| A cobra rearing up | `serpent` with `neck` `pitch` 75 and `length` about 1, and `torso` and `tail` `pitch` 0–1 so the body lies flat (higher values lift the tail tip off the ground and sink the torso). For a hood give the neck `crossSection` "wide" and a radius profile that swells and narrows, such as `[0.09, 0.15, 0.07]`, starting no wider than the torso's first radius (the `hood` part draws a real one from 9.5). A rearing neck shows its belly to the front, so lower `countershade`'s `height` (about -0.6) to keep it the body's colour |
+| A flat, broad head | `"head": { "shape": "flat", "crossSection": "wide" }`: the shape alone still reads as a dome from the front |
+| A big round head with forward eyes (a goblin) | `"head": { "shape": "round", "radius": 0.3 }` and `eye.basic` at `at` 0.22, `angle` 62, `scale` 2.6: the default places eyes on the crown, like a frog's |
+| A club on the tail | a tail `radius` profile that swells near the end, such as `[0.15, 0.12, 0.1, 0.1, 0.14, 0.24, 0.25, 0.08]`, with `segments` 12 so the swell keeps its shape |
+| A bushy tail | a thick `radius` profile (`[0.08, 0.14, 0.12, 0.05]`) and longer fur on it: `"fur": { "length": 0.06, "region": "tail" }` (a full coat at 0.03 reads as fur, not a brush) |
+| A beetle's nose horn | `horn.curved` on `head`, `at` 0.2, `angle` 0; `length` 0.55, `width` 0.065, `lean` -5, `curve` -75 (it rises and arcs back; mammal horn values hang it down) |
+| A colour only on the tail | a layer with `"region": "tail"`, e.g. `countershade` with `color` "base" and `height` 1 to keep a curled tail's underside dark |
 | Bull horns, out then forward | `horn.curved` on `head`, `at` 0.85, `angle` 75; `length` 0.3, `width` 0.04, `curve` -70 |
 | Rhino nose horn | `horn.curved` on `head`, `at` 0.12, `angle` 0; `length` 0.22, `width` 0.05, `curve` 25 (add a smaller one at `at` 0.4) |
 | Tusks from the lower jaw | `horn.curved` on `jaw`, `at` 0.25, `angle` 60; `length` 0.16, `width` 0.025, `curve` -60, pale `color` and `tipColor` |
@@ -277,7 +283,7 @@ All lengths are in torso lengths.
 | Horns swept back along the head | `horn.curved` on `head`, `at` 0.8, `angle` 50; `length` 0.4, `curve` 50, `aim` "back" |
 | Spikes down the whole back | `spikes.row` on `spine`, `from` 0.1, `to` 0.95, `angle` 0; a `height` profile such as `[0.06, 0.12, 0.05]` |
 | A stinger on the tail tip | `horn.curved` on `tail`, `at` 0.97, `angle` 0; `length` 0.14, `width` 0.025, `curve` 60, a dark `color` |
-| Pointed ears | `ear.pointed` on `head`, `at` 0.85, `angle` 45; `length` 0.14, `width` 0.05 (`droop` 0.8 and `angle` 70 for hanging ears) |
+| Pointed ears | `ear.pointed` on `head`, `at` 0.85, `angle` 45; `length` 0.14, `width` 0.05 (for hanging ears, param `droop` 0.8 and `attach.angle` 70) |
 | A wolf's or croc's grin | `teeth.row` with `fangs` 1 and nothing else: the row fills the mouth and the fangs show over the lips when it is shut; `fangs` 0 and `scale` 1.2 for a crocodile's even teeth, `fangScale` 1.8 for sabres |
 | A snake's mouth | the `serpent` preset (forked tongue, no lips, no eyelids); `teeth.row` with `incisors` 0, `fangs` 1, `lower` false |
 | A bird's head | `"head": { "shape": "snout", "lips": 0 }` and a `beak` with `"shape": "hooked"` (eagle, terror bird), `"straight"` (heron) or `"broad"` (duck); no teeth (examples/terror-bird.json) |
@@ -436,7 +442,8 @@ What the body model does not do yet: a section bends only as a whole, so a neck 
 (a cobra) turns at its base unless `neck.curve` gives it an S; and the head
 stays level while walking, by design. For sprawled legs, an attach `angle` around 110–120 keeps
 the legs clear of the body as they swing; angles past about 150 bring both legs under the belly.
-Big eyes need a large `size` (0.06–0.1 for cartoon eyes).
+Big eyes need a large `scale` on `eye.basic` (2–3 for cartoon eyes); `size` in torso lengths
+also works, and wins when written.
 
 ## Editing with patch
 
@@ -444,7 +451,9 @@ Big eyes need a large `size` (0.06–0.1 for cartoon eyes).
 only written when the result is valid. Operations: `set` (a value), `add` (an item to a list
 such as `parts` or `skin.layers`), `remove` (a key, back to its default, or a limb or part;
 inherited ones get `"remove": true`), `mirror` (make a limb or part a pair, or set its `side`)
-and `scale` (multiply a number or a profile by `by`; path `""` scales the whole creature). Paths
+and `scale` (multiply a number or a profile by `by`; path `""` scales the whole creature). `set`
+on an object replaces the whole object, so `set body.tail {"length": 0.2}` drops the tail's other
+fields back to the preset; set one field by its path (`body.tail.length`) instead. Paths
 look like error paths. Limbs and parts are found by id (`limbs[id=hindleg]`), including inherited
 ones; layers, gaits and actions by type (`skin.layers[type=mottle]`, `motion.gaits[type=walk]`,
 the first of that type) or by position (`skin.layers[1]`):
