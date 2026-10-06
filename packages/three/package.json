@@ -1,15 +1,28 @@
 {
   "name": "@spawnforge/three",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
   "description": "Three.js runtime: skinned mesh assembly, TSL materials, pose sync and export.",
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/michaelcrosato/Spawnforge.git",
+    "directory": "packages/three"
+  },
+  "engines": {
+    "node": ">=22.18"
+  },
+  "files": [
+    "dist"
+  ],
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
     "./worker": "./src/worker.ts"
   },
   "scripts": {
-    "typecheck": "tsc -p tsconfig.json"
+    "typecheck": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.build.json"
   },
   "dependencies": {
     "@spawnforge/core": "workspace:*",
@@ -18,5 +31,17 @@
   },
   "devDependencies": {
     "@types/three": "catalog:"
+  },
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "./worker": {
+        "types": "./dist/worker.d.ts",
+        "default": "./dist/worker.js"
+      }
+    }
   }
 }

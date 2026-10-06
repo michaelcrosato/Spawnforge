@@ -1,0 +1,14 @@
+{
+  // Builds dist/ for publishing: JavaScript with .js imports, and declarations. The workspace
+  // itself runs the TypeScript source.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": true,
+    "rewriteRelativeImportExtensions": true,
+    "rootDir": "src",
+    "outDir": "dist"
+  },
+  "include": ["src"],
+  "exclude": ["src/**/*.test.ts"]
+}

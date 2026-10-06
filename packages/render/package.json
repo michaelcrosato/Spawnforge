@@ -1,14 +1,28 @@
 {
   "name": "@spawnforge/render",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
   "description": "Headless renders of creatures: contact sheets and filmstrips as PNG, through Chromium.",
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/michaelcrosato/Spawnforge.git",
+    "directory": "packages/render"
+  },
+  "engines": {
+    "node": ">=22.18"
+  },
+  "files": [
+    "dist",
+    "page"
+  ],
   "type": "module",
   "exports": {
     ".": "./src/index.ts"
   },
   "scripts": {
-    "typecheck": "tsc -p tsconfig.json && tsc -p page/tsconfig.json"
+    "typecheck": "tsc -p tsconfig.json && tsc -p page/tsconfig.json",
+    "build": "tsc -p tsconfig.build.json"
   },
   "dependencies": {
     "@spawnforge/core": "workspace:*",
@@ -20,5 +34,13 @@
   },
   "devDependencies": {
     "@types/three": "catalog:"
+  },
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
   }
 }

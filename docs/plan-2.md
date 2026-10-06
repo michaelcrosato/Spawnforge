@@ -112,7 +112,7 @@ since anatomy comes before the new vocabulary.
 | [7.3 Format 0.2](#73-format-02-the-new-vocabulary-and-a-format-eval) | **max (raised)** | The format is the contract for models, saved files and phases 8–12 | 7.2 | Done ([#12](https://github.com/michaelcrosato/Spawnforge/pull/12)) |
 | [7.4 Rig lists](#74-rig-lists-without-a-visible-change) | xhigh (confirmed) | A wide refactor, but unchanged goldens are a strict oracle | 7.3 | Done ([#13](https://github.com/michaelcrosato/Spawnforge/pull/13)) |
 | [7.5 Eval and test tools](#75-eval-and-test-tools) | high (lowered) | Scripts and harnesses in the style of plan 1's, with clear outputs | | Done ([#14](https://github.com/michaelcrosato/Spawnforge/pull/14)) |
-| [7.6 Buildable packages](#76-buildable-packages) | high (lowered) | Standard tooling; an install test is the oracle | | Not started |
+| [7.6 Buildable packages](#76-buildable-packages) | high (lowered) | Standard tooling; an install test is the oracle | | Done ([#15](https://github.com/michaelcrosato/Spawnforge/pull/15)) |
 | [8.1 Muscle and body shape](#81-muscle-masses-joints-and-body-shape) | **max (raised)** | Changes every creature, judged by eye; the rules must fit every body | 7.4, 7.5 | Not started |
 | [8.2 Feet, hands, stance](#82-feet-hands-and-stance) | xhigh (confirmed) | Modules through existing seams, plus a contained rest-pose change | 7.3, 7.5 | Not started |
 | [8.3 Heads](#83-heads-mouths-teeth-eyes-and-beaks) | xhigh (confirmed), one max step | Mouth and eye code with renders as the oracle; how lids and lips are built is a max step | 7.4 | Not started |
@@ -989,8 +989,10 @@ test places, moves and removes a horn, leaving a file that validates.
   release commit, with the budgets.
 - Refresh README, AGENTS.md (status and repo map), architecture.md, blueprint.md, runtime.md,
   engines.md, the catalogue and the changelog.
-- With the owner's go-ahead: set `private: false`, publish each package (`pnpm publish` per
-  package), publish the gallery, and tag the release.
+- With the owner's go-ahead: set `private: false`, set the license the owner chose (7.6 left
+  `UNLICENSED`), publish each package (`pnpm publish` per package), publish the gallery, and tag
+  the release. Before then, `@spawnforge/mcp` must ship the docs it serves as resources (it reads
+  them from the repository's `docs/` today) and `@spawnforge/render` its page (in `files`).
 
 **Done when** the evals pass at the release commit, the docs are current, and the release is
 published or ready to publish.

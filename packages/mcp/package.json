@@ -1,14 +1,27 @@
 {
   "name": "@spawnforge/mcp",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
   "description": "MCP server exposing the Spawnforge CLI commands as tools.",
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/michaelcrosato/Spawnforge.git",
+    "directory": "packages/mcp"
+  },
+  "engines": {
+    "node": ">=22.18"
+  },
+  "files": [
+    "dist"
+  ],
   "type": "module",
   "exports": {
     ".": "./src/index.ts"
   },
   "scripts": {
-    "typecheck": "tsc -p tsconfig.json"
+    "typecheck": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.build.json"
   },
   "dependencies": {
     "@modelcontextprotocol/server": "2.3.1",
@@ -22,5 +35,16 @@
   },
   "bin": {
     "spawnforge-mcp": "./src/bin.ts"
+  },
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    },
+    "bin": {
+      "spawnforge-mcp": "./dist/bin.js"
+    }
   }
 }

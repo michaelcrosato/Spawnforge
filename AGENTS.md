@@ -46,7 +46,8 @@ tracks each milestone. Done so far: 7.1 (carry-overs), 7.2 (`migrate` and the co
 format eval scored 20/20 on suite B, `eval/runs/2026-10-06-phase7-format/`) and 7.4 (the
 compiled rig holds lists of heads, tails and driven chains, with goldens unchanged) and 7.5
 (scenarios for `render` and `analyze`, the module harness for every kind, visual regression for
-every example, and the quality and motion reviews, `eval/README.md`).
+every example, and the quality and motion reviews, `eval/README.md`) and 7.6 (every package
+builds to `dist/` for publishing, at 0.1.0; `pnpm smoke` installs the tarballs into a game).
 
 ## Repo map
 
@@ -75,6 +76,8 @@ pnpm format                   # Biome: format, sort imports, apply safe lint fix
 pnpm generate                 # rewrite generated files after adding or changing a module
 pnpm dev                      # sandbox at http://localhost:5173 (add ?webgl to force the WebGL 2 backend)
 pnpm build                    # production build of the sandbox
+pnpm build:packages           # each package's dist/ (for publishing; the workspace runs src/)
+pnpm smoke                    # pack the packages, install them into scripts/smoke-game, build and run it
 pnpm spawnforge <command>     # the CLI from source: list-modules, describe-module, validate, analyze, patch, diff,
                               # migrate, render, generate, mutate, crossbreed, instantiate, export, schema
 pnpm spawnforge generate --theme reptile --seed 4 --out creatures/lizard.json   # a new creature from a theme
@@ -95,9 +98,13 @@ To use the MCP server from Claude Code: `claude mcp add spawnforge -- node packa
 
 ## How the code runs
 
-There is no build step for packages. Each package exports its TypeScript source
+The workspace has no build step. Each package exports its TypeScript source
 (`"exports": { ".": "./src/index.ts" }`). Node runs it directly with type stripping (Node 22.18+),
-Vite and Vitest load it as-is, and TypeScript (`tsc` 7) only typechecks. So:
+Vite and Vitest load it as-is, and TypeScript (`tsc` 7) only typechecks. `dist/` is for
+publishing only: `pnpm build:packages` compiles each package with its `tsconfig.build.json`
+(JavaScript with `.js` imports, and declarations), `publishConfig.exports` points packed packages
+at it, and `pnpm smoke` installs the packed tarballs into a small Vite game outside the
+workspace and runs it in headless Chromium (CI runs it too). So:
 
 - **Erasable syntax only** (`erasableSyntaxOnly`): no `enum`, `namespace` or constructor parameter
   properties. Use `as const` objects and string unions.

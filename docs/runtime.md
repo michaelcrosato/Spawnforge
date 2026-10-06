@@ -7,11 +7,13 @@ conventions: metres, Y up, creatures facing +Z, angles in radians.
 
 ## Setting up
 
-The packages are not published to npm yet. Use them from this repository, as workspace packages
-or a git dependency: `@spawnforge/core`, `@spawnforge/modules` (the basic pack) and
-`@spawnforge/three` (the Three.js layer). They ship TypeScript source, so the game's bundler must
-compile TypeScript, as Vite does out of the box. Three.js is pinned to r186; the game should use
-the same release.
+The packages are not published to npm yet. A game needs `@spawnforge/core`, `@spawnforge/modules`
+(the basic pack) and `@spawnforge/three` (the Three.js layer). Use them from this repository as
+workspace packages (TypeScript source, which the game's bundler compiles, as Vite does out of the
+box), or as tarballs: `pnpm build:packages`, then `pnpm pack` in each of the three packages,
+gives packages of plain JavaScript and declarations that install like any library
+(`scripts/smoke.ts` does exactly this for a small Vite game). Three.js is pinned to r186; the
+game should use the same release.
 
 The live creatures use TSL node materials, so they need Three.js's `WebGPURenderer` (from
 `three/webgpu`), which runs on WebGPU where it can and falls back to WebGL 2.

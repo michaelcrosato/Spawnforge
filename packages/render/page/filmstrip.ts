@@ -9,7 +9,7 @@ import {
 import { applyPose, type CreatureObject } from '@spawnforge/three';
 import * as THREE from 'three';
 import type { WebGPURenderer } from 'three/webgpu';
-import type { FilmstripRequest, MotionInfo } from './protocol.ts';
+import type { FilmstripRequest, MotionInfo } from '../src/protocol.ts';
 
 const STEP = 1 / 120;
 

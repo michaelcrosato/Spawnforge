@@ -29,3 +29,5 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
+      - name: Smoke test the packed packages in a small game
+        run: pnpm smoke

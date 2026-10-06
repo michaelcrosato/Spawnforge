@@ -3,5 +3,7 @@
   "compilerOptions": {
     "types": ["node"]
   },
-  "include": ["*.ts", "scripts", "eval"]
+  "include": ["*.ts", "scripts", "eval"],
+  // The smoke game typechecks against the installed packages, inside `pnpm smoke`.
+  "exclude": ["scripts/smoke-game"]
 }
