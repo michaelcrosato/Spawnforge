@@ -23,11 +23,17 @@ At the end of plan 1 (commit `d101c06`):
 - **Packages.** `core` (blueprint schema, registry, RNG, compile pipeline, motion controller,
   analysis, variation, clip and colour bakes), `modules` (the basic pack), `three` (assembly, TSL
   materials, pose sync, export scene, runtime), `cli`, `mcp`, `render` (headless Chromium) and
-  the sandbox. About 20k lines of TypeScript, with tests beside the code.
+  the sandbox. About 20k lines of TypeScript and 190 tests beside the code.
 - **Basic pack.** Body plans `biped`, `quadruped`, `hexapod`, `serpent`; parts `ear.pointed`,
   `eye.basic`, `foot.claw`, `horn.curved`, `spikes.row`, `teeth.row`; patterns `countershade`,
   `grime`, `mottle`, `scales`, `spots`, `stripes`; gaits `walk`, `trot`, `tripod`, `slither`;
   actions `bite`, `roar`, `look`, `idle`; themes `reptile`, `insect`, `demon`; stats `rpg`.
+- **Examples.** Four: `bog-troll`, `ember-beetle`, `reed-viper` and `ridgeback-stalker`, each a
+  blueprint beside its render, with golden fingerprints.
+- **Already in place for this plan.** Format migrations (`packages/core/src/blueprint/migrate.ts`
+  chains steps before validation, warns `migrated`, and lists `KNOWN_FORMATS`); limbs may attach
+  to the neck and tail as well as the torso; up to six leg pairs validate; `plate` exists in the
+  geometry kit but no module uses it.
 - **Measured** ([poc.md](poc.md)): compile 41–287 ms in Node and 71–372 ms in Chrome at medium
   quality; skin 4.0k–26.5k triangles; 3 draw calls; motion 0.037–0.076 ms per creature and
   2.76 ms for 50. GPU frame rate was not measurable (agent sandboxes render on the CPU).
@@ -39,8 +45,9 @@ At the end of plan 1 (commit `d101c06`):
 | Source | What it says |
 | --- | --- |
 | Blind reviews, every gate | Tube-and-stilt bodies without muscle or joints; generic feet (no hooves, paws or pads); teeth glued on and sparse; mouths not visibly cut; one plastic look for skin, hide and chitin; scales as a Voronoi mosaic; big glossy eyes; sparse spots; rod-like tails |
-| Agents' feedback marked "Later" | A `diff` command; an underside view; a cadence check; suggestions across sibling fields; an aim direction for horns; fangs scaled to the head; per-speed gait settings; an S-curved neck; running bipeds; muscle masses and shaped limbs |
+| Agents' feedback marked "Later" | A `diff` command; an underside view; a cadence check; suggestions across sibling fields; an aim direction for horns; fangs scaled to the head; per-speed gait settings; an S-curved neck; running bipeds; muscle masses and shaped limbs; cobra hoods; beetle wing cases |
 | plan.md's "Later" column | Flyers, swimmers, eight legs, several heads, centaurs; branching tails; wings, fins, tentacles, mandibles; shells, armour plates, quills, antennae, frills, sails; scars, bioluminescence, slime, fur-like shells; run and gallop, jump, swim, fly, hit reactions, death; click-to-place parts, a gallery, game plug-ins; meshoptimizer and xatlas |
+| The code | The core names a few basic-pack modules, against plan 1's rule: schema defaults `foot.claw` and `countershade`, `walk` in `motion/gaits.ts` and `blueprint/random.ts`, `idle` in `analysis/analyze.ts`, and `quadruped` in `variation/generate.ts` |
 | Runtime and export | Not installable from a registry (TypeScript source in a private monorepo); exports carry vertex colours only (no texture maps, so no bump or varying roughness); one mesh detail per creature; GPU budget unmeasured |
 
 ## Goals
@@ -50,10 +57,11 @@ At the end of plan 1 (commit `d101c06`):
 3. The motion games need: running and galloping, jumping, swimming, flying, hit reactions and
    death.
 4. Exports that look the same in an engine as they do live, with texture maps and levels of
-   detail.
+   detail, and a stated answer for each live effect glTF cannot carry.
 5. Packages a game can install, and tools to edit and browse creatures.
-6. Models stay as good at the format as in plan 1: on every suite, at every gate, at least 18 of
-   20 prompts valid within three fix rounds and at least 16 of 20 renders matched blind.
+6. Models stay as good at the format as in plan 1. Suite A stays at 18/20 or better, valid and
+   matched blind. Suite B reaches 18/20 valid and 16/20 matched. The
+   [gate thresholds](#gate-thresholds) set each gate's bar.
 
 ## Scope
 
@@ -61,14 +69,14 @@ This table is plan 2's contract, as plan 1's scope table was. New ideas go to th
 
 | Area | Plan 2 | Later |
 | --- | --- | --- |
-| Body plans | `octopod` (eight legs), `centaur`, and presets for flyers and swimmers | Different heads on one body, segmented bodies (caterpillars), colonies |
+| Body plans | `octopod` (eight legs), `centaur`, `wyvern` (wings as forelimbs) and `fish` | Different heads on one body, segmented bodies (caterpillars), colonies |
 | Body sections | Muscle masses, joints and body shape; an S-curved neck; several identical necks and heads; several or split tails | General body graphs |
-| Limbs | Stance (plantigrade, digitigrade, unguligrade); wings (membrane, insect, feathered); fins and flippers; tentacles | Walking on tentacles, prehensile tails as limbs |
-| Parts | Hooves, paws, pads, talons, hands, beaks, mandibles, pincers, antennae, shells, armour plates and bands, quills, frills, sails, dorsal and tail fins | Body feathers, manes and hair, worn gear |
+| Limbs | Stance (plantigrade, digitigrade, unguligrade); wings (membrane, feathered, and insect wings with wing cases); fins and flippers; tentacles | Walking on tentacles, prehensile tails as limbs |
+| Parts | Hooves, paws, pads, talons, hands, beaks, mandibles, pincers, antennae, shells, armour plates and bands, quills, frills, hoods, sails, dorsal and tail fins | Body feathers, manes and hair, worn gear |
 | Textures | Distinct skin, hide, scales and chitin; fur shells; scars, bioluminescence, slime, warts, veins, rosettes, bands | Wounds that appear in play, wetness from water |
 | Animation | Gaits that change with speed; run, gallop, bound; jump and pounce; swimming; flight (flap, glide, hover, take off, land); hit reactions; death | Ragdolls and physics, climbing, burrowing, herd and flock behaviour |
 | Export and runtime | Buildable npm packages; texture maps from UV atlases; levels of detail; crowds; a GPU benchmark; engine guides | KTX2 texture compression, engine plug-ins, Three.js past r186 |
-| Tools | `diff`, `migrate`, an underside view, cadence and sibling-field checks, click-to-place parts, a static gallery, quality and motion reviews in the evals | Submissions to a hosted gallery, an in-game editor for players |
+| Tools | `diff`, `migrate`, an underside view, cadence and sibling-field checks, scenario files for renders and analysis, click-to-place parts, a static gallery, quality and motion reviews in the evals | Submissions to a hosted gallery, an in-game editor for players |
 
 ## Decisions this plan takes
 
@@ -91,53 +99,54 @@ of them before the phase it affects.
 | **max** | Choices that lock in a contract others build on (the format, the rig), and new algorithms judged mostly by eye, where a wrong turn means reworking later phases |
 | **xhigh** | The default: features through existing seams, with tests or metrics as the oracle and room for design |
 | **high** | Well-specified work with a clear oracle: small fixes, tooling, packaging, UI, tuning against renders |
-| **medium** | Documentation of finished work, and assembling existing pieces |
+| **medium** | Assembling finished pieces |
 
 Each milestone's level, confirmed against the xhigh default. This table is also the tracker:
-update its status column as milestones merge.
+update its status column as milestones merge. "Gate 8" in the needs column means all of phase 8,
+since anatomy comes before the new vocabulary.
 
 | Milestone | Effort | Why this level | Needs | Status |
 | --- | --- | --- | --- | --- |
-| [7.1 Carry-overs](#71-carry-overs-from-plan-1s-evals) | high (lowered) | Six small, local fixes, each specified here and testable | | Not started |
-| [7.2 Versions and migrations](#72-format-versions-and-migrations) | xhigh (confirmed) | Reaches every reader of saved files; a known pattern with a corpus test | | Not started |
+| [7.1 Carry-overs](#71-carry-overs-and-tidying) | high (lowered) | Small, local fixes, each specified here and testable | | Not started |
+| [7.2 Migrations](#72-migrations-a-command-and-a-corpus-test) | high (lowered) | The migration chain exists; this adds a command, writers and a corpus test | | Not started |
 | [7.3 Format 0.2](#73-format-02-the-new-vocabulary-and-a-format-eval) | **max (raised)** | The format is the contract for models, saved files and phases 8–12 | 7.2 | Not started |
 | [7.4 Rig lists](#74-rig-lists-without-a-visible-change) | xhigh (confirmed) | A wide refactor, but unchanged goldens are a strict oracle | 7.3 | Not started |
-| [7.5 Eval tools](#75-eval-tools) | high (lowered) | Scripts in the style of `eval/blind.ts`, with clear outputs | | Not started |
+| [7.5 Eval and test tools](#75-eval-and-test-tools) | high (lowered) | Scripts and harnesses in the style of plan 1's, with clear outputs | | Not started |
 | [7.6 Buildable packages](#76-buildable-packages) | high (lowered) | Standard tooling; an install test is the oracle | | Not started |
-| [8.1 Muscle and body shape](#81-muscle-masses-joints-and-body-shape) | **max (raised)** | Changes every creature, judged by eye; the rules must fit every body | 7.4 | Not started |
-| [8.2 Feet, hands, stance](#82-feet-hands-and-stance) | xhigh (confirmed) | Modules through existing seams, plus a contained rest-pose change | 7.3 | Not started |
-| [8.3 Heads](#83-heads-mouths-teeth-eyes-and-beaks) | xhigh (confirmed) | Delicate mouth and eye code, with renders as the oracle | 7.4 | Not started |
-| [8.4 Materials and patterns](#84-materials-and-new-pattern-layers) | xhigh (confirmed) | Shader work with a CPU–GPU parity check; fur is the risk | 7.3 | Not started |
-| [9.1 Heads and tails](#91-several-heads-and-split-tails) | xhigh (confirmed) | Builds on 7.4's lists; per-head mouths and targeting are the work | 7.4, 8.3 | Not started |
-| [9.2 Eight legs, centaurs](#92-eight-legs-and-centaurs) | xhigh (confirmed) | Upright fronts and four leg pairs reach into posture and balance | 7.4, 8.1 | Not started |
-| [9.3 Wings and fins](#93-wings-fins-and-membranes) | **max (raised)** | New geometry and skinning across several bone chains, which flight depends on | 7.4, 8.1 | Not started |
-| [9.4 Tentacles to pincers](#94-tentacles-antennae-mandibles-and-pincers) | xhigh (confirmed) | Parts with bones and springs are a new capability; tests are the oracle | 7.4 | Not started |
-| [9.5 Coverings](#95-coverings-shells-plates-quills-frills-and-sails) | xhigh (confirmed) | A new placement slot and conforming geometry; the harness and budgets check it | 7.3 | Not started |
-| [9.6 Variation and themes](#96-variation-themes-and-stats-for-the-new-vocabulary) | high (lowered) | Variation is schema-driven; the work is rules and tuning | 9.1–9.5 | Not started |
-| [10.1 Run and gallop](#101-gaits-that-change-with-speed-run-and-gallop) | xhigh (confirmed) | Generalizes gaits without moving old ones; motion metrics check it | 8.2 | Not started |
-| [10.2 Jump and pounce](#102-root-motion-in-actions-jump-and-pounce) | xhigh (confirmed) | A new root channel in the controller; landing error is measurable | 7.4 | Not started |
-| [10.3 Swimming](#103-swimming) | xhigh (confirmed) | A new water input and 3D steering on existing machinery | 9.3 | Not started |
-| [10.4 Flight](#104-flight) | **max (raised)** | New locomotion and runtime API that must read as flight for any wing; judged by eye | 9.3 | Not started |
-| [10.5 Hits and death](#105-hit-reactions-and-death) | xhigh (confirmed) | Contained; penetration and stability are measurable | 7.4 | Not started |
-| [11.1 Texture maps](#111-texture-maps-from-uv-atlases) | xhigh (confirmed) | Many conventions, made visible by a round-trip render and the glTF validator | 8.4 | Not started |
+| [8.1 Muscle and body shape](#81-muscle-masses-joints-and-body-shape) | **max (raised)** | Changes every creature, judged by eye; the rules must fit every body | 7.4, 7.5 | Not started |
+| [8.2 Feet, hands, stance](#82-feet-hands-and-stance) | xhigh (confirmed) | Modules through existing seams, plus a contained rest-pose change | 7.3, 7.5 | Not started |
+| [8.3 Heads](#83-heads-mouths-teeth-eyes-and-beaks) | xhigh (confirmed), one max step | Mouth and eye code with renders as the oracle; how lids and lips are built is a max step | 7.4 | Not started |
+| [8.4 Materials and patterns](#84-materials-and-new-pattern-layers) | xhigh (confirmed) | Shader work with a new CPU–GPU parity test; fur is the risk | 7.3, 7.5 | Not started |
+| [9.1 Heads and tails](#91-several-heads-and-split-tails) | xhigh (confirmed) | Builds on 7.4's lists; per-head mouths and targeting are the work | Gate 8 | Not started |
+| [9.2 Eight legs, centaurs](#92-eight-legs-and-centaurs) | xhigh (confirmed) | Upright fronts and four leg pairs reach into posture and balance | Gate 8 | Not started |
+| [9.3 Wings and fins](#93-wings-fins-and-membranes) | **max (raised)** | New geometry and skinning across several bone chains, which flight depends on | Gate 8 | Not started |
+| [9.4 Tentacles to pincers](#94-tentacles-antennae-mandibles-and-pincers) | xhigh (confirmed) | Parts with bones (designed in 7.3) are a new capability; tests are the oracle | 9.3 | Not started |
+| [9.5 Coverings](#95-coverings-shells-plates-quills-frills-hoods-and-sails) | xhigh (confirmed) | A new placement slot and conforming geometry; the harness and budgets check it | 9.4 | Not started |
+| [9.6 Variation and themes](#96-variation-themes-and-stats-for-the-new-vocabulary) | xhigh (confirmed) | Pairing heads and wings in crossbreeds and the new themes' grammar are unsettled | 9.1–9.5 | Not started |
+| [10.1 Run and gallop](#101-gaits-that-change-with-speed-run-and-gallop) | xhigh (confirmed) | Generalizes gaits without moving old ones; motion metrics check it | Gate 9 | Not started |
+| [10.2 Jump and pounce](#102-root-motion-in-actions-jump-and-pounce) | xhigh (confirmed) | A new root channel in the controller; landing error is measurable | Gate 9 | Not started |
+| [10.3 Swimming](#103-swimming) | xhigh (confirmed) | A new medium, input and 3D steering on existing machinery | 10.1 | Not started |
+| [10.4 Flight](#104-flight) | **max (raised)** | New locomotion and runtime API that must read as flight for any wing; judged by eye | 10.1, 10.2 | Not started |
+| [10.5 Hits and death](#105-hit-reactions-and-death) | xhigh (confirmed) | Contained; penetration and stability are measurable | Gate 9 | Not started |
+| [11.1 Texture maps](#111-texture-maps-from-uv-atlases) | xhigh (confirmed), one max step | Conventions made visible by a round-trip render and the glTF validator; what each live effect exports as is a max step | Gate 10 | Not started |
 | [11.2 Levels of detail](#112-levels-of-detail) | high (lowered) | A mature library behind a clear interface | 11.1 | Not started |
-| [11.3 GPU cost and crowds](#113-gpu-cost-and-crowds) | xhigh (confirmed) | New TSL skinning; performance only measurable on real hardware | 10.1 | Not started |
-| [11.4 Engine guides](#114-engine-guides) | medium (lowered) | Documents finished exports | 11.1, 11.2 | Not started |
-| [12.1 Click-to-place](#121-click-to-place-editing) | high (lowered) | UI on existing seams, with a round-trip oracle | 9.5 | Not started |
-| [12.2 Gallery](#122-gallery) | medium (lowered) | Assembles finished pieces into a static site | 11.1 | Not started |
-| [12.3 Release 0.2](#123-release-02) | high (lowered) | Protocol reruns and docs over finished work | all | Not started |
+| [11.3 GPU cost and crowds](#113-gpu-cost-and-crowds) | xhigh (confirmed) | New TSL skinning; performance only measurable on real hardware | 11.2 | Not started |
+| [11.4 Engine guides](#114-engine-guides) | high (lowered) | Docs plus per-engine scripts and an import test: tooling, not design | 11.1, 11.2 | Not started |
+| [12.1 Click-to-place](#121-click-to-place-editing) | high (lowered) | UI on existing seams, with a round-trip oracle | Gate 9 | Not started |
+| [12.2 Gallery](#122-gallery) | medium (lowered) | Assembles finished pieces into a static site | Gate 11 | Not started |
+| [12.3 Release 0.2](#123-release-02) | high (lowered) | Protocol reruns and docs over finished work | All | Not started |
 
 **Rules for effort**
 
-- Work each milestone at its level, and switch only between milestones.
+- Work each milestone at its level, and switch only between milestones (or for a max step).
 - A design question this plan does not settle is a max step, even inside a lower milestone:
   decide it at max, add a dated **Decision** line to the milestone here, then go on at the
-  milestone's level.
-- 11.1 rises to max if the round-trip render oracle cannot be built: without it, colour-space and
-  tangent conventions can only be checked by reasoning.
-- If you cannot change your own level, make up for it on max milestones: write the design down
-  first (`docs/design/<milestone>.md`), have an independent subagent review it adversarially,
-  answer the review, then build.
+  milestone's level. 8.3 and 11.1 each name one such step up front.
+- 11.1 rises to max as a whole if the round-trip render oracle cannot be built: without it,
+  colour-space and tangent conventions can only be checked by reasoning.
+- If you cannot change your own level, make up for it on max milestones and max steps: write the
+  design down first (`docs/design/<milestone>.md`), have an independent subagent review it
+  adversarially, answer the review, then build.
 - Gate runs follow a fixed protocol: run them at high. Fixes for gate feedback take the level of
   the milestone they belong to.
 - Low is not used for milestones; it suits one-off chores (regenerating, formatting).
@@ -160,36 +169,42 @@ update its status column as milestones merge.
    metrics, round trips).
 3. Build it within the rules: pure pipeline stages, determinism (random streams keyed by ids),
    one module per file, a core that never names a module, errors written for a model.
-4. Look at it: `render --labels`, `--views`, filmstrips and `analyze`. Put before-and-after images
-   in the PR for anything visible.
-5. Run `pnpm generate` after module changes, then `pnpm format` and `pnpm check`.
-6. Update the docs in the same PR: `blueprint.md` and its recipes, `runtime.md`, `architecture.md`,
+4. Look at it: `render --labels`, `--views`, filmstrips, scenarios (7.5) and `analyze`. Put
+   before-and-after images in the PR for anything visible.
+5. Add the creatures a milestone names to `examples/` (blueprint, render, golden fingerprint).
+   Node checks every example; keep the Chromium tests (Chrome goldens, visual regression) on a
+   fixed subset so CI stays fast.
+6. Run `pnpm generate` after module changes, then `pnpm format` and `pnpm check`.
+7. Update the docs in the same PR: `blueprint.md` and its recipes, `runtime.md`, `architecture.md`,
    the generated catalogue, and `CHANGELOG.md` (from 7.6).
-7. Open a draft PR, get CI green, mark it ready and merge it with a merge commit. The owner's
+8. Open a draft PR, get CI green, mark it ready and merge it with a merge commit. The owner's
    standing rule: PRs are always approved, and merged once CI is green. Merging through the API
    needs the head's full 40-character SHA.
-8. Mark the milestone done in the table above, with its PR, and record measured numbers.
+9. Mark the milestone done in the table above, with its PR, and record measured numbers.
 
 **Each gate**
 
 Follow [eval/README.md](../eval/README.md), as plan 1 did:
 
 - Pin a git worktree at the commit under test. Give independent subagents only the docs and the
-  CLI (no source code): four agents with five prompts each, and a separate blind reviewer.
-- Record the eval model in `run.json` by family and alias, as plan 1's runs do, and use the same
-  one at every gate so scores compare.
+  CLI (no source code): four agents with five prompts each for suites A and B, two with five
+  tasks each for suite M, and a separate blind reviewer.
+- Record the eval model in `run.json` by family and alias, as plan 1's runs do, with the date.
+  An alias can move to a newer model between gates, so where your environment lets you record
+  the exact version, do; and compare runs only when they used the same model.
 - Score with the scripts, never with the agents' own account of their work.
 - Write `notes.md` with a feedback → disposition table: each item fixed in the gate PR,
   documented, or moved to the "Later" column. None is dropped.
 
 **Versions, goldens and looks**
 
-- The format becomes `spawnforge/0.2` in milestone 7.3. It stays open to additions until 12.3
-  freezes it; after that, any schema change bumps the format and adds a migration.
+- The format becomes `spawnforge/0.2` in milestone 7.3. It stays open until 12.3 freezes it: until
+  then, additions go in, and changes to 0.1 fields extend the one 0.1 → 0.2 migration. After 12.3,
+  any schema change bumps the format and adds a migration.
 - In 0.x the pipeline may change how a blueprint looks. A milestone that moves vertices re-records
   the golden fingerprints once (`UPDATE_GOLDEN=1 pnpm test`), re-renders the examples
   (`pnpm render:examples`) and says why in the commit and the changelog.
-- Refactors (7.2, 7.4) must leave the goldens identical: that is their test.
+- Refactors (7.4) must leave the goldens identical: that is their test.
 - The RNG golden values in `rng.test.ts` do not change in plan 2.
 
 **Lessons from plan 1**
@@ -198,11 +213,12 @@ Follow [eval/README.md](../eval/README.md), as plan 1 did:
 - Agents edit with `patch` far more than by hand, and check with renders and `analyze` more than
   with the docs. Every new list needs `[id=…]` paths, and every new feature a render view or
   label and an `analyze` check.
-- Keep the core module-agnostic. A plan 1 bug came from the core naming the `idle` action;
-  capabilities go through hooks.
+- Keep the core module-agnostic. A plan 1 bug came from the core naming the `idle` action, and a
+  few names remain (7.1 removes them); capabilities go through hooks.
 - Visual critique repeats until it is fixed. That is why anatomy (phase 8) comes before the new
   vocabulary, which inherits it.
 - Biome also formats the JSON under `eval/runs`: run `pnpm format` before committing eval files.
+  Eval renders are not committed (`.gitignore`); they are regenerated from the saved blueprints.
 
 ## Cross-cutting design
 
@@ -212,13 +228,27 @@ Milestone 7.3 designs everything plan 2 adds to the format at once, so it stays 
 language. It does not have to follow the starting proposal in its section; it does have to pass
 the format eval.
 
+**Stub modules.** Module ids are checked against the registry, so vocabulary that a later
+milestone builds as modules (new feet, gaits, parts, patterns) enters 7.3 as stub modules. A
+stub is the real module file with its id, parameters, docs and example but no build hooks.
+Compile skips a module without hooks and warns `not_built`, naming the milestone. The core never
+names the stubs.
+
+### Locomotion media
+
+Ground, water and air become core concepts, as limb roles are: the controller gets one mode per
+medium (10.3 adds water, 10.4 air). Gait modules declare the medium they serve and supply their
+timing and goals, so the core never names `fly` or `swim.paddle`. `generate --requires` takes
+media and features (`water`, `air`), not module ids.
+
 ### A new package for export processing
 
 `@spawnforge/bake` (`packages/bake`) holds the heavy, export-time and load-time mesh work: UV
 atlases and texture bakes (11.1) and level-of-detail chains (11.2). It depends on `core` and on
-WASM builds of xatlas and meshoptimizer, the two libraries plan.md's stack reserved for this. Core
-keeps only `zod` and Three.js math, and the live runtime loads `bake` only for LODs. Add it to
-the repo map in AGENTS.md when it lands.
+WASM builds of xatlas, meshoptimizer and MikkTSpace (Three.js's `computeMikkTSpaceTangents` needs
+an external MikkTSpace module). plan.md's stack foresaw the first two. Core keeps only `zod` and
+Three.js math, and the live runtime loads `bake` only for LODs. Add it to AGENTS.md's repo map
+when it lands.
 
 ### Runtime API additions
 
@@ -232,13 +262,13 @@ the repo map in AGENTS.md when it lands.
 
 ### Eval suites
 
-| Suite | What | From | Gate |
-| --- | --- | --- | --- |
-| A (`eval/prompts.json`) | Plan 1's 20 prompts | Plan 1 | No regression at any gate |
-| B (`eval/prompts-b.json`) | 20 prompts that need the new vocabulary, each with `expects` | 7.3 (format only), 9 (full) | ≥ 18/20 valid within three rounds, ≥ 18/20 meet their `expects`, ≥ 16/20 matched blind |
-| M (`eval/prompts-m.json`) | 10 motion tasks, checked by filmstrips and `analyze` | 10 | ≥ 9/10 pass their checks, ≥ 8/10 filmstrips matched blind |
-| Quality review | Side-by-side renders of the same prompt from two runs | 8 | New preferred in ≥ 16/20 pairs |
-| Variation, export | Plan 1's tasks plus new ones | 9, 11 | All pass |
+| Suite | What | From |
+| --- | --- | --- |
+| A (`eval/prompts.json`) | Plan 1's 20 prompts | Plan 1 |
+| B (`eval/prompts-b.json`) | 20 prompts that need the new vocabulary, each with `expects` (feature predicates) | 7.3 (format only), gate 9 (full) |
+| M (`eval/prompts-m.json`) | 10 motion tasks, each a scenario with checks | Gate 10 |
+| Quality review | The same blueprints rendered by two commits, side by side, judged on a rubric | Gate 8 |
+| Variation, export | Plan 1's tasks plus new ones | Gates 9 and 11 |
 
 Suite B draft (7.3 finalizes the wording and the `expects`):
 
@@ -265,11 +295,26 @@ Suite B draft (7.3 finalizes the wording and the `expects`):
 | b19-armoured-burrower | Armadillo-like bands, digging claws | Armour bands |
 | b20-glow-slug | Slime, glowing spots, eyes on stalks | Slime, bioluminescence |
 
-Suite M draft (phase 10 finalizes it): a horse galloping at 12 m/s; a raptor running at 8 m/s; a
+Suite M draft (gate 10 finalizes it): a horse galloping at 12 m/s; a raptor running at 8 m/s; a
 big cat pouncing on a target 4 m ahead; a shark cruising and turning; a crocodile walking into a
 lake and swimming across; a dragon taking off, circling, gliding and landing on a slope; a moth
 hovering; a hydra biting a target on its left with the nearest head; a bear hit from the left
-that staggers and later dies; a sea turtle diving to 3 m and surfacing.
+that staggers and later dies; a sea turtle diving to 3 m and surfacing. Each runs as a scenario
+(7.5) through `render` and `analyze`, so agents need only the CLI.
+
+### Gate thresholds
+
+"Valid" is within three fix rounds. "Re-score" validates the saved attempts at the new commit
+without a new agent run.
+
+| Gate | Suite A | Suite B | Also |
+| --- | --- | --- | --- |
+| 7 | Re-score after migration: 20/20 | Format eval: ≥ 18/20 valid, ≥ 18/20 meet `expects` | Corpus migrates; smoke test passes |
+| 8 | Full run: ≥ 18/20 valid, ≥ 18/20 matched | Re-score: ≥ 18/20 | Quality review: new preferred in ≥ 16/20 pairs; budgets |
+| 9 | Full run: ≥ 18/20 valid, ≥ 18/20 matched | Full run: ≥ 18/20 valid, ≥ 18/20 meet `expects`, ≥ 16/20 matched | Variation 12/12; fuzz; budgets |
+| 10 | Re-score | Re-score | Suite M: ≥ 9/10 pass their checks, ≥ 8/10 filmstrips matched; motion budgets |
+| 11 | Re-score | Re-score | Export eval passes; round trip and validator clean |
+| 12 | Full run, as gate 9 | Full run, as gate 9 | Every other eval passes again |
 
 ### Budgets
 
@@ -278,7 +323,7 @@ that staggers and later dies; a sea turtle diving to 3 m and surfacing.
 | Compile time, medium, in a worker (Chrome) | ≤ 500 ms for every example; fuzz median ≤ 400 ms | Every gate |
 | Skin mesh, medium | ≤ 30k triangles | Every gate |
 | Hard parts, medium | ≤ 20k triangles | From phase 9 |
-| Draw calls per creature | ≤ 3, or 4 with fur | Every gate |
+| Draw calls per creature | ≤ 3, plus one with fur and one with wing or fin membranes | Every gate |
 | Motion update per creature | ≤ 0.1 ms walking, ≤ 0.15 ms flying or swimming; 50 mixed ≤ 5 ms | Every gate |
 | 50 animated creatures at 60 fps, mid-range laptop | Measured by the owner with `pnpm bench` | 11.3 |
 | 500 distant creatures at 60 fps | Measured by the owner with `pnpm bench` | 11.3 |
@@ -292,45 +337,51 @@ allowed only with measurements that show the need, as plan.md's risk table says.
 Plan 2 settles the format and the rig before building on them, and gets the eval tools and the
 packaging ready, so later phases spend their effort on creatures.
 
-### 7.1 Carry-overs from plan 1's evals
+### 7.1 Carry-overs and tidying
 
-**Effort: high (lowered).** Six small, local changes, each specified here and testable.
+**Effort: high (lowered).** Small, local changes, each specified here and testable.
 
 - **`diff a.json b.json`** (CLI and MCP): the patch operations that turn one blueprint into the
   other, by id-based paths, with one line per change. Reuse `opsBetween`
   (`packages/core/src/variation/genes.ts`) and the patch diff.
 - **Underside view**: `render --views underside`, outside the default six, to check bellies.
 - **Cadence check**: `analyze` reports steps per second for each gait and warns `fast_cadence`
-  above 8 steps a second at the gait's natural speed (it reads as jitter at 30 fps), suggesting
-  longer legs, a larger `scale` or a slower gait.
+  above 8 steps a second at the gait's natural speed, where it reads as jitter at 30 fps.
+  Cadence follows hip height, so phase 4's agent found longer legs barely helped. Each fix the
+  warning offers (such as a larger `scale`, or keeping it for a creature meant to be tiny) needs
+  a test that applies it and sees the warning go.
 - **Sibling-field suggestions**: an enum value that is wrong for its field but right for a
   sibling names that field in the fix (`body.head.shape: "wide"` → "`wide` is a `crossSection`").
 - **Horn aim**: an optional `aim` for `horn.curved` (`forward`, `up`, `out`, `back`, `down`) that
-  sets lean and turn, so forward mandibles and swept-back horns take one word. It is an explicit
-  union, normalized in its own step.
-- **Fangs scaled to the head**: `teeth.row` sizes its teeth from the head's radius rather than the
-  torso length, so a long serpent's fangs stop reading as planks.
+  sets lean and turn, so forward mandibles and swept-back horns take one word. It is normalized
+  by a new optional module hook, `normalize(params)`, which `blueprint/normalize.ts` calls, so the
+  core still never names `horn.curved`.
+- **The core stops naming modules**: the default foot and pattern layer come from the pack
+  (`definePack` gains defaults), the biped walk's longer duty moves into the `walk` module, and
+  `analyze`, `random` and `generate` use hooks (`ambient`) or pack defaults instead of `idle`,
+  `walk` and `quadruped`.
 
-**Done when** each change has tests and docs (blueprint.md, CLI help, MCP descriptions), and the
-fang change has re-recorded the goldens with its reason.
+**Done when** each change has tests and docs (blueprint.md, CLI help, MCP descriptions), the
+goldens are unchanged, and the core names no module. The baked `idle` clip may keep its name:
+it names the ambient motion it holds, not the action module.
 
-### 7.2 Format versions and migrations
+### 7.2 Migrations: a command and a corpus test
 
-**Effort: xhigh (confirmed).** It reaches every reader of saved files, but the pattern is known
-and a corpus test checks it.
+**Effort: high (lowered).** The chain already exists (`packages/core/src/blueprint/migrate.ts`
+runs ordered steps before validation, warns `migrated` and lists `KNOWN_FORMATS`; the runtime's
+cache key and `.glb` extras already carry the format). This milestone finishes it.
 
-- `format` accepts every released version; `FORMAT` is the newest. Migrations are pure
-  functions, one file per step in `packages/core/src/blueprint/migrations/`, chained, and run
-  before validation. The existing `bestiary/0.1` rename becomes the first one.
-- `validate` reports a `migrated` warning saying what changed and returns the migrated
-  blueprint. `spawnforge migrate <file>` (CLI and MCP) writes it back. `patch`, `mutate`,
-  `crossbreed` and `instantiate` write the newest format.
-- Species files, `.glb` extras and the runtime's cache key carry the format.
+- Steps move to one file each in `packages/core/src/blueprint/migrations/`; `bestiary/0.1` →
+  `spawnforge/0.1` is the first.
+- `spawnforge migrate <file>` (CLI and MCP) writes the migrated blueprint back. `patch`,
+  `mutate`, `crossbreed` and `instantiate` write the newest format; species validate through the
+  chain.
 - **Corpus test**: every blueprint saved under `eval/runs/` and `examples/` migrates. Those that
-  were valid stay valid, and the invalid ones fail at the same paths.
+  were valid stay valid, and the invalid ones fail at the same paths. Each later migration
+  re-runs it.
 
 **Done when** the corpus test passes, the goldens are unchanged, and blueprint.md's "Format
-versions" explains migration. 7.2 builds the machinery; 7.3 makes the first real bump.
+versions" explains `migrate`. 7.3 makes the first real bump.
 
 ### 7.3 Format 0.2: the new vocabulary and a format eval
 
@@ -342,11 +393,11 @@ Decide once how a blueprint says everything plan 2 adds, and prove models can wr
 anything is built on it, as plan 1's phase 0 did. The design must cover:
 
 - several necks and heads, and several or split tails;
-- wings (membrane, insect, feathered), fins and flippers, and tentacles;
+- wings (membrane, feathered, insect wings and wing cases), fins and flippers, and tentacles;
 - centaur-style bodies;
 - stance, muscle and an S-curved neck;
 - the new feet and hands, beaks, lips and tongues;
-- coverings over a region of skin, shells, frills, sails, and dorsal and tail fins;
+- coverings over a region of skin, shells, frills, hoods, sails, and dorsal and tail fins;
 - antennae, mandibles and pincers;
 - hide, fur and its length, and the new pattern layers;
 - flying and swimming, and how a blueprint opts in or out.
@@ -361,30 +412,32 @@ Starting proposal, which the design may change and the format eval decides:
 | Centaur-style bodies | Arms on an upright neck shaped like a torso (limbs may already attach to the neck), packaged as a `centaur` body plan |
 | Stance | `limbs[].stance`: plantigrade, digitigrade or unguligrade; foot modules suggest one |
 | Muscle and neck | `body.muscle` (0–1) with `limbs[].muscle` overrides; `neck.curve` for an S-shaped neck |
-| Coverings | A new part slot, `region`: `attach: { "on": "torso", "region": "back" }` plus a `density`, scattered over the skin (quills, scutes, plates, warts) |
-| Fins, sails, frills, shells | Parts: `fin.dorsal` and `sail` in the row slot, `fin.tail` and `frill` in the surface slot, `shell` over the torso |
+| Coverings | A new part slot, `region`: `attach: { "on": "torso", "region": "back" }` plus a `density`, scattered over the skin (quills, scutes, plates) |
+| Fins, sails, frills, hoods, shells | Parts: `fin.dorsal` and `sail` in the row slot, `fin.tail`, `frill` and `hood` in the surface slot, `shell` over the torso |
 | Fur | `skin.material: "fur"` with `skin.fur: { "length", "density" }` |
-| Flying and swimming | Gait modules (`fly`, `glide`, `hover`, `swim.undulate`, `swim.paddle`, `swim.flap`) that apply by default when the body allows, as gaits do now |
+| Flying and swimming | Gait modules for water and air (`swim.undulate`, `swim.paddle`, `swim.flap`, `fly`, `glide`, `hover`) that apply by default when the body allows, as gaits do now |
 
 Deliverables:
 
 - Schema, normalization (friendly forms to canonical ones, in their own step) and validation,
   with id-based errors and fixes for every new field; `patch` paths (`[id=…]`, `[type=…]`) into
   every new list; the catalogue and JSON Schema regenerated.
-- `format` becomes `spawnforge/0.2`, with a 0.1 → 0.2 migration through 7.2's machinery.
-- Until a feature's milestone lands, `validate` accepts it and `compile` warns `not_built`,
-  naming the milestone; blueprint.md marks it "from phase N".
+- Stub modules (see [Format 0.2](#format-02)) for every new module id, so the vocabulary
+  validates before it is built.
+- `format` becomes `spawnforge/0.2`, with a 0.1 → 0.2 migration.
+- Until a feature's milestone lands, `compile` warns `not_built`, naming the milestone, and
+  blueprint.md marks the feature "from phase N".
 - blueprint.md sections and recipes for everything new.
 - Suite B (`eval/prompts-b.json`), with `expects` per prompt: feature predicates such as "a limb
   with role `wing`" or "`neck.count` ≥ 3", checked by `eval/score.ts` beside validity.
-- A rig sketch for 7.4 (`docs/design/rig.md`): how heads, tails and the new limb roles appear in
-  `Rig`, and which readers change.
+- A rig sketch for 7.4 and phase 9 (`docs/design/rig.md`): how heads, tails and the new limb roles
+  appear in `Rig`; how a part module declares bones and springs (antennae, mandibles, frills,
+  eyelids); how gait modules declare their medium; and which readers change.
 - The format eval: suite B with the docs and `validate` only, since renders cannot show features
   that are not built yet.
 
-**Done when** suite B scores at least 18/20 valid within three fix rounds and at least 18/20
-meeting their `expects`, suite A's saved attempts still score 20/20 after migration, and every
-feedback item has a disposition in the run's notes.
+**Done when** gate 7's thresholds are met and every feedback item has a disposition in the run's
+notes.
 
 ### 7.4 Rig lists without a visible change
 
@@ -392,34 +445,45 @@ feedback item has a disposition in the run's notes.
 unchanged goldens make a strict oracle.
 
 The compiled rig, and everything that reads it, handles lists of heads and tails and has room for
-wings, fins and tentacles, before any of them exist.
+wings, fins, tentacles and parts with bones, before any of them exist.
 
 - `Rig.head`, `neck`, `jaw` and `tail` (`packages/core/src/compile/types.ts`) become `heads[]`
   (each with its neck bones, head, jaw, eyes and mouth line) and `tails[]`. Spring chains become
-  one list that tails and ears join now, and antennae and tentacles later.
+  one list; today only the tail has one, and antennae and tentacles join it in phase 9.
 - Readers move to the lists: the mouth cut and mouth-slot parts, the motion controller (look,
   glances, jaw, tail springs), actions (goals apply to every head; a target picks the nearest
   head), analysis (bite reach per head), clips, export, the runtime's sockets, and stats input.
 - Random streams stay keyed by ids, so the first head and tail draw exactly what they draw now.
 
-**Done when** the golden fingerprints, the motion tests' numbers, the budgets' motion cost and the
-render tests' images are all unchanged.
+**Done when** the golden fingerprints, the motion tests' results and the render tests' images
+are unchanged, and the budgets' motion cost is within 15% (timing noise).
 
-### 7.5 Eval tools
+### 7.5 Eval and test tools
 
-**Effort: high (lowered).** Scripts in the style of `eval/blind.ts`, with clear outputs.
+**Effort: high (lowered).** Scripts and harnesses in the style of plan 1's, with clear outputs.
 
-- **Quality review** (`eval/quality.ts prepare|score`): pairs two runs' renders of the same
-  prompt side by side, sides shuffled and names hidden. A reviewer picks the better creature in
-  each pair against a fixed rubric (silhouette, anatomy, extremities, mouth and eyes, surface)
-  and says why. Gate 8 uses it.
-- **Motion review** (`eval/motion.ts prepare|score`): filmstrips of gaits, actions, flight and
-  swimming, shown blind and matched to motion prompts. Gate 10 uses it.
+- **Module harness for every kind.** Today's harness (`packages/modules/src/compile.test.ts`)
+  builds each part module with its defaults, example and random parameters. Extend it to
+  patterns, gaits, actions and themes, and check each module's time and size budgets and its
+  determinism.
+- **Scenario files** for `render` and `analyze` (`--scenario <file>`): ground, targets, a course
+  to walk, and timed calls (`act`, `moveTo`). Phase 10 adds water, flight courses, hits and
+  deaths. Agents script motion through them, with only the CLI.
+- **Quality review** (`eval/quality.ts prepare|score`): renders the same blueprints at two
+  commits (a worktree at the base commit) and shows them side by side, sides shuffled and names
+  hidden. A reviewer picks the better creature in each pair against a fixed rubric (silhouette,
+  anatomy, extremities, mouth and eyes, surface) and says why. Using the same blueprints keeps
+  agent-to-agent variation out of the comparison; the set is the phase 4 run's 20 final
+  blueprints.
+- **Motion review** (`eval/motion.ts prepare|score`): filmstrips of scenarios shown blind and
+  matched to the tasks that asked for them; gate 10 adds suite M's per-task checks.
 - Visual regression for every example, not only the two in `packages/render/src/render.test.ts`,
   at the same tolerance.
 
-**Done when** both review tools have had a dry run on plan 1's runs (phase 3 against phase 4),
-recorded in eval/README.md.
+**Done when** the harness covers every module kind, the scenarios drive a bite at a target and a
+walk along a course, and both reviews have had a dry run recorded in eval/README.md (quality:
+`d101c06` against itself, which must come out even; motion: plan 1's gait and action filmstrips
+matched to their names).
 
 ### 7.6 Buildable packages
 
@@ -432,22 +496,21 @@ Games can install Spawnforge like any library, once the owner decides to publish
   workspace keeps importing `src`.
 - Versions start at 0.1.0, after the format they read. Add a `CHANGELOG.md` at the root, and to
   each `package.json` its `files`, `repository`, `engines` and license. `private` stays `true`
-  until the owner approves publishing.
-- A smoke test in CI packs every package (`pnpm pack`), installs the tarballs into a minimal Vite
-  game outside the workspace (`apps/smoke-game`), spawns a creature, builds, and runs a frame in
-  headless Chromium.
+  until 12.3.
+- A smoke test in CI: `pnpm pack` every package, copy a minimal Vite game from
+  `scripts/smoke-game/` (outside the workspace's `packages/*` and `apps/*`) to a temporary
+  directory, install the tarballs, spawn a creature, build, and run a frame in headless Chromium.
+- Update AGENTS.md's "How the code runs": the workspace still runs TypeScript source; `dist/` is
+  for publishing only.
 
-**Done when** the smoke test passes in CI and `pnpm publish --dry-run` succeeds for every
-package. Nothing is published without the owner's go-ahead; the license is the owner's choice
-(see [Open questions](#open-questions-for-the-owner)).
+**Done when** the smoke test passes in CI. Nothing is published before 12.3 and the owner's
+go-ahead, and the license is the owner's choice (see
+[Open questions](#open-questions-for-the-owner)).
 
 ### Gate 7
 
-- The goldens are unchanged, except for 7.1's fangs (recorded with the reason).
-- The corpus migrates (7.2), suite B passes its format eval (7.3), and the smoke test passes
-  (7.6).
-- The run is saved as `eval/runs/<date>-phase7-format/` with `run.json`, the attempts,
-  `score.json` and `notes.md`.
+Meet the gate 7 row of the [gate thresholds](#gate-thresholds). Save the run as
+`eval/runs/<date>-phase7-format/` with `run.json`, the attempts, `score.json` and `notes.md`.
 
 ## Phase 8: Anatomy and surfaces
 
@@ -480,8 +543,9 @@ and centre of mass follow the new volume).
 
 **Done when**:
 
-- every example is re-rendered, with before-and-after sheets in the PR;
-- a quality review (7.5) of the examples prefers the new look in at least 80% of pairs;
+- the examples are re-rendered, with before-and-after sheets in the PR;
+- a quality review (7.5) of the phase 4 run's 20 blueprints, at `d101c06` against this
+  milestone, prefers the new look in at least 16 of 20 pairs;
 - every example compiles in ≤ 500 ms at medium in Chrome, with a skin of ≤ 30k triangles;
 - the 1,000-blueprint fuzz runs clean;
 - the motion tests pass, with no new foot slide or limb intersections;
@@ -499,67 +563,69 @@ contained change to the rest pose and foot planting.
   unguligrade ones on the hoof tip. Planted feet roll, heel off then toe off.
 - Each is one module file, and the core names none of them.
 
-**Done when** each module passes the module harness (defaults, examples, random parameters,
-budgets, determinism), the motion tests show no new foot slide, and the examples use them: paws
-on the wolf, hooves on the boar, talons on the raptor, hands on the troll.
+**Done when** each module passes the harness (7.5), the motion tests show no new foot slide, and
+new examples use them: a wolf with paws, a boar with hooves, a raptor with talons, and hands on
+the bog troll.
 
 ### 8.3 Heads: mouths, teeth, eyes and beaks
 
-**Effort: xhigh (confirmed).** Careful work in `mouth.ts` and the eye pipeline, with renders as
-the oracle.
+**Effort: xhigh (confirmed), with one max step.** Careful work in `mouth.ts` and the eye
+pipeline, with renders as the oracle. How eyelids and lips are built (pieces of the skin mesh,
+or separate skinned pieces on bones of their own) is unsettled topology that 9.1 builds on:
+decide it first, as a max step.
 
 - **Mouths**: lips with thickness along the cut, gums, mouth corners, a tongue in the inner mouth
   that follows the jaw, and an inner mouth that darkens toward the throat.
-- **Teeth**: seated in the gums, sized along the row (incisors, canines, molars); `teeth.row`
-  gets parameters for fangs and spacing, and dense rows by default.
-- **Eyes**: smaller defaults and softer gloss; eyelids from the skin that close to blink
-  (exported as lid bones, not squashed eyeballs); brow ridges.
+- **Teeth**: seated in the gums, sized along the row (incisors, canines, molars), and dense by
+  default; `teeth.row` gets parameters for fangs and spacing. Tooth sizes follow the head rather
+  than the torso, so a long serpent's fangs stop reading as planks; the 0.1 → 0.2 migration
+  converts saved sizes so old creatures keep their teeth.
+- **Eyes**: smaller defaults and softer gloss; eyelids that close to blink (exported as lid
+  bones, not squashed eyeballs); brow ridges.
 - **Skull**: nostrils, cheekbones and a brow, as SDF details at the head's scale.
 - **Beaks**: a `beak` part, upper on the head and lower on the jaw, for birds and griffins.
 
 **Done when** the PR shows head views (`render --views head`) of every example, the bite and roar
-filmstrips show the lips and tongue moving with the jaw, exported blinks use the lids, and the
-goldens are re-recorded.
+filmstrips show the lips and tongue moving with the jaw, exported blinks use the lids, the
+corpus test passes with the extended migration, and the goldens are re-recorded.
 
 ### 8.4 Materials and new pattern layers
 
-**Effort: xhigh (confirmed).** Shader work with a CPU–GPU parity check; fur shells are the main
-risk.
+**Effort: xhigh (confirmed).** Shader work with a new CPU–GPU parity test; fur shells are the
+main risk.
 
 - Base materials in TSL, each with its CPU kit twin:
   - `skin`: soft, with wrap lighting;
   - `hide`: thick and creased (crease depth is already in the body coordinates);
   - `scales`: overlapping scales running along the body, not a Voronoi mosaic;
   - `chitin`: segmented plates with seams and a clearcoat-like sheen;
-  - `fur`: shell fur, several shells along the normal drawn as one instanced draw call, off at
+  - `fur`: shell fur, at most 16 shells along the normal drawn as one instanced draw call, off at
     low quality.
 - New pattern modules: `scars`, `bioluminescence` (emissive, pulsing), `slime` (wet gloss and
-  drips), `warts`, `veins`, `rosettes` and `bands`; denser `spots` by default.
+  drips), `warts` (bump; plan.md makes detail under two grid cells a shader matter), `veins`,
+  `rosettes` and `bands`; denser `spots` by default.
 - Export bakes the new layers into vertex colours until 11.1; emissive waits for 11.1's maps.
 
 **Done when**:
 
-- each pattern passes the harness and has a render in the PR;
-- the CPU kit and TSL agree: a new parity test renders the pattern stack unlit in headless
-  Chromium and compares it with the CPU kit at sample points (plan 1 relied on both sharing one
-  `Kit` function and never tested it);
-- fur costs at most one extra draw call, and 50 furred creatures stay within the motion budget;
-- the goldens are unchanged (materials do not move vertices) and the render baselines are
+- each pattern passes the harness (7.5) and has a render in the PR;
+- a new parity test renders the pattern stack unlit in headless Chromium and compares it with
+  the CPU kit at sample points (plan 1 relied on both sharing one `Kit` function and never tested
+  it);
+- fur adds one draw call at most (its GPU cost is measured with 11.3's bench);
+- the goldens are unchanged (materials do not move vertices), and the render baselines are
   re-approved.
 
 ### Gate 8
 
-- Suite A is rerun with the full tools. The quality review against phase 4's renders prefers the
-  new creature in at least 16 of 20 pairs; at least 18/20 renders are matched blind and at least
-  18/20 prompts are valid within three rounds.
-- Budgets: compile ≤ 500 ms at medium in Chrome for every example; skin ≤ 30k triangles; draw
-  calls ≤ 3 (4 with fur); motion ≤ 0.1 ms per creature.
-- The fuzz runs clean, the examples are re-rendered, and the goldens are re-recorded with reasons.
+Meet the gate 8 row of the [gate thresholds](#gate-thresholds), with the quality review over the
+phase 4 run's 20 blueprints at `d101c06` against the gate's commit. Re-render the examples and
+re-record the goldens with reasons.
 
 ## Phase 9: New bodies, limbs and parts
 
-Everything plan 1's "Later" column held for bodies, limbs and parts, on the format from 7.3 and
-the rig from 7.4.
+Everything plan 1's "Later" column held for bodies, limbs and parts, on the format from 7.3, the
+rig from 7.4 and the anatomy from phase 8.
 
 ### 9.1 Several heads and split tails
 
@@ -580,8 +646,9 @@ walk and bite cleanly, pass `analyze`, and expose per-head sockets in the runtim
 **Effort: xhigh (confirmed).** Upright fronts and four leg pairs reach into the controller's
 posture and balance, not just into presets.
 
-- An `octopod` body plan for spiders and scorpions (with pincers as arms), and an alternating gait
-  for four leg pairs. The phase formula with w = 0.5 extends to four pairs; check the footfalls.
+- Six leg pairs already validate and `walk` works with any count, but `tripod` (w = 0.5) is
+  limited to three pairs. Extend it to four (`legPairs: [3, 4]`) or add a four-pair gait, and
+  check the footfalls. Add an `octopod` body plan for spiders and scorpions (pincers as arms).
 - A `centaur` body plan: a quadruped body with an upright front (as 7.3 decides), arms that swing
   while walking and stay free for actions, and balance checks that count the front's mass.
 
@@ -598,66 +665,70 @@ flippers.
 
 - **Wing limbs**: arm-like chains with finger bones (three to five for bats and dragons), a
   membrane between the fingers, body and hind limb, skinned across the bones it spans so it folds
-  and spreads. Insect wings are thin plates on a hinge. Feathered wings are overlapping feather
-  cards on the wing bones; body feathers stay Later.
-- **Fins**: dorsal, tail and pectoral fins as plates (`plate` in the geometry kit, unused so far),
-  and fin limbs (flippers) with a flat cross-section.
+  and spreads. Insect wings are thin plates on a hinge, and beetles' hard wing cases fold over
+  them. Feathered wings are overlapping feather cards on the wing bones; body feathers stay Later.
+- **Fins**: dorsal, tail and pectoral fins as plates (`plate` in the geometry kit), and fin limbs
+  (flippers) with a flat cross-section.
 - **Rest poses**: bats and dragons fold their wings at rest and spread them in flight; folded
   wings stay clear of the body and legs.
-- **Rendering**: double-sided membranes with a thin, translucent look in TSL; exports keep them
-  two-sided.
+- **Rendering**: double-sided, thin, translucent membranes in TSL, as one more draw call (see
+  [Budgets](#budgets)).
+- **Body plans**: `wyvern` (two legs, wings as forelimbs, for bats and wyverns) and `fish`
+  (legless, finned).
 
-**Done when** dragon, bat, wyvern (wings as arms), moth and shark-like examples compile, render
-folded and spread (a new `render --pose spread`), walk without wings passing through the body
-(a new `analyze` check), and stay within budgets.
+**Done when** dragon, bat, wyvern, beetle, moth and shark-like examples compile, render folded
+and spread (a new `render --pose spread`), walk without wings passing through the body (a new
+`analyze` check), and stay within budgets.
 
 ### 9.4 Tentacles, antennae, mandibles and pincers
 
 **Effort: xhigh (confirmed).** Parts with bones and springs are a new capability for part
-modules, with tests as the oracle.
+modules, designed in 7.3's rig sketch, with tests as the oracle.
 
 - **Tentacle limbs**: up to 16 segments, tapered and spring-driven, with a rest curl. They curl
   and reach by cyclic coordinate descent, as the neck already does, or by FABRIK, which plan.md
   planned for long chains but plan 1 never needed. Suckers are a pattern or a part.
 - **Parts with bones**: a part module may declare bone chains with spring settings (eyes already
-  get bones of their own), so `antenna` is one file.
+  get bones of their own), so `antenna` is one file, and ears can join the springs too.
 - **Mandibles and pincers**: `mandible` (paired, hinged, closing with the bite) and `hand.pincer`
   (two fingers, one hinged).
-- **Actions** for the new parts: `pinch`, `lash` (a tail or tentacle strike) and `display`
-  (spreading frills and wings).
+- **Actions** for the new parts: `pinch` and `lash` (a tail or tentacle strike).
 
-**Done when** kraken-like, moth, spider and scorpion examples work with their actions, and the
-module harness covers parts with bones.
+**Done when** kraken-like, moth (antennae), spider and scorpion examples work with their actions,
+and the harness covers parts with bones.
 
-### 9.5 Coverings: shells, plates, quills, frills and sails
+### 9.5 Coverings: shells, plates, quills, frills, hoods and sails
 
 **Effort: xhigh (confirmed).** A new placement slot and geometry that conforms to the skin; the
 module harness and the budgets check it.
 
 - The `region` slot (7.3) and `scatter` in the geometry kit: Poisson-disk placement over a region
-  of skin, oriented by body coordinates, for quills, scutes, warts and plates. plan.md listed
-  `scatter` but plan 1 never built it.
+  of skin, oriented by body coordinates, for quills, scutes and plates. plan.md listed `scatter`
+  but plan 1 never built it.
 - `shell` (a dome over the torso that follows the skin, with scutes), `plates.row` (alternating
   stegosaur plates), `armor.bands` (armadillo bands), `quills`, `frill` (a fan of spines with a
-  membrane around the neck that opens for `display`) and `sail` (spines along the back with a
-  membrane).
+  membrane around the neck), `hood` (a cobra's flaring neck ribs, replacing today's recipe of a
+  wide neck) and `sail` (spines along the back with a membrane).
+- A `display` action opens frills and hoods, raises quills and spreads wings, using 9.4's part
+  bones.
 - Hard parts stay within ≤ 20k triangles at medium and remain one draw call.
 
-**Done when** turtle, stegosaur, porcupine, frilled-lizard and sail-back examples compile and
-render within budgets, and the harness covers the region slot.
+**Done when** turtle, stegosaur, porcupine, frilled-lizard, cobra and sail-back examples compile
+and render within budgets, `display` works on them, and the harness covers the region slot.
 
 ### 9.6 Variation, themes and stats for the new vocabulary
 
-**Effort: high (lowered).** Variation is driven by the schema, so the work is rules and tuning,
-checked with renders.
+**Effort: xhigh (confirmed).** Genes come from the schema, but crossbreeding creatures with
+different head, tail and wing counts, and the new themes' grammar, need design.
 
 - **Genes** for the new fields come from the schema. Structural mutation adds, removes or swaps
   the new parts by tag, but never adds wings or heads (those come from themes and edits).
   Crossbreed pairs heads, tails, wings and fins by role and count.
 - **Themes**: `dragon`, `aquatic`, `eldritch` (tentacles, extra eyes and heads) and `beast`
-  (muscled mammals with fur, paws or hooves); `generate --requires fly|swim`.
-- **Stats**: `rpg` gains flight and swimming speeds, armour from shells and plates, and attack
-  per head.
+  (muscled mammals with fur, paws or hooves); `generate --requires water|air` (media, not module
+  ids).
+- **Stats**: `rpg` gains armour from shells and plates, and attack per head. Swimming and flight
+  speeds join it in 10.3 and 10.4.
 - The variation eval gains four tasks over the new vocabulary.
 
 **Done when** the variation eval passes 12/12, and each new theme renders plausibly across 20
@@ -665,12 +736,13 @@ seeds (a contact sheet in the PR).
 
 ### Gate 9
 
-- Suite B full run (renders, filmstrips, `analyze`, `patch`): at least 18/20 valid within three
-  rounds, at least 18/20 meeting their `expects`, at least 16/20 matched blind.
-- Suite A: at least 18/20 valid and 18/20 matched.
-- The variation eval passes 12/12; the fuzz, with the new vocabulary, runs clean; budgets hold.
+Meet the gate 9 row of the [gate thresholds](#gate-thresholds): suite B's first full run, with
+renders, filmstrips, `analyze` and `patch`.
 
 ## Phase 10: Motion for games
+
+Each milestone adds its scenario kinds (7.5) and checks, so agents can script and check the new
+motion through the CLI.
 
 ### 10.1 Gaits that change with speed; run and gallop
 
@@ -684,10 +756,12 @@ the motion metrics check it.
   rotary) and `bound` for small quadrupeds. Gaits follow Froude number as dynamic similarity
   predicts: walk below about 0.5, trot or run up to about 2.5, gallop above.
 - Transitions blend at matching phases. Existing gaits keep their numbers.
+- `analyze` runs every gait at its natural speed (today it runs at walking pace only), so foot
+  slide is checked at a gallop too.
 - Clips bake `run` and `gallop`, and the runtime's distant level of detail plays them.
 
 **Done when** horse, cheetah-like and raptor examples reach their gallop or run speeds with foot
-slide inside `analyze`'s threshold (2% of `scale`), the motion tests' numbers for existing gaits
+slide inside `analyze`'s threshold (2% of `scale`), the motion tests' results for existing gaits
 are unchanged, and filmstrips are in the PR.
 
 ### 10.2 Root motion in actions: jump and pounce
@@ -707,17 +781,19 @@ penetrating it, and exports round-trip.
 
 ### 10.3 Swimming
 
-**Effort: xhigh (confirmed).** A new water input and 3D steering, built from the slither and
+**Effort: xhigh (confirmed).** A new medium, input and 3D steering, built from the slither and
 gait machinery.
 
-- A `water` callback beside `ground`: `water(x, z)` returns `{ surface }` or `null`. Depth
-  against hip height decides between wading, swimming at the surface and diving.
+- The water medium (see [Locomotion media](#locomotion-media)) and a `water` callback beside
+  `ground`: `water(x, z)` returns `{ surface }` or `null`. Depth against hip height decides
+  between wading, swimming at the surface and diving.
 - Gaits: `swim.undulate` (a body wave that grows toward the tail, with tail-beat frequency from a
   Strouhal number of about 0.3), `swim.paddle` (legs cycling at the surface) and `swim.flap`
   (flippers). Serpents swim with their slither wave.
 - Divers steer in 3D (pitching toward the target depth) with neutral buoyancy. Leaving the water
   switches back to walking.
-- The sandbox's terrain course gets a lake.
+- The sandbox's terrain course gets a lake, and scenarios get water. `rpg` gains a swimming
+  speed.
 
 **Done when** shark-like, turtle, crocodile-like and serpent examples swim, dive and climb out on
 the course; `analyze` checks swimming (paddlers breaking the surface, divers hitting the bed);
@@ -731,9 +807,9 @@ machine and steering are expensive to redo.
 
 Winged creatures take off, fly, glide, hover (insects), bank and land, with any wing 9.3 builds.
 
-- **States**: grounded; takeoff (crouch, leap, power strokes); flapping (downstroke spread,
-  upstroke folded for bats and birds, fast figure-eight strokes for insects); gliding; hovering;
-  landing (flare, legs forward, touchdown with foot IK).
+- **States** in the air medium: takeoff (crouch, then 10.2's leap, then power strokes); flapping
+  (downstroke spread, upstroke folded for bats and birds, fast figure-eight strokes for insects);
+  gliding; hovering; landing (flare, legs forward, touchdown with foot IK).
 - **Scaling**: wingbeat frequency from size, following Pennycuick's fit for birds in cruising
   flight, with mass m, gravity g, span b, wing area S and air density ρ:
 
@@ -742,12 +818,12 @@ Winged creatures take off, fly, glide, hover (insects), bank and land, with any 
   ```
 
   Flight speed comes from wing loading. `analyze` warns `cannot_fly` with the span the creature
-  would need.
+  would need, and `rpg` gains a flight speed.
 - **Steering in 3D**: banking into turns, climbing and descending, holding altitude over the
   game's ground.
 - **Runtime**: `moveTo` with a `y`, or `fly()` and `land()`; `takeoff`, `land` and `flap` events;
   the distant level of detail plays baked `fly` and `glide` cycles. Clips: `fly`, `glide`,
-  `hover`, `takeoff` and `land`.
+  `hover`, `takeoff` and `land`. Scenarios get flight courses.
 
 **Done when** dragon, bat, wyvern and moth examples fly a scripted course: take off, circle,
 glide, land on a slope. Wings never pass through the body or the ground, altitude stays within
@@ -766,29 +842,32 @@ Ragdoll physics stays out of scope.
   engine. Legs buckle; quadrupeds roll onto the side away from the hit, bipeds slump and serpents
   go limp. The body settles on sampled ground heights while its springs die out. A `death` event
   and a baked `death` clip.
-- Hit capsules stay correct while dying.
+- Hit capsules stay correct while dying. Scenarios get hits and deaths.
 
 **Done when** every example dies on flat and rough ground from hits on either side without going
 into the ground by more than 3% of `scale`, with filmstrips in the PR.
 
 ### Gate 10
 
-- Suite M with filmstrips: at least 9/10 tasks pass their checks, and the motion review matches
-  at least 8/10 filmstrips.
-- Motion cost: ≤ 0.1 ms per walking creature and ≤ 0.15 ms flying or swimming; 50 mixed
-  creatures ≤ 5 ms.
-- Every new clip bakes, and gait clips loop without a seam.
+Write suite M's ten tasks and their checks (`eval/prompts-m.json`, `eval/motion.ts`), then meet
+the gate 10 row of the [gate thresholds](#gate-thresholds). Every new clip must bake, and gait
+clips must loop without a seam.
 
 ## Phase 11: Into engines
 
 ### 11.1 Texture maps from UV atlases
 
-**Effort: xhigh (confirmed).** The bake has many conventions to get right (colour spaces, tangent
-space, seams), but a round-trip render and the glTF validator make mistakes visible. If the
-round trip cannot be built, raise this milestone to max.
+**Effort: xhigh (confirmed), with one max step.** The bake has many conventions to get right
+(colour spaces, tangent space, seams), but a round-trip render and the glTF validator make
+mistakes visible. If the round trip cannot be built, raise the milestone to max.
 
 Exported creatures should look in any engine as they do live.
 
+- **Max step first**: decide, per live effect that glTF cannot carry as such, whether it exports
+  through a glTF extension, bakes into the maps, or stays live-only and documented. The effects
+  are fur shells, translucent membranes, the chitin sheen, pulsing emissive and wrap lighting. The
+  round trip then compares like with like, rendering the live side with the same
+  simplifications.
 - `@spawnforge/bake` (see [Cross-cutting design](#a-new-package-for-export-processing)) unwraps
   skin and parts into UV atlases with xatlas at export.
 - It evaluates the pattern stack per texel with the CPU kit, interpolating rest position and body
@@ -800,11 +879,12 @@ Exported creatures should look in any engine as they do live.
 - Gutters are dilated; skin maps are 512, 1024 or 2048 pixels by quality.
 - `export --textures` is on by default; `none` keeps vertex colours only.
 - **Oracle**: the headless page loads the exported `.glb` with GLTFLoader and renders it from the
-  same cameras as the live TSL creature, and the images must agree within a set tolerance. The
-  glTF validator must report no errors.
+  same cameras as the live creature, and the images must agree within a set tolerance. The glTF
+  validator (Khronos, a dev dependency) must report no errors.
 
 **Done when** the round trip passes for every example, the validator is clean, the export eval
-has texture tasks, and a medium `.glb` stays ≤ 8 MB and bakes in ≤ 10 s.
+has texture tasks, a medium `.glb` stays ≤ 8 MB and bakes in ≤ 10 s, and runtime.md lists what
+each live-only effect becomes in an export.
 
 ### 11.2 Levels of detail
 
@@ -813,24 +893,23 @@ and simplification error.
 
 - `@spawnforge/bake` simplifies skin and parts with meshoptimizer into a chain (100, 50, 25 and 10%
   of the triangles), keeping skin weights and UV seams.
-- Live, the runtime swaps meshes by screen size, beside its baked-motion level of detail.
-  Exports carry the chain as `skin_LOD1` and so on (the suffix Unity's importer groups) and list
-  it in the extras.
+- Live, the runtime swaps meshes by screen size, beside its baked-motion level of detail, at
+  distances where the simplification error projects to under one pixel. Exports carry the chain
+  as `skin_LOD1` and so on (the naming Unity uses for LOD groups) and list it in the extras.
 
-**Done when** the triangle counts and error are tested, switching never pops the skin, and the
-exports validate.
+**Done when** the triangle counts and the projected error are tested, and the exports validate.
 
 ### 11.3 GPU cost and crowds
 
 **Effort: xhigh (confirmed).** Skinning from textures in TSL is new code, and performance can only
 be measured on real hardware.
 
-- **`pnpm bench`**: a page that runs N creatures (mixed species, walking and acting) and reports
-  frame time, draw calls and GPU time where the browser exposes it, saved as JSON. The owner runs
-  it on a mid-range laptop, since agent sandboxes render on the CPU.
-- **Crowds**: distant creatures drawn instanced per species and level of detail, sampling baked
-  clips from a bone-matrix texture in TSL (one draw call per species and level), each with its own
-  time offset.
+- **`pnpm bench`**: a page that runs N creatures (mixed species, walking and acting, with fur and
+  membranes) and reports frame time, draw calls and GPU time where the browser exposes it, saved
+  as JSON. The owner runs it on a mid-range laptop, since agent sandboxes render on the CPU.
+- **Crowds**: distant creatures drawn instanced per species and level of detail (11.2), sampling
+  baked clips from a bone-matrix texture in TSL (one draw call per species and level), each with
+  its own time offset.
 - Targets: 50 fully animated creatures at 60 fps (plan 1's target, measured at last) and 500
   distant ones.
 
@@ -840,24 +919,23 @@ posed exactly as the per-creature baked level of detail.
 
 ### 11.4 Engine guides
 
-**Effort: medium (lowered).** Documentation of finished exports.
+**Effort: high (lowered).** Documentation plus a small script per engine and an import test:
+tooling, but no design questions.
 
 - `docs/engines.md`: importing into Godot 4, Unity 6, Unreal 5 and Blender: textures and colour
-  spaces, animations and root motion, sockets, levels of detail, and a short script per engine
-  that reads the extras.
+  spaces, animations and root motion (10.2), sockets, levels of detail, the live-only effects
+  (11.1), and a short script per engine that reads the extras.
 - Exports are checked with the glTF validator. Where an engine runs in CI (Blender headless), add
   an import test.
 
-**Done when** every engine section is complete, and the extras snippets are tested where an
-engine is available.
+**Done when** every engine section is complete, and the extras scripts are tested where an engine
+is available.
 
 ### Gate 11
 
-- The export eval, extended with textures, levels of detail, root-motion clips and engine notes,
-  passes every task.
-- The round trip and the glTF validator pass for every example, and 7.6's smoke test still
-  passes.
-- The bench numbers are recorded from the owner's run, or listed as pending.
+Extend the export eval with textures, levels of detail, root-motion clips and engine notes, then
+meet the gate 11 row of the [gate thresholds](#gate-thresholds). 7.6's smoke test must still
+pass, and the bench numbers are recorded from the owner's run or listed as pending.
 
 ## Phase 12: Tools and release
 
@@ -890,26 +968,28 @@ test places, moves and removes a horn, leaving a file that validates.
 
 **Effort: high (lowered).** Protocol reruns and documentation over finished work.
 
-- Freeze format 0.2. Rerun every eval at the release commit (suites A, B and M, variation, export)
-  and the budgets.
+- Freeze format 0.2. Meet the gate 12 row of the [gate thresholds](#gate-thresholds) at the
+  release commit, with the budgets.
 - Refresh README, AGENTS.md (status and repo map), architecture.md, blueprint.md, runtime.md,
   engines.md, the catalogue and the changelog.
-- Publish the packages and the gallery only with the owner's go-ahead, then tag the release.
+- With the owner's go-ahead: set `private: false`, publish each package (`pnpm publish` per
+  package), publish the gallery, and tag the release.
 
 **Done when** the evals pass at the release commit, the docs are current, and the release is
 published or ready to publish.
 
 ## Dependencies
 
-Milestones in the same phase without an arrow between them can run in parallel (in separate
-worktrees, each with its own PR).
+Phases run in order, each after the previous gate, except where an arrow says more. Milestones
+in the same phase without an arrow between them can run in parallel (in separate worktrees, each
+with its own PR).
 
 ```mermaid
 flowchart TD
   subgraph p7[Phase 7: foundations]
     m71[7.1 carry-overs]
-    m72[7.2 versions] --> m73[7.3 format 0.2] --> m74[7.4 rig lists]
-    m75[7.5 eval tools]
+    m72[7.2 migrations] --> m73[7.3 format 0.2] --> m74[7.4 rig lists]
+    m75[7.5 eval and test tools]
     m76[7.6 packages]
   end
   subgraph p8[Phase 8: anatomy and surfaces]
@@ -921,9 +1001,7 @@ flowchart TD
   subgraph p9[Phase 9: new bodies]
     m91[9.1 heads and tails]
     m92[9.2 eight legs, centaurs]
-    m93[9.3 wings and fins]
-    m94[9.4 tentacles to pincers]
-    m95[9.5 coverings]
+    m93[9.3 wings and fins] --> m94[9.4 tentacles to pincers] --> m95[9.5 coverings]
     m96[9.6 variation and themes]
   end
   subgraph p10[Phase 10: motion]
@@ -934,9 +1012,7 @@ flowchart TD
     m105[10.5 hits and death]
   end
   subgraph p11[Phase 11: into engines]
-    m111[11.1 textures]
-    m112[11.2 LOD]
-    m113[11.3 GPU and crowds]
+    m111[11.1 textures] --> m112[11.2 LOD] --> m113[11.3 GPU and crowds]
     m114[11.4 engine guides]
   end
   subgraph p12[Phase 12: tools and release]
@@ -944,35 +1020,36 @@ flowchart TD
     m122[12.2 gallery]
     m123[12.3 release 0.2]
   end
-  m74 --> m81 & m83 & m94 & m102 & m105
-  m73 --> m82 & m84 & m95
-  m81 --> m92 & m93
-  m83 --> m91
-  m91 & m92 & m93 & m94 & m95 --> m96
-  m82 --> m101
-  m93 --> m103 & m104
-  m84 --> m111 --> m112
+  m74 --> m81 & m83
+  m73 --> m82 & m84
+  m75 --> m81 & m82 & m84
+  p8 --> p9
+  m91 & m92 & m95 --> m96
+  p9 --> p10
+  m101 --> m103 & m104
+  m102 --> m104
+  p10 --> p11
   m111 & m112 --> m114
-  m101 --> m113
-  m95 --> m121
-  m111 --> m122
-  m71 & m75 & m76 & m96 & m104 & m113 & m114 & m121 & m122 --> m123
+  p9 --> m121
+  p11 --> m122
+  m71 & m76 & m96 & m103 & m104 & m105 & m113 & m114 & m121 & m122 --> m123
 ```
 
-Gate 8 also needs 7.5's quality review, and gate 10 its motion review.
+Gate 8 also needs 7.5's quality review, and gate 10 its motion review and scenarios.
 
 ## Risks
 
 | Risk | Mitigation |
 | --- | --- |
-| The new vocabulary makes the format hard for models | Design it once (7.3), run a format eval before building, check `expects` and rerun suite B at every gate |
+| The new vocabulary makes the format hard for models | Design it once (7.3), run a format eval before building, check `expects`, and rerun suite B as the gate thresholds say |
 | Compile time grows past budget with muscles, extra chains and coverings | Coverings are parts, not SDF; per-primitive culling; profile per stage; WASM only when measurements demand it |
-| "Better looking" stays subjective | A blind side-by-side review against a fixed rubric, with a numeric gate; before-and-after sheets in every visible PR |
+| "Better looking" stays subjective | A blind side-by-side review of the same blueprints at two commits, against a fixed rubric, with a numeric gate; before-and-after sheets in every visible PR |
 | Flight and swimming look robotic | Parameters from measured animals (Pennycuick's wingbeat scaling, Strouhal numbers of 0.2–0.4), filmstrips, motion metrics and a blind motion review |
 | Golden churn hides accidental changes | Re-record once per milestone, with a reason; refactors must keep goldens identical |
-| Exports look different from live creatures | The round-trip render oracle (11.1) |
-| Fur shells cost fill rate and draw calls | One instanced draw call, off at low quality, inside the budget table |
-| Dependencies creep | Only xatlas and meshoptimizer (in `bake`) and the glTF validator (dev only) are new, as plan.md foresaw |
+| Exports look different from live creatures | The round-trip render oracle (11.1), with each live-only effect decided and documented |
+| More examples slow CI | Node checks every example; the Chromium tests use a fixed subset |
+| Fur shells and membranes cost fill rate and draw calls | One instanced draw call for fur, off at low quality; one for membranes; both in the budget table and the bench |
+| Dependencies creep | New in plan 2: xatlas, meshoptimizer and MikkTSpace (WASM, in `bake` only) and the glTF validator (dev only); plan.md foresaw the first two |
 | Three.js changes under the TSL code | Stay on r186 through plan 2; an upgrade is its own deliberate milestone, later |
 | Scope creep | This scope table is the contract; new ideas go to its "Later" column |
 
@@ -980,8 +1057,8 @@ Gate 8 also needs 7.5's quality review, and gate 10 its motion review.
 
 1. **License.** The repository has none. Packages cannot be published without one; MIT is the
    usual choice for a library like this.
-2. **Publishing.** Who owns the `@spawnforge` npm scope, and when should the first release go out
-   (after 7.6 for the alpha, or at 12.3)?
+2. **Publishing.** Who owns the `@spawnforge` npm scope, and whether to publish an alpha after
+   7.6 or wait for 12.3.
 3. **Gallery hosting.** Where 12.2's site should live (GitHub Pages, or elsewhere).
 4. **Benchmark hardware.** A mid-range laptop to run `pnpm bench` on for 11.3.
 5. **The assumptions** in [Decisions this plan takes](#decisions-this-plan-takes): art direction,
@@ -1000,5 +1077,5 @@ Gate 8 also needs 7.5's quality review, and gate 10 its motion review.
 - R. McN. Alexander and A. S. Jayes, A dynamic similarity hypothesis for the gaits of quadrupedal
   mammals, J. Zool. 201 (1983)
 - [xatlas](https://github.com/jpcy/xatlas), [meshoptimizer](https://github.com/zeux/meshoptimizer),
-  [glTF Validator](https://github.com/KhronosGroup/glTF-Validator),
-  [MikkTSpace](http://www.mikktspace.com/)
+  [MikkTSpace](http://www.mikktspace.com/),
+  [glTF Validator](https://github.com/KhronosGroup/glTF-Validator)
