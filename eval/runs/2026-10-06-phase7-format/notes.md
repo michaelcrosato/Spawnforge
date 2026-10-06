@@ -57,3 +57,14 @@ plan 2's "Later" column.
 - Error messages gave exact ranges and "did you mean" fixes in the agents' probes, and
   `heads_overlap` gave a usable `spread`.
 - `notBuilt` was understood as intended: every agent kept every listed feature.
+
+## Gate 7
+
+Every row of plan 2's gate 7 is met:
+
+| Check | Bar | Result |
+| --- | --- | --- |
+| Suite A, re-scored after migration | 20/20 | 20/20 (above) |
+| Suite B, format eval | ≥ 18/20 valid, ≥ 18/20 meet `expects` | 20/20 and 20/20 (above) |
+| Corpus migrates | Every saved blueprint | `corpus.test.ts` passes, including this run's attempts |
+| Smoke test | Passes | `pnpm smoke` passes in CI from 7.6 ([#15](https://github.com/michaelcrosato/Spawnforge/pull/15)) |
