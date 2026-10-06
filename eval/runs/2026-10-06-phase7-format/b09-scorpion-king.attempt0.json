@@ -1,0 +1,75 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Scorpion King",
+  "seed": 909,
+  "extends": "hexapod",
+  "scale": 1.0,
+  "body": {
+    "head": { "length": 0.2, "radius": 0.09 },
+    "tail": {
+      "length": 2.4,
+      "radius": [0.085, 0.06, 0.055, 0.05, 0.05, 0.065, 0.02],
+      "pitch": 40,
+      "curl": 200,
+      "segments": 12
+    }
+  },
+  "limbs": [
+    { "id": "frontleg", "attach": { "at": 0.14 } },
+    { "id": "midleg", "attach": { "at": 0.26 } },
+    { "id": "hindleg", "attach": { "at": 0.38 } },
+    {
+      "id": "claw-arm",
+      "role": "arm",
+      "attach": { "on": "torso", "at": 0.02, "side": "both", "angle": 80 },
+      "length": 0.9,
+      "segments": 2,
+      "radius": [0.06, 0.045],
+      "splay": 25,
+      "lift": 80,
+      "foot": { "type": "hand.pincer", "size": 0.3, "width": 0.9, "teeth": 5 }
+    }
+  ],
+  "parts": [
+    {
+      "id": "stinger",
+      "type": "horn.curved",
+      "attach": { "on": "tail", "at": 0.97, "angle": 0 },
+      "params": {
+        "length": 0.14,
+        "width": 0.03,
+        "curve": 60,
+        "color": "#1e1a16",
+        "tipColor": "#0a0806"
+      }
+    },
+    {
+      "id": "armor",
+      "type": "armor.bands",
+      "attach": { "on": "torso", "area": "back", "from": 0.15, "to": 1 },
+      "params": { "bands": 9, "thickness": 0.03, "overlap": 0.35, "color": "base" }
+    },
+    {
+      "id": "crown",
+      "type": "spikes.row",
+      "attach": { "on": "head", "from": 0.3, "to": 0.9, "angle": 0 },
+      "params": {
+        "count": 5,
+        "height": 0.06,
+        "curve": -10,
+        "color": "#d8b040",
+        "tipColor": "#f0d870"
+      }
+    }
+  ],
+  "skin": {
+    "palette": { "base": "#3a2418", "belly": "#7a5a3a", "accent": "#c08a30" },
+    "material": "chitin",
+    "layers": [
+      { "type": "countershade", "softness": 0.2 },
+      { "type": "mottle", "color": "accent", "scale": 0.15, "coverage": 0.3, "strength": 0.5 },
+      { "type": "bands", "color": "accent", "count": 7, "region": "tail" }
+    ]
+  },
+  "motion": { "temperament": "aggressive", "actions": ["pinch", "lash", "bite", "look", "idle"] }
+}

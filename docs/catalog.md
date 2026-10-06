@@ -6,6 +6,20 @@ Every module available to `spawnforge/0.2` blueprints. Lengths are in torso leng
 the blueprint's `scale`); angles are in degrees. Run `spawnforge describe-module <id>` or the
 `describe_module` tool for the same facts as JSON.
 
+## At a glance
+
+Every module by kind. A milestone in brackets marks a stub: it validates, and compile skips it
+until that milestone lands (`list-modules` gives the same as `planned`; `validate` lists what a
+blueprint uses of it under `notBuilt`).
+
+- **Body plans:** `biped`, `centaur`, `fish`, `hexapod`, `octopod`, `quadruped`, `serpent`, `wyvern`
+- **Parts:** `antenna` (9.4), `armor.bands` (9.5), `beak` (8.3), `ear.pointed`, `eye.basic`, `fin.dorsal` (9.3), `fin.tail` (9.3), `foot.claw`, `foot.hoof` (8.2), `foot.pad` (8.2), `foot.paw` (8.2), `foot.talon` (8.2), `frill` (9.5), `hand.grasp` (8.2), `hand.pincer` (9.4), `hood` (9.5), `horn.curved`, `mandible` (9.4), `membrane.bat` (9.3), `membrane.case` (9.3), `membrane.feather` (9.3), `membrane.fin` (9.3), `membrane.insect` (9.3), `plates.row` (9.5), `quills` (9.5), `sail` (9.5), `shell` (9.5), `spikes.row`, `teeth.row`
+- **Patterns:** `bands` (8.4), `bioluminescence` (8.4), `countershade`, `grime`, `mottle`, `rosettes` (8.4), `scales`, `scars` (8.4), `slime` (8.4), `spots`, `stripes`, `veins` (8.4), `warts` (8.4)
+- **Gaits:** `bound` (10.1), `fly` (10.4), `gallop` (10.1), `glide` (10.4), `hover` (10.4), `run` (10.1), `slither`, `swim.flap` (10.3), `swim.paddle` (10.3), `swim.undulate` (10.3), `tripod`, `trot`, `walk`
+- **Actions:** `bite`, `display` (9.5), `idle`, `jump` (10.2), `lash` (9.4), `look`, `pinch` (9.4), `pounce` (10.2), `roar`
+- **Themes:** `demon`, `insect`, `reptile`
+- **Stats:** `rpg`
+
 ## Blueprint fields
 
 Every field outside the modules, generated from the schema. Fields with a default may be left out.
@@ -167,7 +181,7 @@ A tentacle: a long tapering chain of up to 16 bones
 | `radius` | number or list of number | 0.005–0.5 | `[0.06, 0.008]` | Radius from root to tip, in torso lengths |
 | `muscle` | number | 0–1 |  | How muscled this limb is, 0 to 1; left out, it follows body.muscle |
 | `remove` | true |  |  | Delete an inherited limb with this id |
-| `curl` | number | -360–360 | `0` | Total degrees the tentacle curls at rest; negative curls the other way |
+| `curl` | number | -360–360 | `0` | Total degrees the tentacle curls at rest, toward the belly; negative curls toward the back |
 | `curlStart` | number | 0–0.95 | `0` | Share of the tentacle that stays straight before the curl begins |
 | `foot` | object or "foot.claw" \| "foot.hoof" \| "foot.pad" \| "foot.paw" \| "foot.talon" \| "hand.grasp" \| "hand.pincer" or null |  | `null` | Foot or hand part at the limb tip; the id alone also works; null for none |
 
@@ -211,6 +225,16 @@ A tentacle: a long tapering chain of up to 16 bones
 | `fur` | object (below) |  |  | Fur over the skin, where its region says; null removes an inherited coat |
 | `layers` | list of object |  | `[{ "type": "countershade" }]` | Pattern stack, bottom first |
 
+### `skin.fur`
+
+A coat of fur over the skin
+
+| Field | Type | Range | Default | Description |
+| --- | --- | --- | --- | --- |
+| `length` | number | 0.002–0.3 | `0.03` | Hair length in torso lengths |
+| `density` | number | 0–1 | `0.8` | How thick the coat is |
+| `region` | "all" \| "back" \| "belly" \| "head" \| "torso" \| "limbs" \| "tail" \| "wings" or list of "all" \| "back" \| "belly" \| "head" \| "torso" \| "limbs" \| "tail" \| "wings" |  | `"all"` | Where it grows: a layer region or a list of them, e.g. ["torso", "limbs", "tail"] |
+
 ### `skin.layers[] (every layer)`
 
 One pattern layer; its parameters sit beside `type`
@@ -229,7 +253,17 @@ One pattern layer; its parameters sit beside `type`
 | `temperament` | "calm" \| "stalking" \| "skittish" \| "aggressive" \| "lumbering" |  | `"calm"` | Sets pace, posture and idle behaviour |
 | `gaits` | list of "bound" \| "fly" \| "gallop" \| "glide" \| "hover" \| "run" \| "slither" \| "swim.flap" \| "swim.paddle" \| "swim.undulate" \| "tripod" \| "trot" \| "walk" or object |  |  | Gaits it may use; by default every gait that suits its body; a list replaces the defaults only for the media its gaits serve |
 | `actions` | list of "bite" \| "display" \| "idle" \| "jump" \| "lash" \| "look" \| "pinch" \| "pounce" \| "roar" or object |  |  | Actions it can perform; by default every action its body allows |
-| `media` | object (below) |  |  | Where it moves; each switch left out follows the body (land with legs, water with fins or tentacles and no legs, air with wings) |
+| `media` | object (below) |  |  | Where it moves; each switch left out follows the body (land with legs, water with fins or tentacles on the torso and no legs, air with wings) |
+
+### `motion.media`
+
+Where it moves; each switch left out follows the body (land with legs, water with fins or tentacles on the torso and no legs, air with wings)
+
+| Field | Type | Range | Default | Description |
+| --- | --- | --- | --- | --- |
+| `land` | boolean |  |  | Walks (or slithers) on the ground |
+| `water` | boolean |  |  | Swims |
+| `air` | boolean |  |  | Flies; needs a wing |
 
 ## Body plans
 
@@ -412,7 +446,7 @@ Ids you can override: limb `pectoral`, part `eyes`, part `dorsal`, part `tailfin
 
 ### `hexapod`
 
-Six sprawled legs on a low, wide body with a chitin shell; runs a tripod gait.
+Six sprawled legs on a low, wide body with chitin skin; runs a tripod gait.
 
 Start a blueprint with "extends": "hexapod"; override preset limbs and parts by id.
 
@@ -1015,6 +1049,8 @@ Add to "parts" with "type": "frill"; parameters go in "params".
 
 **Not built yet** (plan milestone 9.5): it validates, but compile skips it and warns `not_built`.
 
+Provides `display`, which actions can need.
+
 slot: `"surface"` · material: `"skin"` · defaultAttach: `{"on":"neck","at":0.1,"angle":0}`
 
 | Parameter | Type | Range | Default | Description |
@@ -1037,6 +1073,8 @@ Set as a limb's foot: { "foot": { "type": "hand.grasp", ...params } }.
 
 **Not built yet** (plan milestone 8.2): it validates, but compile skips it and warns `not_built`.
 
+Provides `hand`, which actions can need.
+
 slot: `"foot"` · material: `"skin"` · defaultAttach: `{"on":"limb"}`
 
 | Parameter | Type | Range | Default | Description |
@@ -1057,6 +1095,8 @@ A crab or scorpion pincer: a heavy claw with one hinged finger that snaps shut.
 Set as a limb's foot: { "foot": { "type": "hand.pincer", ...params } }.
 
 **Not built yet** (plan milestone 9.4): it validates, but compile skips it and warns `not_built`.
+
+Provides `pincer`, which actions can need.
 
 slot: `"foot"` · material: `"chitin"` · defaultAttach: `{"on":"limb"}`
 
@@ -1079,6 +1119,8 @@ A cobra's hood: neck ribs that spread the skin into a flat shield in display.
 Add to "parts" with "type": "hood"; parameters go in "params".
 
 **Not built yet** (plan milestone 9.5): it validates, but compile skips it and warns `not_built`.
+
+Provides `display`, which actions can need.
 
 slot: `"surface"` · material: `"skin"` · defaultAttach: `{"on":"neck","at":0.3,"angle":0}`
 
@@ -1131,6 +1173,8 @@ Add to "parts" with "type": "mandible"; parameters go in "params".
 
 **Not built yet** (plan milestone 9.4): it validates, but compile skips it and warns `not_built`.
 
+Provides `mandibles`, which actions can need.
+
 slot: `"mouth"` · material: `"chitin"` · defaultAttach: `{"on":"head"}`
 
 | Parameter | Type | Range | Default | Description |
@@ -1150,9 +1194,11 @@ slot: `"mouth"` · material: `"chitin"` · defaultAttach: `{"on":"head"}`
 
 Leathery skin stretched between long finger bones, the body and the hind leg: bat and dragon wings.
 
-Add to "parts" with "type": "membrane.bat"; parameters go in "params".
+Set as a wing's or fin's membrane: { "membrane": { "type": "membrane.bat", ...params } }, not in "parts".
 
 **Not built yet** (plan milestone 9.3): it validates, but compile skips it and warns `not_built`.
+
+Provides `glide`, which actions can need.
 
 slot: `"membrane"` · material: `"skin"` · defaultAttach: `{"on":"limb"}`
 
@@ -1173,7 +1219,7 @@ slot: `"membrane"` · material: `"skin"` · defaultAttach: `{"on":"limb"}`
 
 A beetle's hard wing case (elytron): a shell that covers the same-side wing behind it and lifts in flight.
 
-Add to "parts" with "type": "membrane.case"; parameters go in "params".
+Set as a wing's or fin's membrane: { "membrane": { "type": "membrane.case", ...params } }, not in "parts".
 
 **Not built yet** (plan milestone 9.3): it validates, but compile skips it and warns `not_built`.
 
@@ -1194,9 +1240,11 @@ slot: `"membrane"` · material: `"chitin"` · defaultAttach: `{"on":"limb"}`
 
 Overlapping flight feathers along the wing bones, for birds and griffins.
 
-Add to "parts" with "type": "membrane.feather"; parameters go in "params".
+Set as a wing's or fin's membrane: { "membrane": { "type": "membrane.feather", ...params } }, not in "parts".
 
 **Not built yet** (plan milestone 9.3): it validates, but compile skips it and warns `not_built`.
+
+Provides `glide`, which actions can need.
 
 slot: `"membrane"` · material: `"skin"` · defaultAttach: `{"on":"limb"}`
 
@@ -1216,7 +1264,7 @@ slot: `"membrane"` · material: `"skin"` · defaultAttach: `{"on":"limb"}`
 
 A fin of thin rays with skin between them, on a fin limb (pectoral and pelvic fins).
 
-Add to "parts" with "type": "membrane.fin"; parameters go in "params".
+Set as a wing's or fin's membrane: { "membrane": { "type": "membrane.fin", ...params } }, not in "parts".
 
 **Not built yet** (plan milestone 9.3): it validates, but compile skips it and warns `not_built`.
 
@@ -1237,9 +1285,11 @@ slot: `"membrane"` · material: `"skin"` · defaultAttach: `{"on":"limb"}`
 
 A thin, veined insect wing on a hinge, for flies, dragonflies, moths and bees.
 
-Add to "parts" with "type": "membrane.insect"; parameters go in "params".
+Set as a wing's or fin's membrane: { "membrane": { "type": "membrane.insect", ...params } }, not in "parts".
 
 **Not built yet** (plan milestone 9.3): it validates, but compile skips it and warns `not_built`.
+
+Provides `hover`, which actions can need.
 
 slot: `"membrane"` · material: `"chitin"` · defaultAttach: `{"on":"limb"}`
 
@@ -1267,7 +1317,7 @@ slot: `"row"` · material: `"bone"` · defaultAttach: `{"on":"spine","from":0.2,
 
 | Parameter | Type | Range | Default | Description |
 | --- | --- | --- | --- | --- |
-| `count` | integer | 2–40 | `12` | Plates in the row |
+| `count` | integer | 2–40 | `12` | Plates in all; with alternate they take turns left and right |
 | `height` | number or list of number | 0.01–0.8 | `[0.08, 0.2, 0.08]` | Height in torso lengths, as one number or a profile along the row |
 | `alternate` | boolean |  | `true` | Two staggered rows, left and right |
 | `shape` | "kite" \| "round" \| "spike" |  | `"kite"` | Plate outline |
@@ -1290,6 +1340,8 @@ Long sharp quills scattered over an area of the body, raised in display, like a 
 Add to "parts" with "type": "quills"; parameters go in "params".
 
 **Not built yet** (plan milestone 9.5): it validates, but compile skips it and warns `not_built`.
+
+Provides `display`, which actions can need.
 
 slot: `"area"` · material: `"horn"` · defaultAttach: `{"on":"spine","area":"back","from":0.3,"to":0.9}`
 
@@ -1317,6 +1369,8 @@ A tall sail of skin stretched over long spines along the back, like a dimetrodon
 Add to "parts" with "type": "sail"; parameters go in "params".
 
 **Not built yet** (plan milestone 9.5): it validates, but compile skips it and warns `not_built`.
+
+Provides `display`, which actions can need.
 
 slot: `"row"` · material: `"skin"` · defaultAttach: `{"on":"spine","from":0.25,"to":0.6,"angle":0}`
 
@@ -1369,7 +1423,7 @@ slot: `"row"` · material: `"bone"` · defaultAttach: `{"on":"torso","angle":0}`
 
 | Parameter | Type | Range | Default | Description |
 | --- | --- | --- | --- | --- |
-| `count` | integer | 1–60 | `7` | Spikes in the row |
+| `count` | integer | 1–60 | `7` | Spikes in the row (in each row, with side "both") |
 | `height` | number or list of number | 0.01–0.5 | `0.08` | Height in torso lengths, as one number or a profile along the row |
 | `width` | number | 0.005–0.2 | `0.025` | Base radius in torso lengths |
 | `curve` | number | -90–90 | `20` | Degrees each spike sweeps back toward the tail |
@@ -1921,7 +1975,7 @@ needs: `["jaw"]`
 
 ### `display`
 
-Threat display: opens frills and hoods, raises quills and sails, spreads wings.
+Threat display: opens frills and hoods, raises quills and sails. Needs a part that provides `display`.
 
 List in motion.actions as "display", or { "type": "display", ...params }.
 

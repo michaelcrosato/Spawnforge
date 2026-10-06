@@ -1,0 +1,46 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Giant Bat",
+  "seed": 303,
+  "extends": "wyvern",
+  "scale": 0.7,
+  "body": {
+    "torso": { "radius": [0.14, 0.17, 0.14, 0.09], "pitch": 20 },
+    "neck": { "length": 0.12, "radius": [0.07, 0.1], "pitch": 25 },
+    "head": { "shape": "snout", "length": 0.24, "radius": 0.1, "pitch": -5 },
+    "tail": { "length": 0.2, "radius": [0.05, 0.015], "curl": 0 }
+  },
+  "limbs": [
+    {
+      "id": "leg",
+      "attach": { "on": "torso", "at": 0.85 },
+      "length": 0.4,
+      "radius": [0.045, 0.02],
+      "foot": { "type": "foot.claw", "toes": 4 }
+    },
+    {
+      "id": "wing",
+      "role": "wing",
+      "length": 2,
+      "membrane": { "type": "membrane.bat", "fingers": 5, "span": 1.2, "scallop": 0.5 },
+      "foot": { "type": "foot.claw", "toes": 1, "clawLength": 0.05 }
+    }
+  ],
+  "parts": [
+    {
+      "id": "ears",
+      "type": "ear.pointed",
+      "attach": { "on": "head", "at": 0.85, "angle": 45 },
+      "params": { "length": 0.26, "width": 0.09, "curve": 5, "thickness": 0.2 }
+    },
+    { "id": "eyes", "params": { "pupil": "round", "size": 0.02, "irisColor": "#2a1a10" } },
+    { "id": "teeth", "type": "teeth.row", "params": { "count": 8, "fangs": 2 } }
+  ],
+  "skin": {
+    "palette": { "base": "#3b2416", "belly": "#5a3f2a", "accent": "#1f120a" },
+    "material": "skin",
+    "fur": { "length": 0.03, "density": 0.9, "region": ["head", "torso", "limbs"] },
+    "layers": [{ "type": "countershade", "strength": 0.5 }]
+  },
+  "motion": { "temperament": "stalking" }
+}

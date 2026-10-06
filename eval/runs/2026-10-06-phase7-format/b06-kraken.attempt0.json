@@ -1,0 +1,100 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Abyssal Kraken",
+  "seed": 606,
+  "scale": 2.5,
+  "body": {
+    "torso": {
+      "radius": [0.18, 0.32, 0.4, 0.3],
+      "pitch": 0,
+      "segments": 6,
+      "crossSection": "round"
+    },
+    "neck": { "length": 0 },
+    "head": { "shape": "round", "length": 0.3, "radius": 0.2, "jaw": true, "pitch": 0 },
+    "tail": { "length": 0 }
+  },
+  "limbs": [
+    {
+      "id": "tentacle-a",
+      "role": "tentacle",
+      "attach": { "on": "torso", "at": 0.9, "side": "both", "angle": 60 },
+      "length": 2.0,
+      "segments": 12,
+      "radius": [0.08, 0.008],
+      "curl": 70,
+      "curlStart": 0.4
+    },
+    {
+      "id": "tentacle-b",
+      "role": "tentacle",
+      "attach": { "on": "torso", "at": 0.9, "side": "both", "angle": 100 },
+      "length": 1.8,
+      "segments": 12,
+      "radius": [0.08, 0.008],
+      "curl": -60,
+      "curlStart": 0.4
+    },
+    {
+      "id": "tentacle-c",
+      "role": "tentacle",
+      "attach": { "on": "torso", "at": 0.9, "side": "both", "angle": 130 },
+      "length": 1.9,
+      "segments": 12,
+      "radius": [0.08, 0.008],
+      "curl": 80,
+      "curlStart": 0.5
+    },
+    {
+      "id": "tentacle-d",
+      "role": "tentacle",
+      "attach": { "on": "torso", "at": 0.9, "side": "both", "angle": 160 },
+      "length": 1.7,
+      "segments": 12,
+      "radius": [0.08, 0.008],
+      "curl": -90,
+      "curlStart": 0.4
+    }
+  ],
+  "parts": [
+    {
+      "id": "eyes",
+      "type": "eye.basic",
+      "attach": { "on": "head", "at": 0.35, "angle": 75, "side": "both" },
+      "params": {
+        "size": 0.1,
+        "pupil": "goat",
+        "irisColor": "#e0b020",
+        "scleraColor": "#f0e8c8",
+        "bulge": 0.7
+      }
+    },
+    {
+      "id": "beak",
+      "type": "beak",
+      "params": { "shape": "hooked", "color": "#2a1a1a", "tipColor": "#0a0505" }
+    }
+  ],
+  "skin": {
+    "palette": { "base": "#6a1f3a", "belly": "#c06a7a", "accent": "#2a0a24" },
+    "material": "skin",
+    "layers": [
+      { "type": "countershade" },
+      { "type": "mottle", "color": "accent", "scale": 0.2, "coverage": 0.5 },
+      {
+        "type": "bioluminescence",
+        "color": "#60e0ff",
+        "shape": "spots",
+        "size": 0.02,
+        "density": 0.4,
+        "region": "limbs"
+      },
+      { "type": "slime", "wetness": 0.9, "drips": 0.3 }
+    ]
+  },
+  "motion": {
+    "temperament": "stalking",
+    "media": { "water": true },
+    "actions": ["lash", "bite", "look", "idle"]
+  }
+}

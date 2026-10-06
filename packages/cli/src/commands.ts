@@ -102,6 +102,8 @@ export interface DescribeModuleResult {
   preset?: Record<string, unknown>;
   /** For stubs: the plan milestone that builds the module; until then compile skips it. */
   planned?: string;
+  /** Capabilities the module gives a body, which some actions need (`display`, `pincer`, …). */
+  provides?: readonly string[];
 }
 
 function findModule(id: string, kind: ModuleKind | undefined, registry: Registry) {
@@ -139,6 +141,7 @@ export function describeModule(
     params: paramsJsonSchema(module.params),
     defaults: (module.params.safeParse({}).data ?? {}) as Record<string, unknown>,
     ...(module.planned ? { planned: module.planned } : {}),
+    ...(module.provides?.length ? { provides: module.provides } : {}),
   };
   switch (module.kind) {
     case 'bodyPlan':
@@ -154,7 +157,9 @@ export function describeModule(
         usage:
           module.slot === 'foot'
             ? `Set as a limb's foot: { "foot": { "type": "${module.id}", ...params } }.`
-            : `Add to "parts" with "type": "${module.id}"; parameters go in "params".`,
+            : module.slot === 'membrane'
+              ? `Set as a wing's or fin's membrane: { "membrane": { "type": "${module.id}", ...params } }, not in "parts".`
+              : `Add to "parts" with "type": "${module.id}"; parameters go in "params".`,
         example: module.example,
         details: { slot: module.slot, material: module.material, defaultAttach: module.attach },
       };

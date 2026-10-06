@@ -263,6 +263,8 @@ export interface CatalogEntry {
   readonly params: Record<string, unknown>;
   /** For stubs: the milestone that builds the module. */
   readonly planned?: string;
+  /** Capabilities the module gives a body (`display`, `pincer`, …), which some actions need. */
+  readonly provides?: readonly string[];
 }
 
 export interface Registry {
@@ -371,6 +373,7 @@ export function createRegistry(packs: readonly Pack[]): Registry {
         tags: module.tags,
         params: paramsJsonSchema(module.params),
         ...(module.planned ? { planned: module.planned } : {}),
+        ...(module.provides?.length ? { provides: module.provides } : {}),
       })),
     defaults: () => defaults,
     hints: () => hints,

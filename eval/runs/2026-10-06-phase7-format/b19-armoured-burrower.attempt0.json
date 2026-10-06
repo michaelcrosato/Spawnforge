@@ -1,0 +1,94 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Armoured Burrower",
+  "seed": 19,
+  "extends": "quadruped",
+  "scale": 0.8,
+  "body": {
+    "torso": { "radius": [0.17, 0.25, 0.26, 0.19], "arch": 0.12, "pitch": 0 },
+    "neck": { "length": 0.1, "radius": [0.08, 0.13], "pitch": 5, "segments": 2 },
+    "head": { "shape": "snout", "length": 0.3, "radius": 0.075, "jaw": true, "pitch": -25 },
+    "tail": { "length": 0.7, "radius": [0.1, 0.015], "pitch": -15, "curl": 0, "segments": 8 }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "length": 0.42,
+      "radius": [0.085, 0.055],
+      "stance": "plantigrade",
+      "foot": {
+        "type": "foot.claw",
+        "toes": 3,
+        "toeLength": 0.09,
+        "spread": 40,
+        "clawLength": 0.16,
+        "clawCurve": 55,
+        "clawWidth": 1.8,
+        "clawColor": "#e0d2b4"
+      }
+    },
+    {
+      "id": "hindleg",
+      "length": 0.42,
+      "radius": [0.09, 0.05],
+      "stance": "plantigrade",
+      "foot": {
+        "type": "foot.claw",
+        "toes": 4,
+        "toeLength": 0.07,
+        "clawLength": 0.06,
+        "clawColor": "#cfc0a0"
+      }
+    }
+  ],
+  "parts": [
+    {
+      "id": "eyes",
+      "attach": { "on": "head", "at": 0.45, "angle": 60 },
+      "params": { "size": 0.014, "irisColor": "#2a1a10" }
+    },
+    {
+      "id": "ears",
+      "type": "ear.pointed",
+      "attach": { "on": "head", "at": 0.9, "angle": 55, "side": "both" },
+      "params": { "length": 0.1, "width": 0.045, "thickness": 0.5, "curve": 5, "lean": 15 }
+    },
+    {
+      "id": "armor",
+      "type": "armor.bands",
+      "attach": { "on": "torso", "area": "back", "from": 0.02, "to": 0.98 },
+      "params": { "bands": 11, "thickness": 0.035, "overlap": 0.35, "color": "armor" }
+    },
+    {
+      "id": "tail-armor",
+      "type": "armor.bands",
+      "attach": { "on": "tail", "area": "all", "from": 0, "to": 0.9 },
+      "params": { "bands": 9, "thickness": 0.02, "overlap": 0.3, "color": "armor" }
+    },
+    {
+      "id": "head-shield",
+      "type": "armor.bands",
+      "attach": { "on": "head", "area": "back", "from": 0.4, "to": 1 },
+      "params": { "bands": 4, "thickness": 0.015, "overlap": 0.3, "scales": true, "color": "armor" }
+    }
+  ],
+  "skin": {
+    "palette": { "base": "#7d6a58", "belly": "#cdbba0", "accent": "#3e3026", "armor": "#9a8670" },
+    "material": "hide",
+    "layers": [
+      { "type": "countershade", "softness": 0.25 },
+      { "type": "scales", "size": 0.02, "bump": 0.5, "gap": 0.4, "region": "back" },
+      {
+        "type": "bands",
+        "color": "accent",
+        "count": 11,
+        "width": 0.18,
+        "sharpness": 0.6,
+        "region": "back",
+        "strength": 0.7
+      },
+      { "type": "grime", "color": "#5c4a36", "amount": 0.6, "creases": 0.5, "feet": 0.9 }
+    ]
+  },
+  "motion": { "temperament": "lumbering", "actions": ["idle", "look", "bite"] }
+}

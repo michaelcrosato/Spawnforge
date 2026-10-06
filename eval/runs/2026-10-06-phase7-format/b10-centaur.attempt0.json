@@ -1,0 +1,40 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Centaur Warden",
+  "seed": 1010,
+  "extends": "centaur",
+  "scale": 1.7,
+  "body": {
+    "neck": { "length": 0.5, "radius": [0.045, 0.09, 0.1, 0.08, 0.1] },
+    "head": { "shape": "round", "length": 0.15, "radius": 0.065 }
+  },
+  "limbs": [
+    { "id": "foreleg", "foot": { "type": "foot.hoof" }, "stance": "unguligrade" },
+    { "id": "hindleg", "foot": { "type": "foot.hoof" }, "stance": "unguligrade" },
+    { "id": "arm", "length": 0.45, "foot": { "type": "hand.grasp", "fingers": 4 } }
+  ],
+  "parts": [
+    {
+      "id": "horns",
+      "type": "horn.curved",
+      "attach": { "on": "head", "at": 0.8, "angle": 50, "side": "both" },
+      "params": { "length": 0.2, "curve": 50, "aim": "back" }
+    }
+  ],
+  "skin": {
+    "palette": { "base": "#7a4a2a", "belly": "#c8a070", "accent": "#2a1a10" },
+    "fur": { "length": 0.012, "density": 0.9, "region": ["torso", "limbs", "tail"] },
+    "layers": [
+      { "type": "countershade" },
+      {
+        "type": "spots",
+        "color": "#9a6a40",
+        "size": 0.06,
+        "density": 0.3,
+        "strength": 0.5,
+        "region": "torso"
+      }
+    ]
+  },
+  "motion": { "temperament": "calm", "actions": ["look", "idle", "jump"] }
+}

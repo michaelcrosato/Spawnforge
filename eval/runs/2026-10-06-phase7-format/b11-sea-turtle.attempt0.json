@@ -1,0 +1,63 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Sea Turtle",
+  "seed": 11,
+  "extends": "quadruped",
+  "scale": 0.8,
+  "body": {
+    "torso": { "radius": [0.2, 0.28, 0.27, 0.16], "arch": 0.1, "crossSection": "wide" },
+    "neck": { "length": 0.2, "radius": [0.07, 0.1], "pitch": 10 },
+    "head": { "shape": "round", "length": 0.22, "radius": 0.08, "pitch": 0 },
+    "tail": { "length": 0.2, "radius": [0.05, 0.01], "pitch": -10, "curl": 0 }
+  },
+  "limbs": [
+    { "id": "foreleg", "remove": true },
+    { "id": "hindleg", "remove": true },
+    {
+      "id": "fore-flipper",
+      "role": "fin",
+      "attach": { "on": "torso", "at": 0.18, "angle": 105, "side": "both" },
+      "length": 0.7,
+      "segments": 2,
+      "radius": [0.06, 0.02],
+      "membrane": null
+    },
+    {
+      "id": "hind-flipper",
+      "role": "fin",
+      "attach": { "on": "torso", "at": 0.85, "angle": 110, "side": "both" },
+      "length": 0.35,
+      "segments": 2,
+      "radius": [0.045, 0.015],
+      "membrane": null
+    }
+  ],
+  "parts": [
+    {
+      "id": "shell",
+      "type": "shell",
+      "params": {
+        "dome": 0.7,
+        "overhang": 0.15,
+        "scutes": 13,
+        "color": "base",
+        "seamColor": "accent"
+      }
+    }
+  ],
+  "skin": {
+    "palette": { "base": "#5a6a3a", "belly": "#dccf9a", "accent": "#2c3820" },
+    "material": "scales",
+    "layers": [
+      { "type": "countershade" },
+      { "type": "mottle", "scale": 0.12, "coverage": 0.4 },
+      { "type": "scales", "size": 0.03, "region": "limbs" }
+    ]
+  },
+  "motion": {
+    "temperament": "calm",
+    "media": { "water": true },
+    "gaits": ["swim.flap"],
+    "actions": ["idle", "look", "bite"]
+  }
+}

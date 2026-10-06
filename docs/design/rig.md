@@ -40,13 +40,14 @@ interface TailRig {
 
 /**
  * A chain of bones something drives: springs (tails, tentacles, antennae, ears), the blink
- * (eyelids), the bite (mandibles close with the jaw) or a display (frills open, quills rise).
+ * (eyelids), the jaw (mandibles close with it) or a flare (frills open, quills rise; the `display`
+ * action runs it).
  * Driven chains move between named poses of relative joint angles.
  */
 interface DrivenChain {
   readonly owner: string;
   readonly bones: readonly number[];
-  readonly drive: 'spring' | 'blink' | 'bite' | 'display';
+  readonly drive: 'spring' | 'blink' | 'jaw' | 'flare';
   /** For springs: natural frequency (Hz, at 1 m size) and damping ratio, scaled by size. */
   readonly frequency?: number;
   readonly damping?: number;
@@ -109,7 +110,7 @@ bones?(ctx: PartBuildContext, params): {
   readonly chains: readonly {
     readonly points: readonly Vector3[]; // in socket space, root first
     readonly radii: readonly number[];
-    readonly drive?: 'spring' | 'blink' | 'bite' | 'display';
+    readonly drive?: 'spring' | 'blink' | 'jaw' | 'flare';
     readonly frequency?: number;
     readonly damping?: number;
     readonly poses?: Readonly<Record<string, readonly number[]>>;
@@ -121,7 +122,7 @@ bones?(ctx: PartBuildContext, params): {
   on, as it already does for eye bones. `build` then gets the bone ids and binds pieces to them
   (`emit(piece, socket, { bone })` exists today).
 - Chains with a drive join `Rig.chains`: antennae and ears on springs (9.4), eyelids on the blink
-  (8.3), mandibles on the bite (9.4), frills, hoods and quills on a display (9.5). The controller
+  (8.3), mandibles on the jaw (9.4), frills, hoods and quills on a flare (9.5). The controller
   runs each drive generically, so no module needs the core to know its name.
 - The hook makes "one capability is one file" hold for parts that move: `antenna` declares its
   chain and its look in one module.

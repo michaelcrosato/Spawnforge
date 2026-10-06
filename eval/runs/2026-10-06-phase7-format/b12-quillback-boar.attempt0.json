@@ -1,0 +1,99 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Quillback Boar",
+  "seed": 12,
+  "extends": "quadruped",
+  "scale": 1,
+  "body": {
+    "torso": { "radius": [0.2, 0.24, 0.2, 0.15], "arch": 0.1 },
+    "neck": { "length": 0.2, "radius": [0.11, 0.16], "pitch": 15 },
+    "head": {
+      "shape": "wedge",
+      "length": 0.34,
+      "radius": 0.12,
+      "jaw": true,
+      "pitch": -15,
+      "brow": 0.5
+    },
+    "tail": { "length": 0.2, "radius": [0.03, 0.01], "pitch": -20 }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "length": 0.45,
+      "radius": [0.07, 0.035],
+      "foot": { "type": "foot.hoof", "cloven": true }
+    },
+    {
+      "id": "hindleg",
+      "length": 0.48,
+      "radius": [0.08, 0.035],
+      "foot": { "type": "foot.hoof", "cloven": true }
+    }
+  ],
+  "parts": [
+    { "id": "eyes", "params": { "size": 0.016, "irisColor": "#3a2010" } },
+    {
+      "id": "tusks",
+      "type": "horn.curved",
+      "attach": { "on": "jaw", "at": 0.25, "angle": 60 },
+      "params": {
+        "length": 0.14,
+        "width": 0.025,
+        "curve": 50,
+        "aim": "up",
+        "color": "#e8dcc0",
+        "tipColor": "#b8a888"
+      }
+    },
+    {
+      "id": "ears",
+      "type": "ear.pointed",
+      "attach": { "on": "head", "at": 0.85, "angle": 45 },
+      "params": { "length": 0.1, "width": 0.05, "droop": 0.3 }
+    },
+    {
+      "id": "quills",
+      "type": "quills",
+      "attach": { "on": "spine", "area": "back", "from": 0.1, "to": 0.8 },
+      "params": {
+        "density": 0.7,
+        "length": 0.3,
+        "lie": 55,
+        "color": "#e8e0d0",
+        "tipColor": "#2a2018"
+      }
+    }
+  ],
+  "skin": {
+    "palette": { "base": "#4a3a30", "belly": "#8a7a68", "accent": "#241a14" },
+    "material": "hide",
+    "layers": [
+      { "type": "countershade" },
+      { "type": "mottle", "scale": 0.2, "coverage": 0.4 },
+      {
+        "id": "scars-body",
+        "type": "scars",
+        "color": "belly",
+        "count": 8,
+        "length": 0.2,
+        "rake": 3,
+        "depth": 0.6
+      },
+      {
+        "id": "scars-head",
+        "type": "scars",
+        "color": "belly",
+        "count": 3,
+        "length": 0.08,
+        "rake": 1,
+        "region": "head"
+      },
+      { "type": "grime", "amount": 0.4 }
+    ]
+  },
+  "motion": {
+    "temperament": "aggressive",
+    "actions": ["idle", "look", "bite", "display"]
+  }
+}

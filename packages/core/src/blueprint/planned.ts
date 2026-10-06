@@ -6,8 +6,10 @@ import type { Issue } from './issues.ts';
  * Format 0.2 holds all of plan 2's vocabulary before it is built. A blueprint may use any of it:
  * it validates, and compile skips what it cannot draw yet. This lists what is skipped, naming the
  * plan milestone that builds each thing. Pass `written` (the blueprint merged with its preset,
- * before defaults) to include fields whose defaults already have a value, such as `muscle`, only
- * when the blueprint sets them; each milestone deletes its rows here.
+ * before defaults) to include fields that something else implies, such as a stance (from the foot)
+ * or a medium (from the limbs), or whose defaults already have a value, such as `muscle`, only
+ * when the blueprint sets them; the thing that implies them is listed anyway. Each milestone
+ * deletes its rows here.
  */
 export function notBuilt(
   spec: CreatureSpec,
@@ -16,15 +18,19 @@ export function notBuilt(
 ): Issue[] {
   const issues: Issue[] = [];
   const seen = new Set<string>();
-  const add = (path: string, what: string, milestone: string) => {
+  const add = (path: string, what: string, milestone: string, host?: string) => {
     if (seen.has(path)) return;
     seen.add(path);
     issues.push({
       severity: 'warning',
       path,
       code: 'not_built',
-      message: `${what} is in the format but not built yet (plan milestone ${milestone}), so it is left out for now`,
-      fix: 'keep it: it validates, and it appears once that milestone lands',
+      message: host
+        ? `${what} sits on "${host}", which is not built yet (plan milestone ${milestone}), so it is left out for now`
+        : `${what} is in the format but not built yet (plan milestone ${milestone}), so it is left out for now`,
+      fix: host
+        ? 'keep it: it appears with its host once that milestone lands'
+        : 'keep it: it validates, and it appears once that milestone lands',
     });
   };
   const planned = (kind: ModuleKind, type: string) => registry.get(kind, type)?.planned;
@@ -70,15 +76,24 @@ export function notBuilt(
   for (const limb of spec.limbs) {
     const role = roles[limb.role];
     if (role) add(`limbs[id=${limb.baseId}].role`, role[0], role[1]);
-    if (limb.stance) add(`limbs[id=${limb.baseId}].stance`, `a ${limb.stance} stance`, '8.2');
   }
   for (const part of spec.parts)
     if (/^(head|neck|jaw|tail)\.[LR]\d+/.test(part.on))
       add(`parts[id=${part.baseId}].attach.on`, `a part on "${part.on}"`, '9.1');
+  // Parts on something skipped (a wing, a tentacle, a part on one) are skipped with it.
+  const kept = new Set(buildable(spec).parts.map((p) => p.id));
+  const hostMilestone = (on: string, depth = 0): string | undefined => {
+    const limb = spec.limbs.find((l) => l.id === on);
+    if (limb) return roles[limb.role]?.[1];
+    const part = spec.parts.find((p) => p.id === on);
+    return part && depth < 16 ? hostMilestone(part.on, depth + 1) : undefined;
+  };
+  for (const part of spec.parts) {
+    const milestone = !kept.has(part.id) && hostMilestone(part.on);
+    if (milestone) add(`parts[id=${part.baseId}].attach.on`, `"${part.type}"`, milestone, part.on);
+  }
   if (spec.skin.fur) add('skin.fur', 'fur', '8.4');
   if (spec.skin.material === 'hide') add('skin.material', 'the hide material', '8.4');
-  if (spec.motion.media.water) add('motion.media.water', 'swimming', '10.3');
-  if (spec.motion.media.air) add('motion.media.air', 'flying', '10.4');
 
   // Fields whose defaults have a value: only when the blueprint writes them.
   if (written) {
@@ -91,6 +106,14 @@ export function notBuilt(
         written,
       );
     if (get('body', 'muscle') !== undefined) add('body.muscle', 'muscle', '8.1');
+    const limbList = get('limbs');
+    for (const limb of Array.isArray(limbList) ? (limbList as Record<string, unknown>[]) : []) {
+      const stance = limb?.stance;
+      if (typeof stance === 'string')
+        add(`limbs[id=${String(limb.id)}].stance`, `${article(stance)} ${stance} stance`, '8.2');
+    }
+    if (get('motion', 'media', 'water') === true) add('motion.media.water', 'swimming', '10.3');
+    if (get('motion', 'media', 'air') === true) add('motion.media.air', 'flying', '10.4');
     for (const key of ['lips', 'tongue', 'brow'])
       if (get('body', 'head', key) !== undefined) add(`body.head.${key}`, `the ${key}`, '8.3');
     const limbs = get('limbs');
@@ -133,3 +156,5 @@ export function buildable(spec: CreatureSpec): CreatureSpec {
   if (limbs.length === spec.limbs.length && parts.length === spec.parts.length) return spec;
   return { ...spec, limbs, parts };
 }
+
+const article = (word: string) => (/^[aeiou]/.test(word) ? 'an' : 'a');

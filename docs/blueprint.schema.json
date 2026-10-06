@@ -1206,7 +1206,7 @@
               },
               "curl": {
                 "default": 0,
-                "description": "Total degrees the tentacle curls at rest; negative curls the other way",
+                "description": "Total degrees the tentacle curls at rest, toward the belly; negative curls toward the back",
                 "type": "number",
                 "minimum": -360,
                 "maximum": 360
@@ -1693,7 +1693,7 @@
           }
         },
         "media": {
-          "description": "Where it moves; each switch left out follows the body (land with legs, water with fins or tentacles and no legs, air with wings)",
+          "description": "Where it moves; each switch left out follows the body (land with legs, water with fins or tentacles on the torso and no legs, air with wings)",
           "type": "object",
           "properties": {
             "land": {
@@ -2733,7 +2733,7 @@
       "properties": {
         "count": {
           "default": 12,
-          "description": "Plates in the row",
+          "description": "Plates in all; with alternate they take turns left and right",
           "type": "integer",
           "minimum": 2,
           "maximum": 40
@@ -2937,7 +2937,7 @@
       "properties": {
         "count": {
           "default": 7,
-          "description": "Spikes in the row",
+          "description": "Spikes in the row (in each row, with side \"both\")",
           "type": "integer",
           "minimum": 1,
           "maximum": 60
@@ -3846,7 +3846,7 @@
       "additionalProperties": false
     },
     "action:display": {
-      "description": "Threat display: opens frills and hoods, raises quills and sails, spreads wings.",
+      "description": "Threat display: opens frills and hoods, raises quills and sails. Needs a part that provides `display`.",
       "type": "object",
       "properties": {
         "duration": {

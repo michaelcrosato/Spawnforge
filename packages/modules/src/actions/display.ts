@@ -3,7 +3,8 @@ import { z } from 'zod';
 
 export default defineAction({
   id: 'display',
-  summary: 'Threat display: opens frills and hoods, raises quills and sails, spreads wings.',
+  summary:
+    'Threat display: opens frills and hoods, raises quills and sails. Needs a part that provides `display`.',
   tags: ['display'],
   planned: '9.5',
   needs: ['display'],

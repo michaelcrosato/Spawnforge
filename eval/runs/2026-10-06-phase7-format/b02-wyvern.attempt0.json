@@ -1,0 +1,41 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Stinger Wyvern",
+  "seed": 202,
+  "extends": "wyvern",
+  "scale": 1.3,
+  "body": {
+    "torso": { "pitch": 15 },
+    "tail": { "length": 1.8, "curl": 50, "curlStart": 0.5 }
+  },
+  "limbs": [
+    { "id": "leg", "length": 0.8, "foot": { "type": "foot.talon" } },
+    {
+      "id": "wing",
+      "role": "wing",
+      "length": 1.7,
+      "membrane": { "type": "membrane.bat", "fingers": 4 },
+      "foot": "foot.claw"
+    }
+  ],
+  "parts": [
+    {
+      "id": "stinger",
+      "type": "horn.curved",
+      "attach": { "on": "tail", "at": 0.97, "angle": 0 },
+      "params": {
+        "length": 0.14,
+        "width": 0.025,
+        "curve": 60,
+        "color": "#3a2a24",
+        "tipColor": "#c8b070"
+      }
+    }
+  ],
+  "skin": {
+    "palette": { "base": "#4a5a3a", "belly": "#c8b88a", "accent": "#26301c" },
+    "material": "scales",
+    "layers": [{ "type": "countershade" }, { "type": "scales", "size": 0.025 }]
+  },
+  "motion": { "temperament": "aggressive" }
+}

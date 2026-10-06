@@ -62,6 +62,22 @@ export function renderCatalog(registry = getRegistry()): string {
     '`describe_module` tool for the same facts as JSON.',
     '',
   ];
+  // An index first: every id by kind, with the milestone that builds each stub.
+  lines.push(
+    '## At a glance',
+    '',
+    'Every module by kind. A milestone in brackets marks a stub: it validates, and compile skips it',
+    'until that milestone lands (`list-modules` gives the same as `planned`; `validate` lists what a',
+    'blueprint uses of it under `notBuilt`).',
+    '',
+  );
+  for (const kind of MODULE_KINDS) {
+    const modules = registry.list(kind);
+    if (modules.length === 0) continue;
+    const ids = modules.map((m) => `\`${m.id}\`${m.planned ? ` (${m.planned})` : ''}`);
+    lines.push(`- **${KIND_TITLES[kind]}:** ${ids.join(', ')}`);
+  }
+  lines.push('');
   lines.push(...renderFields(registry));
   for (const kind of MODULE_KINDS) {
     const modules = registry.list(kind);
@@ -73,6 +89,11 @@ export function renderCatalog(registry = getRegistry()): string {
       if (d.planned)
         lines.push(
           `**Not built yet** (plan milestone ${d.planned}): it validates, but compile skips it and warns \`not_built\`.`,
+          '',
+        );
+      if (d.provides)
+        lines.push(
+          `Provides ${d.provides.map((p) => `\`${p}\``).join(', ')}, which actions can need.`,
           '',
         );
       if (d.details) {
@@ -184,8 +205,10 @@ function renderFields(registry = getRegistry()): string[] {
     ['parts[]', part],
     ['parts[].attach', objectIn(part?.properties?.attach)],
     ['skin', objectIn(top.skin)],
+    ['skin.fur', objectIn(skin.fur)],
     ['skin.layers[] (every layer)', objectIn(skin.layers)],
     ['motion', objectIn(top.motion)],
+    ['motion.media', objectIn(objectIn(top.motion)?.properties?.media)],
   ];
   const out = [
     '## Blueprint fields',

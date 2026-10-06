@@ -478,9 +478,14 @@ export function resolveDocument(input: unknown, registry: Registry): ResolveOutc
 }
 
 /** Where a body moves before its blueprint's own `motion.media` switches. */
-export function bodyMedia(limbs: readonly { role: string }[]): Record<Medium, boolean> {
+export function bodyMedia(
+  limbs: readonly { role: string; attach?: { on?: string } }[],
+): Record<Medium, boolean> {
   const legs = limbs.some((l) => l.role === 'leg');
-  const swims = limbs.some((l) => l.role === 'fin' || l.role === 'tentacle');
+  // Fins or tentacles on the torso make a swimmer; on the head they are stalks or whiskers.
+  const swims = limbs.some(
+    (l) => (l.role === 'fin' || l.role === 'tentacle') && (l.attach?.on ?? 'torso') === 'torso',
+  );
   return {
     land: legs || !swims,
     water: !legs && swims,
@@ -988,10 +993,16 @@ function semanticChecks(doc: ResolvedDoc, registry: Registry): Issue[] {
     for (const need of action?.needs ?? []) {
       if (!meets(features, need)) {
         const first = typeof need === 'string' ? need : need[0];
+        const providers = registry
+          .list()
+          .filter((m) => first !== undefined && m.provides?.includes(first))
+          .map((m) => `"${m.id}"`);
         error(`motion.actions[${i}]`, 'missing_feature', `"${ref.type}" needs ${sayNeed(need)}`, {
           fix:
             (first && fixFor[first]) ??
-            `add a part or limb that provides "${first}" (list_modules shows what provides it)`,
+            (providers.length > 0
+              ? `add a module that provides "${first}": ${providers.join(', ')}; or remove the action`
+              : `remove the action: nothing provides "${first}"`),
         });
       }
     }

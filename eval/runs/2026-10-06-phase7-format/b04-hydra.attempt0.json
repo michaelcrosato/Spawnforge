@@ -1,0 +1,41 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Marsh Hydra",
+  "seed": 404,
+  "extends": "quadruped",
+  "scale": 2,
+  "body": {
+    "torso": { "radius": [0.2, 0.27, 0.26, 0.2], "arch": 0.04 },
+    "neck": { "count": 5, "length": 0.9, "radius": [0.06, 0.1], "pitch": 55, "segments": 5 },
+    "head": { "shape": "wedge", "length": 0.26, "radius": 0.08, "jaw": true, "pitch": -15 },
+    "tail": { "length": 0.8, "radius": [0.14, 0.02], "pitch": -15, "curl": 10 }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "length": 0.5,
+      "radius": [0.1, 0.06],
+      "foot": { "type": "foot.pad", "nails": 4 }
+    },
+    {
+      "id": "hindleg",
+      "length": 0.5,
+      "radius": [0.12, 0.065],
+      "foot": { "type": "foot.pad", "nails": 4 }
+    }
+  ],
+  "parts": [
+    { "id": "eyes", "params": { "pupil": "slit", "irisColor": "#d8e040" } },
+    { "id": "teeth", "type": "teeth.row", "params": { "count": 9, "fangs": 2 } }
+  ],
+  "skin": {
+    "palette": { "base": "#3c5a3a", "belly": "#a8b070", "accent": "#1c2c1c" },
+    "material": "scales",
+    "layers": [
+      { "type": "countershade" },
+      { "type": "scales", "size": 0.03 },
+      { "type": "mottle", "scale": 0.2, "strength": 0.5 }
+    ]
+  },
+  "motion": { "temperament": "lumbering", "actions": ["bite", "roar", "look", "idle"] }
+}

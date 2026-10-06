@@ -358,7 +358,9 @@ export function buildBlueprintSchema(ids: ModuleIds = NO_IDS, defaults: PackDefa
           ...limbCommon('tentacle'),
           curl: range(-360, 360)
             .default(0)
-            .describe('Total degrees the tentacle curls at rest; negative curls the other way'),
+            .describe(
+              'Total degrees the tentacle curls at rest, toward the belly; negative curls toward the back',
+            ),
           curlStart: range(0, 0.95)
             .default(0)
             .describe('Share of the tentacle that stays straight before the curl begins'),
@@ -482,7 +484,7 @@ export function buildBlueprintSchema(ids: ModuleIds = NO_IDS, defaults: PackDefa
       })
       .optional()
       .describe(
-        'Where it moves; each switch left out follows the body (land with legs, water with fins or tentacles and no legs, air with wings)',
+        'Where it moves; each switch left out follows the body (land with legs, water with fins or tentacles on the torso and no legs, air with wings)',
       ),
   });
 

@@ -11,7 +11,13 @@ export default definePart({
   material: 'bone',
   attach: { on: 'spine', from: 0.2, to: 0.8, angle: 0 },
   params: z.strictObject({
-    count: z.number().int().min(2).max(40).default(12).describe('Plates in the row'),
+    count: z
+      .number()
+      .int()
+      .min(2)
+      .max(40)
+      .default(12)
+      .describe('Plates in all; with alternate they take turns left and right'),
     height: z
       .union([z.number().min(0.01).max(0.8), z.array(z.number().min(0.01).max(0.8)).min(1).max(16)])
       .default([0.08, 0.2, 0.08])

@@ -116,6 +116,51 @@ describe('format 0.2', () => {
     expect(hydra.notBuilt?.[0]?.fix).toMatch(/^keep it/);
   });
 
+  it('leaves out what something else implies, and names a skipped host', () => {
+    // A hoof implies a stance and wings imply flying: the foot and the role are listed alone.
+    const implied = check({
+      extends: 'quadruped',
+      limbs: [
+        { id: 'foreleg', foot: 'foot.hoof' },
+        { id: 'wing', role: 'wing' },
+      ],
+    });
+    expect(implied.notBuilt?.map((i) => i.path).sort()).toEqual([
+      'limbs[id=foreleg].foot.type',
+      'limbs[id=wing].membrane.type',
+      'limbs[id=wing].role',
+    ]);
+    const written = check({
+      extends: 'quadruped',
+      limbs: [{ id: 'foreleg', stance: 'unguligrade' }],
+      motion: { media: { water: true } },
+    });
+    expect(written.notBuilt?.map((i) => i.message)).toEqual([
+      'an unguligrade stance is in the format but not built yet (plan milestone 8.2), so it is left out for now',
+      'swimming is in the format but not built yet (plan milestone 10.3), so it is left out for now',
+    ]);
+    const stalks = check({
+      extends: 'serpent',
+      limbs: [{ id: 'stalk', role: 'tentacle', attach: { on: 'head' } }],
+      parts: [{ id: 'eyes', type: 'eye.basic', attach: { on: 'stalk', at: 1 } }],
+    });
+    expect(stalks.errors).toEqual([]);
+    // Tentacles on the head are stalks, not a swimmer's arms: it stays on land.
+    expect(stalks.creature?.motion.media).toEqual({ land: true, water: false, air: false });
+    const eyes = stalks.notBuilt?.find((i) => i.path === 'parts[id=eyes].attach.on');
+    expect(eyes?.message).toMatch(
+      /^"eye.basic" sits on "stalk.L", which is not built yet \(plan milestone 9.4\)/,
+    );
+  });
+
+  it('names the modules that provide what an action needs', () => {
+    const result = check({ extends: 'quadruped', motion: { actions: ['display'] } });
+    const missing = result.errors.find((e) => e.code === 'missing_feature');
+    expect(missing?.fix).toBe(
+      'add a module that provides "display": "frill", "hood", "quills", "sail"; or remove the action',
+    );
+  });
+
   it('names extra heads outward from the main one, which keeps the plain name', () => {
     expect(instanceNames('head', 1)).toEqual(['head']);
     expect(instanceNames('head', 3)).toEqual(['head.L1', 'head', 'head.R1']);
