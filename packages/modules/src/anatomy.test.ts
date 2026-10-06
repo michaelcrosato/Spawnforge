@@ -39,6 +39,29 @@ describe('anatomy', () => {
     }
   });
 
+  it('leaves the skin it does not reshape exactly where it was', () => {
+    // The grid keeps the muscle-free lattice, so the head and mouth are sampled as before.
+    const head = (c: CompiledCreature) => {
+      const ids = new Set(['head', 'jaw'].map((n) => c.bones.names.indexOf(n)));
+      const out: string[] = [];
+      for (let v = 0; v < c.skin.positions.length / 3; v++)
+        if (
+          ids.has(c.skin.skinIndex[v * 4] as number) &&
+          (c.skin.skinWeight[v * 4] as number) > 0.999
+        )
+          out.push(
+            Array.from(c.skin.positions.subarray(v * 3, v * 3 + 3), (x) => x.toFixed(6)).join(),
+          );
+      return out.sort();
+    };
+    // (A short neck's muscle may reach under the jaw, as the troll's does; these do not.)
+    for (const name of ['ridgeback-stalker', 'ember-beetle']) {
+      const plain = head(compile(withMuscle(example(name), 0), 'medium'));
+      expect(plain.length, name).toBeGreaterThan(100);
+      expect(head(compile(example(name), 'medium')), name).toEqual(plain);
+    }
+  });
+
   it('gives each body the masses and shapes its rules call for', () => {
     const build = (blueprint: unknown) =>
       buildSkeleton(resolveBlueprint(blueprint, registry), registry);
@@ -59,16 +82,18 @@ describe('anatomy', () => {
     expect(shaped('ridgeback-stalker')).toEqual(
       expect.arrayContaining(['spine.0', 'tail.0', 'hindleg.L.1']),
     );
-    // A biped with two-segment limbs: bellies but no caps; a chest from the arms.
-    expect(masses('bog-troll')).toMatchObject({ torso: 1, neck: 1, 'leg.L': 4, 'arm.R': 4 });
+    // An upright biped with two-segment limbs: bellies but no caps, and no keel on its upright
+    // torso (its chest comes from the profile).
+    expect(masses('bog-troll')).toMatchObject({ torso: 0, neck: 1, 'leg.L': 4, 'arm.R': 4 });
     // A chitin hexapod: its root spheres only; the segments swell through their profiles, and the
     // clustered pairs give the torso no chest or pelvis.
     const beetle = masses('ember-beetle');
     expect(Object.values(beetle).reduce((a, b) => a + b, 0)).toBe(6);
     expect(shaped('ember-beetle').every((b) => /leg\.[LR]\.\d$/.test(b))).toBe(true);
-    // A serpent: no masses and no shaping, only a slightly flatter belly.
+    // A serpent: no masses; a throat behind the head and a flatter belly.
     expect(Object.values(masses('reed-viper')).every((n) => n === 0)).toBe(true);
-    expect(shaped('reed-viper')).toEqual([]);
+    expect(shaped('reed-viper').every((b) => b.startsWith('neck.'))).toBe(true);
+    expect(shaped('reed-viper')).toContain('neck.1');
     const viper = build(example('reed-viper')).bones.find((b) => b.name === 'spine.2');
     const flat = build(withMuscle(example('reed-viper'), 0)).bones.find(
       (b) => b.name === 'spine.2',

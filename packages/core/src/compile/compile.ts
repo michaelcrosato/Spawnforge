@@ -170,6 +170,17 @@ export interface CompileOptions {
 
 const v3 = (v: Vector3): Vec3 => [v.x, v.y, v.z];
 
+/** Whether any of the body or its limbs has muscle (which reshapes the skin). */
+const muscled = (spec: CreatureSpec) =>
+  spec.body.muscle > 0 || spec.limbs.some((l) => l.muscle > 0);
+
+/** The same creature with no muscle anywhere: plan 1's tubes. */
+const withoutMuscle = (spec: CreatureSpec): CreatureSpec => ({
+  ...spec,
+  body: { ...spec.body, muscle: 0 },
+  limbs: spec.limbs.map((l) => ({ ...l, muscle: 0 })),
+});
+
 /** Compiles a creature spec into meshes, a skeleton and a rig. Pure: same input, same output. */
 export function compileCreature(
   input: CreatureSpec,
@@ -215,22 +226,26 @@ export function compileCreature(
   }
   const roughCell = Math.max(extent.x, extent.y, extent.z) / cells;
   let sdf = buildSdf(bones, skeleton.chains, roughCell * 0.9);
+  // The grid follows the same creature without muscle, so muscle reshapes the skin without
+  // resampling what it leaves alone (docs/design/8.1-anatomy.md).
+  const plain = muscled(spec) ? buildSkeleton(withoutMuscle(spec), registry) : undefined;
+  const latticeFor = (minRadius: number) =>
+    plain ? buildSdf(plain.bones, plain.chains, minRadius) : undefined;
+  let lattice = latticeFor(roughCell * 0.9);
   lap('sdf');
 
   // 3. Mesh. Bulky creatures have more surface per cell; if the skin comes out over the
   // triangle budget, mesh once more on a grid coarse enough to fit.
-  let grid = fitGrid(sdf, cells);
+  let grid = fitGrid(sdf, cells, lattice);
   let surface = surfaceNets(sdf, grid);
   const budget = TRIANGLE_BUDGET[quality];
   let gridCells = cells;
   for (let pass = 0; pass < 3 && surface.indices.length / 3 > budget; pass++) {
     gridCells = Math.floor(gridCells * Math.sqrt((budget * 0.85) / (surface.indices.length / 3)));
-    sdf = buildSdf(
-      bones,
-      skeleton.chains,
-      (Math.max(extent.x, extent.y, extent.z) / gridCells) * 0.9,
-    );
-    grid = fitGrid(sdf, gridCells);
+    const minRadius = (Math.max(extent.x, extent.y, extent.z) / gridCells) * 0.9;
+    sdf = buildSdf(bones, skeleton.chains, minRadius);
+    lattice = latticeFor(minRadius);
+    grid = fitGrid(sdf, gridCells, lattice);
     surface = surfaceNets(sdf, grid);
   }
   lap('mesh');

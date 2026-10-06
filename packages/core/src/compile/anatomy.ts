@@ -48,18 +48,30 @@ export function limbFactor(T: number, n: number, s: number, chitin: boolean): nu
 
 /**
  * A bone's radius profile with a multiplier applied: the base profile's points (or the bone's
- * two ends) with a midpoint added, so the shape shows between joints. Unchanged when the
- * multiplier is 1 everywhere (s = 0).
+ * two ends) with a midpoint added, so the shape shows between joints, or `minSpans` even spans
+ * when the shape needs more (a chitin segment's arch). Unchanged when the multiplier is 1
+ * everywhere (s = 0).
  */
 export function shapedProfile(
   radiusAt: (t: number) => number,
   base: readonly number[] | undefined,
   factorAt: (t: number) => number,
+  minSpans = 2,
 ): number[] | undefined {
-  const spans = base ? base.length - 1 : 2;
+  const spans = Math.max(base ? base.length - 1 : 2, minSpans);
   const points = Array.from({ length: spans + 1 }, (_, i) => i / spans);
   if (points.every((t) => Math.abs(factorAt(t) - 1) < 1e-9)) return base ? [...base] : undefined;
-  return points.map((t, i) => (base ? (base[i] as number) : radiusAt(t)) * factorAt(t));
+  const own = base !== undefined && base.length === spans + 1;
+  return points.map((t, i) => (own ? (base[i] as number) : radiusAt(t)) * factorAt(t));
+}
+
+/**
+ * How much of a segment's bellies show, from how stocky it is (radius over length): all of them
+ * on slender limbs, none on columns as thick as about half their length, which muscle only
+ * turns into balloons.
+ */
+export function slenderness(radius: number, length: number): number {
+  return 1 - smoothstep(0.3, 0.55, radius / Math.max(1e-9, length));
 }
 
 /** A belly: a capsule along a bone, offset toward its face (q > 0) or back (q < 0). */
@@ -85,9 +97,10 @@ export function bellyRules(
           { from: 0.15, to: 0.6, p: 0.38, q: -0.26 },
         ]
       : [
-          // Down the visible part of the thigh: the upper end is inside the body.
+          // Down the visible part of the thigh: the upper end is inside the body, and a
+          // hamstring near the hip reads as a lump.
           { from: 0.35, to: 0.78, p: 0.38, q: 0.22 },
-          { from: 0.25, to: 0.8, p: 0.52, q: -0.32 },
+          { from: 0.35, to: 0.82, p: 0.42, q: -0.24 },
         ];
   if (k === 1)
     return role === 'arm' || frontLeg
@@ -179,8 +192,13 @@ export interface TorsoPlan {
   readonly waist: number | undefined;
 }
 
+/**
+ * `upright` torsos (pitch 45° or more: bipeds standing tall) get no waist: on them it reads as a
+ * pinch above a sagging belly.
+ */
 export function torsoPlan(
   limbs: readonly { readonly role: string; readonly at: number; readonly pair?: number }[],
+  upright = false,
 ): TorsoPlan {
   const arms = limbs.filter((l) => l.role === 'arm');
   const legs = limbs.filter((l) => l.role === 'leg');
@@ -196,7 +214,7 @@ export function torsoPlan(
       : undefined;
   const pelvis = legs.length > 0 && !clustered ? hind : undefined;
   const waist =
-    chest !== undefined && pelvis !== undefined && pelvis - chest >= 0.35
+    !upright && chest !== undefined && pelvis !== undefined && pelvis - chest >= 0.35
       ? (chest + pelvis) / 2
       : undefined;
   return { chest, pelvis, waist };
@@ -216,4 +234,13 @@ export function torsoFactor(t: number, plan: TorsoPlan, s: number): number {
 export function tailFactor(t: number, s: number): number {
   if (s <= 0) return 1;
   return 1 + 0.22 * s * (1 - smoothstep(0, 0.3, t));
+}
+
+/**
+ * A legless body's neck radius multiplier at `at` (0 at the head, 1 at the body): a throat
+ * behind the jaw, so the head reads apart from the body instead of as the end of a tube.
+ */
+export function throatFactor(at: number, s: number): number {
+  if (s <= 0) return 1;
+  return 1 - 0.2 * Math.min(1, s) * (1 - smoothstep(0, 0.45, at));
 }

@@ -92,26 +92,44 @@ export class PrimCulling {
   }
 }
 
-/** A grid with `cells` cells along the longest axis of the field's bounds. */
-export function fitGrid(sdf: Sdf, cells: number): Grid {
-  const min = new Vector3(Infinity, Infinity, Infinity);
-  const max = new Vector3(-Infinity, -Infinity, -Infinity);
-  for (let p = 0; p < sdf.count; p++) {
-    const o = p * 4;
-    const r = sdf.bounds[o + 3] as number;
-    min.x = Math.min(min.x, (sdf.bounds[o] as number) - r);
-    min.y = Math.min(min.y, (sdf.bounds[o + 1] as number) - r);
-    min.z = Math.min(min.z, (sdf.bounds[o + 2] as number) - r);
-    max.x = Math.max(max.x, (sdf.bounds[o] as number) + r);
-    max.y = Math.max(max.y, (sdf.bounds[o + 1] as number) + r);
-    max.z = Math.max(max.z, (sdf.bounds[o + 2] as number) + r);
-  }
+/**
+ * A grid with `cells` cells along the longest axis of the field's bounds. With `lattice`, the
+ * grid's cell size and lattice come from that field instead (the same creature without its
+ * muscle), extended by whole cells to cover this one, so what anatomy leaves alone (a head, a
+ * mouth, a tail tip) is sampled exactly as it was.
+ */
+export function fitGrid(sdf: Sdf, cells: number, lattice: Sdf = sdf): Grid {
+  const bounds = (field: Sdf) => {
+    const min = new Vector3(Infinity, Infinity, Infinity);
+    const max = new Vector3(-Infinity, -Infinity, -Infinity);
+    for (let p = 0; p < field.count; p++) {
+      const o = p * 4;
+      const r = field.bounds[o + 3] as number;
+      min.x = Math.min(min.x, (field.bounds[o] as number) - r);
+      min.y = Math.min(min.y, (field.bounds[o + 1] as number) - r);
+      min.z = Math.min(min.z, (field.bounds[o + 2] as number) - r);
+      max.x = Math.max(max.x, (field.bounds[o] as number) + r);
+      max.y = Math.max(max.y, (field.bounds[o + 1] as number) + r);
+      max.z = Math.max(max.z, (field.bounds[o + 2] as number) + r);
+    }
+    return { min, max };
+  };
+  const { min, max } = bounds(lattice);
   const size = new Vector3().subVectors(max, min);
   const longest = Math.max(size.x, size.y, size.z);
   const cell = longest / cells;
   const pad = cell * 2;
   min.subScalar(pad);
   max.addScalar(pad);
+  if (lattice !== sdf) {
+    // Grow by whole cells, so the lattice stays where it was.
+    const own = bounds(sdf);
+    for (const axis of ['x', 'y', 'z'] as const) {
+      const below = own.min[axis] - pad;
+      if (below < min[axis]) min[axis] -= Math.ceil((min[axis] - below) / cell) * cell;
+      max[axis] = Math.max(max[axis], own.max[axis] + pad);
+    }
+  }
   size.subVectors(max, min);
   return {
     min,

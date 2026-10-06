@@ -41,6 +41,10 @@ export interface BoneDef {
   readonly profile?: readonly number[];
   /** Whether anatomy shaped the profile (8.1); thin bones' tubes then follow it too. */
   readonly shaped?: boolean;
+  /** The profile before anatomy shaped it, which decides whether the bone is thin. */
+  readonly plainProfile?: readonly number[];
+  /** The cross-section before anatomy flattened it (legless bodies), for the same decision. */
+  readonly plainCross?: readonly [number, number];
   /** Index of the chain this bone belongs to (-1 for none). */
   readonly chain: number;
 }

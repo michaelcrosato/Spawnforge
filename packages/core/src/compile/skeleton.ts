@@ -7,8 +7,10 @@ import {
   jointCap,
   limbFactor,
   shapedProfile,
+  slenderness,
   strength,
   tailFactor,
+  throatFactor,
   torsoFactor,
   torsoPlan,
 } from './anatomy.ts';
@@ -240,10 +242,15 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
   const chitin = spec.skin.material === 'chitin';
   // Legless bodies rest on a slightly flattened belly.
   const flatten = (c: readonly [number, number]): readonly [number, number] =>
-    legs.length === 0 && sBody > 0 ? [c[0] * (1 + 0.04 * sBody), c[1] * (1 - 0.06 * sBody)] : c;
+    legs.length === 0 && sBody > 0 ? [c[0] * (1 + 0.06 * sBody), c[1] * (1 - 0.1 * sBody)] : c;
   const torsoCross = flatten(CROSS_SCALE[spec.body.torso.crossSection]);
   const torsoRadius = (t: number) => sampleProfile(spec.body.torso.radius, t) * L;
-  const plan = torsoPlan(spec.limbs.filter((l) => l.on === 'torso'));
+  // Upright torsos (bipeds standing tall) get no waist and no keel, which read as a sag on them.
+  const upright = Math.abs(spec.body.torso.pitch) >= 45;
+  const plan = torsoPlan(
+    spec.limbs.filter((l) => l.on === 'torso'),
+    upright,
+  );
   const torsoSegments = spec.body.torso.segments;
 
   // --- Posture: torso height and pitch from where the legs need their hips ------------------
@@ -355,25 +362,27 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
   const layout = layoutFor(pitch, center);
   const sampleTorso = torsoSampler(layout);
 
-  const profileOf = (values: readonly number[], ta: number, tb: number) => {
-    const profile = boneProfile(values, ta, tb, L);
-    return profile ? { profile } : {};
-  };
   /** A bone's profile with an anatomy multiplier (u: 0 at the bone's head, 1 at its tail). */
   const shaped = (
     radiusAt: (u: number) => number,
     base: readonly number[] | undefined,
     factorAt: (u: number) => number,
+    minSpans?: number,
   ) => {
-    const profile = shapedProfile(radiusAt, base, factorAt);
+    const profile = shapedProfile(radiusAt, base, factorAt, minSpans);
     // `shaped` marks a profile anatomy changed, which thin bones' tubes then follow too.
     return profile
-      ? { profile, ...(profile !== base && !sameProfile(profile, base) ? { shaped: true } : {}) }
+      ? {
+          profile,
+          ...(profile !== base && !sameProfile(profile, base)
+            ? { shaped: true, ...(base ? { plainProfile: base } : {}) }
+            : {}),
+        }
       : {};
   };
   /** The ribcage's depth: a keel below the chest, when the torso has a chest. */
   const chestKeel = (): MassDef[] => {
-    if (plan.chest === undefined || sBody <= 0 || chitin) return [];
+    if (plan.chest === undefined || sBody <= 0 || chitin || upright) return [];
     const at = (t: number) => sampleTorso(clamp01(t));
     const [sx, sy] = torsoCross;
     const ends = [at(plan.chest - 0.1), at(plan.chest + 0.14)].map((f) => {
@@ -441,6 +450,9 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
         r0: a.radius,
         r1: c.radius,
         cross: torsoCross,
+        ...(torsoCross !== CROSS_SCALE[spec.body.torso.crossSection]
+          ? { plainCross: CROSS_SCALE[spec.body.torso.crossSection] }
+          : {}),
         t0: ta,
         t1: tb,
         skin: true,
@@ -555,7 +567,11 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
           up: dorsalUp(forward),
           r0: sampleProfile(neckSpec.radius, 1 - sa) * L,
           r1: sampleProfile(neckSpec.radius, 1 - sb) * L,
-          ...profileOf(neckSpec.radius, 1 - sa, 1 - sb),
+          ...shaped(
+            (u) => sampleProfile(neckSpec.radius, 1 - (sa + (sb - sa) * u)) * L,
+            boneProfile(neckSpec.radius, 1 - sa, 1 - sb, L),
+            (u) => (legs.length === 0 ? throatFactor(1 - (sa + (sb - sa) * u), sBody) : 1),
+          ),
           cross: neckCross,
           t0: 1 - sa,
           t1: 1 - sb,
@@ -730,6 +746,9 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
             (u) => tailShape((k + u) / n),
           ),
           cross: tailCross,
+          ...(tailCross !== CROSS_SCALE[tailSpec.crossSection]
+            ? { plainCross: CROSS_SCALE[tailSpec.crossSection] }
+            : {}),
           t0: k / n,
           t1: (k + 1) / n,
           skin: true,
@@ -875,6 +894,8 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
             (u) => sampleProfile(limb.radius, (k + u) / n) * L,
             boneProfile(limb.radius, k / n, (k + 1) / n, L),
             (u) => limbFactor((k + u) / n, n, sLimb, chitin),
+            // A chitin segment's arch needs more points than a joint's narrowing.
+            chitin ? 4 : 2,
           ),
           cross: [1, 1],
           t0: k / n,
@@ -893,15 +914,17 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
         // shoulders taper hard toward the knee or elbow.
         const bulk =
           (k === 0 ? (limb.role === 'arm' ? 0.32 : 0.42) : k === 1 ? 0.2 : 0) * frame.radius;
+        const radiusAt = (u: number) => sampleProfile(limb.radius, (k + u) / n) * L;
+        const slender = slenderness(radiusAt(0.5), bone.head.distanceTo(bone.tail));
         limbMasses.push(
           ...bellies(
             limbBones[k] as number,
             bone.head,
             bone.tail,
             bone.up,
-            (u) => sampleProfile(limb.radius, (k + u) / n) * L,
+            radiusAt,
             rules,
-            sLimb,
+            sLimb * slender,
             bulk,
             k === 0 ? 0.55 : 0.6,
           ),
@@ -960,13 +983,13 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
             bone: limbBones[0] as number,
             a: rootPos.clone(),
             b: rootPos.clone(),
-            // Shoulders and haunches grow with muscle.
-            ra: rootRadius * (1.12 + 0.22 * sLimb),
-            rb: rootRadius * (1.12 + 0.22 * sLimb),
+            // The shoulder or hip melds into the body and the limb with muscle (a plain union at
+            // 0); it does not grow, which turns short legs into balls.
+            ra: rootRadius * 1.12,
+            rb: rootRadius * 1.12,
             up: Y.clone(),
             cross: [1, 1],
-            // The shoulder or hip swells into the body with muscle (a plain union at 0).
-            blend: 0.45 * rootRadius * Math.min(1, sLimb),
+            blend: 0.4 * rootRadius * Math.min(1, sLimb),
           },
           ...limbMasses,
         ],

@@ -114,9 +114,11 @@ export function buildSdf(
     for (const id of chain.bones) {
       const bone = bones[id] as BoneDef;
       if (!bone.skin) continue;
-      const thinness =
-        Math.max(bone.r0, bone.r1, ...(bone.profile ?? [])) *
-        Math.min(bone.cross[0], bone.cross[1]);
+      // Thin by the radii the blueprint gave, so anatomy never moves a bone between the field
+      // and the swept tubes.
+      const plain = bone.shaped ? bone.plainProfile : bone.profile;
+      const cross = bone.plainCross ?? bone.cross;
+      const thinness = Math.max(bone.r0, bone.r1, ...(plain ?? [])) * Math.min(cross[0], cross[1]);
       if (thinness < minRadius) {
         thinBones.push(id);
         continue;
