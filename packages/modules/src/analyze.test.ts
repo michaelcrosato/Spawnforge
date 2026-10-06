@@ -27,7 +27,15 @@ describe('analyze', () => {
   });
 
   it('runs two gait cycles on flat and rough ground with clean motion for the examples', () => {
-    for (const name of ['ridgeback-stalker', 'ember-beetle', 'reed-viper', 'bog-troll']) {
+    for (const name of [
+      'ridgeback-stalker',
+      'ember-beetle',
+      'reed-viper',
+      'bog-troll',
+      'grey-wolf',
+      'tusk-boar',
+      'rust-raptor',
+    ]) {
       const a = analyze(example(name));
       expect(a.motion.map((m) => m.ground)).toEqual(['flat', 'rough']);
       for (const m of a.motion) {

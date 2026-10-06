@@ -1,5 +1,5 @@
 import type { CreatureSpec } from '../blueprint/creature.ts';
-import type { Registry } from '../registry.ts';
+import type { PartModule, Registry } from '../registry.ts';
 import type { Analysis } from './analyze.ts';
 
 /** What a stats module sees: the creature's measured body, not its blueprint. */
@@ -46,10 +46,14 @@ export function statsInput(spec: CreatureSpec, analysis: Analysis, registry: Reg
   let clawCount = 0;
   let clawLength = 0;
   for (const limb of spec.limbs) {
-    const p = limb.foot?.params;
-    if (!p) continue;
-    clawCount += num(p.toes, 1);
-    clawLength = Math.max(clawLength, num(p.clawLength) * L);
+    const foot = limb.foot;
+    if (!foot) continue;
+    // Each foot module says what claws it carries (a hoof none, a paw its toes').
+    const hooks = (registry.get('part', foot.type) as PartModule | undefined)?.hooks;
+    const claws = hooks?.claws?.(foot.params);
+    if (!claws) continue;
+    clawCount += claws.count;
+    clawLength = Math.max(clawLength, claws.length * L);
   }
   return {
     measurements: analysis.measurements,

@@ -13,7 +13,7 @@ until that milestone lands (`list-modules` gives the same as `planned`; `validat
 blueprint uses of it under `notBuilt`).
 
 - **Body plans:** `biped`, `centaur`, `fish`, `hexapod`, `octopod`, `quadruped`, `serpent`, `wyvern`
-- **Parts:** `antenna` (9.4), `armor.bands` (9.5), `beak` (8.3), `ear.pointed`, `eye.basic`, `fin.dorsal` (9.3), `fin.tail` (9.3), `foot.claw`, `foot.hoof` (8.2), `foot.pad` (8.2), `foot.paw` (8.2), `foot.talon` (8.2), `frill` (9.5), `hand.grasp` (8.2), `hand.pincer` (9.4), `hood` (9.5), `horn.curved`, `mandible` (9.4), `membrane.bat` (9.3), `membrane.case` (9.3), `membrane.feather` (9.3), `membrane.fin` (9.3), `membrane.insect` (9.3), `plates.row` (9.5), `quills` (9.5), `sail` (9.5), `shell` (9.5), `spikes.row`, `teeth.row`
+- **Parts:** `antenna` (9.4), `armor.bands` (9.5), `beak` (8.3), `ear.pointed`, `eye.basic`, `fin.dorsal` (9.3), `fin.tail` (9.3), `foot.claw`, `foot.hoof`, `foot.pad`, `foot.paw`, `foot.talon`, `frill` (9.5), `hand.grasp`, `hand.pincer` (9.4), `hood` (9.5), `horn.curved`, `mandible` (9.4), `membrane.bat` (9.3), `membrane.case` (9.3), `membrane.feather` (9.3), `membrane.fin` (9.3), `membrane.insect` (9.3), `plates.row` (9.5), `quills` (9.5), `sail` (9.5), `shell` (9.5), `spikes.row`, `teeth.row`
 - **Patterns:** `bands` (8.4), `bioluminescence` (8.4), `countershade`, `grime`, `mottle`, `rosettes` (8.4), `scales`, `scars` (8.4), `slime` (8.4), `spots`, `stripes`, `veins` (8.4), `warts` (8.4)
 - **Gaits:** `bound` (10.1), `fly` (10.4), `gallop` (10.1), `glide` (10.4), `hover` (10.4), `run` (10.1), `slither`, `swim.flap` (10.3), `swim.paddle` (10.3), `swim.undulate` (10.3), `tripod`, `trot`, `walk`
 - **Actions:** `bite`, `display` (9.5), `idle`, `jump` (10.2), `lash` (9.4), `look`, `pinch` (9.4), `pounce` (10.2), `roar`
@@ -962,8 +962,6 @@ A hoof, single (a horse) or cloven (a goat or boar); set it as a leg's "foot".
 
 Set as a limb's foot: { "foot": { "type": "foot.hoof", ...params } }.
 
-**Not built yet** (plan milestone 8.2): it validates, but compile skips it and warns `not_built`.
-
 slot: `"foot"` · material: `"horn"` · defaultAttach: `{"on":"limb"}`
 
 | Parameter | Type | Range | Default | Description |
@@ -983,8 +981,6 @@ A broad column foot with blunt nails, for heavy creatures like elephants and tro
 
 Set as a limb's foot: { "foot": { "type": "foot.pad", ...params } }.
 
-**Not built yet** (plan milestone 8.2): it validates, but compile skips it and warns `not_built`.
-
 slot: `"foot"` · material: `"skin"` · defaultAttach: `{"on":"limb"}`
 
 | Parameter | Type | Range | Default | Description |
@@ -1002,8 +998,6 @@ slot: `"foot"` · material: `"skin"` · defaultAttach: `{"on":"limb"}`
 A padded paw with toes and visible or hidden claws, like a dog or a big cat.
 
 Set as a limb's foot: { "foot": { "type": "foot.paw", ...params } }.
-
-**Not built yet** (plan milestone 8.2): it validates, but compile skips it and warns `not_built`.
 
 slot: `"foot"` · material: `"skin"` · defaultAttach: `{"on":"limb"}`
 
@@ -1024,8 +1018,6 @@ slot: `"foot"` · material: `"skin"` · defaultAttach: `{"on":"limb"}`
 A bird-like foot: three long toes forward, one back, each with a hooked talon.
 
 Set as a limb's foot: { "foot": { "type": "foot.talon", ...params } }.
-
-**Not built yet** (plan milestone 8.2): it validates, but compile skips it and warns `not_built`.
 
 slot: `"foot"` · material: `"horn"` · defaultAttach: `{"on":"limb"}`
 
@@ -1070,8 +1062,6 @@ slot: `"surface"` · material: `"skin"` · defaultAttach: `{"on":"neck","at":0.1
 A grasping hand: fingers and an opposed thumb, with nails or claws; set it as "foot".
 
 Set as a limb's foot: { "foot": { "type": "hand.grasp", ...params } }.
-
-**Not built yet** (plan milestone 8.2): it validates, but compile skips it and warns `not_built`.
 
 Provides `hand`, which actions can need.
 

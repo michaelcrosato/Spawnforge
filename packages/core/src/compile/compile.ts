@@ -1,5 +1,5 @@
 import { Matrix4, Quaternion, Vector3 } from 'three';
-import type { CreatureSpec } from '../blueprint/creature.ts';
+import type { CreatureSpec, Stance } from '../blueprint/creature.ts';
 import type { Issue } from '../blueprint/issues.ts';
 import { buildable, notBuilt } from '../blueprint/planned.ts';
 import { sweep } from '../geometry/kit.ts';
@@ -98,9 +98,11 @@ export interface LegRigData {
   readonly pole: Vec3;
   readonly reach: number;
   readonly toes: readonly (readonly number[])[];
+  /** The leg's stance: a planted foot rolls (none keeps plan 1's flat feet). */
+  readonly stance?: Stance;
 }
 
-export interface ArmRigData extends Omit<LegRigData, 'pair' | 'restFoot' | 'side'> {
+export interface ArmRigData extends Omit<LegRigData, 'pair' | 'restFoot' | 'side' | 'stance'> {
   readonly side: 'left' | 'right' | 'center';
 }
 

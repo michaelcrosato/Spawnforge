@@ -75,18 +75,41 @@ export interface PartBuildContext {
     readonly bone: number;
     readonly length: number;
     readonly toeRadius: number;
+    /** The toe's bones, root to tip, and its joints (rest pose, model space; ground at y = 0). */
+    readonly bones: readonly number[];
+    readonly points: readonly Vector3[];
+    /** The limb bone the toe grows from (the ankle's). */
+    readonly limbBone: number;
   })[];
+  /**
+   * A socket at any point, moving rigidly with `bone`: for foot parts that place pads, nails and
+   * sheaths themselves. `forward` is projected off `normal`.
+   */
+  frame(
+    position: Vector3,
+    normal: Vector3,
+    forward: Vector3,
+    bone: number,
+    radius?: number,
+  ): Socket;
   /** Places a piece built in socket space (+Y out of the skin, +Z forward, +X side). */
   emit(piece: MeshPiece, socket: Socket, options?: EmitOptions): void;
 }
 
 /** Hooks a part module provides. */
 export interface PartHooks {
+  /**
+   * A foot's height: how far above the ground it holds the leg's tip (metres). Without it the
+   * stance decides (docs/design/8.2-feet.md).
+   */
+  footHeight?(ctx: import('./types.ts').FootContext, params: Record<string, unknown>): number;
   toes?(
     ctx: import('./types.ts').ToeContext,
     params: Record<string, unknown>,
   ): import('./types.ts').ToeChain[];
   build?(ctx: PartBuildContext, params: Record<string, unknown>): void;
+  /** A foot's or hand's claws, for stats: how many and how long (torso lengths). */
+  claws?(params: Record<string, unknown>): { readonly count: number; readonly length: number };
 }
 
 const ROUGHNESS: Record<PartMaterial, number> = {
@@ -467,6 +490,8 @@ export function buildParts(
       ]);
     },
     toes,
+    frame: (position, normal, forward, bone, radius = 0) =>
+      frameOf(position.clone(), normal.clone().normalize(), forward, radius, [[bone, 1]]),
     emit: (piece, socket, options = {}) =>
       emitInto(piece, socket, mirror, options, module.material, id),
   });
@@ -526,7 +551,18 @@ export function buildParts(
           a + (input.bones[id] as BoneDef).head.distanceTo((input.bones[id] as BoneDef).tail),
         0,
       );
-      return { ...s, bone: chain.at(-1) as number, length, toeRadius: (first.r0 + last.r1) / 2 };
+      return {
+        ...s,
+        bone: chain.at(-1) as number,
+        length,
+        toeRadius: (first.r0 + last.r1) / 2,
+        bones: chain,
+        points: [
+          first.head.clone(),
+          ...chain.map((id) => (input.bones[id] as BoneDef).tail.clone()),
+        ],
+        limbBone: first.parent,
+      };
     });
     hooks.build(
       contextFor(

@@ -50,7 +50,9 @@ every example, and the quality and motion reviews, `eval/README.md`) and 7.6 (ev
 builds to `dist/` for publishing, at 0.1.0; `pnpm smoke` installs the tarballs into a game) and
 8.1 (`muscle` shapes limbs, torso, neck and tail by rules, and `neck.curve` makes an S; `muscle: 0`
 is plan 1's mesh exactly, and the meshing grid keeps the muscle-free lattice; the quality review
-shows both orders at 640 px, `docs/design/8.1-anatomy.md`).
+shows both orders at 640 px, `docs/design/8.1-anatomy.md`) and 8.2 (`foot.paw`, `foot.hoof`,
+`foot.talon`, `foot.pad` and `hand.grasp`; each foot stands the leg at its own height, and legs
+with a `stance` roll their planted feet, `docs/design/8.2-feet.md`).
 
 ## Repo map
 
