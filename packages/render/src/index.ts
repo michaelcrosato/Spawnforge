@@ -10,7 +10,7 @@ import type {
   RenderRequest,
   RenderResponse,
   View,
-} from '../page/protocol.ts';
+} from './protocol.ts';
 
 export type { ExportInfo, ExportRequest, RenderInfo, RenderRequest, View };
 
@@ -20,6 +20,28 @@ const pageRoot = fileURLToPath(new URL('../page/', import.meta.url));
 function executableCandidates(): (string | undefined)[] {
   return [process.env.SPAWNFORGE_CHROMIUM, undefined, '/opt/pw-browsers/chromium'].filter(
     (p, i, all) => all.indexOf(p) === i && (p === undefined || existsSync(p)),
+  );
+}
+
+/**
+ * Headless Chromium with WebGL 2 through SwiftShader, so no GPU is needed: from
+ * $SPAWNFORGE_CHROMIUM, Playwright's own, or the sandbox's pre-installed one. The smoke test
+ * runs its game in it too.
+ */
+export async function launchChromium(): Promise<Browser> {
+  let lastError: unknown;
+  for (const executablePath of executableCandidates()) {
+    try {
+      return await chromium.launch({
+        ...(executablePath ? { executablePath } : {}),
+        args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'],
+      });
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw new Error(
+    `could not start Chromium; set SPAWNFORGE_CHROMIUM or run \`pnpm exec playwright-core install chromium\` (${(lastError as Error)?.message ?? ''})`,
   );
 }
 
@@ -49,28 +71,12 @@ export class Renderer {
     await server.listen();
     const url = server.resolvedUrls?.local[0];
     if (!url) throw new Error('render server did not start');
-    let browser: Browser | undefined;
-    let lastError: unknown;
-    for (const executablePath of executableCandidates()) {
-      try {
-        browser = await chromium.launch({
-          ...(executablePath ? { executablePath } : {}),
-          args: [
-            '--use-angle=swiftshader',
-            '--enable-unsafe-swiftshader',
-            '--ignore-gpu-blocklist',
-          ],
-        });
-        break;
-      } catch (error) {
-        lastError = error;
-      }
-    }
-    if (!browser) {
+    let browser: Browser;
+    try {
+      browser = await launchChromium();
+    } catch (error) {
       await server.close();
-      throw new Error(
-        `could not start Chromium; set SPAWNFORGE_CHROMIUM or run \`pnpm exec playwright-core install chromium\` (${(lastError as Error)?.message ?? ''})`,
-      );
+      throw error;
     }
     const page = await browser.newPage();
     const errors: string[] = [];

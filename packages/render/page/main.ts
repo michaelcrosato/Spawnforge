@@ -13,7 +13,6 @@ import { basicPack } from '@spawnforge/modules';
 import { buildExportScene, createCreatureObject, createRenderer } from '@spawnforge/three';
 import * as THREE from 'three';
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
-import { diagramHeight, drawFilmstrip } from './filmstrip.ts';
 import type {
   ExportRequest,
   ExportResponse,
@@ -21,7 +20,8 @@ import type {
   RenderRequest,
   RenderResponse,
   View,
-} from './protocol.ts';
+} from '../src/protocol.ts';
+import { diagramHeight, drawFilmstrip } from './filmstrip.ts';
 
 const registry = createRegistry([basicPack]);
 const ALL_VIEWS: View[] = ['three-quarter', 'side', 'head', 'front', 'top', 'rear'];

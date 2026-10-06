@@ -9,7 +9,9 @@
   },
   "scripts": {
     "dev": "pnpm --filter @spawnforge/sandbox dev",
-    "build": "pnpm -r build",
+    "build": "pnpm -r --filter \"./apps/*\" build",
+    "build:packages": "pnpm -r --filter \"./packages/*\" run build",
+    "smoke": "node scripts/smoke.ts",
     "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.tests.json && pnpm -r typecheck",
     "lint": "biome check . && node scripts/generate.ts --check",
     "format": "biome check --write .",
