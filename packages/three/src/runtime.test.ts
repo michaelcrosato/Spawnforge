@@ -21,6 +21,11 @@ describe('runtime', () => {
     for (let i = 0; i < 300; i++) bestiary.update(1 / 60);
     expect(stalker.position.x).toBeGreaterThan(4);
     expect(steps).toBeGreaterThan(4);
+    let arrived = 0;
+    stalker.on('arrive', () => arrived++);
+    for (let i = 0; i < 600 && arrived === 0; i++) bestiary.update(1 / 60);
+    expect(arrived).toBe(1);
+    expect(bestiary.stats(stalker, 'rpg').health).toBeGreaterThan(10);
     expect(stalker.actions()).toContain('bite');
     bestiary.dispose();
   }, 30_000);

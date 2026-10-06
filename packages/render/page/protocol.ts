@@ -105,6 +105,8 @@ export interface ExportInfo {
     readonly duration: number;
     readonly loop: boolean;
   }[];
+  /** Things worth knowing about the file, e.g. an idle that is only a standing pose. */
+  readonly notes: readonly string[];
   readonly exportMs: number;
 }
 

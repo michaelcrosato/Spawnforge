@@ -263,7 +263,7 @@ when the creature moves.
   the legs' stance), `--frames n` (2–16, default 8) and `--size px` (per frame, default 320).
   Fine patterns fade out in small frames, so judge spots and scales on the contact sheet.
 - **Contact sheet options**: `--views 3/4,side,head,front,top,rear` picks the panels, `--size px`
-  sets the image width, `--quality low|medium|high` the mesh detail, and `--labels` tags every
+  sets the pixels per panel (default 512), `--quality low|medium|high` the mesh detail, and `--labels` tags every
   part and limb by id. Spots and scales on a small creature (under about half a metre) are only a
   few pixels across on the default sheet; check them with `--views top,3/4 --size 900 --quality
   high`. Pattern sizes are in torso lengths, so on a creature with a very long tail a few large

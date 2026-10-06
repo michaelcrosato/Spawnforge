@@ -83,41 +83,54 @@ function kindOf(value: string | undefined): ModuleKind | undefined {
   return value as ModuleKind;
 }
 
-const { positionals, values } = parseArgs({
-  allowPositionals: true,
-  options: {
-    help: { type: 'boolean', short: 'h' },
-    kind: { type: 'string' },
-    expanded: { type: 'boolean' },
-    out: { type: 'string' },
-    labels: { type: 'boolean' },
-    size: { type: 'string' },
-    views: { type: 'string' },
-    quality: { type: 'string' },
-    filmstrip: { type: 'boolean' },
-    'dry-run': { type: 'boolean' },
-    gait: { type: 'string' },
-    action: { type: 'string' },
-    speed: { type: 'string' },
-    frames: { type: 'string' },
-    view: { type: 'string' },
-    theme: { type: 'string' },
-    seed: { type: 'string' },
-    'body-plan': { type: 'string' },
-    'max-height': { type: 'string' },
-    'min-height': { type: 'string' },
-    actions: { type: 'string' },
-    parts: { type: 'string' },
-    amount: { type: 'string' },
-    lock: { type: 'string' },
-    'keep-parts': { type: 'boolean' },
-    mix: { type: 'string' },
-    base: { type: 'string' },
-    stats: { type: 'string' },
-    clips: { type: 'string' },
-    fps: { type: 'string' },
-  },
-});
+function parseOptions() {
+  return parseArgs({
+    allowPositionals: true,
+    options: {
+      help: { type: 'boolean', short: 'h' },
+      kind: { type: 'string' },
+      expanded: { type: 'boolean' },
+      out: { type: 'string' },
+      labels: { type: 'boolean' },
+      size: { type: 'string' },
+      views: { type: 'string' },
+      quality: { type: 'string' },
+      filmstrip: { type: 'boolean' },
+      'dry-run': { type: 'boolean' },
+      gait: { type: 'string' },
+      action: { type: 'string' },
+      speed: { type: 'string' },
+      frames: { type: 'string' },
+      view: { type: 'string' },
+      theme: { type: 'string' },
+      seed: { type: 'string' },
+      'body-plan': { type: 'string' },
+      'max-height': { type: 'string' },
+      'min-height': { type: 'string' },
+      actions: { type: 'string' },
+      parts: { type: 'string' },
+      amount: { type: 'string' },
+      lock: { type: 'string' },
+      'keep-parts': { type: 'boolean' },
+      mix: { type: 'string' },
+      base: { type: 'string' },
+      stats: { type: 'string' },
+      clips: { type: 'string' },
+      fps: { type: 'string' },
+    },
+  });
+}
+let parsed: ReturnType<typeof parseOptions>;
+try {
+  parsed = parseOptions();
+} catch (error) {
+  // A missing value or an unknown flag: say so as JSON, like every other error.
+  console.log(
+    JSON.stringify({ error: (error as Error).message, fix: 'see spawnforge --help' }, null, 2),
+  );
+  process.exit(2);
+}
+const { positionals, values } = parsed;
 const [command, arg] = positionals;
 
 const VIEW_NAMES: Record<string, View> = {
@@ -129,6 +142,14 @@ const VIEW_NAMES: Record<string, View> = {
   top: 'top',
   rear: 'rear',
 };
+
+/** --quality: low, medium or high. */
+function qualityOf(value: string | undefined): 'low' | 'medium' | 'high' | undefined {
+  if (value === undefined) return undefined;
+  if (value !== 'low' && value !== 'medium' && value !== 'high')
+    throw new CommandError(`unknown quality "${value}"`, 'use low, medium or high');
+  return value;
+}
 
 function number(name: string, value: string | undefined): number | undefined {
   if (value === undefined) return undefined;
@@ -183,7 +204,7 @@ async function render(): Promise<{ output: unknown; exitCode?: number }> {
       labels: values.labels ?? false,
       ...(values.size ? { size: Number(values.size) } : {}),
       ...(views ? { views } : {}),
-      ...(values.quality ? { quality: values.quality as 'low' | 'medium' | 'high' } : {}),
+      ...(values.quality ? { quality: qualityOf(values.quality) } : {}),
       ...(filmstrip ? { filmstrip } : {}),
     });
   } catch (error) {
@@ -336,6 +357,9 @@ const commands: Record<
     const extras = exportExtras({ blueprint, ...(values.stats ? { stats: values.stats } : {}) });
     const clips = list(values.clips);
     const fps = number('fps', values.fps);
+    if (fps !== undefined && !(Number.isInteger(fps) && fps >= 5 && fps <= 120))
+      throw new CommandError(`--fps must be a whole number from 5 to 120, not ${fps}`);
+    const quality = qualityOf(values.quality);
     const out = values.out ?? (arg === '-' ? 'creature.glb' : `${arg.replace(/\.json$/i, '')}.glb`);
     const { exportBlueprint } = await import('@spawnforge/render');
     let result: Awaited<ReturnType<typeof exportBlueprint>>;
@@ -343,7 +367,7 @@ const commands: Record<
       result = await exportBlueprint({
         blueprint,
         extras,
-        ...(values.quality ? { quality: values.quality as 'low' | 'medium' | 'high' } : {}),
+        ...(quality ? { quality } : {}),
         ...(clips ? { clips } : {}),
         ...(fps !== undefined ? { fps } : {}),
       });
@@ -352,7 +376,9 @@ const commands: Record<
       throw new CommandError(`export failed: ${message}`);
     }
     writeFileSync(out, result.glb);
-    return { output: { ok: true, out, ...result.info } };
+    return {
+      output: { ok: true, out, ...result.info, ...(extras.stats ? { stats: extras.stats } : {}) },
+    };
   },
   instantiate: () => {
     if (!arg) throw new CommandError('instantiate needs a species file, or - for stdin');

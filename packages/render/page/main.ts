@@ -116,6 +116,11 @@ window.spawnforgeExport = async (request) => {
       bones: compiled.bones.names.length,
       sockets: compiled.sockets.map((s) => s.name),
       clips: clips.map((c) => ({ name: c.name, duration: c.duration, loop: c.loop })),
+      notes: clips.some((c) => c.name === 'idle' && c.frames <= 2)
+        ? [
+            'idle is only the standing pose: the creature has no ambient action; add "idle" to motion.actions for breathing, blinks and glances',
+          ]
+        : [],
       exportMs: performance.now() - started,
     },
   };

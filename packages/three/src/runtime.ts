@@ -1,8 +1,10 @@
 import {
+  analyzeCreature,
   type BakedClip,
   bakeClips,
   type CompiledCreature,
   compileCreature,
+  computeStats,
   createRegistry,
   FORMAT,
   type Ground,
@@ -74,6 +76,8 @@ const UP = new Vector3(0, 1, 0);
 export class Creature {
   /** Add this to the scene. */
   readonly object: Object3D;
+  /** The blueprint it was spawned from (with the spawn's seed). */
+  readonly blueprint: unknown;
   readonly compiled: CompiledCreature;
   readonly controller: MotionController;
   /** Named nodes that follow the body: head, mouth, eyes, claw tips, centre of mass. */
@@ -93,11 +97,13 @@ export class Creature {
   };
 
   constructor(
+    blueprint: unknown,
     compiled: CompiledCreature,
     registry: Registry,
     clips: () => readonly BakedClip[],
     options: SpawnOptions = {},
   ) {
+    this.blueprint = blueprint;
     this.compiled = compiled;
     this.view = createCreatureObject(compiled, registry);
     this.object = this.view.object;
@@ -332,6 +338,15 @@ export interface Bestiary {
   readonly registry: Registry;
   /** Compiles (or reuses) and places a creature. Add `creature.object` to your scene. */
   spawn(blueprint: unknown, options?: SpawnOptions): Promise<Creature>;
+  /**
+   * A game's numbers for a creature from a stats module (e.g. "rpg"): its body measured and its
+   * motion analysed, so it takes a moment; call it once per species or creature, not per frame.
+   */
+  stats(
+    creature: Creature,
+    module: string,
+    params?: Readonly<Record<string, unknown>>,
+  ): Record<string, number>;
   /** Updates every live creature, switching distant ones to baked cycles when given a camera. */
   update(dt: number, input?: UpdateInput): void;
   readonly creatures: ReadonlySet<Creature>;
@@ -406,7 +421,7 @@ export async function createBestiary(options: BestiaryOptions): Promise<Bestiary
         }
         return baked;
       };
-      const creature = new Creature(compiled, registry, clips, spawn);
+      const creature = new Creature(withSeed, compiled, registry, clips, spawn);
       creatures.add(creature);
       return creature;
     },
@@ -419,6 +434,10 @@ export async function createBestiary(options: BestiaryOptions): Promise<Bestiary
         }
         creature.update(dt, input);
       }
+    },
+    stats(creature, module, params = {}) {
+      const spec = resolveBlueprint(creature.blueprint, registry);
+      return computeStats(spec, analyzeCreature(spec, registry), registry, module, params);
     },
     remove(creature) {
       creatures.delete(creature);

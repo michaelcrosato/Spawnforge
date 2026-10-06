@@ -453,6 +453,7 @@ export class MotionController {
         this.target = null;
         wantSpeed = 0;
         this.desiredSpeed = 0;
+        this.events.push({ type: 'arrive', time: this.time });
       } else {
         wantHeading = Math.atan2(to.x, to.z);
         wantSpeed = Math.min(wantSpeed, distance * 1.5);

@@ -213,7 +213,7 @@ export function createServer(): McpServer {
     {
       title: 'Generate a creature from a theme',
       description:
-        'Builds a new, valid creature from a theme (list_modules with kind "theme": reptile, insect, demon) and a seed: the theme weights the body plan, proportions, parts, patterns, colours and temperament. Constraints fix the body plan, a body height range in metres (the creature is rescaled to fit), actions it must be able to do and part types it must have. The same theme, seed and constraints always give the same creature. Returns the minimal blueprint and its body height and length.',
+        'Builds a new, valid creature from a theme (list_modules with kind "theme": reptile, insect, demon) and a seed: the theme weights the body plan, proportions, parts, patterns, colours and temperament. Constraints fix the body plan, a body height range in metres (the creature is rescaled to fit), actions it must be able to do and part types it must have. The same theme, seed and constraints always give the same creature. Returns the minimal blueprint and its body height (bodyHeight, without horns, as analyze reports it) and length.',
       inputSchema: z.object({
         theme: z.string().describe('Theme module id, e.g. "reptile"'),
         seed: z.number().int().optional().describe('Which creature (default 1)'),
@@ -532,7 +532,12 @@ export function createServer(): McpServer {
           ...(input.fps ? { fps: input.fps } : {}),
         });
         writeFileSync(input.out, result.glb);
-        return reply(() => ({ ok: true, out: input.out, ...result.info }));
+        return reply(() => ({
+          ok: true,
+          out: input.out,
+          ...result.info,
+          ...(extras.stats ? { stats: extras.stats } : {}),
+        }));
       } catch (error) {
         return reply(() => {
           throw new CommandError(`export failed: ${(error as Error).message}`);
