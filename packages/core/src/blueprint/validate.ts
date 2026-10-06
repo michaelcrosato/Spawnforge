@@ -14,7 +14,7 @@ import type {
 import { formatPath, fromZodIssues, type Issue, type PathKey } from './issues.ts';
 import { cloneJson, isRecord, mergeBlueprint } from './merge.ts';
 import { migrate } from './migrate.ts';
-import { isColorField, normalizeBlueprint } from './normalize.ts';
+import { isColorField, normalizeBlueprint, normalizeModules } from './normalize.ts';
 import {
   type BlueprintDoc,
   type BlueprintSchema,
@@ -32,14 +32,17 @@ export function blueprintSchemaFor(registry: Registry): BlueprintSchema {
   let schema = schemaCache.get(registry);
   if (!schema) {
     const parts = registry.list('part');
-    schema = buildBlueprintSchema({
-      bodyPlan: registry.ids('bodyPlan'),
-      part: parts.filter((p) => p.slot !== 'foot').map((p) => p.id),
-      foot: parts.filter((p) => p.slot === 'foot').map((p) => p.id),
-      pattern: registry.ids('pattern'),
-      gait: registry.ids('gait'),
-      action: registry.ids('action'),
-    });
+    schema = buildBlueprintSchema(
+      {
+        bodyPlan: registry.ids('bodyPlan'),
+        part: parts.filter((p) => p.slot !== 'foot').map((p) => p.id),
+        foot: parts.filter((p) => p.slot === 'foot').map((p) => p.id),
+        pattern: registry.ids('pattern'),
+        gait: registry.ids('gait'),
+        action: registry.ids('action'),
+      },
+      registry.defaults(),
+    );
     schemaCache.set(registry, schema);
   }
   return schema;
@@ -170,6 +173,7 @@ export function resolveDocument(input: unknown, registry: Registry): ResolveOutc
   }
   const { merged, warnings: mergeWarnings, userIndex } = mergeBlueprint(preset, user);
   warnings.push(...mergeWarnings);
+  normalizeModules(merged, registry);
   const pathOf = (path: readonly PathKey[]) =>
     formatPath(path, merged, (item) => (isRecord(item) ? userIndex.get(item) : undefined));
 
@@ -236,10 +240,12 @@ export function resolveDocument(input: unknown, registry: Registry): ResolveOutc
   const rawLimbs = Array.isArray(working.limbs) ? working.limbs : [];
   const feet = rawLimbs.map((limb, i) => {
     if (!isRecord(limb)) return undefined;
-    const foot = limb.foot === undefined ? {} : limb.foot;
+    const defaultFoot = registry.defaults().foot;
+    const foot = limb.foot === undefined ? (defaultFoot ? {} : null) : limb.foot;
     if (foot === null) return null;
     if (!isRecord(foot)) return undefined;
-    const type = typeof foot.type === 'string' ? foot.type : 'foot.claw';
+    const type = typeof foot.type === 'string' ? foot.type : defaultFoot;
+    if (type === undefined) return undefined;
     const module = registry.get('part', type);
     const out = moduleParams(module, { ...foot, type }, { type: z.string() }, ['limbs', i, 'foot']);
     if (!out) return undefined;
@@ -412,7 +418,7 @@ function partParamHints(
     if (issue.code === 'unknown_key' && limb && footKeys.has(limb[1] ?? ''))
       return {
         ...issue,
-        fix: `move "${limb[1]}" into "foot", e.g. "foot": { "type": "foot.claw", "${limb[1]}": … }`,
+        fix: `move "${limb[1]}" into "foot", e.g. "foot": { "type": "${registry.defaults().foot ?? '…'}", "${limb[1]}": … }`,
       };
     const m = /^parts\[id=([^\]]+)\]\.([A-Za-z0-9_]+)$/.exec(issue.path);
     if (issue.code !== 'unknown_key' || !m) return issue;

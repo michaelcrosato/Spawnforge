@@ -9,6 +9,7 @@ import {
   CommandError,
   crossbreed,
   describeModule,
+  diff,
   exportExtras,
   generate,
   instantiate,
@@ -26,7 +27,7 @@ Commands:
   describe-module <id> [--kind <kind>]  One module's parameters, ranges, defaults and an example
   validate <file|->  [--expanded]       Errors and warnings with fixes, plus the minimal blueprint
   render <file|-> [--out f.png] [--labels] [--size px] [--quality low|medium|high]
-         [--views 3/4,side,head,front,top,rear]
+         [--views 3/4,side,head,front,top,rear,underside]
                                         PNG contact sheet of the creature (headless Chromium)
   render <file|-> --filmstrip [--gait id] [--speed m/s] [--frames n] [--view side|3/4|top|front]
                                         One gait cycle as frames with a footfall diagram;
@@ -36,6 +37,8 @@ Commands:
   analyze <file|-> [--stats id]         Measurements, mass, speeds, motion checks on flat and
                                         rough ground, plausibility warnings and a description;
                                         --stats adds a game's numbers (e.g. rpg)
+  diff <a> <b>                          The patch operations that turn blueprint a into b, by
+                                        id-based paths, with one line per change
   patch <file> <ops|ops-file|-> [--dry-run]
                                         Edits a blueprint file by id-based paths and writes it
                                         back if the result is valid; prints the diff. ops is a
@@ -141,6 +144,7 @@ const VIEW_NAMES: Record<string, View> = {
   front: 'front',
   top: 'top',
   rear: 'rear',
+  underside: 'underside',
 };
 
 /** --quality: low, medium or high. */
@@ -167,7 +171,10 @@ async function render(): Promise<{ output: unknown; exitCode?: number }> {
   const views = values.views?.split(',').map((v) => {
     const view = VIEW_NAMES[v.trim()];
     if (!view)
-      throw new CommandError(`unknown view "${v}"`, 'use 3/4, side, head, front, top or rear');
+      throw new CommandError(
+        `unknown view "${v}"`,
+        'use 3/4, side, head, front, top, rear or underside',
+      );
     return view;
   });
   const filmView = values.view === undefined ? undefined : VIEW_NAMES[values.view];
@@ -327,6 +334,16 @@ const commands: Record<
         ...(values['keep-parts'] ? { structure: false } : {}),
       }),
     );
+  },
+  diff: () => {
+    const other = positionals[2];
+    if (!arg || !other)
+      throw new CommandError(
+        'diff needs two blueprint files',
+        'e.g. spawnforge diff a.json b.json',
+      );
+    const result = diff({ a: readInput(arg), b: readInput(other) });
+    return { output: result, exitCode: result.ok ? 0 : 1 };
   },
   crossbreed: () => {
     const other = positionals[2];

@@ -27,6 +27,7 @@ describe('MCP server', () => {
       'analyze',
       'crossbreed',
       'describe_module',
+      'diff',
       'export',
       'generate',
       'instantiate',

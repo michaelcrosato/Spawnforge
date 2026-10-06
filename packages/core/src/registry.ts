@@ -20,6 +20,12 @@ export type ModuleKind = (typeof MODULE_KINDS)[number];
 /** Lowercase words joined by dots or dashes, e.g. `horn.curved`, `spikes.row`, `quadruped`. */
 const MODULE_ID = /^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$/;
 
+/** What a module's `normalize` hook knows about where the item sits. */
+export interface NormalizeContext {
+  /** For parts: the anchor as written, with the module's default anchor filling the gaps. */
+  readonly attach?: { readonly on: string; readonly at?: number; readonly angle?: number };
+}
+
 /** Fields every module declares. */
 export interface ModuleBase<K extends ModuleKind, P extends z.ZodType = z.ZodType> {
   readonly kind: K;
@@ -30,6 +36,16 @@ export interface ModuleBase<K extends ModuleKind, P extends z.ZodType = z.ZodTyp
   readonly tags: readonly string[];
   /** Strict schema for the module's parameters, each with a default, range and description. */
   readonly params: P;
+  /**
+   * Turns friendly forms of the module's parameters into canonical ones before validation, as
+   * blueprint normalization does for the core's fields: a horn's `aim` into `lean` and `turn`.
+   * Gets the parameters as written (possibly invalid) and returns them rewritten; anything it
+   * does not recognize it leaves for validation to report.
+   */
+  readonly normalize?: (
+    params: Readonly<Record<string, unknown>>,
+    context: NormalizeContext,
+  ) => Record<string, unknown>;
 }
 
 /** Where a part sits. Each slot has its own placement rules (docs/blueprint.md). */
@@ -79,8 +95,8 @@ export interface GaitModule<P extends z.ZodType = z.ZodType> extends ModuleBase<
   readonly legPairs: 'any' | readonly number[];
   /** Phase offset between successive leg pairs, counted from the back, for a given pair count. */
   readonly wave: (pairs: number) => number;
-  /** Default share of the cycle each foot is planted. */
-  readonly duty: number;
+  /** Default share of the cycle each foot is planted, or one per leg-pair count. */
+  readonly duty: number | ((pairs: number) => number);
   /** Speeds the gait suits, as Froude numbers v²/(g·h). */
   readonly froude: readonly [number, number];
   readonly hooks?: unknown;
@@ -156,10 +172,24 @@ export function defineStats<P extends z.ZodType>(m: Omit<StatsModule<P>, 'kind'>
   return { kind: 'stats', ...m };
 }
 
+/**
+ * What a pack offers when a blueprint leaves something out, so the core never names a module.
+ * With several packs, the first pack that sets a default wins.
+ */
+export interface PackDefaults {
+  /** Foot part a limb gets when its blueprint leaves `foot` out. */
+  readonly foot?: string;
+  /** Pattern layers a skin gets when its blueprint leaves `skin.layers` out. */
+  readonly layers?: readonly Readonly<Record<string, unknown>>[];
+  /** Body plan `generate` falls back on when no plan of a theme fits. */
+  readonly bodyPlan?: string;
+}
+
 /** A named set of modules. Games include only the packs they want. */
 export interface Pack {
   readonly id: string;
   readonly modules: readonly ModuleDefinition[];
+  readonly defaults?: PackDefaults;
 }
 
 export function definePack<const P extends Pack>(pack: P): P {
@@ -185,6 +215,8 @@ export interface Registry {
   ids(kind: ModuleKind): string[];
   packOf(kind: ModuleKind, id: string): string | undefined;
   catalog(): CatalogEntry[];
+  /** The packs' defaults, merged (the first pack to set one wins). */
+  defaults(): PackDefaults;
 }
 
 export function paramsJsonSchema(params: z.ZodType): Record<string, unknown> {
@@ -222,6 +254,29 @@ export function createRegistry(packs: readonly Pack[]): Registry {
     }
   }
 
+  const defaults: { -readonly [K in keyof PackDefaults]: PackDefaults[K] } = {};
+  for (const pack of packs) {
+    for (const [name, value] of Object.entries(pack.defaults ?? {}) as [
+      keyof PackDefaults,
+      never,
+    ][]) {
+      if (value !== undefined && defaults[name] === undefined) defaults[name] = value;
+    }
+  }
+  const kindOf: Record<keyof PackDefaults, ModuleKind> = {
+    foot: 'part',
+    layers: 'pattern',
+    bodyPlan: 'bodyPlan',
+  };
+  for (const [name, kind] of Object.entries(kindOf) as [keyof PackDefaults, ModuleKind][]) {
+    const value = defaults[name];
+    const ids = typeof value === 'string' ? [value] : (value ?? []).map((l) => l.type);
+    for (const id of ids) {
+      if (typeof id !== 'string' || !byKey.has(key(kind, id)))
+        throw new Error(`default ${name} names ${kind} "${String(id)}", which no pack defines`);
+    }
+  }
+
   const sorted = [...byKey.values()].sort(
     (x, y) =>
       MODULE_KINDS.indexOf(x.module.kind) - MODULE_KINDS.indexOf(y.module.kind) ||
@@ -247,5 +302,6 @@ export function createRegistry(packs: readonly Pack[]): Registry {
         tags: module.tags,
         params: paramsJsonSchema(module.params),
       })),
+    defaults: () => defaults,
   };
 }

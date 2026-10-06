@@ -8,6 +8,7 @@ import {
   createRegistry,
   crossbreed as crossbreedBlueprints,
   didYouMean,
+  diffBlueprints,
   FORMAT,
   formatDiff,
   formatIssue,
@@ -166,7 +167,13 @@ export function describeModule(
         example: { motion: { gaits: [module.id] } },
         details: {
           legPairs: module.legPairs,
-          duty: module.duty,
+          duty:
+            typeof module.duty === 'function'
+              ? [1, 2, 3].map((n) => ({
+                  pairs: n,
+                  duty: (module.duty as (p: number) => number)(n),
+                }))
+              : module.duty,
           froude: module.froude,
           wave:
             module.legPairs === 'any'
@@ -333,6 +340,45 @@ export function patch(
     errors: result.errors,
     warnings: result.warnings,
     blueprint: result.blueprint,
+  };
+}
+
+export interface DiffResult {
+  ok: boolean;
+  /** Whether patching a with `ops` gives exactly b's creature. */
+  exact: boolean;
+  /** Patch operations that turn a into b; pass them to `patch` as they are. */
+  ops: readonly PatchOp[];
+  /** One line per change to a: `~ path: from → to`, `+ path: value`, `- path`. */
+  changes: string[];
+  /** Errors in a (paths start `a:`) or b (`b:`). */
+  errors: readonly Issue[];
+}
+
+/**
+ * The edits that turn blueprint a into blueprint b, as `patch` operations by id-based paths,
+ * comparing the creatures they resolve to (so a preset value written out is no change).
+ */
+export function diff(options: { a: unknown; b: unknown }, registry = getRegistry()): DiffResult {
+  for (const [name, value] of [
+    ['a', options.a],
+    ['b', options.b],
+  ] as const) {
+    if (typeof value !== 'object' || value === null || Array.isArray(value))
+      throw new CommandError(`blueprint ${name} must be a JSON object`);
+    needIndividual(value, 'diff');
+  }
+  const result = diffBlueprints(
+    options.a as Record<string, unknown>,
+    options.b as Record<string, unknown>,
+    registry,
+  );
+  return {
+    ok: result.ok,
+    exact: result.exact,
+    ops: result.ops,
+    changes: formatDiff(result.changes),
+    errors: result.errors,
   };
 }
 

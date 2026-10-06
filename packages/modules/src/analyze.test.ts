@@ -69,4 +69,26 @@ describe('analyze', () => {
     });
     expect(a.warnings.map((w) => `${w.path} ${w.code}`)).toContain('parts[id=stub] part_buried');
   });
+
+  it('warns when a small creature steps fast, and each fix clears it', () => {
+    const tiny = { extends: 'quadruped', scale: 0.1 };
+    const a = analyze(tiny);
+    expect(a.cadence.map((c) => c.id)).toEqual(['walk', 'trot']);
+    const warning = a.warnings.find((w) => w.code === 'fast_cadence');
+    expect(warning?.path).toBe('scale');
+    const scale = Number(/"scale": ([\d.]+)/.exec(warning?.fix ?? '')?.[1]);
+    expect(scale).toBeGreaterThan(0.1);
+    const codes = (b: Record<string, unknown>) => analyze(b).warnings.map((w) => w.code);
+    expect(codes({ ...tiny, scale })).not.toContain('fast_cadence');
+    expect(warning?.fix).toContain('"motion.temperament": "skittish"');
+    expect(codes({ ...tiny, motion: { temperament: 'skittish' } })).not.toContain('fast_cadence');
+    // A creature of ordinary size steps slowly enough.
+    expect(analyze(example('ridgeback-stalker')).cadence.every((c) => c.steps < 8)).toBe(true);
+  });
+
+  it('describes what it can do without its ambient actions', () => {
+    const a = analyze({ extends: 'quadruped', motion: { actions: ['idle', 'bite'] } });
+    expect(a.description).toContain('it can bite.');
+    expect(a.description).not.toContain('idle');
+  });
 });

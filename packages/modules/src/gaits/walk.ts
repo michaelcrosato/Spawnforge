@@ -7,7 +7,8 @@ export default defineGait({
   tags: ['legs', 'slow'],
   legPairs: 'any',
   wave: (pairs) => (pairs <= 1 ? 0.5 : pairs === 2 ? 0.25 : 1 / pairs),
-  duty: 0.7,
+  // Two legs walk with a longer stance share than four or six.
+  duty: (pairs) => (pairs <= 1 ? 0.62 : 0.75),
   froude: [0, 0.5],
   params: z.strictObject({
     duty: z

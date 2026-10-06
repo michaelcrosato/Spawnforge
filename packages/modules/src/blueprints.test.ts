@@ -165,6 +165,20 @@ describe('errors written for a model', () => {
     expect(find(errors, 'parts[id=h].type')?.fix).toBe('did you mean "horn.curved"?');
   });
 
+  it('names the sibling field an enum value belongs to', () => {
+    const errors = validateBlueprint(
+      { format: FORMAT, body: { head: { shape: 'wide' }, torso: { crossSection: 'snout' } } },
+      registry,
+    ).errors;
+    expect(find(errors, 'body.head.shape')?.fix).toMatch(
+      /^"wide" is a crossSection, not a shape: set "crossSection": "wide"/,
+    );
+    // "snout" is a head shape, but the torso has no field that takes it.
+    expect(find(errors, 'body.torso.crossSection')?.fix).toBe(
+      'pick one of "round", "tall", "wide"',
+    );
+  });
+
   it('tells a model to move part parameters into params', () => {
     const issue = find(
       validateBlueprint(
@@ -269,6 +283,23 @@ describe('friendly forms', () => {
     expect(result.ok).toBe(true);
     expect(result.warnings[0]?.code).toBe('migrated');
     expect(result.blueprint?.format).toBe(FORMAT);
+  });
+
+  it('runs module normalize hooks after merging: aim replaces lean and turn', () => {
+    const result = validateBlueprint(
+      {
+        format: FORMAT,
+        extends: 'quadruped',
+        parts: [{ id: 'horns', type: 'horn.curved', params: { aim: 'back', lean: 30, turn: 10 } }],
+      },
+      registry,
+    );
+    expect(result.ok).toBe(true);
+    const horn = result.creature?.parts.find((p) => p.baseId === 'horns');
+    expect(horn?.params).toMatchObject({ aim: 'back', lean: 0, turn: 0 });
+    expect(result.blueprint?.parts).toEqual([
+      { id: 'horns', type: 'horn.curved', params: { aim: 'back' } },
+    ]);
   });
 
   it('removes inherited items with "remove": true', () => {

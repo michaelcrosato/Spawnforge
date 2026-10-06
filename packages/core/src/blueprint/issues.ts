@@ -77,6 +77,7 @@ export function formatPath(
 
 interface Def {
   type: string;
+  entries?: Record<string, string | number>;
   innerType?: z.ZodType;
   shape?: Record<string, z.ZodType>;
   catchall?: z.ZodType;
@@ -154,6 +155,35 @@ export function objectKeys(schema: z.ZodType, value: unknown): string[] | undefi
     def = defOf(s);
   }
   return def.type === 'object' && def.shape ? Object.keys(def.shape) : undefined;
+}
+
+/**
+ * A sibling field whose options include `value`: `body.head.shape: "wide"` is right for its
+ * sibling `crossSection`.
+ */
+function siblingWith(
+  schema: z.ZodType,
+  input: unknown,
+  path: readonly PathKey[],
+  value: string,
+): string | undefined {
+  const key = path.at(-1);
+  if (typeof key !== 'string') return undefined;
+  const parent = locate(schema, input, path.slice(0, -1));
+  if (!parent.schema) return undefined;
+  let s = unwrap(parent.schema);
+  let def = defOf(s);
+  if (def.type === 'union' && def.options) {
+    s = unwrap(def.options.find((o) => matchesShape(o, parent.value)) ?? s);
+    def = defOf(s);
+  }
+  if (def.type !== 'object' || !def.shape) return undefined;
+  for (const [name, child] of Object.entries(def.shape)) {
+    if (name === key) continue;
+    const entries = defOf(unwrap(child)).entries;
+    if (entries && Object.values(entries).includes(value)) return name;
+  }
+  return undefined;
 }
 
 function numberBounds(schema: z.ZodType | undefined): { min?: number; max?: number } {
@@ -304,6 +334,8 @@ function convert(
       const values = raw.values ?? [];
       const v = at.value;
       const guess = typeof v === 'string' ? didYouMean(v, values.map(String)) : undefined;
+      const sibling = typeof v === 'string' ? siblingWith(schema, input, path, v) : undefined;
+      const field = path.at(-1);
       const expected =
         values.length <= 24
           ? `one of ${quoteList(values)}`
@@ -311,7 +343,11 @@ function convert(
       return [
         err('invalid_value', `${describeValue(v)} is not allowed`, {
           expected,
-          fix: guess ? `did you mean "${guess}"?` : `pick one of ${quoteList(values.slice(0, 8))}`,
+          fix: sibling
+            ? `${JSON.stringify(v)} is a ${sibling}, not a ${String(field)}: set "${sibling}": ${JSON.stringify(v)}${guess ? `, or did you mean "${guess}"?` : ''}`
+            : guess
+              ? `did you mean "${guess}"?`
+              : `pick one of ${quoteList(values.slice(0, 8))}`,
         }),
       ];
     }

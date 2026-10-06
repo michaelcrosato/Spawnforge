@@ -174,7 +174,12 @@ function draw(
       .filter(([id]) => !needs.has('legs') || planHas(registry, id, 'leg'))
       .map(([id, p]) => [id, p.weight]),
   );
-  const plan = constraints.bodyPlan ?? weighted(rng.stream('plan'), plans) ?? 'quadruped';
+  const plan =
+    constraints.bodyPlan ??
+    weighted(rng.stream('plan'), plans) ??
+    registry.defaults().bodyPlan ??
+    registry.ids('bodyPlan')[0] ??
+    '';
   const shape = mergeBlueprint(
     (bias.shape ?? {}) as Json,
     (bias.plans[plan]?.shape ?? {}) as Json,
