@@ -32,6 +32,10 @@ export default definePart({
   example: { type: 'foot.claw', toes: 3, clawLength: 0.05 },
   describe: (p) => `${p.toes as number}-toed clawed feet`,
   hooks: {
+    claws: (raw) => {
+      const p = raw as Params;
+      return { count: p.clawLength > 0 ? p.toes : 0, length: p.clawLength };
+    },
     toes(ctx, raw) {
       const p = raw as Params;
       const length = p.toeLength * ctx.scale;

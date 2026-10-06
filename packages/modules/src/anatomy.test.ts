@@ -28,6 +28,7 @@ const withMuscle = (blueprint: Record<string, unknown>, muscle: number) => ({
 });
 
 describe('anatomy', () => {
+  // (The bog troll's entry was re-pinned when it got hands in 8.2.)
   it('compiles muscle 0 to exactly the mesh each example had before it', () => {
     const before = JSON.parse(
       readFileSync(new URL('./golden-muscle0.json', import.meta.url), 'utf8'),

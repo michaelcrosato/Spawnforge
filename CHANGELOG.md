@@ -17,6 +17,13 @@ Work in progress toward 0.2, phase by phase (see the plan's status table).
   default (0.5) changes every creature's mesh and golden fingerprints. Muscle never resamples
   what it leaves alone (heads, mouths, tail tips).
 - **Quality review:** each pair is shown in both orders to two reviewers, at 640 px views.
+- **Feet and hands (8.2):** `foot.paw`, `foot.hoof` (single or cloven), `foot.talon`, `foot.pad`
+  and `hand.grasp` (fingers and an opposed thumb) are drawn. `stance` is drawn: each foot holds
+  the leg at its own height, and a planted foot with a stance rolls, heel off then toe off. Legs
+  without a stance (`foot.claw`) keep their old pose and motion. Part modules get `footHeight`
+  and `claws` hooks, and foot parts a `frame()` socket helper and each toe's joints.
+- **Examples:** a grey wolf with paws, a tusk boar with cloven hooves and a rust raptor with
+  talons; the bog troll has hands.
 
 ## 0.1.0
 

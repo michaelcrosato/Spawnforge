@@ -12,6 +12,7 @@ import {
   torsoPlan,
 } from './anatomy.ts';
 import { type LimbIkSetup, solveLimb } from './ik.ts';
+import type { PartHooks } from './parts.ts';
 import { sampleProfile } from './profile.ts';
 import type {
   ArmRig,
@@ -268,11 +269,27 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
   const posture =
     legs.length === 0 ? 'legless' : legs.some((l) => l.splay >= 35) ? 'sprawl' : 'upright';
   const lastPair = Math.max(0, ...legs.map((l) => l.pair ?? 0));
+  // How high a foot holds the leg's tip: its module's say, or its stance's (no stance keeps plan
+  // 1's height; docs/design/8.2-feet.md).
+  const footHeightOf = (limb: LimbSpec, tipR: number) => {
+    const plain = Math.max(tipR, 0.012 * L);
+    const foot = limb.foot;
+    const module = foot ? (registry.get('part', foot.type) as PartModule | undefined) : undefined;
+    const hook = (module?.hooks as PartHooks | undefined)?.footHeight;
+    if (foot && hook)
+      return Math.max(
+        0.012 * L,
+        hook({ role: limb.role, stance: limb.stance, tipRadius: tipR, scale: L }, foot.params),
+      );
+    if (limb.stance === 'digitigrade') return Math.max(plain, 2.2 * tipR);
+    if (limb.stance === 'unguligrade') return Math.max(plain, 3 * tipR);
+    return plain;
+  };
   const legPlan = (limb: LimbSpec) => {
     const R = limb.length * L;
     const sw = clamp01(limb.splay / 60);
     const tipR = (limb.radius.at(-1) ?? 0.03) * L;
-    const footH = Math.max(tipR, 0.012 * L);
+    const footH = footHeightOf(limb, tipR);
     // Upright two-legged walkers stand nearly straight-legged; four-legged ones a little more
     // flexed; sprawlers low.
     const biped = lastPair === 0;
@@ -965,6 +982,8 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
         scale: L,
         mirror: limb.mirror,
         splay: limb.splay,
+        stance: limb.role === 'leg' ? limb.stance : undefined,
+        footHeight: limb.role === 'leg' ? last.tail.y : 0,
       };
       hooks.toes(ctx, foot.params).forEach((toe, ti) => {
         const ids: number[] = [];
@@ -1024,6 +1043,7 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
         pole,
         reach: R,
         toes,
+        ...(limb.stance ? { stance: limb.stance } : {}),
       });
     } else {
       armRigs.push({

@@ -7,6 +7,7 @@ import type { ActionModule, Registry } from '../registry.ts';
 import { createRng, type Rng } from '../rng.ts';
 import type { ActionContext, ActionGoals, ActionHooks } from './actions.ts';
 import { Pose } from './pose.ts';
+import { type FootRoll, footRoll, heelAt, plantToes, poseToes } from './roll.ts';
 
 const G = 9.81;
 const STEP = 1 / 120;
@@ -85,6 +86,10 @@ interface LegState {
   /** Ready to lift: set during stance, cleared at lift-off. */
   armed: boolean;
   readonly points: Vector3[];
+  /** The planted foot's roll, for legs with a stance and toes along the ground. */
+  readonly roll: FootRoll | undefined;
+  /** Swing progress, 0 to 1 (for the toes letting go). */
+  swingU: number;
 }
 
 interface Spring {
@@ -208,8 +213,12 @@ export class MotionController {
         swinging: false,
         armed: true,
         points: Array.from({ length: rig.lengths.length + 1 }, () => new Vector3()),
+        roll: footRoll(rig, this.pose),
+        swingU: 0,
       };
     });
+    for (const leg of this.legs)
+      if (leg.roll) plantToes(leg.roll, leg.neutral, leg.footLift, 0, () => 0);
     // How far a foot can travel fore and aft of its neutral spot while planted.
     this.halfStride = Math.max(
       0.05 * compiled.scale,
@@ -301,6 +310,10 @@ export class MotionController {
       leg.target.copy(foot);
       leg.swinging = false;
       leg.armed = true;
+      if (leg.roll) {
+        leg.roll.heel = 0;
+        plantToes(leg.roll, foot, leg.footLift, heading, (x, z) => ground(x, z).height);
+      }
     }
     this.applyPose(ground);
     for (const [i, spring] of this.springs.entries())
@@ -665,9 +678,20 @@ export class MotionController {
         leg.target.x += Math.sin(this.heading) * ahead;
         leg.target.z += Math.cos(this.heading) * ahead;
         leg.target.y = ground(leg.target.x, leg.target.z).height + leg.footLift;
+        leg.swingU = u;
         if (crossedLand || u >= 1) {
           leg.swinging = false;
           leg.planted.copy(leg.target);
+          if (leg.roll) {
+            leg.roll.heel = 0;
+            plantToes(
+              leg.roll,
+              leg.planted,
+              leg.footLift,
+              this.heading,
+              (x, z) => ground(x, z).height,
+            );
+          }
           this.events.push({
             type: 'footstep',
             time: this.time,
@@ -680,6 +704,16 @@ export class MotionController {
           leg.planted.y += Math.sin(Math.PI * u) * (gait?.stepHeight ?? 0.15) * h;
         }
       }
+    }
+
+    // Planted feet roll: late in the stance the heel lifts (straight up, so the foot does not
+    // slide) while the toes stay down; standing still, it settles.
+    const rolling = advanced && this.speed > 0.02 * h;
+    for (const leg of this.legs) {
+      if (!leg.roll || leg.swinging) continue;
+      const local = (((this.phase - leg.offset) % 1) + 1) % 1;
+      leg.roll.heel = rolling ? heelAt(leg.roll, local, duty) : leg.roll.heel * 0.85;
+      leg.planted.y = ground(leg.planted.x, leg.planted.z).height + leg.footLift + leg.roll.heel;
     }
 
     // Body height, pitch and roll follow the feet.
@@ -936,7 +970,8 @@ export class MotionController {
       leg.rig.bones.forEach((b, k) => {
         pose.aim(b, scratch2.subVectors(leg.points[k + 1] as Vector3, leg.points[k] as Vector3));
       });
-      // Toes stay flat, turned with the body.
+      // Toes stay flat, turned with the body; a rolling foot's toes stay on their planted tips,
+      // letting go early in the swing.
       for (const toe of leg.rig.toes) {
         for (const b of toe) {
           pose.solveBone(b);
@@ -944,6 +979,10 @@ export class MotionController {
           restDir.applyAxisAngle(UP, this.heading);
           pose.aim(b, restDir);
         }
+      }
+      if (leg.roll) {
+        const hold = leg.swinging ? 1 - Math.min(1, leg.swingU / 0.25) : 1;
+        if (hold > 0) poseToes(leg.roll, pose, this.heading, hold * hold * (3 - 2 * hold));
       }
     }
 

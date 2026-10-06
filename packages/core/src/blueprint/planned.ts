@@ -6,8 +6,8 @@ import type { Issue } from './issues.ts';
  * Format 0.2 holds all of plan 2's vocabulary before it is built. A blueprint may use any of it:
  * it validates, and compile skips what it cannot draw yet. This lists what is skipped, naming the
  * plan milestone that builds each thing. Pass `written` (the blueprint merged with its preset,
- * before defaults) to include fields that something else implies, such as a stance (from the foot)
- * or a medium (from the limbs), or whose defaults already have a value, such as `head.lips`,
+ * before defaults) to include fields that something else implies, such as a medium (from the
+ * limbs), or whose defaults already have a value, such as `head.lips`,
  * only when the blueprint sets them; the thing that implies them is listed anyway. Each milestone
  * deletes its rows here.
  */
@@ -104,12 +104,6 @@ export function notBuilt(
             : undefined,
         written,
       );
-    const limbList = get('limbs');
-    for (const limb of Array.isArray(limbList) ? (limbList as Record<string, unknown>[]) : []) {
-      const stance = limb?.stance;
-      if (typeof stance === 'string')
-        add(`limbs[id=${String(limb.id)}].stance`, `${article(stance)} ${stance} stance`, '8.2');
-    }
     if (get('motion', 'media', 'water') === true) add('motion.media.water', 'swimming', '10.3');
     if (get('motion', 'media', 'air') === true) add('motion.media.air', 'flying', '10.4');
     for (const key of ['lips', 'tongue', 'brow'])
@@ -150,5 +144,3 @@ export function buildable(spec: CreatureSpec): CreatureSpec {
   if (limbs.length === spec.limbs.length && parts.length === spec.parts.length) return spec;
   return { ...spec, limbs, parts };
 }
-
-const article = (word: string) => (/^[aeiou]/.test(word) ? 'an' : 'a');

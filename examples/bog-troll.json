@@ -28,8 +28,10 @@
       "length": 1.3,
       "radius": [0.09, 0.06],
       "foot": {
-        "toes": 3,
-        "clawLength": 0.06
+        "type": "hand.grasp",
+        "fingers": 4,
+        "fingerLength": 0.2,
+        "claws": 0.04
       }
     }
   ],

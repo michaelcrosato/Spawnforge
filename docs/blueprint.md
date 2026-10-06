@@ -196,9 +196,15 @@ own defaults, so `{ "id": "wing", "role": "wing" }` is already a usable wing. Ev
   puts toes with claws on the tip (parameters sit beside `type`), and the bare id works too:
   `"foot": "foot.hoof"`. Feet: `foot.claw`, `foot.hoof` (single or cloven), `foot.paw`,
   `foot.talon` (bird-like), `foot.pad` (column feet); hands: `hand.grasp`, `hand.pincer`.
-  `"foot": null` ends the limb in a stump. _(The new feet are built in 8.2, pincers in 9.4.)_
+  `"foot": null` ends the limb in a stump. Each foot stands the leg at its own height: a paw on
+  its toes, a hoof on its tip, a column foot low. `hand.grasp` on an arm has four fingers and an
+  opposed thumb (`fingers`, `fingerLength`, and `claws` 0 for nails). _(Pincers arrive in 9.4.)_
 - **`stance`** (legs): `plantigrade` (on the whole sole, like a bear), `digitigrade` (on the toes,
-  like a dog) or `unguligrade` (on hoof tips, like a horse). Left out, the foot suggests one (_8.2_).
+  like a dog) or `unguligrade` (on hoof tips, like a horse). Left out, the foot suggests one
+  (`foot.paw` and `foot.talon` digitigrade, `foot.hoof` unguligrade, `foot.pad` plantigrade;
+  `foot.claw` none). With a stance, a planted foot rolls as the creature walks: the heel lifts
+  late in the step while the toes stay down, and hooves stay flat. Without one, the leg keeps
+  plan 1's flat feet.
 - **Wings and fins** carry a `membrane`, set like a foot: `membrane.bat` (leathery, between finger
   bones), `membrane.insect` (thin veined plates), `membrane.feather` (flight feathers),
   `membrane.case` (a beetle's hard wing case, which covers the wing behind it) and `membrane.fin`
@@ -398,8 +404,7 @@ when the creature moves.
   (size, proportions, parts, colours, gaits): read it to check the creature is what you meant.
 
 What the body model does not do yet: a section bends only as a whole, so a neck raised steeply
-(a cobra) turns at its base unless `neck.curve` gives it an S; feet are clawed toes or stumps
-(hooves, paws and pads arrive in _8.2_); and the head
+(a cobra) turns at its base unless `neck.curve` gives it an S; and the head
 stays level while walking, by design. For sprawled legs, an attach `angle` around 110–120 keeps
 the legs clear of the body as they swing; angles past about 150 bring both legs under the belly.
 Big eyes need a large `size` (0.06–0.1 for cartoon eyes).
@@ -508,8 +513,8 @@ the minimal blueprint is there to show what actually differs from the preset. Ea
 
 `notBuilt`, when present, lists what the blueprint uses that the format has but the pipeline
 does not draw yet, each with the milestone that builds it. It is neither an error nor a warning:
-keep those features. It names what the blueprint (or its preset) writes, so a stance the foot
-implies or swimming that fins imply is not listed on its own: the foot or the fin is. A part on a
+keep those features. It names what the blueprint (or its preset) writes, so swimming that fins
+imply is not listed on its own: the fin is. A part on a
 host that is not drawn names its host. `list-modules` gives each module that is not drawn yet a
 `planned` milestone.
 
@@ -534,7 +539,6 @@ neck for a cobra's hood (see the recipes).
 
 | Not drawn yet | Milestone that draws it |
 | --- | --- |
-| `foot.hoof`, `foot.paw`, `foot.talon`, `foot.pad`, `hand.grasp`, `stance` | 8.2 |
 | `head.lips`, `head.tongue`, `head.brow`, `beak` | 8.3 |
 | `hide`, `fur`, the new pattern layers | 8.4 |
 | Several heads and tails (`count`, `spread`, `forkAt`) | 9.1 |

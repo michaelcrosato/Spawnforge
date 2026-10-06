@@ -113,11 +113,11 @@ describe('format 0.2', () => {
   });
 
   it('leaves out what something else implies, and names a skipped host', () => {
-    // A hoof implies a stance and wings imply flying: the foot and the role are listed alone.
+    // Wings imply flying and a pincer is not built yet: the role and the parts are listed alone.
     const implied = check({
       extends: 'quadruped',
       limbs: [
-        { id: 'foreleg', foot: 'foot.hoof' },
+        { id: 'foreleg', foot: 'hand.pincer' },
         { id: 'wing', role: 'wing' },
       ],
     });
@@ -126,13 +126,13 @@ describe('format 0.2', () => {
       'limbs[id=wing].membrane.type',
       'limbs[id=wing].role',
     ]);
+    // Stances are drawn (8.2); swimming is not yet.
     const written = check({
       extends: 'quadruped',
-      limbs: [{ id: 'foreleg', stance: 'unguligrade' }],
+      limbs: [{ id: 'foreleg', foot: 'foot.hoof', stance: 'unguligrade' }],
       motion: { media: { water: true } },
     });
     expect(written.notBuilt?.map((i) => i.message)).toEqual([
-      'an unguligrade stance is in the format but not built yet (plan milestone 8.2), so it is left out for now',
       'swimming is in the format but not built yet (plan milestone 10.3), so it is left out for now',
     ]);
     const stalks = check({

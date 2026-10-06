@@ -66,8 +66,9 @@ each a pure function of the creature spec, seed and quality:
 
 1. **Skeleton** (`skeleton.ts`). Torso, neck, head, jaw and tail become bone chains; standing
    height and body pitch come from where the legs need their hips. Limbs are posed by the
-   coupled-joint IK (`ik.ts`) so the feet rest on the ground, then foot parts add toe chains.
-   Knee, hock, elbow and jaw joints get helper bones.
+   coupled-joint IK (`ik.ts`) so the feet rest on the ground, at the height each foot module (or
+   the leg's stance) asks for, then foot parts add toe chains. Knee, hock, elbow and jaw joints
+   get helper bones.
 2. **SDF** (`sdf.ts`). A rounded cone per bone (elliptical cross-sections allowed), plain union
    inside a chain, a smooth minimum once where a chain meets its parent. Bones thinner than about
    a grid cell are left out and become swept tubes later.
@@ -107,7 +108,9 @@ same code runs live in the browser, checks motion in Node and renders filmstrips
   can travel within the leg's reach; past the cap, and when a planted foot would run out of reach
   (starting off, speeding up), the legs step faster instead of sliding.
 - **Feet.** Planted feet stay fixed in the world. Swinging feet arc to a spot predicted half a
-  stance ahead of the hip, on the ground the caller supplies (`update(dt, { ground })`).
+  stance ahead of the hip, on the ground the caller supplies (`update(dt, { ground })`). Legs
+  with a stance roll (`roll.ts`): late in the stance the heel rises straight up while each toe's
+  tip stays where it landed, solved as two-bone IK, and the toes let go early in the swing.
 - **Body.** Height, pitch and roll follow the planted feet; the body sinks if a foot in a dip is
   out of reach. Bob and sway follow the steps, the spine bends into turns, sprawlers undulate.
 - **Legless bodies** lay a trail behind a weaving head and place each spine joint along it, so

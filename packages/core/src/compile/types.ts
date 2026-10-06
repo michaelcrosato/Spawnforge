@@ -98,6 +98,8 @@ export interface LegRig {
   readonly reach: number;
   /** Toe bones, root to tip per toe. */
   readonly toes: readonly (readonly number[])[];
+  /** The stance, which makes a planted foot roll (none keeps plan 1's flat feet). */
+  readonly stance?: import('../blueprint/creature.ts').Stance;
 }
 
 export interface ArmRig {
@@ -196,6 +198,16 @@ export interface Skeleton {
   readonly rig: Rig;
 }
 
+/** Context a foot part gets for its height above the ground, before the leg is posed. */
+export interface FootContext {
+  readonly role: import('../blueprint/creature.ts').LimbRole;
+  readonly stance: import('../blueprint/creature.ts').Stance | undefined;
+  /** Limb radius at the tip (metres). */
+  readonly tipRadius: number;
+  /** Metres per torso length. */
+  readonly scale: number;
+}
+
 /** Context a foot part gets for growing toes off a limb tip. */
 export interface ToeContext {
   readonly ankle: Vector3;
@@ -213,6 +225,10 @@ export interface ToeContext {
   readonly scale: number;
   readonly mirror: 1 | -1 | 0;
   readonly splay: number;
+  /** The leg's stance (none on arms, or on legs that keep plan 1's pose). */
+  readonly stance: import('../blueprint/creature.ts').Stance | undefined;
+  /** How far above the ground the ankle is (metres). */
+  readonly footHeight: number;
 }
 
 /** One toe: joint positions from the ankle outward, with a radius at each point (metres). */

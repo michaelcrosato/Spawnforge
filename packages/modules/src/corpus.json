@@ -7,11 +7,23 @@
     "ok": true,
     "errors": []
   },
+  "examples/grey-wolf.json": {
+    "ok": true,
+    "errors": []
+  },
   "examples/reed-viper.json": {
     "ok": true,
     "errors": []
   },
   "examples/ridgeback-stalker.json": {
+    "ok": true,
+    "errors": []
+  },
+  "examples/rust-raptor.json": {
+    "ok": true,
+    "errors": []
+  },
+  "examples/tusk-boar.json": {
     "ok": true,
     "errors": []
   },

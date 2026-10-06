@@ -198,18 +198,11 @@ export function analyzeCreature(
 
   // --- Stability: the centre of mass over the feet's support area -------------------------
   const feet = compiled.rig.legs.map((l) => [l.restFoot[0], l.restFoot[2]] as [number, number]);
-  // A foot covers its tip's width and, with toes, their length.
+  // A foot covers its tip's width and, with toes, as far as they reach from the ankle.
   const footRadius = Math.max(
     0.03 * L,
-    ...spec.limbs
-      .filter((l) => l.role === 'leg')
-      .map(
-        (l) =>
-          Math.max(
-            (l.radius.at(-1) ?? 0.03) * 2,
-            typeof l.foot?.params.toeLength === 'number' ? l.foot.params.toeLength : 0,
-          ) * L,
-      ),
+    ...spec.limbs.filter((l) => l.role === 'leg').map((l) => (l.radius.at(-1) ?? 0.03) * 2 * L),
+    ...compiled.rig.legs.map((leg) => toeReach(compiled, leg.restFoot, leg.toes)),
   );
   const stability =
     feet.length === 0
@@ -684,4 +677,23 @@ export function describeCreature(
   ]
     .join(' ')
     .replace(/\ba (?=[aeiou])/g, 'an ');
+}
+
+/** How far a foot's toes reach from its ankle, across the ground (metres). */
+function toeReach(
+  compiled: CompiledCreature,
+  ankle: readonly [number, number, number],
+  toes: readonly (readonly number[])[],
+): number {
+  const { positions, rotations, lengths } = compiled.bones;
+  let reach = 0;
+  for (const toe of toes)
+    for (const b of toe) {
+      const tail = new Vector3(0, 1, 0)
+        .applyQuaternion(new Quaternion().fromArray(rotations, b * 4))
+        .multiplyScalar(lengths[b] as number)
+        .add(new Vector3().fromArray(positions, b * 3));
+      reach = Math.max(reach, Math.hypot(tail.x - ankle[0], tail.z - ankle[2]));
+    }
+  return reach;
 }
