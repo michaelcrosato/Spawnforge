@@ -1,0 +1,148 @@
+import { readFileSync } from 'node:fs';
+import { McpServer } from '@modelcontextprotocol/server';
+import { CommandError, describeModule, listModules, validate } from '@spawnforge/cli';
+import { MODULE_KINDS } from '@spawnforge/core';
+import { z } from 'zod';
+
+const docsDir = new URL('../../../docs/', import.meta.url);
+
+const INSTRUCTIONS = `Spawnforge builds 3D monsters from JSON blueprints.
+Workflow: read the blueprint guide (resource spawnforge://docs/blueprint.md) and the catalogue
+(spawnforge://docs/catalog.md), start from a body plan ("extends"), then call validate and fix
+every error it reports (each has a path, the problem, the valid range and a fix) until ok is true.
+Use describe_module for any part, pattern, gait, action or body plan you use.`;
+
+type ToolResult = {
+  content: { type: 'text'; text: string }[];
+  structuredContent?: Record<string, unknown>;
+  isError?: boolean;
+};
+
+function reply(run: () => unknown): ToolResult {
+  try {
+    const output = run() as Record<string, unknown>;
+    return {
+      content: [{ type: 'text', text: JSON.stringify(output, null, 2) }],
+      structuredContent: output,
+    };
+  } catch (error) {
+    if (!(error instanceof Error)) throw error;
+    const fix = error instanceof CommandError ? error.fix : undefined;
+    const output = { error: error.message, ...(fix ? { fix } : {}) };
+    return { content: [{ type: 'text', text: JSON.stringify(output, null, 2) }], isError: true };
+  }
+}
+
+function readBlueprint(input: { blueprint?: unknown; path?: string }): unknown {
+  if (input.blueprint !== undefined) return input.blueprint;
+  if (input.path === undefined)
+    throw new CommandError('pass either "blueprint" (the JSON object) or "path" (a file)');
+  let text: string;
+  try {
+    text = readFileSync(input.path, 'utf8');
+  } catch {
+    throw new CommandError(`cannot read ${input.path}`);
+  }
+  try {
+    return JSON.parse(text);
+  } catch (error) {
+    throw new CommandError(`${input.path} is not valid JSON: ${(error as Error).message}`);
+  }
+}
+
+/** One server instance with every Spawnforge tool and doc resource registered. */
+export function createServer(): McpServer {
+  const server = new McpServer(
+    { name: 'spawnforge', version: '0.1.0' },
+    { capabilities: { tools: {}, resources: {} }, instructions: INSTRUCTIONS },
+  );
+
+  server.registerTool(
+    'list_modules',
+    {
+      title: 'List modules',
+      description:
+        'Catalogue of body plans, parts, patterns, gaits and actions: ids, one-line summaries and tags.',
+      inputSchema: z.object({
+        kind: z.enum(MODULE_KINDS).optional().describe('Only modules of this kind'),
+      }),
+      annotations: { readOnlyHint: true },
+    },
+    async ({ kind }) => reply(() => listModules(kind ? { kind } : {})),
+  );
+
+  server.registerTool(
+    'describe_module',
+    {
+      title: 'Describe a module',
+      description:
+        "One module's parameters (JSON Schema with ranges, defaults and units), how to use it, and an example. For body plans, the preset with the limb and part ids you can override.",
+      inputSchema: z.object({
+        id: z.string().describe('Module id, e.g. "horn.curved" or "quadruped"'),
+        kind: z.enum(MODULE_KINDS).optional().describe('Disambiguates when two kinds share an id'),
+      }),
+      annotations: { readOnlyHint: true },
+    },
+    async ({ id, kind }) => reply(() => describeModule(kind ? { id, kind } : { id })),
+  );
+
+  server.registerTool(
+    'validate',
+    {
+      title: 'Validate a blueprint',
+      description:
+        'Checks a blueprint. Returns ok, errors and warnings (each with an id-based path, the problem, the valid range and a suggested fix), and the minimal blueprint. Pass the blueprint object, or a path to a JSON file.',
+      inputSchema: z.object({
+        blueprint: z
+          .record(z.string(), z.unknown())
+          .optional()
+          .describe('The blueprint JSON object'),
+        path: z
+          .string()
+          .optional()
+          .describe('Path to a blueprint JSON file, instead of "blueprint"'),
+        expanded: z.boolean().optional().describe('Also return the fully expanded creature spec'),
+      }),
+      annotations: { readOnlyHint: true },
+    },
+    async (input) =>
+      reply(() =>
+        validate({
+          blueprint: readBlueprint(input),
+          ...(input.expanded ? { expanded: true } : {}),
+        }),
+      ),
+  );
+
+  for (const [name, file, mimeType, description] of [
+    [
+      'blueprint-guide',
+      'blueprint.md',
+      'text/markdown',
+      'How to write a blueprint: fields, units, attachment and rules',
+    ],
+    [
+      'catalog',
+      'catalog.md',
+      'text/markdown',
+      'Every module with its parameters, ranges and defaults',
+    ],
+    [
+      'blueprint-schema',
+      'blueprint.schema.json',
+      'application/schema+json',
+      'The blueprint JSON Schema',
+    ],
+  ] as const) {
+    server.registerResource(
+      name,
+      `spawnforge://docs/${file}`,
+      { title: file, description, mimeType },
+      async (uri) => ({
+        contents: [{ uri: uri.href, mimeType, text: readFileSync(new URL(file, docsDir), 'utf8') }],
+      }),
+    );
+  }
+
+  return server;
+}

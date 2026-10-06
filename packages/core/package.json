@@ -11,6 +11,10 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
+    "three": "catalog:",
     "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/three": "catalog:"
   }
 }

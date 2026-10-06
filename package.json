@@ -10,17 +10,20 @@
   "scripts": {
     "dev": "pnpm --filter @spawnforge/sandbox dev",
     "build": "pnpm -r build",
-    "typecheck": "tsc -p tsconfig.json && pnpm -r typecheck",
-    "lint": "biome check .",
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.tests.json && pnpm -r typecheck",
+    "lint": "biome check . && node scripts/generate.ts --check",
     "format": "biome check --write .",
     "test": "vitest run",
     "test:watch": "vitest",
     "check": "pnpm lint && pnpm typecheck && pnpm test",
-    "spawnforge": "node packages/cli/src/bin.ts"
+    "spawnforge": "node packages/cli/src/bin.ts",
+    "generate": "node scripts/generate.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.15",
+    "@spawnforge/cli": "workspace:*",
     "@types/node": "^22.19.0",
+    "@types/three": "catalog:",
     "typescript": "^7.0.2",
     "vite": "catalog:",
     "vitest": "^5.0.3"

@@ -1,0 +1,1395 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "format": {
+      "type": "string",
+      "const": "spawnforge/0.1",
+      "description": "Format id and version"
+    },
+    "name": {
+      "default": "Unnamed creature",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "seed": {
+      "default": 1,
+      "description": "Same blueprint and seed, same monster",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4294967295
+    },
+    "extends": {
+      "description": "Body-plan preset to start from",
+      "type": "string",
+      "enum": [
+        "biped",
+        "hexapod",
+        "quadruped",
+        "serpent"
+      ]
+    },
+    "scale": {
+      "default": 1,
+      "description": "Torso length in metres; every other length is a multiple of it",
+      "type": "number",
+      "minimum": 0.05,
+      "maximum": 20
+    },
+    "body": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "torso": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "radius": {
+              "default": [
+                0.14,
+                0.18,
+                0.16,
+                0.12
+              ],
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0.02,
+                  "maximum": 1
+                },
+                {
+                  "minItems": 1,
+                  "maxItems": 16,
+                  "type": "array",
+                  "items": {
+                    "type": "number",
+                    "minimum": 0.02,
+                    "maximum": 1
+                  }
+                }
+              ],
+              "description": "Radius from the neck end to the tail end, in torso lengths"
+            },
+            "arch": {
+              "default": 0,
+              "description": "Upward bow of the spine, as a share of torso length; negative sags",
+              "type": "number",
+              "minimum": -0.5,
+              "maximum": 0.5
+            },
+            "pitch": {
+              "default": 0,
+              "description": "Degrees the torso tilts nose-up: 0 is horizontal, about 75 for an upright biped",
+              "type": "number",
+              "minimum": -30,
+              "maximum": 90
+            },
+            "crossSection": {
+              "default": "round",
+              "description": "Shape across the torso",
+              "type": "string",
+              "enum": [
+                "round",
+                "tall",
+                "wide"
+              ]
+            },
+            "segments": {
+              "default": 6,
+              "description": "Spine bones in the torso",
+              "type": "integer",
+              "minimum": 3,
+              "maximum": 12
+            }
+          },
+          "additionalProperties": false,
+          "description": "The main body. Its length is the blueprint `scale`."
+        },
+        "neck": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "length": {
+              "default": 0.3,
+              "description": "Neck length in torso lengths; 0 for no neck",
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1.5
+            },
+            "radius": {
+              "default": [
+                0.07,
+                0.09
+              ],
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0.01,
+                  "maximum": 0.6
+                },
+                {
+                  "minItems": 1,
+                  "maxItems": 16,
+                  "type": "array",
+                  "items": {
+                    "type": "number",
+                    "minimum": 0.01,
+                    "maximum": 0.6
+                  }
+                }
+              ],
+              "description": "Radius from the head end to the torso end, in torso lengths"
+            },
+            "pitch": {
+              "default": 20,
+              "description": "Degrees the neck rises above horizontal",
+              "type": "number",
+              "minimum": -60,
+              "maximum": 90
+            },
+            "crossSection": {
+              "default": "round",
+              "description": "Shape across the neck",
+              "type": "string",
+              "enum": [
+                "round",
+                "tall",
+                "wide"
+              ]
+            },
+            "segments": {
+              "default": 3,
+              "description": "Bones in the neck",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 8
+            }
+          },
+          "additionalProperties": false,
+          "description": "Joins the head to the front of the torso."
+        },
+        "head": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "shape": {
+              "default": "round",
+              "description": "Overall head shape",
+              "type": "string",
+              "enum": [
+                "round",
+                "snout",
+                "flat",
+                "wedge"
+              ]
+            },
+            "length": {
+              "default": 0.28,
+              "description": "Snout tip to back of skull, in torso lengths",
+              "type": "number",
+              "minimum": 0.05,
+              "maximum": 1
+            },
+            "radius": {
+              "default": 0.1,
+              "description": "Skull radius in torso lengths",
+              "type": "number",
+              "minimum": 0.02,
+              "maximum": 0.6
+            },
+            "jaw": {
+              "default": true,
+              "description": "A hinged lower jaw, needed for bite, roar and teeth",
+              "type": "boolean"
+            },
+            "pitch": {
+              "default": 0,
+              "description": "Degrees the snout points above horizontal",
+              "type": "number",
+              "minimum": -60,
+              "maximum": 60
+            },
+            "crossSection": {
+              "default": "round",
+              "description": "Shape across the head",
+              "type": "string",
+              "enum": [
+                "round",
+                "tall",
+                "wide"
+              ]
+            }
+          },
+          "additionalProperties": false,
+          "description": "The head. `at` runs from the snout tip (0) to the back of the skull (1)."
+        },
+        "tail": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "length": {
+              "default": 0.6,
+              "description": "Tail length in torso lengths; 0 for no tail",
+              "type": "number",
+              "minimum": 0,
+              "maximum": 4
+            },
+            "radius": {
+              "default": [
+                0.08,
+                0.012
+              ],
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0.005,
+                  "maximum": 0.6
+                },
+                {
+                  "minItems": 1,
+                  "maxItems": 16,
+                  "type": "array",
+                  "items": {
+                    "type": "number",
+                    "minimum": 0.005,
+                    "maximum": 0.6
+                  }
+                }
+              ],
+              "description": "Radius from the root to the tip, in torso lengths"
+            },
+            "curl": {
+              "default": 0,
+              "description": "Total degrees the tail bends upward along its length; negative curls down",
+              "type": "number",
+              "minimum": -360,
+              "maximum": 360
+            },
+            "curlStart": {
+              "default": 0,
+              "description": "Share of the tail that stays straight before the curl begins; 0.6 curls only the end",
+              "type": "number",
+              "minimum": 0,
+              "maximum": 0.95
+            },
+            "crossSection": {
+              "default": "round",
+              "description": "Shape across the tail",
+              "type": "string",
+              "enum": [
+                "round",
+                "tall",
+                "wide"
+              ]
+            },
+            "pitch": {
+              "default": -10,
+              "description": "Degrees the tail root points above horizontal; negative droops",
+              "type": "number",
+              "minimum": -90,
+              "maximum": 60
+            },
+            "segments": {
+              "default": 8,
+              "description": "Bones in the tail",
+              "type": "integer",
+              "minimum": 2,
+              "maximum": 24
+            }
+          },
+          "additionalProperties": false,
+          "description": "Runs back from the torso. `at` runs from the root (0) to the tip (1)."
+        }
+      },
+      "additionalProperties": false
+    },
+    "limbs": {
+      "default": [],
+      "description": "Legs and arms. Lists merge with the preset by id",
+      "maxItems": 16,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_-]*$",
+            "description": "Unique id; mirrored copies get .L and .R"
+          },
+          "role": {
+            "default": "leg",
+            "description": "\"leg\" limbs carry the body; \"arm\" limbs are free",
+            "type": "string",
+            "enum": [
+              "leg",
+              "arm"
+            ]
+          },
+          "attach": {
+            "default": {},
+            "type": "object",
+            "properties": {
+              "on": {
+                "default": "torso",
+                "description": "Body section the limb grows from",
+                "type": "string"
+              },
+              "at": {
+                "default": 0.5,
+                "description": "Where along the section: 0 is the snout end, 1 the tail end",
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "side": {
+                "default": "both",
+                "type": "string",
+                "enum": [
+                  "both",
+                  "left",
+                  "right",
+                  "center"
+                ],
+                "description": "\"both\" makes a mirrored pair with ids ending .L and .R"
+              },
+              "angle": {
+                "default": 100,
+                "description": "Degrees around the section from the top: 90 is the side, 180 the belly",
+                "type": "number",
+                "minimum": 0,
+                "maximum": 180
+              }
+            },
+            "additionalProperties": false
+          },
+          "length": {
+            "default": 0.5,
+            "description": "Total limb length in torso lengths",
+            "type": "number",
+            "minimum": 0.05,
+            "maximum": 3
+          },
+          "segments": {
+            "default": 3,
+            "description": "Bones from hip or shoulder to ankle",
+            "type": "integer",
+            "minimum": 2,
+            "maximum": 4
+          },
+          "radius": {
+            "default": [
+              0.06,
+              0.03
+            ],
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.005,
+                "maximum": 0.5
+              },
+              {
+                "minItems": 1,
+                "maxItems": 16,
+                "type": "array",
+                "items": {
+                  "type": "number",
+                  "minimum": 0.005,
+                  "maximum": 0.5
+                }
+              }
+            ],
+            "description": "Radius from root to tip, in torso lengths"
+          },
+          "splay": {
+            "default": 0,
+            "description": "Degrees the limb swings out from under the body; about 50 for sprawlers",
+            "type": "number",
+            "minimum": -30,
+            "maximum": 90
+          },
+          "foot": {
+            "description": "Foot part at the limb tip (default { \"type\": \"foot.claw\" }), or null for none",
+            "default": {},
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "default": "foot.claw",
+                    "type": "string",
+                    "enum": [
+                      "foot.claw"
+                    ],
+                    "description": "Foot part id"
+                  }
+                },
+                "additionalProperties": {},
+                "description": "Foot part at the limb tip; its parameters sit beside `type`"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "remove": {
+            "description": "Delete an inherited limb with this id",
+            "type": "boolean",
+            "const": true
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "parts": {
+      "default": [],
+      "description": "Hard parts. Lists merge with the preset by id",
+      "maxItems": 64,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_-]*$",
+            "description": "Unique id; mirrored copies get .L and .R"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "eye.basic",
+              "horn.curved",
+              "spikes.row",
+              "teeth.row"
+            ],
+            "description": "Part module id"
+          },
+          "attach": {
+            "default": {},
+            "type": "object",
+            "properties": {
+              "on": {
+                "description": "Body section, limb id or part id to attach to",
+                "type": "string"
+              },
+              "at": {
+                "description": "Where along it: snout-to-tail on sections, root-to-tip on limbs and parts",
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "from": {
+                "description": "Start of a row",
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "to": {
+                "description": "End of a row",
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "angle": {
+                "description": "Degrees around the section from the top: 0 dorsal, 90 side, 180 belly",
+                "type": "number",
+                "minimum": 0,
+                "maximum": 180
+              },
+              "side": {
+                "description": "Defaults to \"both\", or \"center\" when angle is 0 or 180",
+                "type": "string",
+                "enum": [
+                  "both",
+                  "left",
+                  "right",
+                  "center"
+                ]
+              }
+            },
+            "additionalProperties": false
+          },
+          "params": {
+            "default": {},
+            "description": "The part module's parameters",
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {}
+          },
+          "remove": {
+            "description": "Delete an inherited part with this id",
+            "type": "boolean",
+            "const": true
+          }
+        },
+        "required": [
+          "id",
+          "type"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "skin": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "palette": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "base": {
+              "type": "string",
+              "description": "Colour: \"#rrggbb\", \"#rgb\" or a CSS colour name"
+            },
+            "belly": {
+              "type": "string",
+              "description": "Colour: \"#rrggbb\", \"#rgb\" or a CSS colour name"
+            },
+            "accent": {
+              "type": "string",
+              "description": "Colour: \"#rrggbb\", \"#rgb\" or a CSS colour name"
+            }
+          },
+          "additionalProperties": {
+            "type": "string",
+            "description": "Colour: \"#rrggbb\", \"#rgb\" or a CSS colour name"
+          },
+          "description": "Named colours. base, belly and accent always exist; add any others by name"
+        },
+        "material": {
+          "default": "skin",
+          "description": "Base surface under the patterns",
+          "type": "string",
+          "enum": [
+            "skin",
+            "scales",
+            "chitin"
+          ]
+        },
+        "layers": {
+          "description": "Pattern stack, bottom first",
+          "default": [
+            {
+              "type": "countershade"
+            }
+          ],
+          "maxItems": 12,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "countershade",
+                  "grime",
+                  "mottle",
+                  "scales",
+                  "spots",
+                  "stripes"
+                ],
+                "description": "Pattern module id"
+              },
+              "id": {
+                "description": "Optional id; keys the layer random stream",
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_-]*$"
+              },
+              "region": {
+                "default": "all",
+                "description": "Where the layer shows",
+                "type": "string",
+                "enum": [
+                  "all",
+                  "back",
+                  "belly",
+                  "head",
+                  "torso",
+                  "limbs",
+                  "tail"
+                ]
+              },
+              "strength": {
+                "default": 1,
+                "description": "Layer opacity",
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              }
+            },
+            "required": [
+              "type"
+            ],
+            "additionalProperties": {},
+            "description": "One pattern layer; its parameters sit beside `type`"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "motion": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "temperament": {
+          "default": "calm",
+          "description": "Sets pace, posture and idle behaviour",
+          "type": "string",
+          "enum": [
+            "calm",
+            "stalking",
+            "skittish",
+            "aggressive",
+            "lumbering"
+          ]
+        },
+        "gaits": {
+          "description": "Gaits it may use; by default every gait that suits its legs",
+          "maxItems": 6,
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "slither",
+                  "tripod",
+                  "trot",
+                  "walk"
+                ],
+                "description": "Gait id"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "slither",
+                      "tripod",
+                      "trot",
+                      "walk"
+                    ],
+                    "description": "Gait id"
+                  }
+                },
+                "required": [
+                  "type"
+                ],
+                "additionalProperties": {}
+              }
+            ]
+          }
+        },
+        "actions": {
+          "default": [],
+          "description": "Actions it can perform",
+          "maxItems": 12,
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "bite",
+                  "idle",
+                  "look",
+                  "roar"
+                ],
+                "description": "Action id"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "bite",
+                      "idle",
+                      "look",
+                      "roar"
+                    ],
+                    "description": "Action id"
+                  }
+                },
+                "required": [
+                  "type"
+                ],
+                "additionalProperties": {}
+              }
+            ]
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "format"
+  ],
+  "additionalProperties": false,
+  "$id": "https://spawnforge.dev/schema/spawnforge-0.1.json",
+  "title": "Spawnforge blueprint",
+  "description": "A creature blueprint. Lengths are multiples of `scale` (torso length in metres). Module parameters are listed under $defs as \"<kind>:<id>\": part params go in a part's \"params\"; foot, layer, gait and action params sit beside \"type\".",
+  "$defs": {
+    "part:eye.basic": {
+      "description": "Round eyeball with an iris and pupil that turns to look at targets and blinks.",
+      "type": "object",
+      "properties": {
+        "size": {
+          "default": 0.022,
+          "description": "Eyeball radius in torso lengths",
+          "type": "number",
+          "minimum": 0.005,
+          "maximum": 0.2
+        },
+        "pupil": {
+          "default": "round",
+          "description": "Pupil shape",
+          "type": "string",
+          "enum": [
+            "round",
+            "slit",
+            "goat"
+          ]
+        },
+        "irisColor": {
+          "default": "#c8a030",
+          "description": "Iris colour: a palette name or a colour",
+          "type": "string",
+          "minLength": 1
+        },
+        "scleraColor": {
+          "default": "#e8e2cc",
+          "description": "Colour of the eyeball around the iris",
+          "type": "string",
+          "minLength": 1
+        },
+        "iris": {
+          "default": 0.7,
+          "description": "Iris size as a share of the visible eye",
+          "type": "number",
+          "minimum": 0.2,
+          "maximum": 1
+        },
+        "bulge": {
+          "default": 0.5,
+          "description": "How far the eye stands out of the skin",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "part:foot.claw": {
+      "description": "Foot or hand of short toes, each tipped with a curved claw; set it as a limb's \"foot\".",
+      "type": "object",
+      "properties": {
+        "toes": {
+          "default": 3,
+          "description": "Toes (or fingers) per foot",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 6
+        },
+        "toeLength": {
+          "default": 0.08,
+          "description": "Toe length in torso lengths",
+          "type": "number",
+          "minimum": 0.01,
+          "maximum": 0.5
+        },
+        "spread": {
+          "default": 50,
+          "description": "Degrees between the outermost toes",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 150
+        },
+        "clawLength": {
+          "default": 0.035,
+          "description": "Claw length in torso lengths; 0 for none",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 0.3
+        },
+        "clawCurve": {
+          "default": 70,
+          "description": "Degrees each claw bends down",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 180
+        }
+      },
+      "additionalProperties": false
+    },
+    "part:horn.curved": {
+      "description": "Tapered horn bent along an arc; use side \"both\" for a pair.",
+      "type": "object",
+      "properties": {
+        "length": {
+          "default": 0.2,
+          "description": "Length in torso lengths",
+          "type": "number",
+          "minimum": 0.02,
+          "maximum": 1
+        },
+        "width": {
+          "default": 0.035,
+          "description": "Base radius in torso lengths",
+          "type": "number",
+          "minimum": 0.005,
+          "maximum": 0.3
+        },
+        "curve": {
+          "default": 45,
+          "description": "Total bend in degrees; positive sweeps back toward the tail",
+          "type": "number",
+          "minimum": -270,
+          "maximum": 270
+        },
+        "twist": {
+          "default": 0,
+          "description": "Spiral in degrees along the horn, like a ram",
+          "type": "number",
+          "minimum": -720,
+          "maximum": 720
+        },
+        "lean": {
+          "default": 0,
+          "description": "Degrees the root tilts forward (+) or back (-)",
+          "type": "number",
+          "minimum": -90,
+          "maximum": 90
+        },
+        "ridges": {
+          "default": 0,
+          "description": "Rings along the horn",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 30
+        }
+      },
+      "additionalProperties": false
+    },
+    "part:spikes.row": {
+      "description": "A row of conical spikes between two points, e.g. down the spine at angle 0.",
+      "type": "object",
+      "properties": {
+        "count": {
+          "default": 7,
+          "description": "Spikes in the row",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 60
+        },
+        "height": {
+          "default": 0.08,
+          "description": "Height in torso lengths, as one number or a profile along the row",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.01,
+              "maximum": 0.5
+            },
+            {
+              "minItems": 1,
+              "maxItems": 16,
+              "type": "array",
+              "items": {
+                "type": "number",
+                "minimum": 0.01,
+                "maximum": 0.5
+              }
+            }
+          ]
+        },
+        "width": {
+          "default": 0.025,
+          "description": "Base radius in torso lengths",
+          "type": "number",
+          "minimum": 0.005,
+          "maximum": 0.2
+        },
+        "curve": {
+          "default": 20,
+          "description": "Degrees each spike sweeps back toward the tail",
+          "type": "number",
+          "minimum": -90,
+          "maximum": 90
+        },
+        "jitter": {
+          "default": 0,
+          "description": "Irregular heights and angles, for jagged rows",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "part:teeth.row": {
+      "description": "Teeth along the mouth line; the upper row moves with the head, the lower with the jaw.",
+      "type": "object",
+      "properties": {
+        "count": {
+          "default": 10,
+          "description": "Teeth per row on each side",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 40
+        },
+        "length": {
+          "default": 0.025,
+          "description": "Tooth length in torso lengths",
+          "type": "number",
+          "minimum": 0.005,
+          "maximum": 0.2
+        },
+        "fangs": {
+          "default": 1,
+          "description": "Long fangs at the front of each row",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4
+        },
+        "fangLength": {
+          "default": 0.06,
+          "description": "Fang length in torso lengths",
+          "type": "number",
+          "minimum": 0.01,
+          "maximum": 0.4
+        },
+        "upper": {
+          "default": true,
+          "description": "Teeth in the upper row",
+          "type": "boolean"
+        },
+        "lower": {
+          "default": true,
+          "description": "Teeth in the lower row",
+          "type": "boolean"
+        },
+        "color": {
+          "default": "#efe8d0",
+          "description": "A palette name such as \"accent\", or a colour such as \"#2a1e14\"",
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "pattern:countershade": {
+      "description": "Paler belly blending into a darker back, as on most animals.",
+      "type": "object",
+      "properties": {
+        "color": {
+          "default": "belly",
+          "description": "Belly colour: a palette name or a colour",
+          "type": "string",
+          "minLength": 1
+        },
+        "height": {
+          "default": -0.1,
+          "description": "Where the blend sits: -1 belly, 0 flank, 1 back",
+          "type": "number",
+          "minimum": -1,
+          "maximum": 1
+        },
+        "softness": {
+          "default": 0.35,
+          "description": "Width of the blend",
+          "type": "number",
+          "minimum": 0.01,
+          "maximum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "pattern:grime": {
+      "description": "Dirt gathered in creases, on the feet and low on the body; adds roughness.",
+      "type": "object",
+      "properties": {
+        "color": {
+          "default": "#2a2218",
+          "description": "A palette name such as \"accent\", or a colour such as \"#2a1e14\"",
+          "type": "string",
+          "minLength": 1
+        },
+        "amount": {
+          "default": 0.5,
+          "description": "Overall strength",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "creases": {
+          "default": 0.7,
+          "description": "Dirt in creases and joints",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "feet": {
+          "default": 0.6,
+          "description": "Dirt rising from the ground up the legs",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "pattern:mottle": {
+      "description": "Soft, cloudy blotches of a second colour that break up the outline.",
+      "type": "object",
+      "properties": {
+        "color": {
+          "default": "accent",
+          "description": "A palette name such as \"accent\", or a colour such as \"#2a1e14\"",
+          "type": "string",
+          "minLength": 1
+        },
+        "scale": {
+          "default": 0.15,
+          "description": "Blotch size in torso lengths",
+          "type": "number",
+          "minimum": 0.01,
+          "maximum": 1
+        },
+        "contrast": {
+          "default": 0.5,
+          "description": "How sharp the blotch edges are",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "coverage": {
+          "default": 0.5,
+          "description": "Share of the skin covered",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "pattern:scales": {
+      "description": "Overlapping scales as bump and darker gaps between them.",
+      "type": "object",
+      "properties": {
+        "size": {
+          "default": 0.02,
+          "description": "Scale size in torso lengths",
+          "type": "number",
+          "minimum": 0.005,
+          "maximum": 0.2
+        },
+        "bump": {
+          "default": 0.4,
+          "description": "Depth of the scale relief",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "gapColor": {
+          "default": "accent",
+          "description": "Colour in the gaps between scales: a palette name or a colour",
+          "type": "string",
+          "minLength": 1
+        },
+        "gap": {
+          "default": 0.3,
+          "description": "How dark and wide the gaps are",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "pattern:spots": {
+      "description": "Scattered round spots, from leopard rosettes to sparse blotches.",
+      "type": "object",
+      "properties": {
+        "color": {
+          "default": "accent",
+          "description": "A palette name such as \"accent\", or a colour such as \"#2a1e14\"",
+          "type": "string",
+          "minLength": 1
+        },
+        "size": {
+          "default": 0.05,
+          "description": "Spot radius in torso lengths",
+          "type": "number",
+          "minimum": 0.005,
+          "maximum": 0.5
+        },
+        "density": {
+          "default": 0.5,
+          "description": "Share of possible spots that appear",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "jitter": {
+          "default": 0.8,
+          "description": "Irregularity of placement and size",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "ring": {
+          "default": 0,
+          "description": "Hollow the spots into rings (rosettes)",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "pattern:stripes": {
+      "description": "Bands running across the spine (or along it), with optional wobble.",
+      "type": "object",
+      "properties": {
+        "color": {
+          "default": "accent",
+          "description": "A palette name such as \"accent\", or a colour such as \"#2a1e14\"",
+          "type": "string",
+          "minLength": 1
+        },
+        "count": {
+          "default": 10,
+          "description": "Stripes from snout to tail tip",
+          "type": "number",
+          "minimum": 1,
+          "maximum": 64
+        },
+        "width": {
+          "default": 0.35,
+          "description": "Stripe width as a share of the spacing",
+          "type": "number",
+          "minimum": 0.05,
+          "maximum": 0.95
+        },
+        "jitter": {
+          "default": 0.3,
+          "description": "Wobble and irregularity",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "direction": {
+          "default": "across",
+          "description": "\"across\" the spine like a tiger, or \"along\" it",
+          "type": "string",
+          "enum": [
+            "across",
+            "along"
+          ]
+        },
+        "fade": {
+          "default": 0.6,
+          "description": "How much stripes fade toward the belly",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "gait:slither": {
+      "description": "Legless travelling wave down the spine; each segment follows the path of the one ahead.",
+      "type": "object",
+      "properties": {
+        "amplitude": {
+          "default": 0.18,
+          "description": "Sideways swing as a share of body length",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 0.6
+        },
+        "waves": {
+          "default": 1.5,
+          "description": "Wavelengths along the body",
+          "type": "number",
+          "minimum": 0.5,
+          "maximum": 4
+        }
+      },
+      "additionalProperties": false
+    },
+    "gait:tripod": {
+      "description": "Six-legged insect gait: two alternating tripods of feet.",
+      "type": "object",
+      "properties": {
+        "duty": {
+          "description": "Share of the cycle each foot is planted",
+          "type": "number",
+          "minimum": 0.3,
+          "maximum": 0.8
+        },
+        "stepHeight": {
+          "default": 0.25,
+          "description": "Foot lift as a share of hip height",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "stride": {
+          "default": 1,
+          "description": "Stride length multiplier",
+          "type": "number",
+          "minimum": 0.2,
+          "maximum": 2
+        }
+      },
+      "additionalProperties": false
+    },
+    "gait:trot": {
+      "description": "Faster four-legged gait: diagonal feet move together.",
+      "type": "object",
+      "properties": {
+        "duty": {
+          "description": "Share of the cycle each foot is planted",
+          "type": "number",
+          "minimum": 0.3,
+          "maximum": 0.7
+        },
+        "stepHeight": {
+          "default": 0.2,
+          "description": "Foot lift as a share of hip height",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "stride": {
+          "default": 1,
+          "description": "Stride length multiplier",
+          "type": "number",
+          "minimum": 0.2,
+          "maximum": 2
+        }
+      },
+      "additionalProperties": false
+    },
+    "gait:walk": {
+      "description": "Slow gait for any leg count: feet lift one after another, back to front.",
+      "type": "object",
+      "properties": {
+        "duty": {
+          "description": "Share of the cycle each foot is planted; defaults by leg count",
+          "type": "number",
+          "minimum": 0.4,
+          "maximum": 0.95
+        },
+        "stepHeight": {
+          "default": 0.15,
+          "description": "Foot lift as a share of hip height",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "stride": {
+          "default": 1,
+          "description": "Stride length multiplier",
+          "type": "number",
+          "minimum": 0.2,
+          "maximum": 2
+        }
+      },
+      "additionalProperties": false
+    },
+    "action:bite": {
+      "description": "Lunges the head at a target and snaps the jaw shut; fires a bite-contact event.",
+      "type": "object",
+      "properties": {
+        "reach": {
+          "default": 0.7,
+          "description": "How far the neck may stretch, as a share of its reach",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "speed": {
+          "default": 1,
+          "description": "Speed multiplier",
+          "type": "number",
+          "minimum": 0.25,
+          "maximum": 4
+        }
+      },
+      "additionalProperties": false
+    },
+    "action:idle": {
+      "description": "Breathing, weight shifts, glances, tail swish and blinks while standing.",
+      "type": "object",
+      "properties": {
+        "breath": {
+          "default": 0.5,
+          "description": "Breathing depth",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "fidget": {
+          "default": 0.5,
+          "description": "How often it shifts and looks around",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "action:look": {
+      "description": "Turns eyes, head and neck toward a target within limits.",
+      "type": "object",
+      "properties": {
+        "speed": {
+          "default": 1,
+          "description": "Speed multiplier",
+          "type": "number",
+          "minimum": 0.25,
+          "maximum": 4
+        },
+        "range": {
+          "default": 100,
+          "description": "Degrees the head may turn from straight ahead",
+          "type": "number",
+          "minimum": 10,
+          "maximum": 180
+        }
+      },
+      "additionalProperties": false
+    },
+    "action:roar": {
+      "description": "Raises the head and opens the jaw wide; fires a roar-peak event.",
+      "type": "object",
+      "properties": {
+        "duration": {
+          "default": 2,
+          "description": "Seconds for a creature with 1 m hips; scales with size",
+          "type": "number",
+          "minimum": 0.5,
+          "maximum": 6
+        },
+        "intensity": {
+          "default": 0.8,
+          "description": "How wide the jaw opens and how far the head rises",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

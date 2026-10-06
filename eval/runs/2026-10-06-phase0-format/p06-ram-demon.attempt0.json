@@ -1,0 +1,31 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Ram Demon",
+  "seed": 666,
+  "extends": "biped",
+  "scale": 0.9,
+  "body": {
+    "head": { "shape": "wedge", "length": 0.3, "radius": 0.13 },
+    "tail": { "length": 0.5, "curl": 30 }
+  },
+  "parts": [
+    {
+      "id": "horns",
+      "type": "horn.curved",
+      "attach": { "on": "head", "at": 0.8, "angle": 50, "side": "both" },
+      "params": { "length": 0.4, "width": 0.05, "curve": 200, "twist": 180, "ridges": 10 }
+    },
+    {
+      "id": "eyes",
+      "params": { "pupil": "goat", "irisColor": "#ffd000" }
+    }
+  ],
+  "skin": {
+    "palette": { "base": "#b01e1e", "belly": "#8a1c14", "accent": "#0a0a0a" },
+    "layers": [
+      { "type": "countershade", "strength": 0.4 },
+      { "type": "stripes", "color": "accent", "count": 14, "width": 0.3, "fade": 0.3 }
+    ]
+  },
+  "motion": { "temperament": "aggressive", "actions": ["bite", "roar", "look"] }
+}

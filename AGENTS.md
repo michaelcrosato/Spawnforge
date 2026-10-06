@@ -9,9 +9,11 @@ is the contract.
 
 ## Status
 
-Scaffold only. The workspace, tooling, seeded RNG and a module registry skeleton exist. The
-blueprint schema, compile pipeline, motion and LLM tools do not. Next is phase 0: the blueprint
-format, `list_modules`, `describe_module`, `validate`, and the 20-prompt format eval.
+Phase 0 is done: the blueprint format (schema, presets, merging, mirroring, validation with
+model-friendly errors, minimal blueprints, migrations), the module registry and first pack, the
+`spawnforge` CLI and the MCP server (`list_modules`, `describe_module`, `validate`), the generated
+catalogue and JSON Schema, and the format eval (20/20, see `eval/`). Phase 1 (bodies, skin,
+parts, textures, renders) is in progress.
 
 ## Repo map
 
@@ -24,20 +26,27 @@ format, `list_modules`, `describe_module`, `validate`, and the 20-prompt format 
 | `packages/mcp`     | MCP server: a thin wrapper over the CLI command functions                                        | cli                              |
 | `apps/sandbox`     | Vite app: live 3D view, sliders, JSON panel, terrain test course, gallery                         | core, modules, three             |
 | `examples/`        | Blueprints beside their renders; also the golden test set                                        |                                  |
+| `eval/`            | The 20-prompt agent eval: prompts, scorer and one folder per run                                  |                                  |
+| `scripts/`         | `generate.ts`: writes every generated file (pack index, catalogue, JSON Schema)                  |                                  |
 | `docs/`            | `plan.md` (design), `architecture.md`, `blueprint.md` (format), `catalog.md` (generated, later) |                                  |
 
 ## Commands
 
 ```sh
 pnpm install                  # Node >= 22.18 and pnpm 10 (`corepack enable` picks the pinned version)
-pnpm check                    # lint + typecheck + tests; run before every commit
+pnpm check                    # lint (incl. generated files) + typecheck + tests; run before every commit
 pnpm test                     # Vitest once; `pnpm test:watch` to watch
-pnpm typecheck                # tsc on the root and every package
+pnpm typecheck                # tsc on the root, the tests and every package
 pnpm format                   # Biome: format, sort imports, apply safe lint fixes
+pnpm generate                 # rewrite generated files after adding or changing a module
 pnpm dev                      # sandbox at http://localhost:5173 (add ?webgl to force the WebGL 2 backend)
 pnpm build                    # production build of the sandbox
-pnpm spawnforge list-modules  # run the CLI from source
+pnpm spawnforge <command>     # the CLI from source: list-modules, describe-module, validate, schema
+node packages/mcp/src/bin.ts  # the MCP server over stdio
+node eval/score.ts <run>      # score an eval run from its saved attempts
 ```
+
+To use the MCP server from Claude Code: `claude mcp add spawnforge -- node packages/mcp/src/bin.ts`.
 
 ## How the code runs
 
@@ -79,6 +88,10 @@ From the plan. Follow them unless the plan changes.
   action.
 - Module ids are lowercase words joined by dots or dashes (`horn.curved`). Params are
   `z.strictObject`, and every field has a default, a range and a `.describe()` that states its unit.
+- Colour parameters are named `color` or end in `Color`, and use `colorRef()` from core, so
+  validation and expansion resolve palette names in them.
+- After adding or changing a module, run `pnpm generate`: it rewrites the pack index, the
+  catalogue and the JSON Schema. CI fails when they are stale.
 
 **Blueprints and errors (LLM-first)**
 
@@ -98,7 +111,8 @@ From the plan. Follow them unless the plan changes.
 
 **Tests**
 
-- Tests sit beside the code as `*.test.ts` and run in Node under Vitest.
+- Tests sit beside the code as `*.test.ts` and run in Node under Vitest. They are typechecked by
+  `tsconfig.tests.json` (with Node types), not by the package that holds them.
 - New behaviour comes with tests. Modules will also get the automatic defaults, examples and fuzz
   harness the plan describes.
 

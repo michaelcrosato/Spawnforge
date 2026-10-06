@@ -1,0 +1,82 @@
+[
+  {
+    "id": "p01-wolf",
+    "prompt": "A wolf-like hunter with a long snout, grey fur, a paler belly and a bushy tail."
+  },
+  {
+    "id": "p02-spiked-lizard",
+    "prompt": "A heavy armoured lizard with a row of spikes down its back and a thick, club-like tail."
+  },
+  {
+    "id": "p03-horn-beetle",
+    "prompt": "A small, skittish six-legged beetle with one big horn on its head, glossy black with orange spots."
+  },
+  {
+    "id": "p04-green-serpent",
+    "prompt": "A giant green serpent with yellow stripes and long fangs."
+  },
+  {
+    "id": "p05-swamp-troll",
+    "prompt": "An upright swamp troll with long arms, a flat head, two tusks and mottled green skin."
+  },
+  {
+    "id": "p06-ram-demon",
+    "prompt": "A demon that walks on two legs, red with black stripes, with big curled ram horns."
+  },
+  {
+    "id": "p07-sprawl-lizard",
+    "prompt": "A tiny lizard with four sprawled legs, a very long tail and a spotted back."
+  },
+  {
+    "id": "p08-boar",
+    "prompt": "A stocky boar-like beast with tusks, short legs, a big head and a tiny tail."
+  },
+  {
+    "id": "p09-long-neck",
+    "prompt": "A tall grazer with a very long neck and long legs, like a giraffe crossed with a lizard, covered in spots."
+  },
+  {
+    "id": "p10-scorpion",
+    "prompt": "A desert creature with six legs and a long tail curled up over its back, pale sandy chitin."
+  },
+  {
+    "id": "p11-sea-serpent",
+    "prompt": "A sea serpent with spikes along its whole back, dark blue on top with a pale belly."
+  },
+  {
+    "id": "p12-raptor",
+    "prompt": "A raptor that runs on two legs with a horizontal body, a long stiff tail and small arms."
+  },
+  {
+    "id": "p13-cave-bear",
+    "prompt": "A bulky cave-bear monster with tiny eyes, huge claws and grimy brown hide."
+  },
+  {
+    "id": "p14-leopard-stalker",
+    "prompt": "A cat-like stalker with leopard spots, slit-pupil eyes and a long tail curled at the end."
+  },
+  {
+    "id": "p15-gecko",
+    "prompt": "A gecko-like wall crawler with a flat, wide body, splayed legs and five big toes on each foot."
+  },
+  {
+    "id": "p16-ant-soldier",
+    "prompt": "An ant-like soldier with six legs, a big head with two mandible-like horns and red chitin."
+  },
+  {
+    "id": "p17-goblin",
+    "prompt": "A small goblin standing upright, with a big round head, big yellow eyes and green skin."
+  },
+  {
+    "id": "p18-cobra",
+    "prompt": "A cobra-like snake, brown with dark bands, that rears its neck up high."
+  },
+  {
+    "id": "p19-rhino",
+    "prompt": "A rhino-like beast with a big horn on its nose, a smaller horn behind it, and grey scaly hide."
+  },
+  {
+    "id": "p20-nightmare-hound",
+    "prompt": "A nightmare hound with jagged spines along its back, red eyes and black skin with grime."
+  }
+]

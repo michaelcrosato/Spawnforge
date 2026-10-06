@@ -1,0 +1,22 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Reed Viper",
+  "seed": 314,
+  "extends": "serpent",
+  "parts": [
+    {
+      "id": "fangs",
+      "type": "teeth.row",
+      "params": { "count": 4, "fangs": 1, "fangLength": 0.07, "lower": false }
+    }
+  ],
+  "skin": {
+    "palette": { "base": "#6b7a2e", "belly": "#e0d8a0", "accent": "#2c3314" },
+    "layers": [
+      { "type": "countershade" },
+      { "type": "stripes", "count": 24, "width": 0.25, "jitter": 0.2, "region": "back" },
+      { "type": "scales", "size": 0.025 }
+    ]
+  },
+  "motion": { "actions": ["bite", "look"] }
+}

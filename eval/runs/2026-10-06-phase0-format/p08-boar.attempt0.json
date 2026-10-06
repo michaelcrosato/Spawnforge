@@ -1,0 +1,43 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Boar",
+  "seed": 808,
+  "extends": "quadruped",
+  "scale": 1,
+  "body": {
+    "torso": { "radius": [0.2, 0.26, 0.25, 0.2], "arch": 0.05 },
+    "neck": { "length": 0.1, "radius": [0.12, 0.16], "pitch": 10 },
+    "head": { "shape": "snout", "length": 0.42, "radius": 0.17, "pitch": -15 },
+    "tail": { "length": 0.1, "radius": [0.03, 0.01], "curl": 0 }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "length": 0.35,
+      "radius": [0.09, 0.05]
+    },
+    {
+      "id": "hindleg",
+      "length": 0.38,
+      "radius": [0.1, 0.05]
+    }
+  ],
+  "parts": [
+    {
+      "id": "tusks",
+      "type": "horn.curved",
+      "attach": { "on": "head", "at": 0.12, "angle": 120, "side": "both" },
+      "params": { "length": 0.14, "width": 0.03, "curve": -60 }
+    },
+    { "id": "teeth", "type": "teeth.row", "params": { "count": 8, "fangs": 0 } }
+  ],
+  "skin": {
+    "palette": { "base": "#4a3a2c", "belly": "#7a6650", "accent": "#1e1610" },
+    "layers": [
+      { "type": "countershade" },
+      { "type": "mottle", "scale": 0.1 },
+      { "type": "grime", "amount": 0.4 }
+    ]
+  },
+  "motion": { "temperament": "aggressive", "actions": ["bite", "roar", "idle"] }
+}

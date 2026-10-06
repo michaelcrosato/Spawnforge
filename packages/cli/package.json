@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@spawnforge/core": "workspace:*",
-    "@spawnforge/modules": "workspace:*"
+    "@spawnforge/modules": "workspace:*",
+    "zod": "catalog:"
   }
 }

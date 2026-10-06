@@ -11,6 +11,15 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@spawnforge/cli": "workspace:*"
+    "@modelcontextprotocol/server": "2.3.1",
+    "@spawnforge/cli": "workspace:*",
+    "@spawnforge/core": "workspace:*",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/client": "2.3.1"
+  },
+  "bin": {
+    "spawnforge-mcp": "./src/bin.ts"
   }
 }

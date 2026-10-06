@@ -1,0 +1,41 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Grey Wolf",
+  "seed": 101,
+  "extends": "quadruped",
+  "scale": 1,
+  "body": {
+    "torso": { "radius": [0.14, 0.17, 0.15, 0.12], "arch": 0.06 },
+    "neck": { "length": 0.3, "pitch": 25 },
+    "head": { "shape": "snout", "length": 0.4, "radius": 0.09, "jaw": true, "pitch": -5 },
+    "tail": { "length": 0.65, "radius": [0.07, 0.12, 0.09, 0.02], "pitch": -25, "curl": 5 }
+  },
+  "parts": [
+    { "id": "eyes", "params": { "irisColor": "#d89a1c" } },
+    {
+      "id": "teeth",
+      "type": "teeth.row",
+      "params": { "count": 10, "fangs": 1, "fangLength": 0.05 }
+    }
+  ],
+  "skin": {
+    "palette": { "base": "#7b7d80", "belly": "#d6d0c4", "accent": "#3c3d40" },
+    "material": "skin",
+    "layers": [
+      { "type": "countershade", "softness": 0.3 },
+      {
+        "type": "mottle",
+        "color": "accent",
+        "scale": 0.08,
+        "contrast": 0.3,
+        "coverage": 0.4,
+        "region": "back"
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "stalking",
+    "gaits": ["walk", "trot"],
+    "actions": ["bite", "roar", "look", "idle"]
+  }
+}
