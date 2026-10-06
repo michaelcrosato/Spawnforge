@@ -1,0 +1,82 @@
+{
+  "p01": {
+    "pick": "B",
+    "why": "B's upper limbs have shoulder and thigh mass that blends into a deeper chest; A's legs are thinner and stick-like, with a ball-like elbow in the 3/4 view."
+  },
+  "p02": {
+    "pick": "B",
+    "why": "In side and 3/4 views B's legs read as jointed limbs with an upper arm and knee; A's legs are balloon-like blobs on stubby feet."
+  },
+  "p03": {
+    "pick": "same",
+    "why": "Only a barely visible femur taper on the thin black legs differs; the silhouette, horn, eyes and spots are identical."
+  },
+  "p04": {
+    "pick": "same",
+    "why": "The snake bodies and heads are essentially identical; only tiny snout and scale-shading differences."
+  },
+  "p05": {
+    "pick": "B",
+    "why": "B's torso has a more defined chest and shoulder mass where the arms attach; A's torso is a plainer tube."
+  },
+  "p06": {
+    "pick": "B",
+    "why": "B has a broader chest, a visible waist and thigh mass with readable knees; A's torso is a more uniform egg or tube with stick arms."
+  },
+  "p07": {
+    "pick": "same",
+    "why": "Same silhouette, head and sprawled limbs; differences are a few pixels of shoulder thickness."
+  },
+  "p08": {
+    "pick": "B",
+    "why": "In side view B's front legs come out of the body with a visible upper arm and elbow; A's legs are short stubs mostly hidden under the belly."
+  },
+  "p09": {
+    "pick": "A",
+    "why": "A's hind thighs blend smoothly into the body; B has a lumpy knob at the hip and thinner, tube-like upper legs."
+  },
+  "p10": {
+    "pick": "same",
+    "why": "Pincers, tail and body match; leg thickness differs only slightly and neither reads better."
+  },
+  "p11": {
+    "pick": "A",
+    "why": "A's mouth is a clean slit along the teeth; B's mouth cut is larger, with a jagged, angular edge at the back of the gape (slight difference)."
+  },
+  "p12": {
+    "pick": "B",
+    "why": "B's thighs are more muscular and join the hips better, with a clearer knee; A's legs are thinner at the top for a theropod build."
+  },
+  "p13": {
+    "pick": "B",
+    "why": "B's legs show elbow and forearm bulges and a defined hock; A's legs are plain smooth columns."
+  },
+  "p14": {
+    "pick": "B",
+    "why": "B's cat legs are cleaner, with defined knees and hocks; A has a lumpy elbow bulge and a blobby thigh in side view."
+  },
+  "p15": {
+    "pick": "B",
+    "why": "B's sprawled limbs have clearer upper-arm and thigh bulges and elbows; A's limbs are smoother tubes (slight)."
+  },
+  "p16": {
+    "pick": "B",
+    "why": "A's middle leg shows rippled, ribbed artifacts along the lower segment; B's leg segments are clean and smooth."
+  },
+  "p17": {
+    "pick": "B",
+    "why": "B's torso has a chest-to-waist shape and better-defined thighs; A has a large round lump at the lower back in side view."
+  },
+  "p18": {
+    "pick": "same",
+    "why": "The cobra pose, head, fangs and banding are effectively identical."
+  },
+  "p19": {
+    "pick": "B",
+    "why": "B's legs read as limbs with shoulder and thigh masses and a visible forearm angle; A's legs are stubby blobs merging into the body."
+  },
+  "p20": {
+    "pick": "A",
+    "why": "A has a deeper chest with a defined upper arm and thigh mass; B's legs are thinner, plainer tubes (slight)."
+  }
+}

@@ -1,0 +1,82 @@
+{
+  "p01": {
+    "pick": "A",
+    "why": "A's legs show shoulder/elbow and thigh/knee shaping in side and 3/4 views; B's are straighter tubes."
+  },
+  "p02": {
+    "pick": "B",
+    "why": "From above, B's shoulders and hips read as distinct masses with a waist; A's torso is a straighter-sided slab."
+  },
+  "p03": {
+    "pick": "B",
+    "why": "B's legs taper cleanly; A's legs have a lumpy bulge-and-pinch at the leg joint seen from above."
+  },
+  "p04": {
+    "pick": "same",
+    "why": "Only the head differs a little (A rounder with a clearer neck pinch, B slightly broader-jawed); neither is clearly better."
+  },
+  "p05": {
+    "pick": "A",
+    "why": "A's thighs and shoulders carry more mass, so the legs taper from hip to knee; B's legs are thinner tubes under a narrower torso."
+  },
+  "p06": {
+    "pick": "B",
+    "why": "B's thighs and shoulders are fuller and taper smoothly to the knee; A's thinner legs have knobby knee bulges."
+  },
+  "p07": {
+    "pick": "same",
+    "why": "Nearly identical; tiny differences in belly sag and upper-limb thickness, with no clear winner."
+  },
+  "p08": {
+    "pick": "A",
+    "why": "A has thicker upper limbs with a defined elbow, knee and haunch; B's legs are stubby, blobby tubes off a ball torso."
+  },
+  "p09": {
+    "pick": "A",
+    "why": "A's legs taper from muscular upper segments into a broader chest; B's legs are uniform thin tubes."
+  },
+  "p10": {
+    "pick": "A",
+    "why": "A's walking legs taper cleanly; B's legs are lumpy sausage-like segments with bulging joints in the top view."
+  },
+  "p11": {
+    "pick": "A",
+    "why": "In the front view, A's head stands out from a narrower throat; B's head runs straight into a thick neck."
+  },
+  "p12": {
+    "pick": "B",
+    "why": "B has muscular drumstick thighs and a visible belly between the legs; A's legs are slim stilts that run up into the chest."
+  },
+  "p13": {
+    "pick": "A",
+    "why": "A's limbs show shoulder/elbow and thigh/knee shaping and separate cleanly from the chest; B's legs are straighter pillars blending into the torso."
+  },
+  "p14": {
+    "pick": "B",
+    "why": "B's legs have shoulder and thigh mass that tapers to the paws, and a fuller chest; A's legs are thin straight tubes."
+  },
+  "p15": {
+    "pick": "A",
+    "why": "A's upper limbs carry more shoulder and thigh muscle with a readable elbow bend; B's limbs are thinner uniform tubes."
+  },
+  "p16": {
+    "pick": "A",
+    "why": "A's legs are slimmer with cleaner femur-tibia joints; B shows a lumpy bulge at the leg joints in the top view."
+  },
+  "p17": {
+    "pick": "A",
+    "why": "A's thighs taper from fuller hips to the knee; B's legs are straighter columns that split higher at a narrow crotch."
+  },
+  "p18": {
+    "pick": "same",
+    "why": "Only fine shading and scale-crack differences; body, head, fangs and eyes match."
+  },
+  "p19": {
+    "pick": "A",
+    "why": "A has a shoulder hump, a barrel belly and thicker upper legs; B's torso is a uniform capsule with legs hung from its underside."
+  },
+  "p20": {
+    "pick": "B",
+    "why": "B's legs have muscular thighs and shoulders tapering to the paws, with a deeper chest; A's legs are thin uniform tubes."
+  }
+}

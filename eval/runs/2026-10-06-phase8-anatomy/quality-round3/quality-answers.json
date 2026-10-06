@@ -1,0 +1,73 @@
+{
+  "p01": {
+    "pick": "B",
+    "why": "In the front view A's forelegs pinch in where they meet the bulging chest, while B's forelegs come down as full, clean columns and show a clearer elbow from the side."
+  },
+  "p02": {
+    "pick": "same",
+    "why": "The two ankylosaurs look the same in every view; only a few edge pixels differ."
+  },
+  "p03": {
+    "pick": "same",
+    "why": "The two beetles look the same; the legs differ by a pixel at most."
+  },
+  "p04": {
+    "pick": "B",
+    "why": "Seen from the top, A's mid-body swells wider (53 vs 50 cm) and steps in sharply at both ends; B tapers more evenly."
+  },
+  "p05": {
+    "pick": "B",
+    "why": "A's forearms balloon out past a pinched elbow into clubs, while B's arms taper evenly and its hips and thighs are fuller."
+  },
+  "p06": {
+    "pick": "B",
+    "why": "A's knees bulge out like balls below thin thighs, while B's fuller thighs taper smoothly into the knee."
+  },
+  "p07": { "pick": "same", "why": "The two small lizards look the same in every view." },
+  "p08": {
+    "pick": "same",
+    "why": "The two tusked boars look the same; only the outline shifts by a pixel."
+  },
+  "p09": {
+    "pick": "B",
+    "why": "B's upper legs have muscle mass and taper down to slim shins, while A's legs are thin tubes of even width."
+  },
+  "p10": { "pick": "same", "why": "The two scorpions look the same in every view." },
+  "p11": {
+    "pick": "same",
+    "why": "A's body bulges slightly wider behind the neck (47 vs 45 cm); otherwise the two sea serpents match and neither is better."
+  },
+  "p12": {
+    "pick": "B",
+    "why": "B's thigh is a full drumstick that tapers into the knee, while A's thigh is thinner and flatter."
+  },
+  "p13": { "pick": "same", "why": "The two bears match in legs, torso and head." },
+  "p14": {
+    "pick": "A",
+    "why": "B's hind thigh shows creases and faceted folds down its length and above the knee, while A's hind leg is smooth with a clean knee."
+  },
+  "p15": {
+    "pick": "same",
+    "why": "The two salamanders look the same; B's mid-body is a hair fuller at most."
+  },
+  "p16": {
+    "pick": "same",
+    "why": "The two ants look the same; only the leg edges move by a pixel."
+  },
+  "p17": {
+    "pick": "same",
+    "why": "The two goblins look the same; B's thigh and neck are only a hair fuller."
+  },
+  "p18": {
+    "pick": "same",
+    "why": "The two rearing snakes have the same spindle-shaped raised body and the same head."
+  },
+  "p19": {
+    "pick": "same",
+    "why": "The two rhinos look the same; B's chest is only fractionally fuller."
+  },
+  "p20": {
+    "pick": "B",
+    "why": "A has a lumpy hind knee, and in the front view its forelegs kink and pinch under the chest; B's legs are clean columns with a smooth taper."
+  }
+}

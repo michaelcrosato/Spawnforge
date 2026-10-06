@@ -1,0 +1,82 @@
+{
+  "p01": {
+    "pick": "B",
+    "why": "B's chest sits higher and its legs drop as long straight columns with shaped elbows and knees; A's chest bulges low and its forelegs look stubby and creased."
+  },
+  "p02": {
+    "pick": "same",
+    "why": "Nearly identical spiked ankylosaur; B's belly is only marginally wider and lower in front view."
+  },
+  "p03": {
+    "pick": "B",
+    "why": "B's beetle legs show a femur/tibia knee bulge so they read as jointed; A's are plain tapering tubes."
+  },
+  "p04": {
+    "pick": "same",
+    "why": "Same snake: head, fangs, stripes and mid-body step match; A is only 3 cm wider."
+  },
+  "p05": {
+    "pick": "same",
+    "why": "Trade-off: B's thighs are fuller (side, rear) but fuse into a wide sack in front view, while A's are thin but clearly separated."
+  },
+  "p06": {
+    "pick": "B",
+    "why": "B's thighs are fuller and taper to the knee from the pelvis; A's legs are straight uniform tubes."
+  },
+  "p07": {
+    "pick": "same",
+    "why": "Nearly identical salamander; only a tiny belly lump behind A's forelegs in side view."
+  },
+  "p08": {
+    "pick": "B",
+    "why": "A's belly sags lower between the legs so the legs read stubbier; B's belly is higher and the legs read cleaner."
+  },
+  "p09": {
+    "pick": "B",
+    "why": "B's upper legs have muscle tapering to the knee and shoulder mass in front view; A's legs are uniform tubes."
+  },
+  "p10": {
+    "pick": "same",
+    "why": "Nearly identical scorpion; A's top-view legs have a slight sausage bulge at the femur, too small to decide on."
+  },
+  "p11": {
+    "pick": "same",
+    "why": "Nearly identical sea serpent; height and width differ by only a few cm, and the head, teeth and spines match."
+  },
+  "p12": {
+    "pick": "B",
+    "why": "B's thigh reads as a defined drumstick in side view and its legs are clean in front; A's thighs blend into the belly in a bell-shaped hip."
+  },
+  "p13": {
+    "pick": "B",
+    "why": "B's forelegs separate cleanly from the chest with a visible upper arm and elbow; A's merge into a broad chest."
+  },
+  "p14": {
+    "pick": "B",
+    "why": "B's forelegs drop cleanly from the chest; A has a crease under the chest with smeared spots and wider merged forelegs."
+  },
+  "p15": {
+    "pick": "B",
+    "why": "B's upper limbs are fuller and blend into shoulder mass (front, rear 3/4); A's are thinner and uniform."
+  },
+  "p16": {
+    "pick": "B",
+    "why": "A's middle leg bulges like a sausage after the knee (top view); B's legs taper smoothly."
+  },
+  "p17": {
+    "pick": "B",
+    "why": "B's thighs are fuller and taper to a knee; A's legs are uniform thin tubes."
+  },
+  "p18": {
+    "pick": "same",
+    "why": "Nearly identical raised striped snake; B's mid-body is only marginally broader."
+  },
+  "p19": {
+    "pick": "same",
+    "why": "Trade-off: B's belly hangs deeper like a rhino barrel but makes its legs read shorter; A's body is a straighter tube."
+  },
+  "p20": {
+    "pick": "B",
+    "why": "B's hind thigh separates from the body with a defined knee and hock in side view; A's hind leg grows out of the belly mass."
+  }
+}

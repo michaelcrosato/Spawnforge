@@ -10,6 +10,14 @@ owner's choice (`UNLICENSED` until then). Blueprint format changes are in
 
 Work in progress toward 0.2, phase by phase (see the plan's status table).
 
+- **Anatomy (8.1):** `body.muscle` and `limbs[].muscle` are drawn: limbs fill out and taper into
+  narrower joints, the torso gets a chest, hips and waist from its limbs, the neck a muscle and a
+  tail a thick base, chitin legs swell between joints, serpents get a throat and a flatter belly.
+  `neck.curve` bends the neck into an S. `muscle: 0` compiles to exactly the old mesh; the
+  default (0.5) changes every creature's mesh and golden fingerprints. Muscle never resamples
+  what it leaves alone (heads, mouths, tail tips).
+- **Quality review:** each pair is shown in both orders to two reviewers, at 640 px views.
+
 ## 0.1.0
 
 The proof of concept (plan 1, phases 0 to 6) and plan 2's phase 7, as buildable packages.

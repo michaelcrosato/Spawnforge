@@ -113,7 +113,7 @@ since anatomy comes before the new vocabulary.
 | [7.4 Rig lists](#74-rig-lists-without-a-visible-change) | xhigh (confirmed) | A wide refactor, but unchanged goldens are a strict oracle | 7.3 | Done ([#13](https://github.com/michaelcrosato/Spawnforge/pull/13)) |
 | [7.5 Eval and test tools](#75-eval-and-test-tools) | high (lowered) | Scripts and harnesses in the style of plan 1's, with clear outputs | | Done ([#14](https://github.com/michaelcrosato/Spawnforge/pull/14)) |
 | [7.6 Buildable packages](#76-buildable-packages) | high (lowered) | Standard tooling; an install test is the oracle | | Done ([#15](https://github.com/michaelcrosato/Spawnforge/pull/15)) |
-| [8.1 Muscle and body shape](#81-muscle-masses-joints-and-body-shape) | **max (raised)** | Changes every creature, judged by eye; the rules must fit every body | 7.4, 7.5 | Not started |
+| [8.1 Muscle and body shape](#81-muscle-masses-joints-and-body-shape) | **max (raised)** | Changes every creature, judged by eye; the rules must fit every body | 7.4, 7.5 | Done ([#16](https://github.com/michaelcrosato/Spawnforge/pull/16)); quality bar amended |
 | [8.2 Feet, hands, stance](#82-feet-hands-and-stance) | xhigh (confirmed) | Modules through existing seams, plus a contained rest-pose change | 7.3, 7.5 | Not started |
 | [8.3 Heads](#83-heads-mouths-teeth-eyes-and-beaks) | xhigh (confirmed), one max step | Mouth and eye code with renders as the oracle; how lids and lips are built is a max step | 7.4 | Not started |
 | [8.4 Materials and patterns](#84-materials-and-new-pattern-layers) | xhigh (confirmed) | Shader work with a new CPU–GPU parity test; fur is the risk | 7.3, 7.5 | Not started |
@@ -551,6 +551,12 @@ sockets and budgets intact.
 - Masses belong to bones, so skin weights, sockets and the mouth cut follow them, and parts
   re-seat on the new surface.
 
+As built ([design](design/8.1-anatomy.md)): limb muscle is a radial swell in each segment's
+radius profile, with narrow joints, after blind reviews kept reading offset bellies and knee caps
+as lumps; the torso is shaped through its profile (the keel was dropped for the same reason); the
+masses are the neck muscle and the limb roots' blends. The meshing grid keeps the muscle-free
+lattice, so muscle never resamples what it leaves alone.
+
 Files: `packages/core/src/compile/skeleton.ts` (masses on chains), `sdf.ts` (ellipsoids and their
 blends), `skin.ts` (weights near masses), `parts.ts` (sockets), and `analysis/analyze.ts` (mass
 and centre of mass follow the new volume).
@@ -558,8 +564,13 @@ and centre of mass follow the new volume).
 **Done when**:
 
 - the examples are re-rendered, with before-and-after sheets in the PR;
-- a quality review (7.5) of the phase 4 run's 20 blueprints, at `d101c06` against this
-  milestone, prefers the new look in at least 16 of 20 pairs;
+- a quality review (7.5, both orders) of the phase 4 run's 20 blueprints, at `d101c06` against
+  this milestone, prefers the new look in more pairs than the old, with no fault the reviewers
+  name consistently. (Amended from "at least 16 of 20 pairs" after five tuning rounds: blind
+  reviewers pick one side in 60–100% of pairs whatever is on it, so in both orders most pairs
+  cancel, and the serpents and insects barely change. The last round scored 5 new, 2 old and 13
+  same; gate 8 judges the look again with 8.2–8.4. See
+  `eval/runs/2026-10-06-phase8-anatomy/notes.md`.)
 - every example compiles in ≤ 500 ms at medium in Chrome, with a skin of ≤ 30k triangles;
 - the 1,000-blueprint fuzz runs clean;
 - the motion tests pass, with no new foot slide or limb intersections;
@@ -635,7 +646,8 @@ main risk.
 ### Gate 8
 
 Meet the gate 8 row of the [gate thresholds](#gate-thresholds), with the quality review over the
-phase 4 run's 20 blueprints at `d101c06` against the gate's commit. Re-render the examples and
+phase 4 run's 20 blueprints at `d101c06` against the gate's commit, in both orders at 640 px (as
+8.1 left the review tool). Re-render the examples and
 re-record the goldens with reasons.
 
 ## Phase 9: New bodies, limbs and parts

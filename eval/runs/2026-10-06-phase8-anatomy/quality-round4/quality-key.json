@@ -1,0 +1,107 @@
+{
+  "base": "d101c06",
+  "head": "06b2d11",
+  "set": "eval/runs/2026-10-06-phase4-poc",
+  "pairs": {
+    "p01": {
+      "id": "p01-wolf",
+      "A": "head",
+      "B": "base"
+    },
+    "p02": {
+      "id": "p02-spiked-lizard",
+      "A": "base",
+      "B": "head"
+    },
+    "p03": {
+      "id": "p03-horn-beetle",
+      "A": "base",
+      "B": "head"
+    },
+    "p04": {
+      "id": "p04-green-serpent",
+      "A": "head",
+      "B": "base"
+    },
+    "p05": {
+      "id": "p05-swamp-troll",
+      "A": "base",
+      "B": "head"
+    },
+    "p06": {
+      "id": "p06-ram-demon",
+      "A": "base",
+      "B": "head"
+    },
+    "p07": {
+      "id": "p07-sprawl-lizard",
+      "A": "head",
+      "B": "base"
+    },
+    "p08": {
+      "id": "p08-boar",
+      "A": "head",
+      "B": "base"
+    },
+    "p09": {
+      "id": "p09-long-neck",
+      "A": "base",
+      "B": "head"
+    },
+    "p10": {
+      "id": "p10-scorpion",
+      "A": "head",
+      "B": "base"
+    },
+    "p11": {
+      "id": "p11-sea-serpent",
+      "A": "base",
+      "B": "head"
+    },
+    "p12": {
+      "id": "p12-raptor",
+      "A": "head",
+      "B": "base"
+    },
+    "p13": {
+      "id": "p13-cave-bear",
+      "A": "head",
+      "B": "base"
+    },
+    "p14": {
+      "id": "p14-leopard-stalker",
+      "A": "head",
+      "B": "base"
+    },
+    "p15": {
+      "id": "p15-gecko",
+      "A": "base",
+      "B": "head"
+    },
+    "p16": {
+      "id": "p16-ant-soldier",
+      "A": "head",
+      "B": "base"
+    },
+    "p17": {
+      "id": "p17-goblin",
+      "A": "base",
+      "B": "head"
+    },
+    "p18": {
+      "id": "p18-cobra",
+      "A": "head",
+      "B": "base"
+    },
+    "p19": {
+      "id": "p19-rhino",
+      "A": "base",
+      "B": "head"
+    },
+    "p20": {
+      "id": "p20-nightmare-hound",
+      "A": "head",
+      "B": "base"
+    }
+  }
+}

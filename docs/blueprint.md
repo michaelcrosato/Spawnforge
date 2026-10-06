@@ -105,10 +105,10 @@ separately. _(Built in milestone 9.1.)_
 **Neck shape, muscle and head details.** `neck.curve` (degrees) bends the neck into an S: forward
 at the base and back up below the head, like a swan or a rearing cobra (a C on necks of fewer than
 3 segments). `body.muscle` (0 to 1, default 0.5) sets how muscled the body is, and
-`limbs[].muscle` overrides it per limb: thighs, upper arms and calves get muscle bellies (less
-on stocky legs, which stay columns), knees and elbows caps, joints and ankles narrow, the torso
-gets a chest, hips and (unless it stands upright) a waist from the limbs on it, the neck a muscle
-into the shoulders and a tail a thick base. Chitin limbs swell between their joints instead, and
+`limbs[].muscle` overrides it per limb: thighs and upper arms fill out, calves and forearms
+less, and each tapers into a narrower knee, elbow, ankle or wrist (stocky legs stay columns); the
+torso gets a chest, hips and (unless it stands upright) a waist from the limbs on it, the neck a
+muscle into the shoulders and a tail a thick base. Chitin limbs swell between their joints instead, and
 legless bodies get a flatter belly and a throat behind the head. `0` gives smooth tubes, `1` a
 heavily built body. `head.lips` (0–1),
 `head.tongue` (`none`, `flat` or `forked`) and `head.brow` (0–1) shape the mouth and the brow

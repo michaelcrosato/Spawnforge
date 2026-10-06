@@ -1,0 +1,159 @@
+{
+  "base": "d101c06",
+  "head": "df4fd15",
+  "orders": 1,
+  "head_preferred": 9,
+  "base_preferred": 6,
+  "same": 5,
+  "missing": 0,
+  "total": 20,
+  "picks": {
+    "first": {
+      "A": 0,
+      "B": 15,
+      "same": 5
+    }
+  },
+  "rows": [
+    {
+      "pair": "p01",
+      "id": "p01-wolf",
+      "winner": "base",
+      "votes": [-1, null],
+      "why": "In front view A's wide chest overhangs forelegs that tuck in under it with a ledge; B forelegs drop straight from the chest sides and the upper legs blend into the body in side view."
+    },
+    {
+      "pair": "p02",
+      "id": "p02-spiked-lizard",
+      "winner": "base",
+      "votes": [-1, null],
+      "why": "In side view A legs are stubby with round knobs at the elbow and knee; B legs are straighter columns and its shoulders and upper arms carry fuller muscle in front view."
+    },
+    {
+      "pair": "p03",
+      "id": "p03-horn-beetle",
+      "winner": "same",
+      "votes": [0, null],
+      "why": "The beetle is near-identical; B legs are a touch thicker at the femur with a small joint step, A legs taper smoothly, and neither reads better."
+    },
+    {
+      "pair": "p04",
+      "id": "p04-green-serpent",
+      "winner": "head",
+      "votes": [1, null],
+      "why": "B neck narrows just under the head and widens toward the coils (front view), so the head reads as its own mass; A neck is a uniform-width tube."
+    },
+    {
+      "pair": "p05",
+      "id": "p05-swamp-troll",
+      "winner": "head",
+      "votes": [1, null],
+      "why": "B forearms are bulkier and the thighs separate with a visible gap between the legs (front and 3/4 views); A legs nearly merge into one block under the belly."
+    },
+    {
+      "pair": "p06",
+      "id": "p06-ram-demon",
+      "winner": "base",
+      "votes": [-1, null],
+      "why": "A knees bulge as round knobs between thigh and shin (front and 3/4 views); B legs taper more evenly through the knee with fuller thighs."
+    },
+    {
+      "pair": "p07",
+      "id": "p07-sprawl-lizard",
+      "winner": "same",
+      "votes": [0, null],
+      "why": "Tiny lizard is effectively identical; head, eyes and mouth match and B upper arms are only a hair thicker."
+    },
+    {
+      "pair": "p08",
+      "id": "p08-boar",
+      "winner": "head",
+      "votes": [1, null],
+      "why": "Close call: A limb roots bulge out at the shoulders (top and front views) and the hind knee is knobby in side view; B legs are fuller and blend more smoothly into the barrel body."
+    },
+    {
+      "pair": "p09",
+      "id": "p09-long-neck",
+      "winner": "same",
+      "votes": [0, null],
+      "why": "Very close: A thighs carry a bit more mass at the hip but step at the hind knee, B legs are slimmer and smoother; neither is clearly better."
+    },
+    {
+      "pair": "p10",
+      "id": "p10-scorpion",
+      "winner": "same",
+      "votes": [0, null],
+      "why": "Scorpion is near-identical in every view; B pincer-arm root is slightly rounder in the head close-up, too small to matter."
+    },
+    {
+      "pair": "p11",
+      "id": "p11-sea-serpent",
+      "winner": "head",
+      "votes": [1, null],
+      "why": "Slight: B head is a little larger and rounder with a wider mouth, and the body flares wider below the neck (front view), so head and body read as distinct masses; A is closer to a uniform tube."
+    },
+    {
+      "pair": "p12",
+      "id": "p12-raptor",
+      "winner": "head",
+      "votes": [1, null],
+      "why": "B thigh has a fuller drumstick shape at the hip tapering to the knee (side view), more believable for a biped; A thighs are thinner, straighter tubes."
+    },
+    {
+      "pair": "p13",
+      "id": "p13-cave-bear",
+      "winner": "base",
+      "votes": [-1, null],
+      "why": "A hind leg has a lumpy round bulge at the knee (side view) and its forelegs are knobby in front view; B legs are smooth thick columns with the thigh blending into the haunch."
+    },
+    {
+      "pair": "p14",
+      "id": "p14-leopard-stalker",
+      "winner": "base",
+      "votes": [-1, null],
+      "why": "In front view A chest balloons out over forelegs that pinch in beneath it, and its hind leg is lumpy at the knee in side view; B forelegs drop straight from the chest and the thighs taper cleanly."
+    },
+    {
+      "pair": "p15",
+      "id": "p15-gecko",
+      "winner": "head",
+      "votes": [1, null],
+      "why": "B upper arms carry a rounded shoulder and elbow mass and the belly sits a little deeper (front view); A arms are thinner, flatter tubes."
+    },
+    {
+      "pair": "p16",
+      "id": "p16-ant-soldier",
+      "winner": "same",
+      "votes": [0, null],
+      "why": "The ant renders are effectively identical in every view (segments, mandibles, eyes, legs)."
+    },
+    {
+      "pair": "p17",
+      "id": "p17-goblin",
+      "winner": "base",
+      "votes": [-1, null],
+      "why": "A thighs bulge then step at the knee into a thinner shin (front and 3/4 views); B legs taper smoothly from hip to ankle."
+    },
+    {
+      "pair": "p18",
+      "id": "p18-cobra",
+      "winner": "head",
+      "votes": [1, null],
+      "why": "Slight: in front view B neck tapers more gradually into a narrower throat so the head reads as its own mass; A's body widens right below the head."
+    },
+    {
+      "pair": "p19",
+      "id": "p19-rhino",
+      "winner": "head",
+      "votes": [1, null],
+      "why": "A legs are knobby, with a bulging hind knee over a thin shin (side view) and shoulders that flare out past the body (front view); B legs are fuller pillars set under the body."
+    },
+    {
+      "pair": "p20",
+      "id": "p20-nightmare-hound",
+      "winner": "head",
+      "votes": [1, null],
+      "why": "B thighs and upper forelegs are fuller and blend into a slightly deeper torso (side view, 1.3 m vs 1.2 m tall); A legs read as thin sticks under the body."
+    }
+  ]
+}
