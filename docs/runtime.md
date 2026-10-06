@@ -110,7 +110,7 @@ events it fired. Every event has `type` and `time` (seconds of the creature's mo
 | `gait` | `gait` | It changes gait (walk to trot…) |
 | `arrive` | | It reaches its `moveTo` target |
 | `action-start`, `action-end` | `action` | An action begins or ends |
-| `bite-contact`, `roar-peak` | `action`, `position` (the head) | Moments actions mark: the jaw snaps shut, the roar is loudest |
+| `bite-contact`, `roar-peak` | `action`, `position` (the head), `head` (with several heads: which one, such as `head.L1`) | Moments actions mark: the jaw snaps shut, the roar is loudest |
 | `*` | | Every event |
 
 Events carry no target or creature: hold those in your listener. Timing events fire on time
@@ -120,9 +120,9 @@ whatever the target is doing, so test hits yourself, with sockets or hit capsule
 
 - **Sockets.** `creature.sockets` holds nodes that follow the body: `head`, `mouth`, each eye
   (`eye.eyes.L`), each claw tip (`claw.foreleg.L.0`) and `centerOfMass`. Parent effects to them,
-  or read a world position with `creature.socket('mouth')`. With several heads (milestone 9.1),
-  `head` and `mouth` are the main (middle) head's, and the others add their instance:
-  `head.L1`, `mouth.L1`.
+  or read a world position with `creature.socket('mouth')`. With several heads, `head` and
+  `mouth` are the main (middle) head's, and the others add their instance: `head.L1`,
+  `mouth.L1`. An action aimed at a target uses the nearest head.
 - **Hit volumes.** `creature.hitCapsules()` returns one world-space capsule per body bone
   (`bone`, `start`, `end`, `radius`) for the current pose.
 - **Stats.** `bestiary.stats(creature, 'rpg')` runs a stats module on the creature's measured

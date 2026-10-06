@@ -58,6 +58,8 @@ export interface MotionEvent {
   readonly position?: readonly [number, number, number];
   readonly gait?: string;
   readonly action?: string;
+  /** Action events: the head that acted (`head`, `head.L1`, …), when there are several. */
+  readonly head?: string;
 }
 
 /** Pace, posture and attitude per temperament. */
@@ -264,7 +266,32 @@ export class MotionController {
     this.springs = compiled.rig.chains
       .filter((c) => c.drive === 'spring' && c.bones.length > 1)
       .map((c) => this.makeSpring(c.bones, c.stiffness ?? 0.35, c.swish ?? false));
+    // Each extra head replays the glances a little later, by a delay from its own stream, so
+    // heads look about on their own; never mirrored, which would turn neighbours into each
+    // other (docs/design/9.1-heads-tails.md).
+    this.headGlance = compiled.rig.heads.map((h, i) =>
+      i === compiled.rig.main ? 0 : rng.stream(`glance:${h.id}`).float(0.4, 1.6),
+    );
     this.pose.solve();
+  }
+
+  /** Per head: how long after the shared glance it looks (seconds). */
+  private readonly headGlance: readonly number[];
+  /** Recent glances, newest last, for heads that follow late. */
+  private readonly glances: { time: number; yaw: number; pitch: number }[] = [];
+
+  /** The glance a head makes now: the shared one, its delay ago. */
+  private glanceFor(head: number): { yaw: number; pitch: number } | undefined {
+    const g = this.goals.glance;
+    const delay = this.headGlance[head] ?? 0;
+    if (!g || delay === 0) return g;
+    const when = this.time - delay;
+    let past = this.glances[0];
+    for (const entry of this.glances) {
+      if (entry.time > when) break;
+      past = entry;
+    }
+    return past ? { yaw: past.yaw, pitch: past.pitch } : undefined;
   }
 
   /** The main tail's bones, root to tip (empty without a tail). */
@@ -531,9 +558,8 @@ export class MotionController {
     const rig = this.compiled.rig;
     // The main head speaks for the creature; an action aimed at a target uses the nearest head.
     const c = this.current;
-    const head = this.pose.worldPos[
-      (rig.heads[this.nearestHead(c?.target ?? null)] ?? mainHead(rig)).head
-    ] as Vector3;
+    const acting = rig.heads[this.nearestHead(c?.target ?? null)] ?? mainHead(rig);
+    const head = this.pose.worldPos[acting.head] as Vector3;
     const forward = scratch3.set(Math.sin(this.heading), 0, Math.cos(this.heading));
     const base = {
       timeScale: this.timeScale,
@@ -564,6 +590,7 @@ export class MotionController {
             time: this.time,
             action: c.id,
             position: [head.x, head.y, head.z],
+            ...(rig.heads.length > 1 ? { head: acting.id } : {}),
           });
       }
       const main: ActionGoals = {};
@@ -586,6 +613,10 @@ export class MotionController {
       }
     }
     this.goals = goals;
+    if (goals.glance && this.compiled.rig.heads.length > 1) {
+      this.glances.push({ time: this.time, ...goals.glance });
+      while ((this.glances[0]?.time ?? this.time) < this.time - 2) this.glances.shift();
+    }
   }
 
   private retimeLegs(): void {
@@ -924,6 +955,11 @@ export class MotionController {
 
     if (rig.posture === 'legless') {
       this.applySlither(ground);
+      // The main tail follows the trail; extra tails swing on their springs.
+      if (this.springs.length > 1) {
+        this.applySprings(this.tailBones);
+        this.pose.solve();
+      }
       return;
     }
 
@@ -950,10 +986,23 @@ export class MotionController {
     (pose.rot[spine0] as Quaternion).premultiply(tilt);
     const sprawl = rig.posture === 'sprawl';
     const bendBones = [...rig.spine.slice(1), ...mainHead(rig).neck];
+    const bendAt = (k: number) =>
+      this.bend / Math.max(1, bendBones.length) +
+      (sprawl ? Math.sin(this.phase * Math.PI * 2 - k * 0.6) * 0.06 * moving : 0);
     bendBones.forEach((b, k) => {
-      const wave = sprawl ? Math.sin(this.phase * Math.PI * 2 - k * 0.6) * 0.06 * moving : 0;
-      const yaw = this.bend / Math.max(1, bendBones.length) + wave;
-      (pose.rot[b] as Quaternion).multiply(scratchQ.setFromAxisAngle(new Vector3(0, 0, 1), -yaw));
+      (pose.rot[b] as Quaternion).multiply(
+        scratchQ.setFromAxisAngle(new Vector3(0, 0, 1), -bendAt(k)),
+      );
+    });
+    // Other necks bend with the main one, bone for bone, so the heads turn together.
+    rig.heads.forEach((h, i) => {
+      if (i === rig.main) return;
+      h.neck.forEach((b, j) => {
+        const k = rig.spine.length - 1 + j;
+        (pose.rot[b] as Quaternion).multiply(
+          scratchQ.setFromAxisAngle(new Vector3(0, 0, 1), -bendAt(k)),
+        );
+      });
     });
     pose.solve();
 
@@ -1022,11 +1071,15 @@ export class MotionController {
     // Every head turns to a look; only the nearest one lunges at it.
     const reacher = this.nearestHead(this.goals.look ?? this.lookTarget);
     this.compiled.rig.heads.forEach((h, i) => {
-      this.applyHead(h, i === reacher);
+      this.applyHead(h, i === reacher, this.glanceFor(i));
     });
   }
 
-  private applyHead(h: HeadRig, reaches: boolean): void {
+  private applyHead(
+    h: HeadRig,
+    reaches: boolean,
+    glance: { yaw: number; pitch: number } | undefined,
+  ): void {
     const pose = this.pose;
     const g = this.goals;
     const head = h.head;
@@ -1039,8 +1092,8 @@ export class MotionController {
     const side = scratch6.crossVectors(desired, UP);
     if (side.lengthSq() < 1e-8) side.set(Math.cos(this.heading), 0, -Math.sin(this.heading));
     side.normalize();
-    if (g.glance) {
-      desired.applyAxisAngle(side, g.glance.pitch).applyAxisAngle(UP, g.glance.yaw);
+    if (glance) {
+      desired.applyAxisAngle(side, glance.pitch).applyAxisAngle(UP, glance.yaw);
     }
     const look = g.look ?? this.lookTarget;
     const weight = g.look ? (g.lookWeight ?? 1) : 1;
@@ -1116,8 +1169,10 @@ export class MotionController {
     applyFace(this.pose, this.compiled.rig, this.goals.jaw ?? 0, this.goals.blink ?? 0);
   }
 
-  private applySprings(): void {
+  /** Aims each spring chain's bones along its points, except chains starting in `skip`. */
+  private applySprings(skip: readonly number[] = []): void {
     for (const spring of this.springs) {
+      if (skip.includes(spring.bones[0] as number)) continue;
       spring.bones.forEach((b, i) => {
         this.pose.solveBone(b);
         const dir = scratch1.subVectors(

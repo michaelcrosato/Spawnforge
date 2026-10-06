@@ -117,7 +117,7 @@ since anatomy comes before the new vocabulary.
 | [8.2 Feet, hands, stance](#82-feet-hands-and-stance) | xhigh (confirmed) | Modules through existing seams, plus a contained rest-pose change | 7.3, 7.5 | Done ([#17](https://github.com/michaelcrosato/Spawnforge/pull/17)) |
 | [8.3 Heads](#83-heads-mouths-teeth-eyes-and-beaks) | xhigh (confirmed), one max step | Mouth and eye code with renders as the oracle; how lids and lips are built is a max step | 7.4 | Done ([#18](https://github.com/michaelcrosato/Spawnforge/pull/18)) |
 | [8.4 Materials and patterns](#84-materials-and-new-pattern-layers) | xhigh (confirmed) | Shader work with a new CPU–GPU parity test; fur is the risk | 7.3, 7.5 | Done ([#19](https://github.com/michaelcrosato/Spawnforge/pull/19)) |
-| [9.1 Heads and tails](#91-several-heads-and-split-tails) | xhigh (confirmed) | Builds on 7.4's lists; per-head mouths and targeting are the work | Gate 8 | Not started |
+| [9.1 Heads and tails](#91-several-heads-and-split-tails) | xhigh (confirmed) | Builds on 7.4's lists; per-head mouths and targeting are the work | Gate 8 | Done ([#21](https://github.com/michaelcrosato/Spawnforge/pull/21)); extra heads glance after the main one |
 | [9.2 Eight legs, centaurs](#92-eight-legs-and-centaurs) | xhigh (confirmed) | Upright fronts and four leg pairs reach into posture and balance | Gate 8 | Not started |
 | [9.3 Wings and fins](#93-wings-fins-and-membranes) | **max (raised)** | New geometry and skinning across several bone chains, which flight depends on | Gate 8 | Not started |
 | [9.4 Tentacles to pincers](#94-tentacles-antennae-mandibles-and-pincers) | xhigh (confirmed) | Parts with bones (designed in 7.3) are a new capability; tests are the oracle | 9.3 | Not started |

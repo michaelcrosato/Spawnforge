@@ -58,6 +58,16 @@ Work in progress toward 0.2, phase by phase (see the plan's status table).
     it, or fore against hind legs) and names the segment.
   - `validate --quiet` prints the verdict without the blueprint, and `catalog.md` lists `body`'s
     own fields (`muscle`).
+- **Several heads and tails (9.1):** `body.neck.count` and `spread` are drawn: necks fan across
+  the chest, and each head has its own mouth, eyes, teeth and parts (a part on `head` is copied
+  to every head, `horns.L1.L`; one on `head.R1` stays there). Extra heads glance a little after
+  the main one, every neck bends into turns, and an action aimed at a target uses the nearest
+  head, whose events name it (`head`). `body.tail.count`, `spread` and `forkAt` are drawn: tails
+  leave the rear separately or fork from one trunk, and each swings as its own spring. Instance
+  bones, sockets and export nodes carry the instance (`head.L1`, `mouth.L1`, `tail.R1.3`).
+  `analyze` warns `head_intersection` when heads or necks meet in motion. Creatures with one head
+  and one tail are unchanged.
+- **Examples:** a five-headed marsh hydra, a cerberus and a two-tailed fox.
   - New recipes: a flat head, forward goblin eyes, a club tail, a bushy tail, a beetle's horn,
     a tail-only colour and a rearing cobra's belly. `patch set` replacing whole objects is
     documented.

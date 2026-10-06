@@ -402,6 +402,8 @@ export function refineHeads(input: RefineHeadsInput): {
     n.copy(g);
   };
   const heads = input.heads.filter((h) => !sdf.thinBones.includes(h.head));
+  // Several heads share the allowance: each takes an even share of what the ones before it left.
+  let spent = 0;
   for (const [i, h] of heads.entries()) {
     const head = bones[h.head] as BoneDef;
     const ids = new Set([h.head, h.jaw].filter((b) => b >= 0));
@@ -430,13 +432,15 @@ export function refineHeads(input: RefineHeadsInput): {
     const finest = Math.max(head.r0 / input.perRadius, cell / 16);
     const shape = h.jaw >= 0 ? input.mouths[input.heads.indexOf(h)] : undefined;
     const rest = indices.length / 3 - inside + input.later;
-    const share = input.allowance / (heads.length - i);
+    const share = Math.max(0, input.allowance - spent) / (heads.length - i);
     let edge = Math.max(finest, Math.sqrt(area / (0.433 * share)));
     // Halving long edges leaves them between 0.7 and 1.4 targets, about 0.8 on average; the cut
     // crosses about 1.4 edges per target length on each side.
-    const cost = (e: number) =>
-      area / (0.433 * (0.8 * e) ** 2) +
-      (shape ? 2 * ((2.8 * shape.length) / e) * MOUTH_COLUMN + 500 : 0);
+    // The mouth's inside comes later, for this head and for each head not yet refined (several
+    // heads are alike, so theirs cost the same).
+    const mouthCost = (e: number) =>
+      shape ? 2 * ((2.8 * shape.length) / e) * MOUTH_COLUMN + 500 : 0;
+    const cost = (e: number) => area / (0.433 * (0.8 * e) ** 2) + mouthCost(e) * (heads.length - i);
     for (let k = 0; k < 60 && rest + cost(edge) > 0.97 * input.limit; k++) edge *= 1.08;
     if (area / (0.433 * edge * edge) <= inside) continue;
     // Details: edges within reach of one split down to half its radius.
@@ -468,6 +472,7 @@ export function refineHeads(input: RefineHeadsInput): {
       project,
       passes: 5,
     });
+    spent += (refined.indices.length - indices.length) / 3;
     positions = refined.positions;
     normals = refined.normals;
     indices = refined.indices;

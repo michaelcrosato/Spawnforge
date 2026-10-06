@@ -37,6 +37,12 @@ export interface MotionCheck {
     readonly segment?: 'upper' | 'middle' | 'lower';
     readonly time?: number;
   };
+  /** Deepest overlap of two heads or necks (m), with several heads. */
+  readonly heads: {
+    readonly worst: number;
+    readonly between?: readonly [string, string];
+    readonly time?: number;
+  };
 }
 
 export interface Analysis {
@@ -275,6 +281,15 @@ export function analyzeCreature(
           `the leg is stretched past its reach ${Math.round(check.overstretch.worst * 100)}% of the time ${where}`,
           'lengthen it, or give the gait a smaller stride',
         );
+      if (check.heads.worst > 0.01 * L && check.heads.between) {
+        const [a, b] = check.heads.between;
+        warn(
+          'body.neck',
+          'head_intersection',
+          `${a} and ${b} pass ${(check.heads.worst * 100).toFixed(1)} cm into each other ${where}`,
+          `fan the necks wider (body.neck.spread about ${Math.min(170, Math.round(spec.body.neck.spread + 15))}) or make them longer, or the heads smaller`,
+        );
+      }
       if (check.intersection.worst > 0.01 * L && check.intersection.between) {
         const [a, b] = check.intersection.between;
         const id = a.replace(/\.[LR]$/, '');
@@ -481,6 +496,13 @@ function runMotion(
   };
   const segmentOf = (k: number, n: number) =>
     k === 0 ? 'upper' : k === n - 1 ? 'lower' : 'middle';
+  // Several heads: each one's neck past its first quarter, head and jaw, against the others'.
+  const headBones = rig.heads.map((h) => [
+    ...h.neck.slice(Math.ceil(h.neck.length / 4)),
+    h.head,
+    ...(h.jaw >= 0 ? [h.jaw] : []),
+  ]);
+  const crowd = { worst: 0 } as { worst: number; between?: [string, string]; time?: number };
   let frames = 0;
   let cycles = 0;
   let last = c.phase;
@@ -520,6 +542,23 @@ function runMotion(
       }
     }
     if (frames % 4 !== 0) continue;
+    for (let i = 0; i < headBones.length; i++)
+      for (let j = i + 1; j < headBones.length; j++)
+        for (const bi of headBones[i] as number[])
+          for (const bj of headBones[j] as number[]) {
+            a.copy(pose.worldPos[bi] as Vector3);
+            pose.tail(bi, b);
+            e.copy(pose.worldPos[bj] as Vector3);
+            pose.tail(bj, f);
+            const overlap =
+              ((bones.radii[bi] ?? 0) + (bones.radii[bj] ?? 0)) * 0.8 - segmentDistance(a, b, e, f);
+            if (overlap > crowd.worst)
+              Object.assign(crowd, {
+                worst: overlap,
+                between: [rig.heads[i]?.id ?? '', rig.heads[j]?.id ?? ''],
+                time,
+              });
+          }
     // Limbs through limbs, and lower limb bones through the body.
     for (let i = 0; i < legBones.length; i++) {
       for (let j = i + 1; j < legBones.length; j++) {
@@ -575,6 +614,7 @@ function runMotion(
       ...(rig.legs[worstLeg] ? { leg: rig.legs[worstLeg].id } : {}),
     },
     intersection: hit,
+    heads: crowd,
   };
 }
 
@@ -626,24 +666,49 @@ export function describeCreature(
   }
   if (arms > 0) body.push(`${arms === 2 ? 'two' : arms} arms`);
   const head = spec.body.head;
-  if (head.length >= 0.4 || head.radius >= 0.9 * torsoRadius) body.push('a big head');
-  else if (head.length <= 0.18 && head.radius <= 0.5 * torsoRadius) body.push('a small head');
+  const words = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
+  const heads = spec.body.neck.count;
   const neck = spec.body.neck.length;
-  if (neck >= 1) body.push('a very long neck');
-  else if (neck >= 0.6) body.push('a long neck');
-  else if (neck > 0 && neck < 0.2) body.push('a short neck');
+  const neckWord =
+    neck >= 1
+      ? 'very long neck'
+      : neck >= 0.6
+        ? 'long neck'
+        : neck > 0 && neck < 0.2
+          ? 'short neck'
+          : '';
+  if (heads > 1) {
+    const size =
+      head.length >= 0.4 || head.radius >= 0.9 * torsoRadius
+        ? 'big '
+        : head.length <= 0.18 && head.radius <= 0.5 * torsoRadius
+          ? 'small '
+          : '';
+    body.push(
+      `${words[heads] ?? heads} ${size}heads${neck > 0 ? ` on ${neckWord ? `${neckWord}s` : 'necks'}` : ''}`,
+    );
+  } else {
+    if (head.length >= 0.4 || head.radius >= 0.9 * torsoRadius) body.push('a big head');
+    else if (head.length <= 0.18 && head.radius <= 0.5 * torsoRadius) body.push('a small head');
+    if (neckWord) body.push(`a ${neckWord}`);
+  }
   const tail = spec.body.tail.length;
   if (tail > 0) {
     const kind = Math.abs(spec.body.tail.curl) > 120 ? ' curled' : '';
-    body.push(
+    const word =
       tail >= 2
-        ? `a very long${kind} tail`
+        ? `very long${kind}`
         : tail >= 1
-          ? `a long${kind} tail`
+          ? `long${kind}`
           : tail < 0.4
-            ? `a short${kind} tail`
-            : `a${kind ? ' curled' : ''} tail`,
-    );
+            ? `short${kind}`
+            : kind.trim();
+    const tails = spec.body.tail.count;
+    if (tails > 1)
+      body.push(
+        `${words[tails] ?? tails} ${word ? `${word} ` : ''}tails${spec.body.tail.forkAt > 0 ? ' forking from one' : ''}`,
+      );
+    else body.push(word ? `a ${word} tail` : 'a tail');
   }
   const where: Record<string, string> = {
     head: 'on its head',

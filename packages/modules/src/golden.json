@@ -3,6 +3,10 @@
     "low": "882ff59a",
     "medium": "24aa94d6"
   },
+  "cerberus": {
+    "low": "02e60a4c",
+    "medium": "bd10cb5d"
+  },
   "ember-beetle": {
     "low": "13506973",
     "medium": "45a024bd"
@@ -10,6 +14,10 @@
   "grey-wolf": {
     "low": "8dcb330d",
     "medium": "88b262eb"
+  },
+  "hydra": {
+    "low": "e3e98595",
+    "medium": "69e910d7"
   },
   "reed-viper": {
     "low": "f80424e4",
@@ -30,5 +38,9 @@
   "tusk-boar": {
     "low": "20b4fa6d",
     "medium": "334ead05"
+  },
+  "two-tailed-fox": {
+    "low": "3bfc69b6",
+    "medium": "ba4e2b9d"
   }
 }

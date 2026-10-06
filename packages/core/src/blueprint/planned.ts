@@ -63,10 +63,6 @@ export function notBuilt(
   }
 
   // The core's own new fields.
-  const body = spec.body;
-  if (body.neck.count > 1) add('body.neck.count', 'several heads', '9.1');
-  if (body.tail.count > 1) add('body.tail.count', 'several tails', '9.1');
-  if (body.tail.forkAt > 0 && body.tail.count > 1) add('body.tail.forkAt', 'a forked tail', '9.1');
   const roles: Record<string, [string, string]> = {
     wing: ['a wing', '9.3'],
     fin: ['a fin', '9.3'],
@@ -76,9 +72,6 @@ export function notBuilt(
     const role = roles[limb.role];
     if (role) add(`limbs[id=${limb.baseId}].role`, role[0], role[1]);
   }
-  for (const part of spec.parts)
-    if (/^(head|neck|jaw|tail)\.[LR]\d+/.test(part.on))
-      add(`parts[id=${part.baseId}].attach.on`, `a part on "${part.on}"`, '9.1');
   // Parts on something skipped (a wing, a tentacle, a part on one) are skipped with it.
   const kept = new Set(buildable(spec).parts.map((p) => p.id));
   const hostMilestone = (on: string, depth = 0): string | undefined => {
@@ -111,9 +104,6 @@ export function notBuilt(
 /** Limb roles the pipeline builds; the others arrive in phase 9. */
 const BUILT_ROLES: readonly LimbRole[] = ['leg', 'arm'];
 
-/** Instance names of extra heads, necks, jaws and tails (`head.L1`), built from milestone 9.1. */
-const EXTRA_INSTANCE = /^(head|neck|jaw|tail)\.[LR]\d+(\.|$)/;
-
 /**
  * The part of a creature the pipeline can build today: limbs of the roles it knows, and the
  * parts that sit on what exists. Everything left out is reported by `notBuilt`.
@@ -122,7 +112,7 @@ export function buildable(spec: CreatureSpec): CreatureSpec {
   const limbs = spec.limbs.filter((l) => BUILT_ROLES.includes(l.role));
   const known = new Set(limbs.map((l) => l.id));
   const dropped = new Set(spec.limbs.filter((l) => !known.has(l.id)).map((l) => l.id));
-  const parts = spec.parts.filter((p) => !dropped.has(p.on) && !EXTRA_INSTANCE.test(p.on));
+  const parts = spec.parts.filter((p) => !dropped.has(p.on));
   // Parts on dropped parts go too, however deep.
   for (let changed = true; changed; ) {
     changed = false;

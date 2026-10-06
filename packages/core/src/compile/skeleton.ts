@@ -1,5 +1,6 @@
 import { Vector3 } from 'three';
 import type { CreatureSpec, CrossSection, LimbSpec } from '../blueprint/creature.ts';
+import { instanceSuffixes } from '../blueprint/instances.ts';
 import type { PartModule, Registry } from '../registry.ts';
 import {
   limbFactor,
@@ -472,242 +473,303 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
   const chest = spine.at(-1) as number;
   const hips = spine[0] as number;
 
+  /**
+   * Turns the bones made since `firstBone` (and the masses of chains made since `firstChain`)
+   * about the vertical axis through `pivot` by `yaw` radians, then shifts them `shift` along X:
+   * how extra heads and tails take their place in the fan.
+   */
+  const fan = (
+    firstBone: number,
+    firstChain: number,
+    pivot: Vector3,
+    yaw: number,
+    shift: number,
+  ) => {
+    if (yaw === 0 && shift === 0) return;
+    const move = (p: Vector3) =>
+      p
+        .clone()
+        .sub(pivot)
+        .applyAxisAngle(Y, yaw)
+        .add(pivot)
+        .add(new Vector3(shift, 0, 0));
+    const turn = (v: Vector3) => v.clone().applyAxisAngle(Y, yaw);
+    for (let i = firstBone; i < b.bones.length; i++) {
+      const bone = b.bones[i] as BoneDef;
+      b.bones[i] = { ...bone, head: move(bone.head), tail: move(bone.tail), up: turn(bone.up) };
+    }
+    for (let i = firstChain; i < b.chains.length; i++) {
+      const chain = b.chains[i] as ChainDef;
+      b.chains[i] = {
+        ...chain,
+        masses: chain.masses.map((m) => ({ ...m, a: move(m.a), b: move(m.b), up: turn(m.up) })),
+      };
+    }
+  };
+
   // Neck: a gentle curve from the torso's front, leaving at the torso's angle, to its own pitch.
+  // Several heads (docs/design/9.1-heads-tails.md) run the same builder once per instance and
+  // turn what it made about the vertical through its root; the main one stays where it is.
   const neckSpec = spec.body.neck;
   const neckLen = neckSpec.length * L;
   const front = sampleTorso(0);
-  const neck: number[] = [];
-  let headBase = front.point.clone();
-  /** The muscle running from the neck into the shoulders, on bodies with limbs on the torso. */
-  const neckMuscle = (): MassDef[] => {
-    const first = neck[0];
-    if (first === undefined || sBody <= 0 || chitin || plan.pelvis === undefined) return [];
-    const bone = b.bones[first] as BoneDef;
-    const r = (bone.r0 + bone.r1) / 2;
-    const o = 0.15 * sBody * r;
-    const rho = r * (1 + 0.15 * sBody) - o;
-    const offset = bone.up.clone().multiplyScalar(o);
-    return [
-      {
-        bone: first,
-        a: new Vector3().lerpVectors(bone.head, bone.tail, 0.05).add(offset),
-        b: new Vector3().lerpVectors(bone.head, bone.tail, 0.6).add(offset),
-        ra: rho,
-        rb: rho * 0.85,
-        up: bone.up.clone(),
-        cross: bone.cross,
-        blend: 0.4 * r * Math.min(1, sBody),
-      },
-    ];
-  };
-  if (neckLen > 1e-6) {
-    const np = neckSpec.pitch * DEG;
-    const ndir = new Vector3(0, Math.sin(np), Math.cos(np));
-    const p0 = front.point.clone().addScaledVector(front.forward, -0.02 * L);
-    const p1 = p0.clone().addScaledVector(front.forward, neckLen * 0.4);
-    const p2 = p0.clone().addScaledVector(ndir, neckLen);
-    // `curve` makes an S: today's curve raised to a cubic, its base pushed forward and down and
-    // its head end back and up (a swan's neck).
-    const curve = neckSpec.curve * DEG;
-    const chord = new Vector3().subVectors(p2, p0).normalize();
-    const dorsal = new Vector3(0, chord.z, -chord.y);
-    const push = Math.sin(curve / 2) * 0.35 * neckLen;
-    const c1 = p0
-      .clone()
-      .lerp(p1, 2 / 3)
-      .addScaledVector(dorsal, -push);
-    // The base may not dip into the chest.
-    c1.y = Math.max(c1.y, p0.y - 0.15 * neckLen);
-    const c2 = p2
-      .clone()
-      .lerp(p1, 2 / 3)
-      .addScaledVector(dorsal, push);
-    const bez =
-      curve === 0
-        ? (s: number) =>
-            new Vector3()
-              .addScaledVector(p0, (1 - s) ** 2)
-              .addScaledVector(p1, 2 * s * (1 - s))
-              .addScaledVector(p2, s * s)
-        : (s: number) =>
-            new Vector3()
-              .addScaledVector(p0, (1 - s) ** 3)
-              .addScaledVector(c1, 3 * s * (1 - s) ** 2)
-              .addScaledVector(c2, 3 * s * s * (1 - s))
-              .addScaledVector(p2, s ** 3);
-    const neckCross = CROSS_SCALE[neckSpec.crossSection];
-    for (let k = 0; k < neckSpec.segments; k++) {
-      const sa = k / neckSpec.segments;
-      const sb = (k + 1) / neckSpec.segments;
-      const a = bez(sa);
-      const c = bez(sb);
-      const forward = new Vector3().subVectors(c, a).normalize();
-      neck.push(
-        b.bone({
-          name: `neck.${k}`,
-          parent: k === 0 ? chest : (neck[k - 1] as number),
+  const buildHead = (suffix: string, yaw: number, shift: number) => {
+    const neckId = `neck${suffix}`;
+    const headId = `head${suffix}`;
+    const jawId = `jaw${suffix}`;
+    const firstBone = b.bones.length;
+    const firstChain = b.chains.length;
+    const root = front.point.clone().addScaledVector(front.forward, -0.02 * L);
+    const neck: number[] = [];
+    let headBase = front.point.clone();
+    /** The muscle running from the neck into the shoulders, on bodies with limbs on the torso. */
+    const neckMuscle = (): MassDef[] => {
+      const first = neck[0];
+      if (first === undefined || sBody <= 0 || chitin || plan.pelvis === undefined) return [];
+      const bone = b.bones[first] as BoneDef;
+      const r = (bone.r0 + bone.r1) / 2;
+      const o = 0.15 * sBody * r;
+      const rho = r * (1 + 0.15 * sBody) - o;
+      const offset = bone.up.clone().multiplyScalar(o);
+      return [
+        {
+          bone: first,
+          a: new Vector3().lerpVectors(bone.head, bone.tail, 0.05).add(offset),
+          b: new Vector3().lerpVectors(bone.head, bone.tail, 0.6).add(offset),
+          ra: rho,
+          rb: rho * 0.85,
+          up: bone.up.clone(),
+          cross: bone.cross,
+          blend: 0.4 * r * Math.min(1, sBody),
+        },
+      ];
+    };
+    if (neckLen > 1e-6) {
+      const np = neckSpec.pitch * DEG;
+      const ndir = new Vector3(0, Math.sin(np), Math.cos(np));
+      const p0 = front.point.clone().addScaledVector(front.forward, -0.02 * L);
+      const p1 = p0.clone().addScaledVector(front.forward, neckLen * 0.4);
+      const p2 = p0.clone().addScaledVector(ndir, neckLen);
+      // `curve` makes an S: today's curve raised to a cubic, its base pushed forward and down and
+      // its head end back and up (a swan's neck).
+      const curve = neckSpec.curve * DEG;
+      const chord = new Vector3().subVectors(p2, p0).normalize();
+      const dorsal = new Vector3(0, chord.z, -chord.y);
+      const push = Math.sin(curve / 2) * 0.35 * neckLen;
+      const c1 = p0
+        .clone()
+        .lerp(p1, 2 / 3)
+        .addScaledVector(dorsal, -push);
+      // The base may not dip into the chest.
+      c1.y = Math.max(c1.y, p0.y - 0.15 * neckLen);
+      const c2 = p2
+        .clone()
+        .lerp(p1, 2 / 3)
+        .addScaledVector(dorsal, push);
+      const bez =
+        curve === 0
+          ? (s: number) =>
+              new Vector3()
+                .addScaledVector(p0, (1 - s) ** 2)
+                .addScaledVector(p1, 2 * s * (1 - s))
+                .addScaledVector(p2, s * s)
+          : (s: number) =>
+              new Vector3()
+                .addScaledVector(p0, (1 - s) ** 3)
+                .addScaledVector(c1, 3 * s * (1 - s) ** 2)
+                .addScaledVector(c2, 3 * s * s * (1 - s))
+                .addScaledVector(p2, s ** 3);
+      const neckCross = CROSS_SCALE[neckSpec.crossSection];
+      for (let k = 0; k < neckSpec.segments; k++) {
+        const sa = k / neckSpec.segments;
+        const sb = (k + 1) / neckSpec.segments;
+        const a = bez(sa);
+        const c = bez(sb);
+        const forward = new Vector3().subVectors(c, a).normalize();
+        neck.push(
+          b.bone({
+            name: `${neckId}.${k}`,
+            parent: k === 0 ? chest : (neck[k - 1] as number),
+            section: 'neck',
+            owner: neckId,
+            head: a,
+            tail: c,
+            up: dorsalUp(forward),
+            r0: sampleProfile(neckSpec.radius, 1 - sa) * L,
+            r1: sampleProfile(neckSpec.radius, 1 - sb) * L,
+            ...shaped(
+              (u) => sampleProfile(neckSpec.radius, 1 - (sa + (sb - sa) * u)) * L,
+              boneProfile(neckSpec.radius, 1 - sa, 1 - sb, L),
+              (u) => (legs.length === 0 ? throatFactor(1 - (sa + (sb - sa) * u), sBody) : 1),
+            ),
+            cross: neckCross,
+            t0: 1 - sa,
+            t1: 1 - sb,
+            skin: true,
+          }),
+        );
+      }
+      headBase = p2;
+      b.chain(
+        {
+          id: neckId,
           section: 'neck',
-          owner: 'neck',
-          head: a,
-          tail: c,
-          up: dorsalUp(forward),
-          r0: sampleProfile(neckSpec.radius, 1 - sa) * L,
-          r1: sampleProfile(neckSpec.radius, 1 - sb) * L,
-          ...shaped(
-            (u) => sampleProfile(neckSpec.radius, 1 - (sa + (sb - sa) * u)) * L,
-            boneProfile(neckSpec.radius, 1 - sa, 1 - sb, L),
-            (u) => (legs.length === 0 ? throatFactor(1 - (sa + (sb - sa) * u), sBody) : 1),
-          ),
-          cross: neckCross,
-          t0: 1 - sa,
-          t1: 1 - sb,
-          skin: true,
-        }),
+          owner: neckId,
+          parentBone: chest,
+          blend: 0.5 * Math.min(sampleProfile(neckSpec.radius, 1) * L, front.radius),
+          masses: neckMuscle(),
+        },
+        neck,
+      );
+      b.path(
+        neckId,
+        neck.map((id) => ({
+          bone: id,
+          t0: (b.bones[id] as BoneDef).t0,
+          t1: (b.bones[id] as BoneDef).t1,
+        })),
       );
     }
-    headBase = p2;
-    b.chain(
-      {
-        id: 'neck',
-        section: 'neck',
-        owner: 'neck',
-        parentBone: chest,
-        blend: 0.5 * Math.min(sampleProfile(neckSpec.radius, 1) * L, front.radius),
-        masses: neckMuscle(),
-      },
-      neck,
-    );
-    b.path(
-      'neck',
-      neck.map((id) => ({
-        bone: id,
-        t0: (b.bones[id] as BoneDef).t0,
-        t1: (b.bones[id] as BoneDef).t1,
-      })),
-    );
-  }
 
-  // Head: one bone from the skull centre to the snout centre; the jaw hangs below it.
-  const headSpec = spec.body.head;
-  const shape = HEAD_SHAPES[headSpec.shape];
-  const headCross: [number, number] = [
-    shape.cross[0] * CROSS_SCALE[headSpec.crossSection][0],
-    shape.cross[1] * CROSS_SCALE[headSpec.crossSection][1],
-  ];
-  const hp = headSpec.pitch * DEG;
-  const hd = new Vector3(0, Math.sin(hp), Math.cos(hp));
-  const headUp = dorsalUp(hd);
-  const r0 = headSpec.radius * L;
-  const r1 = r0 * shape.front;
-  const headLen = headSpec.length * L;
-  const centers = Math.max(1e-4 * L, headLen - r0 - r1);
-  const skull = headBase
-    .clone()
-    .addScaledVector(hd, r0 * 0.3)
-    .addScaledVector(headUp, r0 * 0.1);
-  const snout = skull.clone().addScaledVector(hd, centers);
-  const total = centers + r0 + r1;
-  const headParent = neck.length > 0 ? (neck.at(-1) as number) : chest;
-  const head = b.bone({
-    name: 'head',
-    parent: headParent,
-    section: 'head',
-    owner: 'head',
-    head: skull,
-    tail: snout,
-    up: headUp,
-    r0,
-    r1,
-    cross: headCross,
-    t0: (centers + r1) / total,
-    t1: r1 / total,
-    skin: true,
-  });
-  const headBones = [head];
-  let jaw = -1;
-  if (headSpec.jaw) {
-    const hinge = skull
+    // Head: one bone from the skull centre to the snout centre; the jaw hangs below it.
+    const headSpec = spec.body.head;
+    const shape = HEAD_SHAPES[headSpec.shape];
+    const headCross: [number, number] = [
+      shape.cross[0] * CROSS_SCALE[headSpec.crossSection][0],
+      shape.cross[1] * CROSS_SCALE[headSpec.crossSection][1],
+    ];
+    const hp = headSpec.pitch * DEG;
+    const hd = new Vector3(0, Math.sin(hp), Math.cos(hp));
+    const headUp = dorsalUp(hd);
+    const r0 = headSpec.radius * L;
+    const r1 = r0 * shape.front;
+    const headLen = headSpec.length * L;
+    const centers = Math.max(1e-4 * L, headLen - r0 - r1);
+    const skull = headBase
       .clone()
-      .addScaledVector(hd, centers * 0.1)
-      .addScaledVector(headUp, -r0 * 0.45);
-    const tip = snout
-      .clone()
-      .addScaledVector(hd, r1 * 0.2)
-      .addScaledVector(headUp, -r1 * 0.55);
-    jaw = b.bone({
-      name: 'jaw',
-      parent: head,
-      section: 'jaw',
-      owner: 'jaw',
-      head: hinge,
-      tail: tip,
-      up: dorsalUp(new Vector3().subVectors(tip, hinge).normalize()),
-      r0: r0 * 0.45,
-      r1: r1 * 0.6,
+      .addScaledVector(hd, r0 * 0.3)
+      .addScaledVector(headUp, r0 * 0.1);
+    const snout = skull.clone().addScaledVector(hd, centers);
+    const total = centers + r0 + r1;
+    const headParent = neck.length > 0 ? (neck.at(-1) as number) : chest;
+    const head = b.bone({
+      name: headId,
+      parent: headParent,
+      section: 'head',
+      owner: headId,
+      head: skull,
+      tail: snout,
+      up: headUp,
+      r0,
+      r1,
       cross: headCross,
-      t0: 1,
-      t1: 0,
+      t0: (centers + r1) / total,
+      t1: r1 / total,
       skin: true,
     });
-    headBones.push(jaw);
-    b.path('jaw', [{ bone: jaw, t0: 1, t1: 0 }]);
-    const helper = b.bone({
-      name: 'jaw.helper',
-      parent: head,
-      section: 'helper',
-      owner: 'jaw',
-      head: hinge.clone(),
-      tail: hinge.clone().addScaledVector(hd, 0.05 * L),
-      up: headUp.clone(),
-      r0: r0 * 0.45,
-      r1: r0 * 0.45,
-      cross: headCross,
-      t0: 1,
-      t1: 1,
-      skin: false,
-    });
-    b.helpers.push([helper, head, jaw]);
-  }
-  const headRootRadius = neck.length > 0 ? sampleProfile(neckSpec.radius, 0) * L : front.radius;
-  const headChain = b.chain(
-    {
-      id: 'head',
-      section: 'head',
-      owner: 'head',
-      parentBone: headParent,
-      blend: 0.5 * Math.min(headRootRadius, r0),
-      masses: [],
-    },
-    headBones,
-  );
-  const headPath: PathSegment[] = [
-    { bone: head, t0: (b.bones[head] as BoneDef).t0, t1: (b.bones[head] as BoneDef).t1 },
-  ];
-  b.path('head', headPath);
-  // Head details (docs/design/8.3-heads.md): lips, a brow over each eye, cheekbones, nostrils.
-  const mouth =
-    jaw >= 0 ? mouthShape(b.bones, b.chains[headChain] as ChainDef, head, jaw) : undefined;
-  const eyePlaces = spec.parts
-    .filter((p) => p.on === 'head' && registry.get('part', p.type)?.material === 'eye')
-    .map((p) => ({ at: p.at, angle: p.angle, mirror: p.mirror }));
-  b.chains[headChain] = {
-    ...(b.chains[headChain] as ChainDef),
-    masses: headDetails({
-      bones: b.bones,
-      head,
-      jaw,
-      shape: mouth,
-      frame: (at) => samplePath(b.bones, headPath, at),
-      lips: headSpec.lips,
-      brow: headSpec.brow,
-      eyes: eyePlaces,
-    }),
+    const headBones = [head];
+    let jaw = -1;
+    if (headSpec.jaw) {
+      const hinge = skull
+        .clone()
+        .addScaledVector(hd, centers * 0.1)
+        .addScaledVector(headUp, -r0 * 0.45);
+      const tip = snout
+        .clone()
+        .addScaledVector(hd, r1 * 0.2)
+        .addScaledVector(headUp, -r1 * 0.55);
+      jaw = b.bone({
+        name: jawId,
+        parent: head,
+        section: 'jaw',
+        owner: jawId,
+        head: hinge,
+        tail: tip,
+        up: dorsalUp(new Vector3().subVectors(tip, hinge).normalize()),
+        r0: r0 * 0.45,
+        r1: r1 * 0.6,
+        cross: headCross,
+        t0: 1,
+        t1: 0,
+        skin: true,
+      });
+      headBones.push(jaw);
+      b.path(jawId, [{ bone: jaw, t0: 1, t1: 0 }]);
+      const helper = b.bone({
+        name: `${jawId}.helper`,
+        parent: head,
+        section: 'helper',
+        owner: jawId,
+        head: hinge.clone(),
+        tail: hinge.clone().addScaledVector(hd, 0.05 * L),
+        up: headUp.clone(),
+        r0: r0 * 0.45,
+        r1: r0 * 0.45,
+        cross: headCross,
+        t0: 1,
+        t1: 1,
+        skin: false,
+      });
+      b.helpers.push([helper, head, jaw]);
+    }
+    const headRootRadius = neck.length > 0 ? sampleProfile(neckSpec.radius, 0) * L : front.radius;
+    const headChain = b.chain(
+      {
+        id: headId,
+        section: 'head',
+        owner: headId,
+        parentBone: headParent,
+        blend: 0.5 * Math.min(headRootRadius, r0),
+        masses: [],
+      },
+      headBones,
+    );
+    // Turn this instance into place before anything reads its bones' positions.
+    fan(firstBone, firstChain, root, yaw, shift);
+    const headPath: PathSegment[] = [
+      { bone: head, t0: (b.bones[head] as BoneDef).t0, t1: (b.bones[head] as BoneDef).t1 },
+    ];
+    b.path(headId, headPath);
+    // Head details (docs/design/8.3-heads.md): lips, a brow over each eye, cheekbones, nostrils.
+    const mouth =
+      jaw >= 0 ? mouthShape(b.bones, b.chains[headChain] as ChainDef, head, jaw) : undefined;
+    const eyePlaces = spec.parts
+      .filter((p) => p.on === headId && registry.get('part', p.type)?.material === 'eye')
+      .map((p) => ({ at: p.at, angle: p.angle, mirror: p.mirror }));
+    b.chains[headChain] = {
+      ...(b.chains[headChain] as ChainDef),
+      masses: headDetails({
+        bones: b.bones,
+        head,
+        jaw,
+        shape: mouth,
+        frame: (at) => samplePath(b.bones, headPath, at),
+        lips: headSpec.lips,
+        brow: headSpec.brow,
+        eyes: eyePlaces,
+      }),
+    };
+    return { id: headId, neck, head, jaw, mouth };
   };
+  const headCount = Math.max(1, neckSpec.count);
+  // Roots spread across the chest's front, necks fanned over `spread` (the layout `headSpacing`
+  // checks at validation); instance 0 is the creature's left (+X).
+  const headStep = headCount > 1 ? (neckSpec.spread * DEG) / (headCount - 1) : 0;
+  const headRootStep = headCount > 1 ? (1.2 * front.radius) / (headCount - 1) : 0;
+  const builtHeads = instanceSuffixes(headCount).map((suffix, i) => {
+    const k = i - (headCount - 1) / 2;
+    return buildHead(suffix, -k * headStep, -k * headRootStep);
+  });
+  const mainHead = builtHeads.findIndex((h) => h.id === 'head');
+  const { neck } = builtHeads[mainHead] as (typeof builtHeads)[number];
 
-  // Tail: leaves the torso's back end, then bends by `curl` after `curlStart`.
+  // Tail: leaves the torso's back end, then bends by `curl` after `curlStart`. Several tails
+  // leave separately, fanned like heads; with `forkAt`, one trunk forks into branches that
+  // continue its profile and curl (docs/design/9.1-heads-tails.md).
   const tailSpec = spec.body.tail;
   const tailLen = tailSpec.length * L;
   const tail: number[] = [];
+  const builtTails: { id: string; bones: number[]; branch: number }[] = [];
   if (tailLen > 1e-6) {
     const back = sampleTorso(1);
     const tp = tailSpec.pitch * DEG;
@@ -723,64 +785,121 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
       legs.length === 0
         ? 1
         : Math.min(tailFactor(t, sBody), Math.max(1, back.radius / tailRadius(t)));
-    let pos = back.point.clone().addScaledVector(back.forward, 0.02 * L);
-    let bend = 0;
-    for (let k = 0; k < n; k++) {
-      if (curling[k]) bend += (tailSpec.curl * DEG) / curlCount;
-      const dir = td
-        .clone()
-        .applyAxisAngle(
-          X,
-          k === 0 ? 0 : bend - (curling[k] ? (tailSpec.curl * DEG) / curlCount / 2 : 0),
+    const start = back.point.clone().addScaledVector(back.forward, 0.02 * L);
+    /** Segments `k0` to `k1` of one tail, from `pos`, hanging from `parent`. */
+    const run = (k0: number, k1: number, from: Vector3, parent: number, name: string): number[] => {
+      const made: number[] = [];
+      let pos = from.clone();
+      let bend = 0;
+      for (let k = 0; k < k1; k++) {
+        if (curling[k]) bend += (tailSpec.curl * DEG) / curlCount;
+        if (k < k0) continue;
+        const dir = td
+          .clone()
+          .applyAxisAngle(
+            X,
+            k === 0 ? 0 : bend - (curling[k] ? (tailSpec.curl * DEG) / curlCount / 2 : 0),
+          );
+        if (k === 0) dir.add(back.forward.clone().negate()).normalize();
+        const next = pos.clone().addScaledVector(dir, seg);
+        made.push(
+          b.bone({
+            name: `${name}.${k}`,
+            parent: made.length === 0 ? parent : (made.at(-1) as number),
+            section: 'tail',
+            owner: name,
+            head: pos,
+            tail: next,
+            up: dorsalUp(dir.clone().negate()),
+            r0: sampleProfile(tailSpec.radius, k / n) * L,
+            r1: sampleProfile(tailSpec.radius, (k + 1) / n) * L,
+            ...shaped(
+              (u) => tailRadius((k + u) / n),
+              boneProfile(tailSpec.radius, k / n, (k + 1) / n, L),
+              (u) => tailShape((k + u) / n),
+            ),
+            cross: tailCross,
+            ...(tailCross !== CROSS_SCALE[tailSpec.crossSection]
+              ? { plainCross: CROSS_SCALE[tailSpec.crossSection] }
+              : {}),
+            t0: k / n,
+            t1: (k + 1) / n,
+            skin: true,
+          }),
         );
-      if (k === 0) dir.add(back.forward.clone().negate()).normalize();
-      const next = pos.clone().addScaledVector(dir, seg);
-      tail.push(
-        b.bone({
-          name: `tail.${k}`,
-          parent: k === 0 ? hips : (tail[k - 1] as number),
+        pos = next;
+      }
+      return made;
+    };
+    const count = Math.max(1, tailSpec.count);
+    const suffixes = instanceSuffixes(count);
+    const step = count > 1 ? (tailSpec.spread * DEG) / (count - 1) : 0;
+    // Tails point backward, so turning one toward the creature's left (+X) is a negative yaw.
+    const yawOf = (i: number) => (i - (count - 1) / 2) * step;
+    const fork =
+      count > 1 && tailSpec.forkAt > 0
+        ? Math.min(n - 1, Math.max(1, Math.round(tailSpec.forkAt * n)))
+        : 0;
+    const chainOf = (id: string, bones: number[], parent: number) => {
+      b.chain(
+        {
+          id,
           section: 'tail',
-          owner: 'tail',
-          head: pos,
-          tail: next,
-          up: dorsalUp(dir.clone().negate()),
-          r0: sampleProfile(tailSpec.radius, k / n) * L,
-          r1: sampleProfile(tailSpec.radius, (k + 1) / n) * L,
-          ...shaped(
-            (u) => tailRadius((k + u) / n),
-            boneProfile(tailSpec.radius, k / n, (k + 1) / n, L),
-            (u) => tailShape((k + u) / n),
-          ),
-          cross: tailCross,
-          ...(tailCross !== CROSS_SCALE[tailSpec.crossSection]
-            ? { plainCross: CROSS_SCALE[tailSpec.crossSection] }
-            : {}),
-          t0: k / n,
-          t1: (k + 1) / n,
-          skin: true,
-        }),
+          owner: id,
+          parentBone: parent,
+          blend:
+            parent === hips
+              ? 0.5 * Math.min(sampleProfile(tailSpec.radius, 0) * L, back.radius)
+              : 0.5 * ((b.bones[parent] as BoneDef).r1 ?? 0),
+          masses: [],
+        },
+        bones,
       );
-      pos = next;
+    };
+    const pathOf = (id: string, bones: readonly number[]) =>
+      b.path(
+        id,
+        bones.map((bone) => ({
+          bone,
+          t0: (b.bones[bone] as BoneDef).t0,
+          t1: (b.bones[bone] as BoneDef).t1,
+        })),
+      );
+    if (fork === 0) {
+      // Separate tails, roots spread across the rear.
+      const rootStep = count > 1 ? (0.8 * back.radius) / (count - 1) : 0;
+      suffixes.forEach((suffix, i) => {
+        const id = `tail${suffix}`;
+        const firstBone = b.bones.length;
+        const firstChain = b.chains.length;
+        const bones = run(0, n, start, hips, id);
+        chainOf(id, bones, hips);
+        fan(firstBone, firstChain, start, yawOf(i), -(i - (count - 1) / 2) * rootStep);
+        pathOf(id, bones);
+        builtTails.push({ id, bones, branch: 0 });
+      });
+    } else {
+      // One trunk, then a branch per tail from the fork; the main branch continues the trunk's
+      // chain, so a forked tail still swings as one from its root.
+      const trunk = run(0, fork, start, hips, 'tail');
+      const forkAt = (b.bones[trunk.at(-1) as number] as BoneDef).tail.clone();
+      const branches = suffixes.map((suffix, i) => {
+        const id = `tail${suffix}`;
+        const firstBone = b.bones.length;
+        const bones = run(fork, n, forkAt, trunk.at(-1) as number, id);
+        fan(firstBone, b.chains.length, forkAt, yawOf(i), 0);
+        return { id, bones };
+      });
+      for (const { id, bones } of branches) {
+        const all = [...trunk, ...bones];
+        if (id === 'tail') chainOf(id, all, hips);
+        else chainOf(id, bones, trunk.at(-1) as number);
+        pathOf(id, all);
+        builtTails.push({ id, bones: all, branch: fork });
+      }
     }
-    b.chain(
-      {
-        id: 'tail',
-        section: 'tail',
-        owner: 'tail',
-        parentBone: hips,
-        blend: 0.5 * Math.min(sampleProfile(tailSpec.radius, 0) * L, back.radius),
-        masses: [],
-      },
-      tail,
-    );
-    b.path(
-      'tail',
-      tail.map((id) => ({
-        bone: id,
-        t0: (b.bones[id] as BoneDef).t0,
-        t1: (b.bones[id] as BoneDef).t1,
-      })),
-    );
+    const main = builtTails.find((t) => t.id === 'tail');
+    if (main) tail.push(...main.bones);
   }
 
   // The virtual spine path: neck (from the head end) → torso → tail, by arc length.
@@ -1086,14 +1205,22 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
   const rig: Rig = {
     root,
     spine,
-    // One head and one tail until milestone 9.1 builds several; eyes join after the parts.
-    heads: [{ id: 'head', neck, head, jaw, eyes: [] }],
-    main: 0,
-    tails: tail.length > 0 ? [{ id: 'tail', bones: tail, branch: 0 }] : [],
-    chains:
-      tail.length > 1
-        ? [{ owner: 'tail', bones: tail, drive: 'spring', stiffness: 0.35, swish: true }]
-        : [],
+    // Eyes join after the parts.
+    heads: builtHeads.map((h) => ({ id: h.id, neck: h.neck, head: h.head, jaw: h.jaw, eyes: [] })),
+    main: mainHead,
+    tails: builtTails,
+    // Each tail swings on its own spring; a forked tail's branches hang from its trunk, which
+    // swings with the main branch, so the trunk springs first.
+    chains: builtTails
+      .map((t) => ({
+        owner: t.id,
+        bones: t.id === 'tail' ? t.bones : t.bones.slice(t.branch),
+        drive: 'spring' as const,
+        stiffness: 0.35,
+        swish: true,
+      }))
+      .filter((c) => c.bones.length > 1)
+      .sort((a, b) => (a.owner === 'tail' ? -1 : b.owner === 'tail' ? 1 : 0)),
     legs: legRigs,
     arms: armRigs,
     wings: [],
@@ -1110,7 +1237,7 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
     paths: b.paths,
     helpers: b.helpers,
     notes,
-    mouths: [mouth],
+    mouths: builtHeads.map((h) => h.mouth),
   };
 }
 

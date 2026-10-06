@@ -19,7 +19,7 @@ import type {
   PartSpec,
   SideName,
 } from './creature.ts';
-import { headSpacing, instanceNames } from './instances.ts';
+import { headSpacing, instanceNames, instanceSuffixes } from './instances.ts';
 import { formatPath, fromZodIssues, type Issue, type PathKey } from './issues.ts';
 import { cloneJson, isRecord, mergeBlueprint } from './merge.ts';
 import { migrate } from './migrate.ts';
@@ -1145,6 +1145,50 @@ export function expandCreature(doc: ResolvedDoc, registry: Registry): CreatureSp
       parts.push(...made);
     }
   }
+
+  // Several heads and tails (docs/design/9.1-heads-tails.md): a part on the head, jaw or neck, or
+  // on such a part, gets a copy on every extra head; a part on the tail one on every extra tail,
+  // except one wholly on a forked tail's trunk, placed once. A copy's id is the part's id plus
+  // the instance, then its side (`horns.L1.L`), and it keeps the part's `baseId`, so every head
+  // draws the same.
+  const sectionOf = (part: PartSpec, depth = 0): string => {
+    const parent = parts.find((p) => p.id === part.on);
+    return parent && depth < 32 ? sectionOf(parent, depth + 1) : part.on;
+  };
+  const copyId = (part: PartSpec, suffix: string) =>
+    `${part.baseId}${suffix}${part.id.slice(part.baseId.length)}`;
+  const forkAt = doc.body.tail.count > 1 ? doc.body.tail.forkAt : 0;
+  const onTrunk = (part: PartSpec, depth = 0): boolean => {
+    const parent = parts.find((p) => p.id === part.on);
+    if (parent && depth < 32) return onTrunk(parent, depth + 1);
+    return (
+      forkAt > 0 && (part.to <= forkAt || (part.from === 0 && part.to === 1 && part.at <= forkAt))
+    );
+  };
+  const copies: PartSpec[] = [];
+  for (const [sections, count] of [
+    [['head', 'jaw', 'neck'], doc.body.neck.count],
+    [['tail'], doc.body.tail.count],
+  ] as const) {
+    const extra = instanceSuffixes(count).filter((suffix) => suffix !== '');
+    if (extra.length === 0) continue;
+    const copied = parts.filter(
+      (p) =>
+        (sections as readonly string[]).includes(sectionOf(p)) &&
+        !(sections[0] === 'tail' && onTrunk(p)),
+    );
+    const ids = new Set(copied.map((p) => p.id));
+    for (const suffix of extra)
+      for (const part of copied)
+        copies.push({
+          ...part,
+          id: copyId(part, suffix),
+          on: ids.has(part.on)
+            ? copyId(copied.find((p) => p.id === part.on) as PartSpec, suffix)
+            : `${part.on}${suffix}`,
+        });
+  }
+  parts.push(...copies);
 
   const palette = doc.skin.palette;
   const resolveColors = (params: Params): Params => {

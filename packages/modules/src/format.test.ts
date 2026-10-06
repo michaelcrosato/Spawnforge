@@ -101,16 +101,20 @@ describe('format 0.2', () => {
   it('lists what is not built apart from warnings, and only what the blueprint writes', () => {
     const plain = check({ extends: 'quadruped' });
     expect(plain.notBuilt).toBeUndefined();
-    const hydra = check({
+    const dragon = check({
       extends: 'quadruped',
       body: { muscle: 0.8, neck: { count: 3, length: 0.7 } },
+      limbs: [{ id: 'wing', role: 'wing' }],
       skin: { fur: { length: 0.04 } },
     });
-    expect(hydra.ok).toBe(true);
-    expect(hydra.warnings).toEqual([]);
-    // Fur is built (8.4); several heads are not yet (9.1).
-    expect(hydra.notBuilt?.map((i) => i.path).sort()).toEqual(['body.neck.count']);
-    expect(hydra.notBuilt?.[0]?.fix).toMatch(/^keep it/);
+    expect(dragon.ok).toBe(true);
+    expect(dragon.warnings).toEqual([]);
+    // Fur (8.4) and several heads (9.1) are built; wings are not yet (9.3).
+    expect(dragon.notBuilt?.map((i) => i.path).sort()).toEqual([
+      'limbs[id=wing].membrane.type',
+      'limbs[id=wing].role',
+    ]);
+    expect(dragon.notBuilt?.[0]?.fix).toMatch(/^keep it/);
   });
 
   it('leaves out what something else implies, and names a skipped host', () => {
@@ -220,8 +224,10 @@ describe('format 0.2', () => {
     const compiled = compileCreature(result.creature, registry, { quality: 'low' });
     expect(compiled.rig.legs).toHaveLength(4);
     expect(compiled.rig.arms).toHaveLength(0);
+    // Two heads are built (9.1); the wing is reported.
+    expect(compiled.rig.heads.map((h) => h.id)).toEqual(['head', 'head.R1']);
     expect(compiled.warnings.map((w) => w.path)).toEqual(
-      expect.arrayContaining(['limbs[id=wing].role', 'body.neck.count']),
+      expect.arrayContaining(['limbs[id=wing].role']),
     );
   });
 
