@@ -16,7 +16,7 @@ export type * from './blueprint/creature.ts';
 export { type BlueprintDiff, diffBlueprints } from './blueprint/diff.ts';
 export { formatIssue, formatPath, type Issue } from './blueprint/issues.ts';
 export { cloneJson, ID_LISTS, isRecord, mergeBlueprint } from './blueprint/merge.ts';
-export { KNOWN_FORMATS, migrate } from './blueprint/migrate.ts';
+export { KNOWN_FORMATS, type Migration, migrate, toCurrentFormat } from './blueprint/migrate.ts';
 export { normalizeBlueprint } from './blueprint/normalize.ts';
 export {
   applyPatch,

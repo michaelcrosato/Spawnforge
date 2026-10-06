@@ -16,6 +16,8 @@ export {
   instantiate,
   type ListModulesResult,
   listModules,
+  type MigrateResult,
+  migrate,
   mutate,
   needIndividual,
   type PatchCommandResult,

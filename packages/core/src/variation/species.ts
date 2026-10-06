@@ -1,5 +1,6 @@
 import type { Issue } from '../blueprint/issues.ts';
 import { cloneJson, isRecord } from '../blueprint/merge.ts';
+import { toCurrentFormat } from '../blueprint/migrate.ts';
 import { validateBlueprint } from '../blueprint/validate.ts';
 import type { Registry } from '../registry.ts';
 import { createRng, type Rng } from '../rng.ts';
@@ -105,7 +106,7 @@ export function instantiate(
   // Each individual gets its own seed too, so its patterns differ in their details.
   individual.seed = root.stream('individual').int(0, 4_294_967_295);
   if (typeof species.name === 'string') individual.name = `${species.name} #${seed}`;
-  return individual;
+  return toCurrentFormat(individual);
 }
 
 /**

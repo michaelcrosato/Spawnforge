@@ -19,6 +19,7 @@ import {
   isSpecies,
   MODULE_KINDS,
   type ModuleKind,
+  migrate as migrateBlueprint,
   mutate as mutateBlueprint,
   type Pack,
   type PatchOp,
@@ -340,6 +341,48 @@ export function patch(
     errors: result.errors,
     warnings: result.warnings,
     blueprint: result.blueprint,
+  };
+}
+
+export interface MigrateResult {
+  /** False when the format is missing or unknown (see `errors`). */
+  ok: boolean;
+  /** The format the blueprint was in, and the one it is in now. */
+  from: unknown;
+  to: string;
+  /** One line per upgrade step; empty when it was already current. */
+  steps: string[];
+  /** Whether anything changed (whether there is anything to write back). */
+  changed: boolean;
+  /** Format errors, then any validation errors in the upgraded blueprint. */
+  errors: readonly Issue[];
+  warnings: readonly Issue[];
+  /** The upgraded blueprint. */
+  blueprint: Record<string, unknown>;
+}
+
+/**
+ * Upgrades a blueprint (or species) to the current format through every migration step, and
+ * validates the result. Writing it back is up to the caller, and only when `ok`.
+ */
+export function migrate(options: { blueprint: unknown }, registry = getRegistry()): MigrateResult {
+  const input = options.blueprint;
+  if (typeof input !== 'object' || input === null || Array.isArray(input))
+    throw new CommandError('the blueprint must be a JSON object');
+  const record = input as Record<string, unknown>;
+  const migrated = migrateBlueprint(record);
+  const failed = migrated.issues.filter((i) => i.severity === 'error');
+  const steps = migrated.issues.filter((i) => i.code === 'migrated').map((i) => i.message);
+  const checked = failed.length > 0 ? undefined : validate({ blueprint: migrated.doc }, registry);
+  return {
+    ok: failed.length === 0,
+    from: record.format,
+    to: FORMAT,
+    steps,
+    changed: steps.length > 0,
+    errors: [...failed, ...(checked?.errors ?? [])],
+    warnings: checked?.warnings.filter((w) => w.code !== 'migrated') ?? [],
+    blueprint: migrated.doc,
   };
 }
 

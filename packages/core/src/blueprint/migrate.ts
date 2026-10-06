@@ -1,23 +1,19 @@
 import { FORMAT } from '../format.ts';
 import type { Issue } from './issues.ts';
 import { isRecord } from './merge.ts';
+import { MIGRATIONS } from './migrations/index.ts';
 
-interface Migration {
+/** One format upgrade (see `migrations/`). */
+export interface Migration {
+  /** The format it reads, e.g. `spawnforge/0.1`. */
   readonly from: string;
+  /** The format it writes. */
   readonly to: string;
+  /** What changed, for the `migrated` warning. */
   readonly note: string;
+  /** Returns the upgraded blueprint; never modifies `doc`. */
   apply(doc: Record<string, unknown>): Record<string, unknown>;
 }
-
-/** Ordered upgrades. Each turns one format into the next; `migrate` chains them. */
-const MIGRATIONS: readonly Migration[] = [
-  {
-    from: 'bestiary/0.1',
-    to: 'spawnforge/0.1',
-    note: 'the project was renamed from Bestiary to Spawnforge; the format is otherwise unchanged',
-    apply: (doc) => ({ ...doc, format: 'spawnforge/0.1' }),
-  },
-];
 
 export const KNOWN_FORMATS: readonly string[] = [FORMAT, ...MIGRATIONS.map((m) => m.from)];
 
@@ -64,6 +60,16 @@ export function migrate(doc: Record<string, unknown>): {
     });
   }
   return { doc: current, issues };
+}
+
+/**
+ * The blueprint in the current format when the chain can upgrade it, otherwise as it was (for
+ * validation to report). Commands that write blueprints use it, so they always write the newest
+ * format.
+ */
+export function toCurrentFormat(doc: Record<string, unknown>): Record<string, unknown> {
+  const result = migrate(doc);
+  return result.issues.some((i) => i.severity === 'error') ? doc : result.doc;
 }
 
 export { isRecord };

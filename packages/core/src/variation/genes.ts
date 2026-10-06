@@ -1,5 +1,6 @@
 import type { Issue } from '../blueprint/issues.ts';
 import { cloneJson, ID_LISTS, isRecord } from '../blueprint/merge.ts';
+import { toCurrentFormat } from '../blueprint/migrate.ts';
 import {
   applyPatch,
   diffJson,
@@ -355,7 +356,9 @@ export function finish(
   child: Json,
   registry: Registry,
 ): VariationResult {
-  let result = applyPatch(parent, opsBetween(parent, parentDoc, child), registry);
+  // Children are written in the current format.
+  const base = toCurrentFormat(parent);
+  let result = applyPatch(base, opsBetween(base, parentDoc, child), registry);
   for (let round = 0; round < 6 && !result.ok; round++) {
     let dropped = false;
     const drop = new Map<string, Set<number>>();
@@ -383,7 +386,7 @@ export function finish(
       dropped = true;
     }
     if (!dropped) break;
-    result = applyPatch(parent, opsBetween(parent, parentDoc, child), registry);
+    result = applyPatch(base, opsBetween(base, parentDoc, child), registry);
   }
   const childDoc = result.ok ? expand(result.blueprint, registry).doc : undefined;
   return {

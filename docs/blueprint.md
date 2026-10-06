@@ -415,5 +415,12 @@ yet, so a furry animal reads best with a soft `mottle` and a `countershade`.
 
 ## Format versions
 
-`format` carries the version. Older blueprints are migrated automatically, with a warning:
-`bestiary/0.1` (the project's working name) is read as `spawnforge/0.1`.
+`format` carries the version. Every command reads older blueprints by upgrading them first,
+step by step, with a `migrated` warning per step; commands that write a blueprint (`patch`,
+`mutate`, `crossbreed`, `instantiate`) write the current format. To keep a saved file current,
+`spawnforge migrate creature.json` (MCP: `migrate`) upgrades it in place and lists each step
+(`--out` writes elsewhere, `--dry-run` only reports). The steps so far:
+
+| From | To | What changed |
+| --- | --- | --- |
+| `bestiary/0.1` | `spawnforge/0.1` | The project's working name; nothing else |

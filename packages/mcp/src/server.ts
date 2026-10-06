@@ -10,6 +10,7 @@ import {
   generate,
   instantiate,
   listModules,
+  migrate,
   mutate,
   needIndividual,
   patch,
@@ -187,6 +188,35 @@ export function createServer(): McpServer {
       reply(() => {
         const result = patch({ blueprint: readBlueprint(input), ops: input.ops });
         const write = result.ok && input.path !== undefined && !input.dryRun;
+        if (write)
+          writeFileSync(input.path as string, `${JSON.stringify(result.blueprint, null, 2)}\n`);
+        const { blueprint, ...rest } = result;
+        return { ...rest, written: write, ...(input.path === undefined ? { blueprint } : {}) };
+      }),
+  );
+
+  server.registerTool(
+    'migrate',
+    {
+      title: 'Upgrade a blueprint to the current format',
+      description:
+        'Upgrades a blueprint or species written in an older format to the current one, step by step (each step is listed), and validates the result. With "path", the file is rewritten when anything changed (unless dryRun). validate and every other tool read older formats anyway; migrate is for keeping saved files current.',
+      inputSchema: z.object({
+        blueprint: z
+          .record(z.string(), z.unknown())
+          .optional()
+          .describe('The blueprint JSON object (the upgraded one is returned)'),
+        path: z
+          .string()
+          .optional()
+          .describe('Path to a blueprint JSON file to upgrade in place, instead of "blueprint"'),
+        dryRun: z.boolean().optional().describe('Report without writing the file'),
+      }),
+    },
+    async (input) =>
+      reply(() => {
+        const result = migrate({ blueprint: readBlueprint(input) });
+        const write = result.ok && result.changed && input.path !== undefined && !input.dryRun;
         if (write)
           writeFileSync(input.path as string, `${JSON.stringify(result.blueprint, null, 2)}\n`);
         const { blueprint, ...rest } = result;

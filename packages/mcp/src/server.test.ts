@@ -32,6 +32,7 @@ describe('MCP server', () => {
       'generate',
       'instantiate',
       'list_modules',
+      'migrate',
       'mutate',
       'patch',
       'render',

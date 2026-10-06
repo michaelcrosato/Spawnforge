@@ -8,6 +8,7 @@ import {
   generate,
   instantiate,
   listModules,
+  migrate,
   mutate,
   patch,
   validate,
@@ -95,5 +96,34 @@ describe('diff', () => {
     const result = diff({ a: { format: FORMAT, scale: 99 }, b: { format: FORMAT } });
     expect(result.ok).toBe(false);
     expect(result.errors[0]?.path).toBe('a:scale');
+  });
+});
+
+describe('migrate', () => {
+  const old = { format: 'bestiary/0.1', extends: 'quadruped', scale: 1.2 };
+
+  it('upgrades an older blueprint step by step and validates it', () => {
+    const result = migrate({ blueprint: old });
+    expect(result).toMatchObject({ ok: true, from: 'bestiary/0.1', to: FORMAT, changed: true });
+    expect(result.steps).toHaveLength(1);
+    expect(result.blueprint).toEqual({ ...old, format: FORMAT });
+    expect(migrate({ blueprint: result.blueprint })).toMatchObject({ changed: false, steps: [] });
+  });
+
+  it('reports a format it cannot read', () => {
+    const result = migrate({ blueprint: { format: 'monsters/9', extends: 'quadruped' } });
+    expect(result.ok).toBe(false);
+    expect(result.errors[0]).toMatchObject({ path: 'format', code: 'unknown_format' });
+  });
+
+  it('makes every command that writes a blueprint write the current format', () => {
+    const edited = patch({ blueprint: old, ops: [{ op: 'set', path: 'scale', value: 1.3 }] });
+    expect(edited.blueprint.format).toBe(FORMAT);
+    expect(edited.diff).toContain(`~ format: "bestiary/0.1" → "${FORMAT}"`);
+    expect(mutate({ blueprint: old, seed: 2 }).blueprint.format).toBe(FORMAT);
+    expect(crossbreed({ a: old, b: { ...old, scale: 0.8 } }).blueprint.format).toBe(FORMAT);
+    const species = { ...old, scale: { min: 1, max: 1.4 } };
+    expect(validate({ blueprint: species }).ok).toBe(true);
+    expect(instantiate({ species, seed: 1 }).blueprint.format).toBe(FORMAT);
   });
 });
