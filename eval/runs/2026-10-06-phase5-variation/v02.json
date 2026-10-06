@@ -1,0 +1,104 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Zulror",
+  "seed": 2021409843,
+  "extends": "biped",
+  "scale": 0.3293,
+  "body": {
+    "torso": {
+      "radius": [0.143, 0.271, 0.199, 0.169]
+    },
+    "neck": {
+      "length": 0.226,
+      "radius": [0.09, 0.12]
+    },
+    "head": {
+      "shape": "wedge",
+      "length": 0.352,
+      "radius": 0.143
+    },
+    "tail": {
+      "length": 0.41,
+      "pitch": -35,
+      "radius": [0.07, 0.012]
+    }
+  },
+  "limbs": [
+    {
+      "id": "leg",
+      "length": 1.25,
+      "radius": [0.12, 0.07],
+      "segments": 3,
+      "splay": 4,
+      "attach": {
+        "angle": 105
+      },
+      "foot": {
+        "clawLength": 0.05
+      }
+    },
+    {
+      "id": "arm",
+      "length": 1.09,
+      "radius": [0.09, 0.05]
+    }
+  ],
+  "parts": [
+    {
+      "id": "eyes",
+      "params": {
+        "size": 0.0268,
+        "pupil": "goat",
+        "irisColor": "#ffcc00"
+      }
+    },
+    {
+      "id": "teeth",
+      "type": "teeth.row",
+      "params": {
+        "fangs": 2
+      }
+    },
+    {
+      "id": "horns",
+      "type": "horn.curved",
+      "attach": {
+        "on": "head",
+        "at": 0.6,
+        "angle": 70,
+        "side": "both"
+      },
+      "params": {
+        "length": 0.697,
+        "width": 0.0603,
+        "curve": 277,
+        "turn": -36,
+        "ridges": 7,
+        "color": "#2a1a14",
+        "tipColor": "#d8c8a0"
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#724332",
+      "belly": "#b8978d",
+      "accent": "#160f0f"
+    },
+    "layers": [
+      {
+        "type": "countershade",
+        "strength": 0.5
+      },
+      {
+        "type": "stripes",
+        "count": 10,
+        "width": 0.3
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "stalking",
+    "actions": ["bite", "roar", "look", "idle"]
+  }
+}

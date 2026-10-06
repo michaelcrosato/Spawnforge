@@ -1,0 +1,81 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Grey Wolf #1",
+  "extends": "quadruped",
+  "seed": 1905089677,
+  "scale": 0.914,
+  "body": {
+    "neck": {
+      "length": 0.3,
+      "pitch": 25
+    },
+    "tail": {
+      "length": 0.65,
+      "radius": [0.08, 0.03],
+      "pitch": -25,
+      "curl": 5
+    }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "length": 0.508
+    },
+    {
+      "id": "hindleg",
+      "length": 0.627
+    }
+  ],
+  "parts": [
+    {
+      "id": "ears",
+      "type": "ear.pointed",
+      "attach": {
+        "on": "head",
+        "at": 0.85,
+        "angle": 45,
+        "side": "both"
+      },
+      "params": {
+        "length": 0.121,
+        "width": 0.0501
+      }
+    },
+    {
+      "id": "teeth",
+      "type": "teeth.row"
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#5e5e5c",
+      "belly": "#c8c4bc",
+      "accent": "#3a3836",
+      "pale": "#b4b2ac"
+    },
+    "layers": [
+      {
+        "id": "shade",
+        "type": "countershade",
+        "color": "pale",
+        "height": 1,
+        "softness": 1,
+        "strength": 0.0378
+      },
+      {
+        "type": "countershade",
+        "strength": 0.7
+      },
+      {
+        "type": "mottle",
+        "scale": 0.12,
+        "coverage": 0.5,
+        "contrast": 0.3
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "stalking",
+    "actions": ["bite", "roar", "idle"]
+  }
+}

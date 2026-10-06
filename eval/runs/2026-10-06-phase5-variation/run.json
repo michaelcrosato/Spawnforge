@@ -1,0 +1,10 @@
+{
+  "phase": 5,
+  "kind": "variation eval: eight tasks that need species, mutate, crossbreed and generate (eval/variation.json), checked by eval/variation.ts",
+  "date": "2026-10-06",
+  "model": "Claude Sonnet (Claude Code subagent, model alias \"sonnet\")",
+  "commit": "e6be4f7",
+  "tools": "spawnforge CLI: validate, describe-module, list-modules, analyze, patch, render, generate, mutate, crossbreed, instantiate",
+  "docs": ["docs/blueprint.md", "docs/catalog.md", "examples/", "README.md"],
+  "agents": "2 independent agents, 4 tasks each, no shared context"
+}

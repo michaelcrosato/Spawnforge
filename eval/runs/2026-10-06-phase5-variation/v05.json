@@ -1,0 +1,61 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Tiktin",
+  "seed": 508134466,
+  "extends": "hexapod",
+  "scale": 0.734,
+  "body": {
+    "torso": {
+      "radius": [0.0938, 0.131, 0.0784, 0.186, 0.172, 0.0802]
+    },
+    "head": {
+      "length": 0.282,
+      "radius": 0.107
+    }
+  },
+  "limbs": [
+    {
+      "id": "frontleg",
+      "length": 0.595
+    },
+    {
+      "id": "midleg",
+      "length": 0.815
+    },
+    {
+      "id": "hindleg",
+      "length": 0.764
+    }
+  ],
+  "parts": [
+    {
+      "id": "eyes",
+      "params": {
+        "size": 0.0264
+      }
+    },
+    {
+      "id": "horn",
+      "type": "horn.curved",
+      "attach": {
+        "on": "head",
+        "at": 0.2,
+        "angle": 0,
+        "side": "center"
+      },
+      "params": {
+        "length": 0.38,
+        "width": 0.038,
+        "curve": -78,
+        "ridges": 6
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#0b0b0d",
+      "belly": "#1a1a1e",
+      "accent": "#2a2a32"
+    }
+  }
+}
