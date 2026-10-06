@@ -1,0 +1,7 @@
+{
+  "phase": 8,
+  "kind": "quality review of milestone 8.1 (muscle masses, joints and body shape)",
+  "date": "2026-10-06",
+  "model": "a Claude Code general-purpose subagent, one blind reviewer, no other context",
+  "quality": "node eval/quality.ts prepare quality --base d101c06 --head fd74be2; the phase 4 run's 20 final blueprints"
+}
