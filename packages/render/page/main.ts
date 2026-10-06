@@ -30,6 +30,7 @@ const TITLES: Record<View, string> = {
   'three-quarter': '3/4',
   head: 'head',
   rear: 'rear 3/4',
+  underside: 'underside',
 };
 
 declare global {
@@ -312,12 +313,22 @@ window.spawnforgeRender = async (request) => {
         ortho.position.set(centre.x, max.y + span * 2, centre.z);
         ortho.up.set(0, 0, 1);
       }
+      if (view === 'underside') {
+        // Looking up at the belly, head at the top of the panel.
+        ortho.position.set(centre.x, min.y - span * 2, centre.z);
+        ortho.up.set(0, 0, 1);
+      }
       ortho.lookAt(centre);
       camera = ortho;
     }
-    ground.visible = view !== 'top' && view !== 'front' && view !== 'head';
-    grid.visible = view !== 'front' && view !== 'head';
-    scene.background = new THREE.Color(view === 'top' ? '#2b2f36' : '#262a30');
+    const below = view === 'underside';
+    ground.visible = view !== 'top' && view !== 'front' && view !== 'head' && !below;
+    grid.visible = view !== 'front' && view !== 'head' && !below;
+    // From below, the key light moves under the creature so the belly is lit.
+    key.position
+      .copy(centre)
+      .add(new THREE.Vector3(span * 1.2, (below ? -1 : 1) * span * 2.2, span * 1.6));
+    scene.background = new THREE.Color(view === 'top' || below ? '#2b2f36' : '#262a30');
     camera.updateMatrixWorld();
     await renderer.renderAsync(scene, camera);
     const x = (index % cols) * size;
@@ -331,7 +342,13 @@ window.spawnforgeRender = async (request) => {
     ctx.font = '12px system-ui, sans-serif';
     ctx.fillText(TITLES[view], x + 14, y + 22);
 
-    if (view === 'side' || view === 'front' || view === 'top' || view === 'head') {
+    if (
+      view === 'side' ||
+      view === 'front' ||
+      view === 'top' ||
+      view === 'head' ||
+      view === 'underside'
+    ) {
       const bar = niceBar((half * 2) / 3.5);
       const px = (bar / (2 * half)) * size;
       ctx.fillStyle = '#eee';

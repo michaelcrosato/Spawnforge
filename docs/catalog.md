@@ -461,6 +461,7 @@ slot: `"surface"` · material: `"horn"` · defaultAttach: `{"on":"head","at":0.7
 | `twist` | number | -720–720 | `0` | Spiral in degrees along the horn, like a ram |
 | `lean` | number | -90–90 | `0` | Degrees the root tilts forward (+) or back (-) |
 | `turn` | number | -180–180 | `0` | Degrees the bend turns sideways: 90 curves toward the midline (mandibles), -90 away from it |
+| `aim` | "forward" \| "up" \| "out" \| "back" \| "down" |  |  | Which way the horn points, wherever it sits: forward (mandibles, a bull), up, out (away from the body), back (swept back) or down (tusks). It replaces lean and turn |
 | `ridges` | integer | 0–30 | `0` | Rings along the horn |
 | `color` | string |  | `"#d4c6a2"` | Colour at the root: a palette name or a colour |
 | `tipColor` | string |  | `"#3d3329"` | Colour at the tip |
@@ -690,7 +691,7 @@ Slow gait for any leg count: feet lift one after another, back to front.
 
 List in motion.gaits as "walk", or { "type": "walk", ...params }.
 
-legPairs: `"any"` · duty: `0.7` · froude: `[0,0.5]` · wave: `[{"pairs":1,"wave":0.5},{"pairs":2,"wave":0.25},{"pairs":3,"wave":0.3333333333333333}]`
+legPairs: `"any"` · duty: `[{"pairs":1,"duty":0.62},{"pairs":2,"duty":0.75},{"pairs":3,"duty":0.75}]` · froude: `[0,0.5]` · wave: `[{"pairs":1,"wave":0.5},{"pairs":2,"wave":0.25},{"pairs":3,"wave":0.3333333333333333}]`
 
 | Parameter | Type | Range | Default | Description |
 | --- | --- | --- | --- | --- |

@@ -13,8 +13,10 @@ export function motionData(spec: CreatureSpec, registry: Registry): MotionData {
     const num = (key: string, fallback: number) =>
       typeof p[key] === 'number' ? (p[key] as number) : fallback;
     const spine = module.legPairs !== 'any' && module.legPairs.includes(0);
-    // Two legs walk with a longer stance share than four or six.
-    const duty = num('duty', module.id === 'walk' ? (pairs <= 1 ? 0.62 : 0.75) : module.duty);
+    const duty = num(
+      'duty',
+      typeof module.duty === 'function' ? module.duty(Math.max(1, pairs)) : module.duty,
+    );
     gaits.push({
       id: module.id,
       wave: module.wave(Math.max(1, pairs)),

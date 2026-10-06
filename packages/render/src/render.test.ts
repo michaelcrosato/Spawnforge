@@ -38,6 +38,15 @@ describe('headless renders', () => {
     expect(pngSize(result.png)).toEqual({ width: 160, height: 204 });
   }, 120_000);
 
+  it('renders the underside, lit from below, only when asked', async () => {
+    const result = await renderer.render({
+      blueprint: { format: FORMAT, extends: 'quadruped' },
+      size: 160,
+      views: ['top', 'underside'],
+    });
+    expect(pngSize(result.png)).toEqual({ width: 320, height: 204 });
+  }, 120_000);
+
   it('renders a filmstrip of one gait cycle with its measurements', async () => {
     const result = await renderer.render({
       blueprint: { format: FORMAT, extends: 'quadruped' },

@@ -70,8 +70,8 @@ pnpm format                   # Biome: format, sort imports, apply safe lint fix
 pnpm generate                 # rewrite generated files after adding or changing a module
 pnpm dev                      # sandbox at http://localhost:5173 (add ?webgl to force the WebGL 2 backend)
 pnpm build                    # production build of the sandbox
-pnpm spawnforge <command>     # the CLI from source: list-modules, describe-module, validate, analyze, patch, render,
-                              # generate, mutate, crossbreed, instantiate, export, schema
+pnpm spawnforge <command>     # the CLI from source: list-modules, describe-module, validate, analyze, patch, diff,
+                              # render, generate, mutate, crossbreed, instantiate, export, schema
 pnpm spawnforge generate --theme reptile --seed 4 --out creatures/lizard.json   # a new creature from a theme
 pnpm spawnforge export examples/bog-troll.json --stats rpg   # a .glb with baked clips, for any engine
 pnpm spawnforge render examples/ridgeback-stalker.json --labels   # PNG contact sheet next to the file
@@ -121,7 +121,7 @@ From the plan. Follow them unless the plan changes.
 **Modules**
 
 - One capability is one file in a pack. The core never names a specific part, pattern, gait or
-  action.
+  action: pack `defaults` and module hooks carry what it needs, and a test checks it.
 - Module ids are lowercase words joined by dots or dashes (`horn.curved`). Params are
   `z.strictObject`, and every field has a default, a range and a `.describe()` that states its unit.
 - Colour parameters are named `color` or end in `Color`, and use `colorRef()` from core, so

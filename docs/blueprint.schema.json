@@ -967,6 +967,17 @@
           "minimum": -180,
           "maximum": 180
         },
+        "aim": {
+          "description": "Which way the horn points, wherever it sits: forward (mandibles, a bull), up, out (away from the body), back (swept back) or down (tusks). It replaces lean and turn",
+          "type": "string",
+          "enum": [
+            "forward",
+            "up",
+            "out",
+            "back",
+            "down"
+          ]
+        },
         "ridges": {
           "default": 0,
           "description": "Rings along the horn",

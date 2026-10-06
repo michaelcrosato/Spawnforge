@@ -5,12 +5,14 @@ import type { Issue } from '../blueprint/issues.ts';
 import { type CompiledCreature, compileCreature, type Quality } from '../compile/compile.ts';
 import { type Ground, MotionController } from '../motion/controller.ts';
 import { testCourse } from '../motion/terrain.ts';
-import type { PartModule, PatternModule, Registry } from '../registry.ts';
+import type { ActionModule, PartModule, PatternModule, Registry } from '../registry.ts';
 import { measureBody } from '../variation/generate.ts';
 
 const G = 9.81;
 /** Flesh is about as dense as water. */
 const DENSITY = 1000;
+/** Steps per second (cycles per second) above which a gait reads as jitter at 30 frames a second. */
+const MAX_STEPS = 8;
 
 /** One motion run: the worst of each problem, with where and when it happened. */
 export interface MotionCheck {
@@ -60,6 +62,16 @@ export interface Analysis {
     readonly max: number;
     readonly gaits: readonly { readonly id: string; readonly from: number; readonly to: number }[];
   };
+  /**
+   * How fast each legged gait steps at its typical speed: m/s, metres per stride and steps per
+   * second (each foot steps once a cycle).
+   */
+  readonly cadence: readonly {
+    readonly id: string;
+    readonly speed: number;
+    readonly stride: number;
+    readonly steps: number;
+  }[];
   /** How far the head can lunge (m) for a bite, and the head's height. */
   readonly reach: { readonly bite: number | null; readonly headHeight: number };
   /** Centre of mass over the feet: `margin` is its distance inside the support area (m). */
@@ -133,6 +145,29 @@ export function analyzeCreature(
       to: Math.sqrt(Math.min(g.froude[1], 1.5) * G * hip),
     })),
   };
+  // --- Cadence: fast steps read as jitter --------------------------------------------------
+  const cadence = compiled.motion.gaits
+    .filter((g) => !g.spine)
+    .map((g) => ({ id: g.id, ...controller.cadence(g.id) }))
+    .map(({ id, speed, stride, steps }) => ({ id, speed, stride, steps }));
+  // A skittish creature is meant to scurry, so its fast steps are no mistake.
+  const fast = cadence.filter((c) => c.steps > MAX_STEPS);
+  const worst = fast.reduce<(typeof fast)[number] | undefined>(
+    (w, c) => (w === undefined || c.steps > w.steps ? c : w),
+    undefined,
+  );
+  if (worst && spec.motion.temperament !== 'skittish') {
+    // Steps per second fall with the square root of size.
+    const scale = roundUp(spec.scale * (worst.steps / MAX_STEPS) ** 2 * 1.05);
+    const list = fast.map((c) => `the ${c.id} ${c.steps.toFixed(1)} at ${c.speed.toFixed(2)} m/s`);
+    warn(
+      'scale',
+      'fast_cadence',
+      `it steps fast for its size (steps a second: ${list.join(', ')}); above ${MAX_STEPS} a second it reads as jitter at 30 frames a second`,
+      `make it bigger ("scale": ${scale} or more), or, if it is meant to be this small, make it skittish ("motion.temperament": "skittish") so it scurries on purpose`,
+    );
+  }
+
   const head = new Vector3().fromArray(compiled.bones.positions, compiled.rig.head * 3);
   const neckBones = compiled.rig.neck;
   let neckLen = 0;
@@ -249,12 +284,19 @@ export function analyzeCreature(
     name: compiled.name,
     measurements,
     speed,
+    cadence,
     reach,
     stability,
     motion,
     warnings: dedupe(warnings),
     description: describeCreature(spec, registry, measurements, speed),
   };
+}
+
+/** Rounds up to two significant figures. */
+function roundUp(v: number): number {
+  const unit = 10 ** (Math.floor(Math.log10(v)) - 1);
+  return Number((Math.ceil(v / unit - 1e-9) * unit).toPrecision(2));
 }
 
 const sectionPath = (part: string) =>
@@ -603,7 +645,10 @@ export function describeCreature(
     legs === 0
       ? `It slithers at about ${speed.walk.toFixed(1)} m/s`
       : `It walks at about ${speed.walk.toFixed(1)} m/s${gaits.length > 1 ? ` and ${gaits.at(-1)}s up to ${speed.max.toFixed(1)} m/s` : ''}`;
-  const actions = spec.motion.actions.map((a) => a.type).filter((a) => a !== 'idle');
+  // Ambient actions (breathing, blinks) run all the time; the description lists what it can do.
+  const actions = spec.motion.actions
+    .map((a) => a.type)
+    .filter((a) => !(registry.get('action', a) as ActionModule | undefined)?.hooks?.ambient);
   // Two layers that read the same are said once; two parts that do are counted.
   const unique = (items: readonly string[]) => [...new Set(items)];
   const counted = (items: readonly string[]) =>

@@ -1,5 +1,5 @@
 /** Shared between the Node launcher and the page. */
-export type View = 'front' | 'side' | 'top' | 'three-quarter' | 'head' | 'rear';
+export type View = 'front' | 'side' | 'top' | 'three-quarter' | 'head' | 'rear' | 'underside';
 
 export interface RenderRequest {
   readonly blueprint: unknown;
@@ -10,7 +10,7 @@ export interface RenderRequest {
   readonly labels?: boolean;
   /** Leave the creature's name out of the header (for blind reviews). */
   readonly anonymous?: boolean;
-  /** Panels to draw, in order (default all six). */
+  /** Panels to draw, in order (default the six views; `underside` only when asked). */
   readonly views?: readonly View[];
   /**
    * Render one gait cycle as a filmstrip instead of the contact sheet: frames of the creature

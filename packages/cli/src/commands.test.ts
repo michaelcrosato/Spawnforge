@@ -4,6 +4,7 @@ import {
   analyze,
   CommandError,
   crossbreed,
+  diff,
   generate,
   instantiate,
   listModules,
@@ -53,5 +54,46 @@ describe('variation commands', () => {
     const child = mutate({ blueprint: made.blueprint, seed: 1, amount: 0.5 });
     expect(child.ok).toBe(true);
     expect(child.diff.every((line) => /^[~+-] /.test(line))).toBe(true);
+  });
+});
+
+describe('diff', () => {
+  it('gives the patch operations that turn one blueprint into another', () => {
+    const a = { format: FORMAT, extends: 'quadruped', body: { tail: { length: 0.9 } } };
+    const b = {
+      format: FORMAT,
+      extends: 'quadruped',
+      body: { tail: { length: 1.4 } },
+      parts: [{ id: 'eyes', remove: true }],
+    };
+    const result = diff({ a, b });
+    expect(result).toMatchObject({ ok: true, exact: true });
+    expect(result.ops).toEqual([
+      { op: 'set', path: 'body.tail.length', value: 1.4 },
+      { op: 'remove', path: 'parts[id=eyes]' },
+    ]);
+    expect(result.changes[0]).toBe('~ body.tail.length: 0.9 → 1.4');
+    const patched = patch({ blueprint: a, ops: result.ops });
+    expect(patched.ok).toBe(true);
+    expect(diff({ a: patched.blueprint, b }).ops).toEqual([]);
+  });
+
+  it('reaches a creature with another body plan', () => {
+    const a = { format: FORMAT, extends: 'serpent', seed: 3 };
+    const b = {
+      format: FORMAT,
+      extends: 'quadruped',
+      seed: 3,
+      motion: { temperament: 'stalking' },
+    };
+    const result = diff({ a, b });
+    expect(result.exact).toBe(true);
+    expect(result.ops).toContainEqual({ op: 'set', path: 'extends', value: 'quadruped' });
+  });
+
+  it('reports invalid blueprints by side', () => {
+    const result = diff({ a: { format: FORMAT, scale: 99 }, b: { format: FORMAT } });
+    expect(result.ok).toBe(false);
+    expect(result.errors[0]?.path).toBe('a:scale');
   });
 });

@@ -5,6 +5,7 @@ import {
   CommandError,
   crossbreed,
   describeModule,
+  diff,
   exportExtras,
   generate,
   instantiate,
@@ -191,6 +192,28 @@ export function createServer(): McpServer {
         const { blueprint, ...rest } = result;
         return { ...rest, written: write, ...(input.path === undefined ? { blueprint } : {}) };
       }),
+  );
+
+  server.registerTool(
+    'diff',
+    {
+      title: 'Diff two blueprints',
+      description:
+        'Compares two blueprints by the creatures they resolve to (presets merged, defaults filled) and returns the patch operations that turn a into b, by id-based paths, ready for the patch tool, plus one line per change ("~ path: from → to", "+ path: value", "- path"). "exact" says whether patching a with them gives exactly b\'s creature.',
+      inputSchema: z.object({
+        a: z.record(z.string(), z.unknown()).optional().describe('Blueprint a, as a JSON object'),
+        b: z.record(z.string(), z.unknown()).optional().describe('Blueprint b, as a JSON object'),
+        aPath: z.string().optional().describe('Path to blueprint a, instead of "a"'),
+        bPath: z.string().optional().describe('Path to blueprint b, instead of "b"'),
+      }),
+    },
+    async (input) =>
+      reply(() =>
+        diff({
+          a: readBlueprint({ blueprint: input.a, path: input.aPath }),
+          b: readBlueprint({ blueprint: input.b, path: input.bPath }),
+        }),
+      ),
   );
 
   const blueprintInput = (what: string) => ({
@@ -394,7 +417,7 @@ export function createServer(): McpServer {
     {
       title: 'Render a blueprint',
       description:
-        'Renders the creature as a PNG contact sheet: three-quarter, side, head close-up, front, top and rear views with scale bars. With labels, every part and limb is tagged by id, so you can check placement. With filmstrip, it renders one gait cycle as frames plus a footfall diagram and returns the gait, speed, cycle time, stride, duty per leg and foot slide, so you can check how the creature moves; with filmstrip.action it shows one action (bite, roar, look) and the events it fires. Use it to see whether a blueprint looks and moves like what you meant.',
+        'Renders the creature as a PNG contact sheet: three-quarter, side, head close-up, front, top and rear views with scale bars (add an underside view through views). With labels, every part and limb is tagged by id, so you can check placement. With filmstrip, it renders one gait cycle as frames plus a footfall diagram and returns the gait, speed, cycle time, stride, duty per leg and foot slide, so you can check how the creature moves; with filmstrip.action it shows one action (bite, roar, look) and the events it fires. Use it to see whether a blueprint looks and moves like what you meant.',
       inputSchema: z.object({
         blueprint: z
           .record(z.string(), z.unknown())
@@ -413,9 +436,11 @@ export function createServer(): McpServer {
           .optional()
           .describe('Pixels per panel (default 512)'),
         views: z
-          .array(z.enum(['three-quarter', 'side', 'head', 'front', 'top', 'rear']))
+          .array(z.enum(['three-quarter', 'side', 'head', 'front', 'top', 'rear', 'underside']))
           .optional()
-          .describe('Panels to draw (default all six)'),
+          .describe(
+            'Panels to draw (default the six views); "underside" looks up at the belly and feet',
+          ),
         filmstrip: z
           .object({
             action: z

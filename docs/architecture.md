@@ -54,6 +54,10 @@ flowchart LR
   spec and copies poses from the motion controller into bones each frame.
 - **One set of commands.** The CLI's command functions are the API for LLM tools; the MCP server
   only wraps them, so the two cannot drift.
+- **The core never names a module.** What a blueprint gets when it leaves something out (the
+  foot, the pattern layers, `generate`'s fallback body plan) comes from the packs' `defaults`;
+  module-specific behaviour goes through hooks (`describe`, `normalize`, an action's `ambient`,
+  a gait's `duty` per leg-pair count). A test greps the core for module ids.
 
 ## Pipeline
 
@@ -134,7 +138,8 @@ flat ground, draws a gait cycle and reports cycle time, stride, duty per leg and
 - **`analyzeCreature`** (`packages/core/src/analysis`) compiles at low quality and measures:
   bounds, mass and centre of mass from the closed skin (water density), hip height, speeds per
   gait from their Froude ranges, bite reach, and balance (the centre of mass against the convex
-  hull of the feet). It then runs the motion controller for two gait cycles on flat and on rough
+  hull of the feet), and each gait's cadence (steps a second at its typical speed, from the
+  controller's stride model). It then runs the motion controller for two gait cycles on flat and on rough
   `testCourse` ground and records the worst foot slide, ground penetration, overstretched legs
   (IK misses) and limb-limb or limb-body overlaps, each with the limb and time. Problems become
   warnings with id-based paths and fixes, next to the compile's own (`below_ground`,
@@ -143,6 +148,11 @@ flat ground, draws a gait cycle and reports cycle time, stride, duty per leg and
 - **`applyPatch`** (`packages/core/src/blueprint/patch.ts`) applies `set`, `add`, `remove`,
   `mirror` and `scale` by id-based paths, including into inherited preset items, then validates
   and returns a leaf-by-leaf diff. The CLI and MCP write the file back only when it is valid.
+  `diffBlueprints` (`blueprint/diff.ts`) goes the other way: it compares two blueprints by the
+  creatures they resolve to and returns the fewest operations that turn one into the other.
+- **Normalization** runs in two steps before validation: `normalizeBlueprint` rewrites the
+  core's friendly forms (colour names, `{ "type": "walk" }`), then, after merging with the
+  preset, `normalizeModules` runs each module's `normalize` hook on its own parameters.
 - **`randomBlueprint`** draws blueprints from the JSON Schema and the module registry; the fuzz
   harness (`pnpm fuzz`, and a slice in the tests) compiles them.
 - **`fingerprint`** hashes a compiled creature's quantized meshes and skeleton. The golden test

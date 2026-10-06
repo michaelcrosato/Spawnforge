@@ -175,12 +175,18 @@ All lengths are in torso lengths.
 | Bull horns, out then forward | `horn.curved` on `head`, `at` 0.85, `angle` 75; `length` 0.3, `width` 0.04, `curve` -70 |
 | Rhino nose horn | `horn.curved` on `head`, `at` 0.12, `angle` 0; `length` 0.22, `width` 0.05, `curve` 25 (add a smaller one at `at` 0.4) |
 | Tusks from the lower jaw | `horn.curved` on `jaw`, `at` 0.25, `angle` 60; `length` 0.16, `width` 0.025, `curve` -60, pale `color` and `tipColor` |
-| Insect mandibles | `horn.curved` on `head`, `at` 0.08, `angle` 100; `length` 0.2, `width` 0.025, `lean` 60, `curve` 110, `turn` 90, dark colours (on a big head: `at` 0.04, `angle` 80, `lean` 90, `length` 0.3) |
+| Insect mandibles | `horn.curved` on `head`, `at` 0.06, `angle` 110, `side` "both"; `length` 0.25, `width` 0.03, `curve` 60, `aim` "forward", dark colours. They point forward and curve in toward each other, on any head size |
+| Horns swept back along the head | `horn.curved` on `head`, `at` 0.8, `angle` 50; `length` 0.4, `curve` 50, `aim` "back" |
 | Spikes down the whole back | `spikes.row` on `spine`, `from` 0.1, `to` 0.95, `angle` 0; a `height` profile such as `[0.06, 0.12, 0.05]` |
 | A stinger on the tail tip | `horn.curved` on `tail`, `at` 0.97, `angle` 0; `curve` 60 |
 | Pointed ears | `ear.pointed` on `head`, `at` 0.85, `angle` 45; `length` 0.14, `width` 0.05 (`droop` 0.8 and `angle` 70 for hanging ears) |
 
-For `horn.curved`: the horn grows straight out of the skin, then bends by `curve` degrees,
+For `horn.curved`, `aim` is the easy way to point a horn: `forward` (mandibles, a charging
+bull), `up`, `out` (away from the body), `back` (swept back) or `down` (tusks). It works out the
+lean and turn from where the horn sits, whatever its `angle`, and replaces `lean` and `turn`; a
+horn's root can only tilt forward or back, so `up` and `down` work best for horns on the side of
+the head (`angle` 60–110). Without `aim`, the horn grows straight out of the skin, then bends by
+`curve` degrees,
 backward (toward the tail) for positive values and forward for negative ones. `lean` tilts the
 root first, `twist` spirals it, and `turn` swings the bend sideways (90 toward the midline, -90
 away). Pairs (`side` "both") are mirror images. The attach `angle` also sets the plane the horn
@@ -262,7 +268,8 @@ when the creature moves.
   `--view side|3/4|top|front` (default side; serpents from above; actions at 3/4; `front` shows
   the legs' stance), `--frames n` (2–16, default 8) and `--size px` (per frame, default 320).
   Fine patterns fade out in small frames, so judge spots and scales on the contact sheet.
-- **Contact sheet options**: `--views 3/4,side,head,front,top,rear` picks the panels, `--size px`
+- **Contact sheet options**: `--views 3/4,side,head,front,top,rear` picks the panels (add
+  `underside` to look up at the belly and the soles of the feet), `--size px`
   sets the pixels per panel (default 512), `--quality low|medium|high` the mesh detail, and `--labels` tags every
   part and limb by id. Spots and scales on a small creature (under about half a metre) are only a
   few pixels across on the default sheet; check them with `--views top,3/4 --size 900 --quality
@@ -272,7 +279,11 @@ when the creature moves.
   hip height, speeds per gait, bite reach, balance over the feet), runs two gait cycles on flat
   and rough ground, and warns, with a path and a fix, about sliding feet, a body or tail in the
   ground, legs stretched past their reach, limbs passing through each other or the body, parts
-  buried in the skin, eyes facing backwards and a centre of mass outside the feet. Fixes give
+  buried in the skin, eyes facing backwards, a centre of mass outside the feet and stepping too
+  fast (`fast_cadence`: `cadence` lists each gait's steps a second, per foot, at its usual
+  speed; above 8 a second legs read as jitter at 30 frames a second, which happens to creatures
+  with a torso under about 20 cm; make them bigger or, if they are meant to be that small,
+  skittish). Fixes give
   amounts where they can (`about 10° more splay`); a leg that hits the body during the swing also
   clears with a smaller gait `stride` or `stepHeight`. It also writes a one-paragraph description
   (size, proportions, parts, colours, gaits): read it to check the creature is what you meant.
@@ -300,6 +311,11 @@ spawnforge patch wolf.json '[{"op":"set","path":"limbs[id=hindleg].length","valu
   {"op":"scale","path":"parts[id=horns].params.length","by":1.5},
   {"op":"add","path":"parts","value":{"id":"ears","type":"ear.pointed","attach":{"side":"both"}}}]'
 ```
+
+To see what changed between two versions of a creature, `diff a.json b.json` (MCP: `diff`)
+compares the creatures they resolve to and prints the patch operations that turn `a` into `b`,
+one line per change. Its `ops` go straight into `patch`; `exact` says the result is `b`'s
+creature exactly.
 
 ## Species and variation
 
@@ -377,7 +393,8 @@ the minimal blueprint is there to show what actually differs from the preset. Ea
 - `path`, id-based, e.g. `limbs[id=hindleg].attach.at`
 - `message`, e.g. `1.4 is outside 0–1`
 - `expected`, the valid range or values
-- `fix`, e.g. `did you mean "length"?` or `move "length" into "params"`
+- `fix`, e.g. `did you mean "length"?`, `move "length" into "params"` or, for a value that
+  belongs to a neighbouring field, `"wide" is a crossSection, not a shape`
 
 Validation reports every problem it can find in one pass, so fix them all before validating
 again. A few mistakes (an unknown preset, a list where an object belongs) hide the checks that
@@ -391,7 +408,7 @@ name the section to change.
 ## Not in this version
 
 Wings, fins, tentacles, shells, armour plates, quills, antennae, frills, multiple heads and
-branching tails are planned but not available yet (see the scope table in [plan.md](plan.md)), and
+branching tails are planned but not available yet (see the scope table in [plan 2](plan-2.md)), and
 there are no dedicated mandible parts. Approximate them with what exists, as the recipes above
 do: horns for mandibles and stingers, a spike row for a frill. Skins are smooth: there is no fur
 yet, so a furry animal reads best with a soft `mottle` and a `countershade`.

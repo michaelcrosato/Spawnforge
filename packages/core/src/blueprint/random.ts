@@ -211,11 +211,16 @@ export function randomBlueprint(registry: Registry, rng: Rng, name = 'Random'): 
       };
     }),
   };
-  // Extra legs change which gaits fit, so the preset's list goes back to the default.
+  // Extra legs change which gaits fit the preset's list, so it becomes the slowest gait that
+  // works with any number of legs.
   const extraLegs = limbs.some((l) => l.role === 'leg');
+  const anyLegs = registry
+    .list('gait')
+    .filter((g) => g.legPairs === 'any')
+    .sort((a, b) => a.froude[0] - b.froude[0] || a.id.localeCompare(b.id))[0];
   blueprint.motion = {
     temperament: sampleSchema(at(schema, ['motion', 'temperament']), rng),
-    ...(extraLegs ? { gaits: ['walk'] } : {}),
+    ...(extraLegs && anyLegs ? { gaits: [anyLegs.id] } : {}),
   };
   return blueprint;
 }

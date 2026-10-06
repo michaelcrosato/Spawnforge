@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { FORMAT } from '../format.ts';
+import type { PackDefaults } from '../registry.ts';
 import { HARMONIES, isColor } from './colors.ts';
 
 /**
@@ -71,7 +72,8 @@ export function colorRef(fallback: string) {
     .describe('A palette name such as "accent", or a colour such as "#2a1e14"');
 }
 
-export function buildBlueprintSchema(ids: ModuleIds = NO_IDS) {
+/** `defaults` come from the packs (`Registry.defaults()`): the foot and layers a blueprint gets. */
+export function buildBlueprintSchema(ids: ModuleIds = NO_IDS, defaults: PackDefaults = {}) {
   const torso = z
     .strictObject({
       radius: profile(
@@ -155,8 +157,9 @@ export function buildBlueprintSchema(ids: ModuleIds = NO_IDS) {
       .describe('Degrees around the section from the top: 90 is the side, 180 the belly'),
   });
 
+  const footType = idEnum(ids.foot, 'Foot part');
   const foot = z
-    .object({ type: idEnum(ids.foot, 'Foot part').default('foot.claw') })
+    .object({ type: defaults.foot ? footType.default(defaults.foot) : footType })
     .catchall(z.unknown())
     .describe('Foot part at the limb tip; its parameters sit beside `type`');
 
@@ -186,8 +189,12 @@ export function buildBlueprintSchema(ids: ModuleIds = NO_IDS) {
       ),
     foot: z
       .union([foot, z.null()])
-      .prefault({})
-      .describe('Foot part at the limb tip (default { "type": "foot.claw" }), or null for none'),
+      .prefault((defaults.foot ? {} : null) as never)
+      .describe(
+        defaults.foot
+          ? `Foot part at the limb tip (default { "type": "${defaults.foot}" }), or null for none`
+          : 'Foot part at the limb tip, or null for none',
+      ),
     remove: z.literal(true).optional().describe('Delete an inherited limb with this id'),
   });
 
@@ -252,7 +259,7 @@ export function buildBlueprintSchema(ids: ModuleIds = NO_IDS) {
     layers: z
       .array(layer)
       .max(12)
-      .prefault([{ type: 'countershade' }])
+      .prefault((defaults.layers ?? []).map((l) => ({ ...l })) as z.input<typeof layer>[])
       .describe('Pattern stack, bottom first'),
   });
 

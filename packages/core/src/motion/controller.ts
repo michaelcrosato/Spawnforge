@@ -567,15 +567,41 @@ export class MotionController {
     }
   }
 
+  /**
+   * Stride length (m) of a gait at a Froude number, from dynamic similarity (Alexander):
+   * λ/h = 2.3 Fr^0.3, but never more than the legs can reach: past that the creature steps
+   * faster instead. `strideScale` stands in for the gait's own `stride` multiplier.
+   */
+  private strideAt(gait: GaitInfo | undefined, froude: number, strideScale?: number): number {
+    const duty = gait?.duty ?? 0.7;
+    const h = this.hipHeight;
+    const natural =
+      Math.max(0.35 * h, 2.3 * h * Math.max(froude, 0.01) ** 0.3) *
+      (strideScale ?? gait?.stride ?? 1);
+    return Math.min(natural, (2 * this.halfStride) / Math.max(duty, 0.3));
+  }
+
+  /**
+   * How fast a gait steps at its typical speed (or `options.speed`): metres per stride, seconds
+   * per cycle and steps per second (each foot steps once a cycle, so cycles per second).
+   * `options.stride` tries another stride multiplier.
+   */
+  cadence(
+    id: string,
+    options: { speed?: number; stride?: number } = {},
+  ): { speed: number; stride: number; cycle: number; steps: number } {
+    const speed = options.speed ?? this.gaitSpeed(id);
+    const gait = this.motion.gaits.find((g) => g.id === id);
+    const stride = this.strideAt(gait, (speed * speed) / (G * this.hipHeight), options.stride);
+    const cycle = stride / Math.max(speed, 1e-6);
+    return { speed, stride, cycle, steps: 1 / cycle };
+  }
+
   private stepLegs(dt: number, ground: Ground, froude: number): void {
     const gait = this.gait;
     const duty = gait?.duty ?? 0.7;
     const h = this.hipHeight;
-    // Stride length from dynamic similarity (Alexander): λ/h = 2.3 Fr^0.3, but never more than
-    // the legs can reach: past that the creature steps faster instead.
-    const natural =
-      Math.max(0.35 * h, 2.3 * h * Math.max(froude, 0.01) ** 0.3) * (gait?.stride ?? 1);
-    const stride = Math.min(natural, (2 * this.halfStride) / Math.max(duty, 0.3));
+    const stride = this.strideAt(gait, froude);
     let frequency = this.speed / stride;
     // Keep stepping while turning on the spot or settling feet after stopping, and finish any
     // swing in progress; once every foot is close to its rest spot the legs stand still.

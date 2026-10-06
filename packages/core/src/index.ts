@@ -13,6 +13,7 @@ export {
 } from './analysis/stats.ts';
 export * from './blueprint/colors.ts';
 export type * from './blueprint/creature.ts';
+export { type BlueprintDiff, diffBlueprints } from './blueprint/diff.ts';
 export { formatIssue, formatPath, type Issue } from './blueprint/issues.ts';
 export { cloneJson, ID_LISTS, isRecord, mergeBlueprint } from './blueprint/merge.ts';
 export { KNOWN_FORMATS, migrate } from './blueprint/migrate.ts';

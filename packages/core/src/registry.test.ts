@@ -63,4 +63,18 @@ describe('createRegistry', () => {
     const bad = { ...horn, id: 'Horn Curved' };
     expect(() => createRegistry([definePack({ id: 'a', modules: [bad] })])).toThrow(/lowercase/);
   });
+
+  it('merges pack defaults, the first pack to set one winning', () => {
+    const r = createRegistry([
+      definePack({ id: 'a', modules: [horn], defaults: { layers: [{ type: 'stripes' }] } }),
+      definePack({ id: 'b', modules: [stripes], defaults: { layers: [], bodyPlan: undefined } }),
+    ]);
+    expect(r.defaults()).toEqual({ layers: [{ type: 'stripes' }] });
+  });
+
+  it('rejects defaults that name a module no pack defines', () => {
+    expect(() =>
+      createRegistry([definePack({ id: 'a', modules: [horn], defaults: { foot: 'foot.hoof' } })]),
+    ).toThrow(/default foot names part "foot.hoof"/);
+  });
 });
