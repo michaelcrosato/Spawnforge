@@ -193,7 +193,11 @@ length on the coil, so they need a `length` of 0.5–0.75 to read from a distanc
 
 - **`palette`** names colours. `base` (the main colour), `belly` and `accent` always exist; add
   others by name (`"hornTip": "#ffe0a0"`). Colours are `#rrggbb`, `#rgb` or CSS names (`tan`,
-  `darkolivegreen`).
+  `darkolivegreen`). `"harmony"` makes the colours instead: `analogous`, `complementary`,
+  `triadic`, `split` or `monochrome` picks the accent's hue relative to the base, and the seed picks
+  the rest, with a belly clearly lighter than the base and an accent clearly lighter or darker so
+  patterns read. It fills in only the colours the blueprint leaves out (the preset's give way), so
+  `{ "harmony": "complementary", "base": "#305080" }` keeps that blue and finds the rest.
 - **`material`** is the surface under the patterns: `skin`, `scales` or `chitin`.
 - **`layers`** is the pattern stack, bottom first: `countershade`, `stripes`, `spots`, `mottle`,
   `scales` and `grime`. A layer's parameters sit beside its `type`. Every layer also takes

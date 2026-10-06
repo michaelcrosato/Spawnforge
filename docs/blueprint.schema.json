@@ -561,6 +561,17 @@
             "accent": {
               "type": "string",
               "description": "Colour: \"#rrggbb\", \"#rgb\" or a CSS colour name"
+            },
+            "harmony": {
+              "type": "string",
+              "enum": [
+                "analogous",
+                "complementary",
+                "triadic",
+                "split",
+                "monochrome"
+              ],
+              "description": "Generate the base, belly and accent you leave out from the seed: the accent analogous, complementary, triadic, split-complementary or the same hue (monochrome), around the base you give"
             }
           },
           "additionalProperties": {

@@ -6,6 +6,7 @@ import {
   type Issue,
   isSpecies,
   minimalBlueprint,
+  resolveBlueprint,
   validateBlueprint,
   validateSpecies,
 } from '@spawnforge/core';
@@ -276,6 +277,48 @@ describe('friendly forms', () => {
       registry,
     );
     expect(result.creature?.parts).toEqual([]);
+  });
+});
+
+describe('palette harmonies', () => {
+  const lightness = (hex: string) => {
+    const n = Number.parseInt(hex.slice(1), 16);
+    const c = [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+    return (Math.max(...c) + Math.min(...c)) / 510;
+  };
+  it('generates readable base, belly and accent colours from the seed', () => {
+    for (const harmony of ['analogous', 'complementary', 'triadic', 'split', 'monochrome'])
+      for (const seed of [1, 2, 3, 4, 5]) {
+        const spec = resolveBlueprint(
+          { format: FORMAT, extends: 'quadruped', seed, skin: { palette: { harmony } } },
+          registry,
+        );
+        const { base, belly, accent } = spec.skin.palette as Record<string, string>;
+        expect(lightness(belly as string) - lightness(base as string)).toBeGreaterThanOrEqual(0.17);
+        expect(
+          Math.abs(lightness(accent as string) - lightness(base as string)),
+        ).toBeGreaterThanOrEqual(0.17);
+        const again = resolveBlueprint(
+          { format: FORMAT, extends: 'quadruped', seed, skin: { palette: { harmony } } },
+          registry,
+        );
+        expect(again.skin.palette).toEqual(spec.skin.palette);
+      }
+  });
+
+  it('keeps colours the blueprint sets and replaces the preset colours', () => {
+    const preset = resolveBlueprint({ format: FORMAT, extends: 'quadruped' }, registry);
+    const spec = resolveBlueprint(
+      {
+        format: FORMAT,
+        extends: 'quadruped',
+        seed: 3,
+        skin: { palette: { harmony: 'complementary', base: '#305080' } },
+      },
+      registry,
+    );
+    expect(spec.skin.palette.base).toBe('#305080');
+    expect(spec.skin.palette.belly).not.toBe(preset.skin.palette.belly);
   });
 });
 

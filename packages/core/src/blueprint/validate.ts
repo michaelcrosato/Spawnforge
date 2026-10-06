@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { ActionModule, Feature, GaitModule, PartModule, Registry } from '../registry.ts';
-import { toHex } from './colors.ts';
+import { createRng } from '../rng.ts';
+import { harmonyPalette, toHex } from './colors.ts';
 import type {
   CreatureSpec,
   FootSpec,
@@ -292,7 +293,21 @@ export function resolveDocument(input: unknown, registry: Registry): ResolveOutc
   const doc = parsed.data;
   const palette: Record<string, string> = { ...DEFAULT_PALETTE };
   for (const [name, value] of Object.entries(doc.skin.palette)) {
+    if (name === 'harmony') continue;
     if (typeof value === 'string') palette[name] = toHex(value) ?? value;
+  }
+  // A harmony fills in the base, belly and accent the blueprint itself leaves out (preset
+  // colours give way), from the seed and around the blueprint's own base.
+  const harmony = doc.skin.palette.harmony;
+  if (harmony) {
+    const own = (
+      isRecord(user.skin) && isRecord(user.skin.palette) ? user.skin.palette : {}
+    ) as Record<string, unknown>;
+    const ownHex = (key: string) =>
+      typeof own[key] === 'string' ? toHex(own[key] as string) : undefined;
+    const rng = createRng(doc.seed).stream('palette');
+    const made = harmonyPalette(harmony, () => rng.next(), ownHex('base'));
+    for (const key of ['base', 'belly', 'accent'] as const) palette[key] = ownHex(key) ?? made[key];
   }
   // Defaults that came from the schema (not the merged input) still need their module params.
   const defaultLayers = rawLayers === undefined;

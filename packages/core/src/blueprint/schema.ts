@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { FORMAT } from '../format.ts';
-import { isColor } from './colors.ts';
+import { HARMONIES, isColor } from './colors.ts';
 
 /**
  * The blueprint schema. Everything has a default except item ids and part types, so short
@@ -232,7 +232,16 @@ export function buildBlueprintSchema(ids: ModuleIds = NO_IDS) {
     .describe('One pattern layer; its parameters sit beside `type`');
 
   const palette = z
-    .object({ base: colorSchema, belly: colorSchema, accent: colorSchema })
+    .object({
+      base: colorSchema,
+      belly: colorSchema,
+      accent: colorSchema,
+      harmony: z
+        .enum(HARMONIES)
+        .describe(
+          'Generate the base, belly and accent you leave out from the seed: the accent analogous, complementary, triadic, split-complementary or the same hue (monochrome), around the base you give',
+        ),
+    })
     .catchall(colorSchema)
     .partial()
     .describe('Named colours. base, belly and accent always exist; add any others by name');
