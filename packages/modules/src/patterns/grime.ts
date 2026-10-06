@@ -12,6 +12,7 @@ export default definePattern({
     feet: z.number().min(0).max(1).default(0.6).describe('Dirt rising from the ground up the legs'),
   }),
   example: { type: 'grime', amount: 0.4 },
+  describe: () => 'grime',
   hooks: {
     shade(k, s, p, seed) {
       const dirt = fbm(

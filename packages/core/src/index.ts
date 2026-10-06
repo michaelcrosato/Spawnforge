@@ -1,9 +1,25 @@
+export {
+  type Analysis,
+  type AnalyzeOptions,
+  analyzeCreature,
+  describeCreature,
+  type MotionCheck,
+} from './analysis/analyze.ts';
 export * from './blueprint/colors.ts';
 export type * from './blueprint/creature.ts';
 export { formatIssue, formatPath, type Issue } from './blueprint/issues.ts';
 export { cloneJson, ID_LISTS, isRecord, mergeBlueprint } from './blueprint/merge.ts';
 export { KNOWN_FORMATS, migrate } from './blueprint/migrate.ts';
 export { normalizeBlueprint } from './blueprint/normalize.ts';
+export {
+  applyPatch,
+  diffJson,
+  formatDiff,
+  type PatchChange,
+  type PatchOp,
+  type PatchResult,
+} from './blueprint/patch.ts';
+export { randomBlueprint, sampleSchema } from './blueprint/random.ts';
 export {
   type BlueprintDoc,
   buildBlueprintSchema,

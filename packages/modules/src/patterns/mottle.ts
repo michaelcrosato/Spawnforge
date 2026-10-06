@@ -1,4 +1,4 @@
-import { colorRef, definePattern, fbm } from '@spawnforge/core';
+import { colorName, colorRef, definePattern, fbm } from '@spawnforge/core';
 import { z } from 'zod';
 
 export default definePattern({
@@ -12,6 +12,7 @@ export default definePattern({
     coverage: z.number().min(0).max(1).default(0.5).describe('Share of the skin covered'),
   }),
   example: { type: 'mottle', color: 'accent', scale: 0.2, coverage: 0.4 },
+  describe: (p) => `${colorName(p.color as string)} mottling`,
   hooks: {
     shade(k, s, p, seed) {
       const f = k.num(1 / (p.scale as number));

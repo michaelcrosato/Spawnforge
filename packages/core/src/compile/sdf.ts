@@ -294,6 +294,29 @@ export class SdfEvaluator {
     return d;
   }
 
+  /**
+   * Field value and normalized gradient from the same four tetrahedron samples: their average is
+   * the value at the centre to second order. Half the cost of `eval` plus `gradient`.
+   */
+  valueAndGradient(
+    px: number,
+    py: number,
+    pz: number,
+    eps: number,
+    prims: ArrayLike<number> | undefined,
+    out: Vector3,
+  ): number {
+    const a = this.eval(px + eps, py - eps, pz - eps, prims);
+    const b = this.eval(px - eps, py - eps, pz + eps, prims);
+    const c = this.eval(px - eps, py + eps, pz - eps, prims);
+    const d = this.eval(px + eps, py + eps, pz + eps, prims);
+    out.set(a - b - c + d, -a - b + c + d, -a + b - c + d);
+    const len = out.length();
+    if (len > 1e-12) out.divideScalar(len);
+    else out.set(0, 1, 0);
+    return (a + b + c + d) / 4;
+  }
+
   /** Normalized gradient from four samples on a tetrahedron. */
   gradient(
     px: number,

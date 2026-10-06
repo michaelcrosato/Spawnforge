@@ -1,6 +1,7 @@
 import {
   compileCreature,
   createRegistry,
+  fingerprint,
   formatIssue,
   resolveBlueprint,
   validateBlueprint,
@@ -26,8 +27,48 @@ declare global {
   interface Window {
     spawnforgeReady?: boolean;
     spawnforgeRender?: (request: RenderRequest) => Promise<RenderResponse>;
+    spawnforgeFingerprint?: (blueprint: unknown, quality: 'low' | 'medium' | 'high') => string;
+    spawnforgeDiff?: (
+      a: string,
+      b: string,
+      threshold: number,
+    ) => Promise<{ differing: number; mean: number; sizes: number[] }>;
   }
 }
+
+/**
+ * Compares two PNGs (data URLs) of the same size: the share of pixels whose colour differs by
+ * more than `threshold` (0–255) in any channel, and the mean difference.
+ */
+window.spawnforgeDiff = async (a, b, threshold) => {
+  const load = async (url: string) => {
+    const bitmap = await createImageBitmap(await (await fetch(url)).blob());
+    const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+    const ctx = canvas.getContext('2d') as OffscreenCanvasRenderingContext2D;
+    ctx.drawImage(bitmap, 0, 0);
+    return ctx.getImageData(0, 0, bitmap.width, bitmap.height);
+  };
+  const [x, y] = await Promise.all([load(a), load(b)]);
+  if (x.width !== y.width || x.height !== y.height)
+    return { differing: 1, mean: 255, sizes: [x.width, x.height, y.width, y.height] };
+  let differing = 0;
+  let sum = 0;
+  for (let i = 0; i < x.data.length; i += 4) {
+    let worst = 0;
+    for (let c = 0; c < 3; c++) {
+      const d = Math.abs((x.data[i + c] as number) - (y.data[i + c] as number));
+      sum += d;
+      if (d > worst) worst = d;
+    }
+    if (worst > threshold) differing++;
+  }
+  const pixels = x.data.length / 4;
+  return { differing: differing / pixels, mean: sum / (pixels * 3), sizes: [] };
+};
+
+/** Compiles in the browser and returns the golden-test fingerprint (Node must agree). */
+window.spawnforgeFingerprint = (blueprint, quality) =>
+  fingerprint(compileCreature(resolveBlueprint(blueprint, registry), registry, { quality }));
 
 const canvas = document.createElement('canvas');
 document.body.append(canvas);

@@ -155,7 +155,7 @@ part sits depends on its slot (shown in `describe_module`):
 
 | Slot | Placement | Parts |
 | --- | --- | --- |
-| surface | `at` and `angle` on `on` | `horn.curved`, `eye.basic` |
+| surface | `at` and `angle` on `on` | `horn.curved`, `ear.pointed`, `eye.basic` |
 | row | copies from `from` to `to` | `spikes.row` |
 | mouth | along the mouth line; needs `head.jaw` | `teeth.row` |
 | foot | a limb's `foot` field, not `parts` | `foot.claw` |
@@ -170,14 +170,15 @@ All lengths are in torso lengths.
 
 | Look | Part |
 | --- | --- |
-| Ram horns, coiled beside the head | `horn.curved` on `head`, `at` 0.8, `angle` 40; `length` 0.65, `width` 0.05, `curve` 400, `turn` -35, `lean` -10, `ridges` 12 |
+| Ram horns, coiled beside the head | `horn.curved` on `head`, `at` 0.8, `angle` 40; `length` 0.65, `width` 0.05, `curve` 400, `turn` -35, `lean` -10, `ridges` 12 (on an upright biped's head: `at` 0.6, `angle` 85, `turn` -70, `lean` 10) |
+| A cobra rearing up | `serpent` with `neck` `pitch` 75 and `length` about 1, `torso` `pitch` near 6 and `tail` `pitch` near 4, so the body stays on the ground; `crossSection` "wide" on the neck for a hood |
 | Bull horns, out then forward | `horn.curved` on `head`, `at` 0.85, `angle` 75; `length` 0.3, `width` 0.04, `curve` -70 |
 | Rhino nose horn | `horn.curved` on `head`, `at` 0.12, `angle` 0; `length` 0.22, `width` 0.05, `curve` 25 (add a smaller one at `at` 0.4) |
 | Tusks from the lower jaw | `horn.curved` on `jaw`, `at` 0.25, `angle` 60; `length` 0.16, `width` 0.025, `curve` -60, pale `color` and `tipColor` |
-| Insect mandibles | `horn.curved` on `head`, `at` 0.08, `angle` 100; `length` 0.2, `width` 0.025, `lean` 60, `curve` 110, `turn` 90, dark colours |
+| Insect mandibles | `horn.curved` on `head`, `at` 0.08, `angle` 100; `length` 0.2, `width` 0.025, `lean` 60, `curve` 110, `turn` 90, dark colours (on a big head: `at` 0.04, `angle` 80, `lean` 90, `length` 0.3) |
 | Spikes down the whole back | `spikes.row` on `spine`, `from` 0.1, `to` 0.95, `angle` 0; a `height` profile such as `[0.06, 0.12, 0.05]` |
 | A stinger on the tail tip | `horn.curved` on `tail`, `at` 0.97, `angle` 0; `curve` 60 |
-| Pointed ears | `horn.curved` on `head`, `at` 0.85, `angle` 40; `length` 0.1, `width` 0.04, `curve` -15, `color` and `tipColor` set to `base` |
+| Pointed ears | `ear.pointed` on `head`, `at` 0.85, `angle` 45; `length` 0.14, `width` 0.05 (`droop` 0.8 and `angle` 70 for hanging ears) |
 
 For `horn.curved`: the horn grows straight out of the skin, then bends by `curve` degrees,
 backward (toward the tail) for positive values and forward for negative ones. `lean` tilts the
@@ -206,6 +207,9 @@ length on the coil, so they need a `length` of 0.5–0.75 to read from a distanc
   choose. Use either or both.
 - Colour parameters (`color`, and any field ending in `Color`) take a palette name such as
   `"accent"` or a colour.
+- A `tall` torso cross-section is narrow; on a big biped or raptor it reads as a plank, so keep
+  those `round`. On a tail that curls up, `countershade` follows the tail's underside, so the
+  tip can show pale; give the tail its own layer (`region` "tail") if that is not wanted.
 - Pattern sizes are in torso lengths, so they scale with the creature. Details smaller than a few
   pixels fade out instead of flickering, so on a small creature seen from afar, `scales` and
   `spots` at their default sizes read as plain skin; use a `size` of 0.08–0.15 there.
@@ -244,15 +248,38 @@ when the creature moves.
 - **Check motion with a filmstrip**: `render` with `filmstrip` (CLI: `--filmstrip`, optionally
   `--gait trot` or `--speed 2`) draws one gait cycle and a footfall diagram, and reports the
   cycle time, stride, the share of time each foot is planted and how far planted feet slide (in
-  metres; anything above a centimetre or two is visible). Serpents are drawn from above to show
-  their wave. With `--action bite` (or `roar`, `look`) it draws the action instead, with the
-  times of its events.
+  metres; anything above a centimetre or two is visible). With `--action bite` (or `roar`,
+  `look`) it draws the action instead, close on the head and neck, with the times of its events;
+  a bite comes mostly from the neck, so short-necked creatures mostly snap. Other options:
+  `--view side|3/4|top|front` (default side; serpents from above; actions at 3/4; `front` shows
+  the legs' stance), `--frames n` (2–16, default 8) and `--size px` (per frame, default 320).
+  Fine patterns fade out in small frames, so judge spots and scales on the contact sheet.
+- **Check everything else with `analyze`**: it measures the creature (size, mass, centre of mass,
+  hip height, speeds per gait, bite reach, balance over the feet), runs two gait cycles on flat
+  and rough ground, and warns, with a path and a fix, about sliding feet, a body or tail in the
+  ground, legs stretched past their reach, limbs passing through each other or the body, parts
+  buried in the skin and eyes facing backwards. It also writes a one-paragraph description: read
+  it to check the creature is what you meant.
 
 What the body model does not do yet: a section bends only as a whole, so a neck raised steeply
 (a cobra) turns at its base rather than in an S; legs are tubes without hooves; and the head
 stays level while walking, by design. For sprawled legs, an attach `angle` around 110–120 keeps
 the legs clear of the body as they swing; angles past about 150 bring both legs under the belly.
 Big eyes need a large `size` (0.06–0.1 for cartoon eyes).
+
+## Editing with patch
+
+`patch` changes a blueprint file in place by id-based paths and prints a short diff; the file is
+only written when the result is valid. Operations: `set` (a value), `add` (an item to a list
+such as `parts` or `skin.layers`), `remove` (a key, back to its default, or a limb or part;
+inherited ones get `"remove": true`), `mirror` (make a limb or part a pair, or set its `side`)
+and `scale` (multiply a number or a profile; path `""` scales the whole creature). Paths look
+like error paths, and inherited limbs and parts can be edited by id:
+
+```sh
+spawnforge patch wolf.json '[{"op":"set","path":"limbs[id=hindleg].length","value":0.7},
+  {"op":"add","path":"parts","value":{"id":"ears","type":"ear.pointed","attach":{"side":"both"}}}]'
+```
 
 ## Validation
 
@@ -278,8 +305,9 @@ name the section to change.
 
 Wings, fins, tentacles, shells, armour plates, quills, antennae, frills, multiple heads and
 branching tails are planned but not available yet (see the scope table in [plan.md](plan.md)), and
-there are no dedicated mandible or ear parts. Approximate them with what exists, as the recipes
-above do: horns for mandibles, ears and stingers, a spike row for a frill.
+there are no dedicated mandible parts. Approximate them with what exists, as the recipes above
+do: horns for mandibles and stingers, a spike row for a frill. Skins are smooth: there is no fur
+yet, so a furry animal reads best with a soft `mottle` and a `countershade`.
 
 ## Format versions
 

@@ -102,7 +102,7 @@ Runs back from the torso. `at` runs from the root (0) to the tip (1).
 | Field | Type | Range | Default | Description |
 | --- | --- | --- | --- | --- |
 | `id` | string |  |  | Unique id; mirrored copies get .L and .R |
-| `type` | "eye.basic" \| "horn.curved" \| "spikes.row" \| "teeth.row" |  |  | Part module id |
+| `type` | "ear.pointed" \| "eye.basic" \| "horn.curved" \| "spikes.row" \| "teeth.row" |  |  | Part module id |
 | `attach` | object (below) |  | `{}` |  |
 | `params` | object |  | `{}` | The part module's parameters |
 | `remove` | boolean |  |  | Delete an inherited part with this id |
@@ -368,6 +368,34 @@ Ids you can override: part `eyes`.
 </details>
 
 ## Parts
+
+### `ear.pointed`
+
+Leaf-shaped ear, upright or drooping; use side "both" for a pair.
+
+Add to "parts" with "type": "ear.pointed"; parameters go in "params".
+
+slot: `"surface"` · material: `"skin"` · defaultAttach: `{"on":"head","at":0.85,"angle":45}`
+
+| Parameter | Type | Range | Default | Description |
+| --- | --- | --- | --- | --- |
+| `length` | number | 0.02–0.6 | `0.12` | Length in torso lengths |
+| `width` | number | 0.01–0.25 | `0.05` | Widest half-width in torso lengths |
+| `thickness` | number | 0.1–1 | `0.3` | Thickness as a share of the width: low is a flat leaf, 1 a round cone |
+| `curve` | number | -120–120 | `15` | Degrees the ear bends; positive sweeps back toward the tail, negative forward |
+| `lean` | number | -90–90 | `0` | Degrees the root tilts forward (+) or back (-) |
+| `droop` | number | 0–1 | `0` | How much the ear flops outward and down, 0 upright to 1 hanging |
+| `color` | string |  | `"base"` | Colour at the root: a palette name or a colour |
+| `tipColor` | string |  | `"base"` | Colour at the tip |
+
+```json
+{
+  "id": "ears",
+  "type": "ear.pointed",
+  "attach": { "on": "head", "at": 0.85, "angle": 45, "side": "both" },
+  "params": { "length": 0.14, "width": 0.05 }
+}
+```
 
 ### `eye.basic`
 

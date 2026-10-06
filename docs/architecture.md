@@ -129,6 +129,25 @@ same code runs live in the browser, checks motion in Node and renders filmstrips
 sandbox runs creatures on `testCourse` terrain; the render page's filmstrip mode walks one on
 flat ground, draws a gait cycle and reports cycle time, stride, duty per leg and foot slide.
 
+## Analysis and editing
+
+- **`analyzeCreature`** (`packages/core/src/analysis`) compiles at low quality and measures:
+  bounds, mass and centre of mass from the closed skin (water density), hip height, speeds per
+  gait from their Froude ranges, bite reach, and balance (the centre of mass against the convex
+  hull of the feet). It then runs the motion controller for two gait cycles on flat and on rough
+  `testCourse` ground and records the worst foot slide, ground penetration, overstretched legs
+  (IK misses) and limb-limb or limb-body overlaps, each with the limb and time. Problems become
+  warnings with id-based paths and fixes, next to the compile's own (`below_ground`,
+  `leg_too_short`, `part_buried`). `describeCreature` writes a paragraph from the spec, using
+  each module's optional `describe` hook, so the core never names a part.
+- **`applyPatch`** (`packages/core/src/blueprint/patch.ts`) applies `set`, `add`, `remove`,
+  `mirror` and `scale` by id-based paths, including into inherited preset items, then validates
+  and returns a leaf-by-leaf diff. The CLI and MCP write the file back only when it is valid.
+- **`randomBlueprint`** draws blueprints from the JSON Schema and the module registry; the fuzz
+  harness (`pnpm fuzz`, and a slice in the tests) compiles them.
+- **`fingerprint`** hashes a compiled creature's quantized meshes and skeleton. The golden test
+  pins the examples' hashes, and the render tests check that Chromium compiles to the same ones.
+
 ## Runtime conventions
 
 - World units follow glTF: metres, Y up, creatures face +Z.

@@ -53,6 +53,8 @@ export interface PartModule<P extends z.ZodType = z.ZodType> extends ModuleBase<
   readonly example: Record<string, unknown>;
   /** Geometry (and, for feet, toe bones). */
   readonly hooks?: PartHooks;
+  /** A short phrase for the creature's description, e.g. "coiled horns". */
+  readonly describe?: (params: Readonly<Record<string, unknown>>) => string;
 }
 
 export interface PatternModule<P extends z.ZodType = z.ZodType> extends ModuleBase<'pattern', P> {
@@ -60,6 +62,8 @@ export interface PatternModule<P extends z.ZodType = z.ZodType> extends ModuleBa
   readonly example: Record<string, unknown>;
   /** The shader function, written once for CPU and GPU. */
   readonly hooks?: PatternHooks;
+  /** A short phrase for the creature's description, e.g. "dark stripes". */
+  readonly describe?: (params: Readonly<Record<string, unknown>>) => string;
 }
 
 export interface GaitModule<P extends z.ZodType = z.ZodType> extends ModuleBase<'gait', P> {

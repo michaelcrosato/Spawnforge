@@ -174,3 +174,48 @@ export function hexToRgb(hex: string): [number, number, number] {
   const n = Number.parseInt(hex.slice(1), 16);
   return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
 }
+
+const PLAIN: readonly [string, string][] = [
+  ['black', '#141414'],
+  ['charcoal', '#3a3a3a'],
+  ['grey', '#808080'],
+  ['pale grey', '#bdbdbd'],
+  ['white', '#f2f2f2'],
+  ['cream', '#efe4c4'],
+  ['sand', '#d6bf8a'],
+  ['tan', '#b08a5a'],
+  ['brown', '#7a5230'],
+  ['dark brown', '#3f2a1a'],
+  ['red', '#c0302a'],
+  ['dark red', '#6e1414'],
+  ['orange', '#e0782a'],
+  ['yellow', '#e6c83a'],
+  ['olive', '#6b6b2e'],
+  ['green', '#3f8a3a'],
+  ['dark green', '#22401f'],
+  ['teal', '#2a7a78'],
+  ['blue', '#2f5fb0'],
+  ['dark blue', '#1a2a5a'],
+  ['purple', '#6a3a8a'],
+  ['pink', '#e08aa8'],
+];
+
+/** The nearest plain colour name for a colour, for descriptions ("dark green"). */
+export function colorName(color: string): string {
+  const hex = toHex(color);
+  if (!hex) return color;
+  const rgb = (h: string) => [1, 3, 5].map((i) => Number.parseInt(h.slice(i, i + 2), 16));
+  const [r, g, b] = rgb(hex) as [number, number, number];
+  let best = 'grey';
+  let bestD = Infinity;
+  for (const [name, value] of PLAIN) {
+    const [r2, g2, b2] = rgb(value) as [number, number, number];
+    // Weighted towards how eyes see differences (green counts most).
+    const d = 2 * (r - r2) ** 2 + 4 * (g - g2) ** 2 + 3 * (b - b2) ** 2;
+    if (d < bestD) {
+      bestD = d;
+      best = name;
+    }
+  }
+  return best;
+}

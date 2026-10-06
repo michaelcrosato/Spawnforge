@@ -2,6 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { didYouMean, editDistance } from './suggest.ts';
 
 describe('didYouMean', () => {
+  it('prefers a word the input abbreviates over a one-letter typo', () => {
+    expect(didYouMean('len', ['lean', 'length', 'width'])).toBe('length');
+  });
+
   it('counts transpositions as one edit', () => {
     expect(editDistance('lenght', 'length')).toBe(1);
   });

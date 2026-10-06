@@ -35,6 +35,8 @@ export function didYouMean(input: string, candidates: Iterable<string>): string 
       for (const segment of cl.split('.'))
         score = Math.min(score, editDistance(lower, segment) + 0.5);
     }
+    // An abbreviation ("len" -> "length") is a stronger hint than a one-letter typo ("lean").
+    if (lower.length >= 3 && cl.startsWith(lower)) score = Math.min(score, 0.5);
     // Prefix or containment matches ("leg" -> "foreleg") are good hints too.
     if (score > 2 && (cl.startsWith(lower) || lower.startsWith(cl) || cl.includes(lower))) {
       score = 2;

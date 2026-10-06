@@ -24,8 +24,10 @@ describe('MCP server', () => {
   it('lists its tools', async () => {
     const { tools } = await client.listTools();
     expect(tools.map((t) => t.name).sort()).toEqual([
+      'analyze',
       'describe_module',
       'list_modules',
+      'patch',
       'render',
       'validate',
     ]);

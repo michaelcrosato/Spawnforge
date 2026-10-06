@@ -36,8 +36,8 @@ export interface FilmstripRequest {
   readonly speed?: number;
   /** Frames across one cycle, 2 to 16 (default 8). */
   readonly frames?: number;
-  /** Camera (default side). */
-  readonly view?: 'side' | 'three-quarter' | 'top';
+  /** Camera (default side; top for legless bodies; 3/4 close on the head for actions). */
+  readonly view?: 'side' | 'three-quarter' | 'top' | 'front';
 }
 
 /** What a filmstrip measured over the cycle (or action) it drew. */

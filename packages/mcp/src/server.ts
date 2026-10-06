@@ -1,6 +1,14 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { McpServer } from '@modelcontextprotocol/server';
-import { CommandError, describeModule, listModules, validate } from '@spawnforge/cli';
+import {
+  analyze,
+  CommandError,
+  describeModule,
+  listModules,
+  patch,
+  patchOpsSchema,
+  validate,
+} from '@spawnforge/cli';
 import { MODULE_KINDS } from '@spawnforge/core';
 import type { Renderer } from '@spawnforge/render';
 import { z } from 'zod';
@@ -115,6 +123,57 @@ export function createServer(): McpServer {
       ),
   );
 
+  server.registerTool(
+    'analyze',
+    {
+      title: 'Analyze a blueprint',
+      description:
+        'Builds the creature and checks it: measurements (length, height, width, mass, centre of mass, hip height), speeds per gait, bite reach, balance over its feet, and motion run for two gait cycles on flat and rough ground (foot slide, ground penetration, legs stretched past their reach, limbs passing through each other or the body, each with the limb and time). Returns plausibility warnings with id-based paths and fixes, and a plain-text description of the creature. Use it after validate and before render to catch problems you cannot see in a still image.',
+      inputSchema: z.object({
+        blueprint: z
+          .record(z.string(), z.unknown())
+          .optional()
+          .describe('The blueprint JSON object'),
+        path: z
+          .string()
+          .optional()
+          .describe('Path to a blueprint JSON file, instead of "blueprint"'),
+      }),
+      annotations: { readOnlyHint: true },
+    },
+    async (input) => reply(() => analyze({ blueprint: readBlueprint(input) })),
+  );
+
+  server.registerTool(
+    'patch',
+    {
+      title: 'Edit a blueprint',
+      description:
+        'Applies edit operations to a blueprint by id-based paths and validates the result: set (a value), add (an item to a list such as parts or skin.layers), remove (a key, back to the default, or a limb/part; inherited ones get "remove": true), mirror (make a limb or part a pair with side "both", or set a side) and scale (multiply a number or profile; path "" scales the whole creature). Paths look like error paths: "limbs[id=hindleg].length", "parts[id=horns].params.curve", "skin.layers[0].size". With "path", the file is rewritten only when the result is valid. Returns the diff, errors and warnings.',
+      inputSchema: z.object({
+        blueprint: z
+          .record(z.string(), z.unknown())
+          .optional()
+          .describe('The blueprint JSON object (the patched one is returned)'),
+        path: z
+          .string()
+          .optional()
+          .describe('Path to a blueprint JSON file to edit in place, instead of "blueprint"'),
+        ops: patchOpsSchema,
+        dryRun: z.boolean().optional().describe('Check and diff without writing the file'),
+      }),
+    },
+    async (input) =>
+      reply(() => {
+        const result = patch({ blueprint: readBlueprint(input), ops: input.ops });
+        const write = result.ok && input.path !== undefined && !input.dryRun;
+        if (write)
+          writeFileSync(input.path as string, `${JSON.stringify(result.blueprint, null, 2)}\n`);
+        const { blueprint, ...rest } = result;
+        return { ...rest, written: write, ...(input.path === undefined ? { blueprint } : {}) };
+      }),
+  );
+
   for (const [name, file, mimeType, description] of [
     [
       'blueprint-guide',
@@ -200,7 +259,12 @@ export function createServer(): McpServer {
               .optional()
               .describe('Metres per second (default: typical for the gait)'),
             frames: z.number().int().min(2).max(16).optional().describe('Frames (default 8)'),
-            view: z.enum(['side', 'three-quarter', 'top']).optional().describe('Camera'),
+            view: z
+              .enum(['side', 'three-quarter', 'top', 'front'])
+              .optional()
+              .describe(
+                'Camera (default side; top for legless bodies; 3/4 on the head for actions)',
+              ),
           })
           .optional()
           .describe('Render one gait cycle instead of the contact sheet'),

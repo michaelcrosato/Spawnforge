@@ -153,6 +153,8 @@ export class MotionController {
   private readonly halfStride: number;
   /** A legless body whose neck rises well above it in the rest pose. */
   private readonly rearing: boolean;
+  /** Per leg (in `compiled.rig.legs` order): how far the foot was out of reach last frame (m). */
+  readonly legMiss: number[] = [];
   /** √(hip height / 1 m): actions and springs run slower on big creatures. */
   readonly timeScale: number;
   private readonly actionDefs = new Map<
@@ -169,6 +171,7 @@ export class MotionController {
   private actionCount = 0;
   private goals: ActionGoals = {};
   private readonly springRest: Vector3[] = [];
+  private readonly slitherJoints: Vector3[] = [];
 
   constructor(compiled: CompiledCreature, options: MotionOptions = {}) {
     const motion = options.motion ?? compiled.motion;
@@ -852,12 +855,12 @@ export class MotionController {
     this.applyJaw();
 
     // Legs: IK from the posed hips to the planted feet.
-    for (const leg of this.legs) {
+    for (const [k, leg] of this.legs.entries()) {
       const first = leg.rig.bones[0] as number;
       pose.solveBone(first);
       const hip = pose.worldPos[first] as Vector3;
       const pole = scratch1.copy(leg.pole).applyQuaternion(pose.worldRot[rig.root] as Quaternion);
-      solvePrepared(leg.limb, hip, leg.planted, pole, leg.points);
+      this.legMiss[k] = solvePrepared(leg.limb, hip, leg.planted, pole, leg.points);
       leg.rig.bones.forEach((b, k) => {
         pose.aim(b, scratch2.subVectors(leg.points[k + 1] as Vector3, leg.points[k] as Vector3));
       });
@@ -1024,32 +1027,40 @@ export class MotionController {
       return;
     }
     // Place each bone joint along the trail, measured from the head.
-    const joints: Vector3[] = [];
+    // Joints at increasing distances along the trail, in one walk down it.
+    const joints = this.slitherJoints;
+    while (joints.length < chain.length + 1) joints.push(new Vector3());
+    const trail = this.trail;
+    let segment = 1;
+    let acc = 0;
     let distance = 0;
-    const along = (d: number) => {
-      let acc = 0;
-      for (let i = 1; i < this.trail.length; i++) {
-        const a = this.trail[i - 1] as Vector3;
-        const b = this.trail[i] as Vector3;
-        const seg = a.distanceTo(b);
-        if (acc + seg >= d) return new Vector3().lerpVectors(a, b, (d - acc) / (seg || 1));
-        acc += seg;
+    for (let j = 0; j <= chain.length; j++) {
+      if (j > 0) distance += pose.lengths[chain[j - 1] as number] as number;
+      const out = joints[j] as Vector3;
+      let placed = false;
+      while (segment < trail.length) {
+        const a = trail[segment - 1] as Vector3;
+        const b = trail[segment] as Vector3;
+        const length = a.distanceTo(b);
+        if (acc + length >= distance) {
+          out.lerpVectors(a, b, (distance - acc) / (length || 1));
+          placed = true;
+          break;
+        }
+        acc += length;
+        segment++;
       }
-      // Past the end of the trail: continue straight back.
-      const end = this.trail.at(-1) as Vector3;
-      const before = this.trail.at(-2) as Vector3;
-      return end.clone().add(
-        end
-          .clone()
-          .sub(before)
-          .setLength(d - acc),
-      );
-    };
-    joints.push(along(0));
-    for (const b of chain) {
-      distance += pose.lengths[b] as number;
-      joints.push(along(distance));
+      if (!placed) {
+        // Past the end of the trail: continue straight back.
+        const end = trail.at(-1) as Vector3;
+        const before = trail.at(-2) as Vector3;
+        out
+          .subVectors(end, before)
+          .setLength(distance - acc)
+          .add(end);
+      }
     }
+    joints.length = chain.length + 1;
     for (const j of joints)
       j.y = ground(j.x, j.z).height + (pose.restWorldPos[rig.spine[0] as number] as Vector3).y;
     // Torso and neck bones point toward the head; tail bones away from it.

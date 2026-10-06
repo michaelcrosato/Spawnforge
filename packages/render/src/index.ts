@@ -104,6 +104,43 @@ export class Renderer {
     };
   }
 
+  /** Compiles a blueprint in Chromium and returns its fingerprint (see core's `fingerprint`). */
+  async fingerprint(
+    blueprint: unknown,
+    quality: 'low' | 'medium' | 'high' = 'low',
+  ): Promise<string> {
+    return (await this.page.evaluate(
+      ([b, q]) =>
+        (
+          (globalThis as PageGlobals).spawnforgeFingerprint as (
+            b: unknown,
+            q: 'low' | 'medium' | 'high',
+          ) => string
+        )(b, q),
+      [blueprint, quality] as const,
+    )) as string;
+  }
+
+  /**
+   * Compares two PNGs of the same size: the share of pixels differing by more than `threshold`
+   * (0–255) in any channel, and the mean channel difference. For visual regression tests.
+   */
+  async diff(a: Buffer, b: Buffer, threshold = 32): Promise<{ differing: number; mean: number }> {
+    const url = (png: Buffer) => `data:image/png;base64,${png.toString('base64')}`;
+    const result = (await this.page.evaluate(
+      ([x, y, t]) =>
+        (
+          (globalThis as PageGlobals).spawnforgeDiff as (
+            a: string,
+            b: string,
+            t: number,
+          ) => Promise<{ differing: number; mean: number }>
+        )(x, y, t),
+      [url(a), url(b), threshold] as const,
+    )) as { differing: number; mean: number };
+    return { differing: result.differing, mean: result.mean };
+  }
+
   async close(): Promise<void> {
     await this.browser.close();
     await this.server.close();
@@ -126,4 +163,6 @@ export async function renderBlueprint(
 interface PageGlobals {
   spawnforgeReady?: boolean;
   spawnforgeRender?: (request: RenderRequest) => Promise<RenderResponse>;
+  spawnforgeFingerprint?: (blueprint: unknown, quality: 'low' | 'medium' | 'high') => string;
+  spawnforgeDiff?: (a: string, b: string, threshold: number) => Promise<unknown>;
 }

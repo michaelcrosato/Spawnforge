@@ -467,6 +467,7 @@
           "type": {
             "type": "string",
             "enum": [
+              "ear.pointed",
               "eye.basic",
               "horn.curved",
               "spikes.row",
@@ -743,6 +744,67 @@
   "title": "Spawnforge blueprint",
   "description": "A creature blueprint. Lengths are multiples of `scale` (torso length in metres). Module parameters are listed under $defs as \"<kind>:<id>\": part params go in a part's \"params\"; foot, layer, gait and action params sit beside \"type\".",
   "$defs": {
+    "part:ear.pointed": {
+      "description": "Leaf-shaped ear, upright or drooping; use side \"both\" for a pair.",
+      "type": "object",
+      "properties": {
+        "length": {
+          "default": 0.12,
+          "description": "Length in torso lengths",
+          "type": "number",
+          "minimum": 0.02,
+          "maximum": 0.6
+        },
+        "width": {
+          "default": 0.05,
+          "description": "Widest half-width in torso lengths",
+          "type": "number",
+          "minimum": 0.01,
+          "maximum": 0.25
+        },
+        "thickness": {
+          "default": 0.3,
+          "description": "Thickness as a share of the width: low is a flat leaf, 1 a round cone",
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 1
+        },
+        "curve": {
+          "default": 15,
+          "description": "Degrees the ear bends; positive sweeps back toward the tail, negative forward",
+          "type": "number",
+          "minimum": -120,
+          "maximum": 120
+        },
+        "lean": {
+          "default": 0,
+          "description": "Degrees the root tilts forward (+) or back (-)",
+          "type": "number",
+          "minimum": -90,
+          "maximum": 90
+        },
+        "droop": {
+          "default": 0,
+          "description": "How much the ear flops outward and down, 0 upright to 1 hanging",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "color": {
+          "default": "base",
+          "description": "Colour at the root: a palette name or a colour",
+          "type": "string",
+          "minLength": 1
+        },
+        "tipColor": {
+          "default": "base",
+          "description": "Colour at the tip",
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
     "part:eye.basic": {
       "description": "Round eyeball with an iris and pupil that turns to look at targets and blinks.",
       "type": "object",

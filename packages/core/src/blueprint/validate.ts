@@ -385,7 +385,20 @@ function partParamHints(
   registry: Registry,
 ): Issue[] {
   const parts = Array.isArray(doc.parts) ? doc.parts : [];
+  // Foot parameters written on the limb itself belong in its `foot`.
+  const footKeys = new Set(
+    registry
+      .list('part')
+      .filter((p) => p.slot === 'foot')
+      .flatMap((p) => Object.keys((p.params as unknown as { shape?: object }).shape ?? {})),
+  );
   return issues.map((issue) => {
+    const limb = /^limbs\[id=[^\]]+\]\.([A-Za-z0-9_]+)$/.exec(issue.path);
+    if (issue.code === 'unknown_key' && limb && footKeys.has(limb[1] ?? ''))
+      return {
+        ...issue,
+        fix: `move "${limb[1]}" into "foot", e.g. "foot": { "type": "foot.claw", "${limb[1]}": … }`,
+      };
     const m = /^parts\[id=([^\]]+)\]\.([A-Za-z0-9_]+)$/.exec(issue.path);
     if (issue.code !== 'unknown_key' || !m) return issue;
     const part = parts.find((p) => isRecord(p) && p.id === m[1]);
@@ -665,6 +678,22 @@ function semanticChecks(doc: ResolvedDoc, registry: Registry): Issue[] {
       );
     }
   });
+  // Each gait or action is listed once; a repeat would be ignored.
+  for (const key of ['gaits', 'actions'] as const) {
+    const seen = new Set<string>();
+    doc.motion[key].forEach((ref, i) => {
+      if (seen.has(ref.type))
+        warn(
+          `motion.${key}[${i}]`,
+          'duplicate',
+          `"${ref.type}" is listed twice; only the first counts`,
+          {
+            fix: 'remove the repeat and put all its parameters on the first entry',
+          },
+        );
+      seen.add(ref.type);
+    });
+  }
   if (doc.motion.gaits.length === 0 && compatible.length > 0) {
     warn('motion.gaits', 'no_gait', 'no gaits, so the creature cannot move', {
       fix: `add "${compatible[0]}"`,

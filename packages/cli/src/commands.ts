@@ -1,13 +1,18 @@
 import {
+  type Analysis,
+  analyzeCreature,
+  applyPatch,
   blueprintSchemaFor,
   type CatalogEntry,
   createRegistry,
   didYouMean,
   FORMAT,
+  formatDiff,
   type Issue,
   MODULE_KINDS,
   type ModuleKind,
   type Pack,
+  type PatchOp,
   paramsJsonSchema,
   type Registry,
   validateBlueprint,
@@ -185,6 +190,106 @@ export function validate(
     warnings: result.warnings,
     ...(result.blueprint ? { blueprint: result.blueprint } : {}),
     ...(options.expanded && result.creature ? { creature: result.creature } : {}),
+  };
+}
+
+const PATH = z
+  .string()
+  .describe('Id-based path, e.g. "limbs[id=hindleg].length" or "skin.layers[0].size"');
+/** Edit operations for `patch`, checked strictly like blueprints. */
+export const patchOpsSchema = z
+  .array(
+    z.discriminatedUnion('op', [
+      z.strictObject({ op: z.literal('set'), path: PATH, value: z.unknown() }),
+      z.strictObject({
+        op: z.literal('add'),
+        path: PATH.describe('The list to add to, e.g. "parts" or "skin.layers"'),
+        value: z.unknown(),
+      }),
+      z.strictObject({ op: z.literal('remove'), path: PATH }),
+      z.strictObject({
+        op: z.literal('mirror'),
+        path: PATH.describe('A limb or part, e.g. "parts[id=horn]"'),
+        side: z.enum(['both', 'left', 'right', 'center']).optional(),
+      }),
+      z.strictObject({
+        op: z.literal('scale'),
+        path: PATH.describe('A number or profile; "" scales the whole creature'),
+        by: z.number().positive(),
+      }),
+    ]),
+  )
+  .min(1)
+  .max(100);
+
+export interface PatchCommandResult {
+  ok: boolean;
+  /** One line per change: `~ path: from → to`, `+ path: value`, `- path`. */
+  diff: string[];
+  errors: readonly Issue[];
+  warnings: readonly Issue[];
+  /** The patched blueprint, to write back when `ok`. */
+  blueprint: Record<string, unknown>;
+}
+
+/**
+ * Applies edit operations (`set`, `add`, `remove`, `mirror`, `scale`) to a blueprint by
+ * id-based paths and validates the result. Writing it back is up to the caller, and only when
+ * `ok`, so a file never holds an invalid blueprint.
+ */
+export function patch(
+  options: { blueprint: unknown; ops: unknown },
+  registry = getRegistry(),
+): PatchCommandResult {
+  if (typeof options.blueprint !== 'object' || options.blueprint === null)
+    throw new CommandError('the blueprint must be a JSON object');
+  const ops = patchOpsSchema.safeParse(options.ops);
+  if (!ops.success) {
+    const first = ops.error.issues[0];
+    throw new CommandError(
+      `bad operations at ${first?.path.join('.') || '(root)'}: ${first?.message ?? 'invalid'}`,
+      'pass a list like [{"op":"set","path":"body.tail.length","value":1.2}]; ops are set, add, remove, mirror and scale',
+    );
+  }
+  const result = applyPatch(
+    options.blueprint as Record<string, unknown>,
+    ops.data as PatchOp[],
+    registry,
+  );
+  return {
+    ok: result.ok,
+    diff: formatDiff(result.diff),
+    errors: result.errors,
+    warnings: result.warnings,
+    blueprint: result.blueprint,
+  };
+}
+
+export type AnalyzeResult = { ok: false; errors: readonly Issue[] } | ({ ok: true } & Analysis);
+
+/**
+ * Measures a valid blueprint, runs its motion for two gait cycles on flat and rough ground and
+ * returns measurements, speeds, motion checks, plausibility warnings and a description.
+ */
+export function analyze(
+  options: { blueprint: unknown; terrainSeed?: number },
+  registry = getRegistry(),
+): AnalyzeResult {
+  const checked = validateBlueprint(options.blueprint, registry, { minimal: false });
+  if (!checked.ok || !checked.creature) return { ok: false, errors: checked.errors };
+  const analysis = analyzeCreature(checked.creature, registry, {
+    ...(options.terrainSeed !== undefined ? { terrainSeed: options.terrainSeed } : {}),
+  });
+  // Millimetres and grams are plenty; long floats only make the output harder to read.
+  const rounded = JSON.parse(
+    JSON.stringify(analysis, (_key, value) =>
+      typeof value === 'number' ? Number(value.toFixed(3)) : value,
+    ),
+  ) as Analysis;
+  return {
+    ok: true,
+    ...rounded,
+    warnings: [...checked.warnings, ...analysis.warnings],
   };
 }
 

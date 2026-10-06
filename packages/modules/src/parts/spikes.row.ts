@@ -50,6 +50,7 @@ export default definePart({
     attach: { on: 'torso', from: 0.05, to: 0.95, angle: 0 },
     params: { count: 9, height: [0.08, 0.15, 0.06] },
   },
+  describe: (p) => `a row of ${p.count as number} spikes`,
   hooks: {
     build(ctx, raw) {
       const p = raw as Params;

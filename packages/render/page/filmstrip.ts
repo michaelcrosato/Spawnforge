@@ -155,9 +155,26 @@ async function drawAction(
 ): Promise<MotionInfo> {
   const controller = new MotionController(compiled, { registry });
   for (let i = 0; i < 120; i++) controller.update(STEP);
-  const head = controller.pose.worldPos[compiled.rig.head] as THREE.Vector3;
-  const target = head.clone().add(new THREE.Vector3(0, -0.15, 0.7).multiplyScalar(compiled.scale));
+  const head = (controller.pose.worldPos[compiled.rig.head] as THREE.Vector3).clone();
+  // Bite and roar at a point ahead; look to one side, so the turn shows.
+  const target = head
+    .clone()
+    .add(
+      new THREE.Vector3(...(action === 'look' ? [0.9, 0.1, 0.4] : [0, -0.15, 0.7])).multiplyScalar(
+        compiled.scale,
+      ),
+    );
   controller.act(action, { target });
+  // Frame the head and neck, with room for a lunge or a raised head.
+  const neckRoot = compiled.rig.neck[0];
+  const base = (
+    neckRoot === undefined ? head : (controller.pose.worldPos[neckRoot] as THREE.Vector3)
+  ).clone();
+  const headLength = compiled.bones.lengths[compiled.rig.head] ?? 0.2 * compiled.scale;
+  const closeUp = {
+    centre: head.clone().lerp(base, 0.35),
+    radius: Math.max(head.distanceTo(base) * 0.75 + headLength * 1.6, 0.3 * compiled.scale),
+  };
   const frames = Math.max(2, Math.min(16, Math.round(request.frames ?? 8)));
   const { cols, size, top } = layout;
   const events: { type: string; time: number }[] = [];
@@ -169,12 +186,20 @@ async function drawAction(
     if (state) duration = state.duration;
     const progress = state ? state.progress : 1;
     if (progress >= next / (frames - 1) - 1e-9) {
-      await drawFrame(controller, creature, stage, request, ctx, {
-        x: (next % cols) * size,
-        y: top + Math.floor(next / cols) * size,
-        size,
-        label: `${next + 1}  t = ${(controller.time - start).toFixed(2)} s`,
-      });
+      await drawFrame(
+        controller,
+        creature,
+        stage,
+        request,
+        ctx,
+        {
+          x: (next % cols) * size,
+          y: top + Math.floor(next / cols) * size,
+          size,
+          label: `${next + 1}  t = ${(controller.time - start).toFixed(2)} s`,
+        },
+        closeUp,
+      );
       next++;
       continue;
     }
@@ -217,8 +242,11 @@ async function drawFrame(
   request: FilmstripRequest,
   ctx: CanvasRenderingContext2D,
   at: { x: number; y: number; size: number; label: string },
+  /** Frame this sphere (world space) instead of the whole creature, e.g. the head for actions. */
+  closeUp?: { centre: THREE.Vector3; radius: number },
 ): Promise<void> {
-  const { renderer, scene, key, ground, grid, gridCell, centre, extent, span } = stage;
+  const { renderer, scene, key, ground, grid, gridCell, centre, extent } = stage;
+  const span = closeUp ? closeUp.radius * 2 : stage.span;
   applyPose(creature, controller.pose);
   creature.object.updateMatrixWorld(true);
   // The camera, ground and light follow the creature; grid lines stay put in the world.
@@ -227,7 +255,7 @@ async function drawFrame(
   const bones = new THREE.Box3().setFromPoints(controller.pose.worldPos);
   const mid = bones.getCenter(new THREE.Vector3());
   const p = controller.position;
-  const focus = new THREE.Vector3(mid.x, centre.y, mid.z);
+  const focus = closeUp ? closeUp.centre.clone() : new THREE.Vector3(mid.x, centre.y, mid.z);
   ground.position.set(p.x, 0, p.z);
   grid.position.set(
     Math.round(p.x / gridCell) * gridCell,
@@ -237,8 +265,8 @@ async function drawFrame(
   key.position.copy(focus).add(new THREE.Vector3(span * 1.2, span * 2.2, span * 1.6));
   key.target.position.copy(focus);
   key.target.updateMatrixWorld();
-  // Legless bodies show their wave from above.
-  const view = request.view ?? (controller.legless ? 'top' : 'side');
+  // Legless bodies show their wave from above; actions read best at 3/4.
+  const view = request.view ?? (closeUp ? 'three-quarter' : controller.legless ? 'top' : 'side');
   let camera: THREE.Camera;
   if (view === 'three-quarter') {
     const persp = new THREE.PerspectiveCamera(30, 1, span * 0.002, span * 20);
@@ -246,14 +274,18 @@ async function drawFrame(
     persp.lookAt(focus);
     camera = persp;
   } else {
-    const half =
-      view === 'top'
+    const half = closeUp
+      ? closeUp.radius * 1.1
+      : view === 'top'
         ? (Math.max(extent.x, extent.z) / 2) * 1.25
         : (Math.max(extent.z, extent.y) / 2) * 1.25;
     const ortho = new THREE.OrthographicCamera(-half, half, half, -half, span * 0.01, span * 20);
     if (view === 'top') {
       ortho.position.set(focus.x, focus.y + span * 3, focus.z);
       ortho.up.set(0, 0, 1);
+    } else if (view === 'front') {
+      // From ahead (the creature walks toward +Z), to show the legs' stance and spread.
+      ortho.position.set(focus.x, focus.y + span * 0.2, focus.z + span * 3);
     } else {
       // From the side and a little above, so the grid shows feet staying put on the ground.
       ortho.position.set(focus.x + span * 3, focus.y + span * 0.55, focus.z);
