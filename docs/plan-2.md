@@ -107,7 +107,7 @@ since anatomy comes before the new vocabulary.
 
 | Milestone | Effort | Why this level | Needs | Status |
 | --- | --- | --- | --- | --- |
-| [7.1 Carry-overs](#71-carry-overs-and-tidying) | high (lowered) | Small, local fixes, each specified here and testable | | Not started |
+| [7.1 Carry-overs](#71-carry-overs-and-tidying) | high (lowered) | Small, local fixes, each specified here and testable | | Done ([#10](https://github.com/michaelcrosato/Spawnforge/pull/10)) |
 | [7.2 Migrations](#72-migrations-a-command-and-a-corpus-test) | high (lowered) | The migration chain exists; this adds a command, writers and a corpus test | | Not started |
 | [7.3 Format 0.2](#73-format-02-the-new-vocabulary-and-a-format-eval) | **max (raised)** | The format is the contract for models, saved files and phases 8–12 | 7.2 | Not started |
 | [7.4 Rig lists](#74-rig-lists-without-a-visible-change) | xhigh (confirmed) | A wide refactor, but unchanged goldens are a strict oracle | 7.3 | Not started |
@@ -364,6 +364,13 @@ packaging ready, so later phases spend their effort on creatures.
 **Done when** each change has tests and docs (blueprint.md, CLI help, MCP descriptions), the
 goldens are unchanged, and the core names no module. The baked `idle` clip may keep its name:
 it names the ambient motion it holds, not the action module.
+
+**Decision (2026-10-06).** `aim` is solved when the horn is built, from the socket's real frame,
+not in `normalize`: before the body is built the frame is unknown, and a level-section guess
+missed badly on the jaw. `aim` replaces `lean` and `turn`, and the horn's `normalize` hook drops
+them. Cadence counts one step per foot per cycle, as the agents' feedback did; the second fix
+for a creature meant to be tiny is a `skittish` temperament, since its legs cannot reach far
+enough for longer strides.
 
 ### 7.2 Migrations: a command and a corpus test
 
