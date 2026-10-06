@@ -1,30 +1,34 @@
 {
   "bog-troll": {
-    "low": "daef0bb1",
-    "medium": "69cb0818"
+    "low": "882ff59a",
+    "medium": "24aa94d6"
   },
   "ember-beetle": {
-    "low": "baeb93df",
-    "medium": "868fbe1e"
+    "low": "13506973",
+    "medium": "45a024bd"
   },
   "grey-wolf": {
-    "low": "567d4475",
-    "medium": "4c9c1aa7"
+    "low": "8dcb330d",
+    "medium": "88b262eb"
   },
   "reed-viper": {
-    "low": "3f654ec0",
-    "medium": "3df20c66"
+    "low": "f80424e4",
+    "medium": "22c5363f"
   },
   "ridgeback-stalker": {
-    "low": "ea4950cc",
-    "medium": "2641d0c7"
+    "low": "a3d74dba",
+    "medium": "8ad7854f"
   },
   "rust-raptor": {
-    "low": "af440a8a",
-    "medium": "7c3a8f9d"
+    "low": "21d7ec06",
+    "medium": "0d5b3563"
+  },
+  "terror-bird": {
+    "low": "bc7211cd",
+    "medium": "74f3cc98"
   },
   "tusk-boar": {
-    "low": "2156372e",
-    "medium": "8d296367"
+    "low": "20b4fa6d",
+    "medium": "334ead05"
   }
 }

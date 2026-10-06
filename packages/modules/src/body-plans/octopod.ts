@@ -66,13 +66,13 @@ export default defineBodyPlan({
         id: 'eyes',
         type: 'eye.basic',
         attach: { on: 'head', at: 0.25, angle: 35 },
-        params: { size: 0.022, scleraColor: '#140c10', irisColor: '#401020' },
+        params: { scale: 1.3, lids: false, scleraColor: '#140c10', irisColor: '#401020' },
       },
       {
         id: 'side-eyes',
         type: 'eye.basic',
         attach: { on: 'head', at: 0.4, angle: 70 },
-        params: { size: 0.014, scleraColor: '#140c10', irisColor: '#401020' },
+        params: { scale: 0.8, lids: false, scleraColor: '#140c10', irisColor: '#401020' },
       },
     ],
     skin: {

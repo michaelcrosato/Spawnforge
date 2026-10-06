@@ -11,6 +11,7 @@ import {
   torsoFactor,
   torsoPlan,
 } from './anatomy.ts';
+import { headDetails, type MouthShape, mouthShape } from './head.ts';
 import { type LimbIkSetup, solveLimb } from './ik.ts';
 import type { PartHooks } from './parts.ts';
 import { sampleProfile } from './profile.ts';
@@ -100,6 +101,8 @@ export interface SkeletonBuild extends Skeleton {
   readonly paths: ReadonlyMap<string, readonly PathSegment[]>;
   /** Helper bones that take half of a joint's rotation: [helper, upper bone, lower bone]. */
   readonly helpers: readonly (readonly [number, number, number])[];
+  /** Per head (as `rig.heads`), its mouth's outline at the cut; none without a jaw. */
+  readonly mouths: readonly (MouthShape | undefined)[];
   /** Notes for validation warnings, e.g. legs that cannot reach the ground. */
   readonly notes: readonly {
     readonly path: string;
@@ -666,7 +669,7 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
     b.helpers.push([helper, head, jaw]);
   }
   const headRootRadius = neck.length > 0 ? sampleProfile(neckSpec.radius, 0) * L : front.radius;
-  b.chain(
+  const headChain = b.chain(
     {
       id: 'head',
       section: 'head',
@@ -677,9 +680,29 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
     },
     headBones,
   );
-  b.path('head', [
+  const headPath: PathSegment[] = [
     { bone: head, t0: (b.bones[head] as BoneDef).t0, t1: (b.bones[head] as BoneDef).t1 },
-  ]);
+  ];
+  b.path('head', headPath);
+  // Head details (docs/design/8.3-heads.md): lips, a brow over each eye, cheekbones, nostrils.
+  const mouth =
+    jaw >= 0 ? mouthShape(b.bones, b.chains[headChain] as ChainDef, head, jaw) : undefined;
+  const eyePlaces = spec.parts
+    .filter((p) => p.on === 'head' && registry.get('part', p.type)?.material === 'eye')
+    .map((p) => ({ at: p.at, angle: p.angle, mirror: p.mirror }));
+  b.chains[headChain] = {
+    ...(b.chains[headChain] as ChainDef),
+    masses: headDetails({
+      bones: b.bones,
+      head,
+      jaw,
+      shape: mouth,
+      frame: (at) => samplePath(b.bones, headPath, at),
+      lips: headSpec.lips,
+      brow: headSpec.brow,
+      eyes: eyePlaces,
+    }),
+  };
 
   // Tail: leaves the torso's back end, then bends by `curl` after `curlStart`.
   const tailSpec = spec.body.tail;
@@ -1080,7 +1103,15 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
       legRoots.length > 0 ? legRoots.reduce((a, c) => a + c, 0) / legRoots.length : center.y,
     posture,
   };
-  return { bones: b.bones, chains: b.chains, rig, paths: b.paths, helpers: b.helpers, notes };
+  return {
+    bones: b.bones,
+    chains: b.chains,
+    rig,
+    paths: b.paths,
+    helpers: b.helpers,
+    notes,
+    mouths: [mouth],
+  };
 }
 
 export type { BoneSection };

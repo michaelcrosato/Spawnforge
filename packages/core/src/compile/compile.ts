@@ -7,7 +7,8 @@ import type { MotionData } from '../motion/controller.ts';
 import { motionData } from '../motion/gaits.ts';
 import type { Registry } from '../registry.ts';
 import { type SkinMaterialSpec, skinMaterialSpec } from '../shading/compose.ts';
-import { cutMouth, innerMouth, type MouthLine, mouthLine } from './mouth.ts';
+import { type MouthShape, refineHeads } from './head.ts';
+import { type CutResult, cutMouth, lineY, type MouthLine, mouthInside } from './mouth.ts';
 import { buildParts, PartSink } from './parts.ts';
 import { buildSdf, primBone, SdfEvaluator } from './sdf.ts';
 import { buildSkeleton } from './skeleton.ts';
@@ -36,6 +37,12 @@ export type Quality = 'low' | 'medium' | 'high';
 /** Grid cells along the creature's longest axis per quality. */
 export const QUALITY_CELLS: Record<Quality, number> = { low: 48, medium: 96, high: 128 };
 /** Most skin triangles per quality (medium is the plan's 30k budget, less the mouth and tubes). */
+/** Most triangles a head's refinement aims for (docs/design/8.3-heads.md). */
+export const HEAD_TRIANGLES: Record<Quality, number> = { low: 1_500, medium: 4_000, high: 9_000 };
+/** Most skin triangles in all, which the heads' refinement keeps to (medium is the plan's). */
+export const SKIN_LIMIT: Record<Quality, number> = { low: 10_000, medium: 30_000, high: 66_000 };
+/** Skin triangles an eye's lids add, counted before they are built. */
+const LID_TRIANGLES = 600;
 export const TRIANGLE_BUDGET: Record<Quality, number> = {
   low: 9_000,
   medium: 27_000,
@@ -156,6 +163,11 @@ export interface CompiledCreature {
   }[];
   /** Body chains as capsules (bone, radius), free hit volumes for games. */
   readonly hitCapsules: readonly { readonly bone: number; readonly radius: number }[];
+  /**
+   * What each part built, by its id in the blueprint: its largest piece's size (metres) and how
+   * many pieces in a row, as the module reported them. Stats read these.
+   */
+  readonly partSizes: Readonly<Record<string, { readonly size: number; readonly count: number }>>;
   readonly stats: {
     readonly triangles: { readonly skin: number; readonly parts: number; readonly eyes: number };
     readonly vertices: number;
@@ -278,28 +290,77 @@ export function compileCreature(
   let table = computeWeights(positions, indices, weightOptions);
   lap('weights');
 
-  // 5. Mouths: cut each head with a jaw along its mouth line; lower copies follow its jaw.
+  // 4b. Heads: refined toward their own edge length, so their details show at any size.
+  {
+    const eyes = spec.parts.filter((p) => registry.get('part', p.type)?.material === 'eye');
+    const refined = refineHeads({
+      positions,
+      normals,
+      indices,
+      table,
+      bones,
+      heads: skeleton.rig.heads,
+      chains: skeleton.chains,
+      mouths: skeleton.mouths,
+      sdf,
+      culling,
+      cell: surface.grid.cell,
+      perRadius: { low: 8, medium: 12, high: 16 }[quality],
+      allowance: HEAD_TRIANGLES[quality],
+      limit: SKIN_LIMIT[quality],
+      later: 60 * sdf.thinBones.length + LID_TRIANGLES * eyes.length,
+    });
+    positions = refined.positions;
+    normals = refined.normals;
+    indices = refined.indices;
+    table = refined.table;
+  }
+  lap('refine');
+
+  // 5. Mouths: cut each head with a jaw exactly along its mouth line; below it follows the jaw.
   const mouths: (MouthLine | undefined)[] = skeleton.rig.heads.map(() => undefined);
+  const edges: (CutResult['boundary'] | undefined)[] = skeleton.rig.heads.map(() => undefined);
   for (const [i, { head, jaw }] of skeleton.rig.heads.entries()) {
-    if (jaw < 0) continue;
-    const mouth = mouthLine(bones[head] as BoneDef, bones[jaw] as BoneDef);
-    mouths[i] = mouth;
-    const cut = cutMouth(positions, normals, indices, table, head, jaw, mouth);
-    const next = new WeightTable(cut.source.length);
-    for (let v = 0; v < cut.source.length; v++) {
-      const entries = table.entries(cut.source[v] as number);
-      if (cut.lower[v]) {
-        next.set(v, [[jaw, 1]]);
-      } else {
-        const kept = entries.filter(([b]) => b !== jaw);
-        next.set(v, kept.length > 0 && kept.length < entries.length ? kept : entries);
-        next.normalize(v);
-      }
-    }
+    const shape = skeleton.mouths[i];
+    if (jaw < 0 || !shape) continue;
+    mouths[i] = shape.line;
+    const own = (bone: number) => {
+      const field = buildSdf(
+        bones,
+        [
+          {
+            id: 'own',
+            section: 'head',
+            owner: 'head',
+            bones: [bone],
+            parentBone: -1,
+            blend: 0,
+            masses: [],
+          },
+        ],
+        0,
+      );
+      const e = new SdfEvaluator(field);
+      return (x: number, y: number, z: number) => e.eval(x, y, z);
+    };
+    const dHead = own(head);
+    const dJaw = own(jaw);
+    const cut = cutMouth(
+      positions,
+      normals,
+      indices,
+      table,
+      head,
+      jaw,
+      shape.line,
+      (bones[head] as BoneDef).r0,
+      (x, y, z) => dJaw(x, y, z) - dHead(x, y, z),
+    );
     positions = cut.positions;
     normals = cut.normals;
     indices = cut.indices;
-    table = next;
+    table = cut.table;
+    edges[i] = cut.boundary;
   }
   lap('mouth');
 
@@ -379,17 +440,37 @@ export function compileCreature(
     }
     flush();
   }
+  // The inside of each mouth: lips' inner faces, gums, the cavity and the tongue.
+  const extraDepth: number[] = [];
+  const extraKind: number[] = [];
   for (const [i, { head, jaw }] of skeleton.rig.heads.entries()) {
-    const mouth = mouths[i];
-    if (!mouth) continue;
-    const pouch = innerMouth(mouth);
+    const shape = skeleton.mouths[i];
+    const edge = edges[i];
+    if (!shape || !edge) continue;
     const base = (positions.length + extraPos.length) / 3;
-    extraPos.push(...pouch.positions);
-    extraNrm.push(...pouch.normals);
-    for (const i of pouch.indices) extraIdx.push(base + i);
-    for (const lower of pouch.lower) {
-      extraWeights.push([[lower ? jaw : head, 1]]);
+    const inside = mouthInside(
+      {
+        line: shape.line,
+        centre: shape.centre,
+        lips: spec.body.head.lips,
+        tongue: spec.body.head.tongue,
+        radius: shape.radiusAt,
+        room: shape.room,
+        head,
+        jaw,
+      },
+      edge,
+      positions,
+      base,
+    );
+    extraPos.push(...inside.positions);
+    extraNrm.push(...inside.normals);
+    extraIdx.push(...inside.indices);
+    for (const w of inside.weights) extraWeights.push(w);
+    for (let k = 0; k < inside.depth.length; k++) {
       extraFlag.push(1);
+      extraDepth[extraFlag.length - 1] = inside.depth[k] as number;
+      extraKind[extraFlag.length - 1] = inside.kind[k] as number;
     }
   }
   if (extraPos.length > 0) {
@@ -414,14 +495,19 @@ export function compileCreature(
     table = next;
   }
   const vertexCount = positions.length / 3;
-  const mouthInside = new Uint8Array(vertexCount);
+  // Per vertex inside a mouth: its depth (0 at the lips, 1 at the throat) and kind; -1 outside.
+  const inMouth = new Float32Array(vertexCount).fill(-1);
+  const mouthKind = new Uint8Array(vertexCount);
   extraFlag.forEach((f, i) => {
-    mouthInside[vertexCount - extraFlag.length + i] = f;
+    if (!f) return;
+    const v = vertexCount - extraFlag.length + i;
+    inMouth[v] = extraDepth[i] ?? 0;
+    mouthKind[v] = extraKind[i] ?? 0;
   });
   lap('tubes');
 
   // 7. Body coordinates, read by textures and part placement instead of UVs.
-  const { body, region } = bodyCoordinates(
+  let { body, region } = bodyCoordinates(
     positions,
     normals,
     table,
@@ -429,14 +515,16 @@ export function compileCreature(
     skeleton.paths.get('spine') ?? [],
     sdf,
     culling,
-    mouthInside,
+    inMouth,
+    mouthKind,
     spec,
+    lipLine(skeleton.mouths, spec.body.head.lips),
   );
   lap('coords');
 
   // 8. Helper bones take half a joint's rotation.
   applyHelpers(table, skeleton.helpers);
-  const skinPack = packTop4(table);
+  let skinPack = packTop4(table);
   lap('pack');
 
   // 9. Parts and eyes, snapped onto the skin.
@@ -466,10 +554,11 @@ export function compileCreature(
         id: h.id,
         head: h.head,
         jaw: h.jaw,
-        mouth: mouths[i],
+        mouth: h.jaw >= 0 ? skeleton.mouths[i] : undefined,
       })),
       main: skeleton.rig.main,
       palette: spec.skin.palette,
+      lips: spec.body.head.lips,
       scale: L,
       seed: spec.seed,
       registry,
@@ -498,6 +587,76 @@ export function compileCreature(
   const partsPack = packWeights(sink.parts.weights);
   const eyesPack = packWeights(sink.eyes.weights);
 
+  // Eyelids join the skin, each vertex on its lid's bone, coloured like the nearest skin of the
+  // head (docs/design/8.3-heads.md).
+  if (sink.lids.indices.length > 0) {
+    const lid = sink.lids;
+    const n0 = positions.length / 3;
+    const added = lid.positions.length / 3;
+    const lo = new Vector3(Infinity, Infinity, Infinity);
+    const hi = new Vector3(-Infinity, -Infinity, -Infinity);
+    const p = new Vector3();
+    for (let v = 0; v < added; v++) {
+      p.fromArray(lid.positions, v * 3);
+      lo.min(p);
+      hi.max(p);
+    }
+    const pad = hi.distanceTo(lo) * 0.25;
+    lo.subScalar(pad);
+    hi.addScalar(pad);
+    const near: number[] = [];
+    for (let v = 0; v < n0; v++) {
+      if ((body[v * 4 + 2] as number) <= -0.5 || (region[v * 4] as number) < 0.5) continue;
+      p.fromArray(positions, v * 3);
+      if (p.x >= lo.x && p.x <= hi.x && p.y >= lo.y && p.y <= hi.y && p.z >= lo.z && p.z <= hi.z)
+        near.push(v);
+    }
+    const grow = <T extends Float32Array | Uint32Array | Uint16Array>(
+      a: T,
+      extra: number,
+      make: (n: number) => T,
+    ) => {
+      const out = make(a.length + extra);
+      out.set(a);
+      return out;
+    };
+    positions = grow(positions, added * 3, (n) => new Float32Array(n));
+    normals = grow(normals, added * 3, (n) => new Float32Array(n));
+    positions.set(lid.positions, n0 * 3);
+    normals.set(lid.normals, n0 * 3);
+    const idx = grow(indices, lid.indices.length, (n) => new Uint32Array(n));
+    lid.indices.forEach((i, k) => {
+      idx[indices.length + k] = n0 + i;
+    });
+    indices = idx;
+    body = grow(body, added * 4, (n) => new Float32Array(n));
+    region = grow(region, added * 4, (n) => new Float32Array(n));
+    skinPack = {
+      skinIndex: grow(skinPack.skinIndex, added * 4, (n) => new Uint16Array(n)),
+      skinWeight: grow(skinPack.skinWeight, added * 4, (n) => new Float32Array(n)),
+    };
+    const q = new Vector3();
+    for (let v = 0; v < added; v++) {
+      p.fromArray(lid.positions, v * 3);
+      let best = -1;
+      let bestD = Infinity;
+      for (const s of near) {
+        const d = q.fromArray(positions, s * 3).distanceToSquared(p);
+        if (d < bestD) {
+          bestD = d;
+          best = s;
+        }
+      }
+      const w = n0 + v;
+      if (best >= 0) {
+        body.set(body.subarray(best * 4, best * 4 + 4), w * 4);
+        region.set(region.subarray(best * 4, best * 4 + 4), w * 4);
+      } else region[w * 4] = 1;
+      skinPack.skinIndex[w * 4] = lid.bones[v] as number;
+      skinPack.skinWeight[w * 4] = 1;
+    }
+  }
+
   // 10. Bones as plain data.
   const bonesData = bonesToData(bones);
   const headOf = (bone: number): number => {
@@ -517,7 +676,7 @@ export function compileCreature(
     })),
     main: skeleton.rig.main,
     tails: skeleton.rig.tails,
-    chains: skeleton.rig.chains,
+    chains: [...skeleton.rig.chains, ...sink.lids.chains],
     legs: skeleton.rig.legs.map((l) => ({ ...l, restFoot: v3(l.restFoot), pole: v3(l.pole) })),
     arms: skeleton.rig.arms.map((a) => ({ ...a, pole: v3(a.pole) })),
     wings: skeleton.rig.wings,
@@ -617,6 +776,7 @@ export function compileCreature(
       iris: new Float32Array(sink.eyes.iris),
       sclera: new Float32Array(sink.eyes.sclera),
     },
+    partSizes: Object.fromEntries(sink.sizes),
     material: skinMaterialSpec(
       spec.skin.palette.base as string,
       spec.skin.material,
@@ -632,7 +792,13 @@ export function compileCreature(
       .map((b, i) => ({ bone: i, radius: Math.max(b.r0, b.r1), skin: b.skin, section: b.section }))
       .filter((b) => b.skin && b.section !== 'toe')
       .map(({ bone, radius }) => ({ bone, radius })),
-    stats: { triangles, vertices: vertexCount, bones: bones.length, cell: grid.cell, timings },
+    stats: {
+      triangles,
+      vertices: positions.length / 3,
+      bones: bones.length,
+      cell: grid.cell,
+      timings,
+    },
     warnings,
   };
 }
@@ -739,6 +905,38 @@ function gameSockets(
   return sockets;
 }
 
+/**
+ * How much a point lies on a mouth's line (0 to 1): within half the lips' thickness of the cut,
+ * in front of the corner, fading in over a tenth of the skull's radius behind it.
+ */
+function lipLine(
+  mouths: readonly (MouthShape | undefined)[],
+  lips: number,
+): (p: Vector3) => number {
+  const shapes = mouths.filter((m): m is MouthShape => m !== undefined);
+  const d = new Vector3();
+  return (p) => {
+    let best = 0;
+    for (const shape of shapes) {
+      const m = shape.line;
+      d.subVectors(p, m.origin);
+      const z = d.dot(m.forward);
+      const r = shape.radiusAt(z);
+      const fade = smoothstep(m.corner - 0.1 * r, m.corner, z);
+      if (fade <= 0 || z > m.tip + 0.1 * r) continue;
+      const width = 0.5 * (0.04 + 0.2 * lips) * r;
+      const off = Math.abs(d.dot(m.up) - lineY(m, z));
+      best = Math.max(best, 0.85 * fade * (1 - smoothstep(0, width, off)));
+    }
+    return best;
+  };
+}
+
+const smoothstep = (e0: number, e1: number, x: number) => {
+  const t = Math.min(1, Math.max(0, (x - e0) / (e1 - e0)));
+  return t * t * (3 - 2 * t);
+};
+
 /** Body coordinates per vertex, blended by skin weight. */
 function bodyCoordinates(
   positions: Float32Array,
@@ -748,8 +946,10 @@ function bodyCoordinates(
   spinePath: readonly { bone: number; t0: number; t1: number }[],
   sdf: import('./sdf.ts').Sdf,
   culling: import('./surface-nets.ts').PrimCulling,
-  mouthInside: Uint8Array,
+  mouthDepth: Float32Array,
+  mouthKind: Uint8Array,
   spec: CreatureSpec,
+  lip: (p: Vector3) => number,
 ): { body: Float32Array; region: Float32Array } {
   const n = positions.length / 3;
   const body = new Float32Array(n * 4);
@@ -857,13 +1057,22 @@ function bodyCoordinates(
       limb /= sum;
       for (let k = 0; k < 4; k++) reg[k] = (reg[k] as number) / sum;
     }
+    // Inside a mouth, `limb` holds -1 - depth and `crease` the kind (docs/design/8.3-heads.md).
+    const depth = mouthDepth[v] as number;
     let crease = 0;
-    if (!mouthInside[v]) {
+    if (depth < 0) {
       const prims = culling.primsOf(culling.blockAt(p.x, p.y, p.z));
       const d = evaluator.eval(p.x, p.y, p.z, prims);
       crease = Math.min(1, Math.max(0, (evaluator.union - d) / blend));
+      // The lips' line reads as a crease, so a shut mouth shows where it opens.
+      crease = Math.max(crease, lip(p));
     }
-    body.set([spineCoord, height, mouthInside[v] ? -1 : limb, crease], v * 4);
+    body.set(
+      depth < 0
+        ? [spineCoord, height, limb, crease]
+        : [spineCoord, height, -1 - depth, mouthKind[v] as number],
+      v * 4,
+    );
     region.set(reg, v * 4);
   }
   void L;

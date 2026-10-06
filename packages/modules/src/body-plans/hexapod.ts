@@ -55,7 +55,7 @@ export default defineBodyPlan({
         id: 'eyes',
         type: 'eye.basic',
         attach: { on: 'head', at: 0.3, angle: 60 },
-        params: { size: 0.03 },
+        params: { scale: 1.6, lids: false },
       },
     ],
     skin: {

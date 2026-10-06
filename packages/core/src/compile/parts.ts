@@ -4,11 +4,12 @@ import type { PartSpec } from '../blueprint/creature.ts';
 import { type GeometryKit, geometryKit, type MeshPiece, mirrorX } from '../geometry/kit.ts';
 import type { PartMaterial, PartModule, Registry } from '../registry.ts';
 import { createRng, type Rng } from '../rng.ts';
-import { type MouthLine, mouthPoint } from './mouth.ts';
+import { gumPoint, type MouthShape, outlineAt } from './head.ts';
+import { lidAngles, lidMesh } from './lids.ts';
 import { type Sdf, SdfEvaluator } from './sdf.ts';
 import { aroundDirection, type PathSegment, samplePath } from './skeleton.ts';
 import { type WeightOptions, weightsAt } from './skin.ts';
-import type { BoneDef } from './types.ts';
+import type { BoneDef, DrivenChain } from './types.ts';
 
 /** A place on the creature where a part sits, with its frame and skin weights. */
 export interface Socket {
@@ -33,6 +34,10 @@ export interface EyeOptions {
   readonly irisSize: number;
   /** Eyeball radius (metres). */
   readonly radius: number;
+  /** Eyelids that blink (docs/design/8.3-heads.md); none without. */
+  readonly lids?: boolean;
+  /** How far the upper lid hangs over the eye at rest (0–1). */
+  readonly squint?: number;
 }
 
 export interface EmitOptions {
@@ -68,8 +73,19 @@ export interface PartBuildContext {
   color(value: unknown, fallback: string): string;
   /** A socket on the part's target (defaults to its own `at` and `angle`). */
   socket(at?: number, angle?: number): Socket;
-  /** A socket on the mouth line: t = 0 at the tip, 1 at the corner; side ±1. Mouth parts only. */
+  /**
+   * A socket on the gums: t = 0 at the tip, 1 at the corner (by length along them); side ±1.
+   * Its normal points into the opening, and its radius is the skull's, so teeth size to the
+   * head. Mouth parts only; undefined without a jaw.
+   */
   mouth(t: number, row: 'upper' | 'lower', side: number): Socket | undefined;
+  /**
+   * The skin around the snout at mouth position `t` (0 tip, 1 corner): `angle` 0 is the lip
+   * line on the head's left, 90 the top of the snout (upper) or the chin (lower), 180 the lip
+   * line on the right. Its normal is the skin's; it moves with the head (upper) or the jaw
+   * (lower), and its radius is the skull's. Mouth parts only (a beak); undefined without a jaw.
+   */
+  around(t: number, row: 'upper' | 'lower', angle: number): Socket | undefined;
   /** Toe tips, for foot parts: normal along the toe, forward up. */
   readonly toes: readonly (Socket & {
     readonly bone: number;
@@ -94,6 +110,12 @@ export interface PartBuildContext {
   ): Socket;
   /** Places a piece built in socket space (+Y out of the skin, +Z forward, +X side). */
   emit(piece: MeshPiece, socket: Socket, options?: EmitOptions): void;
+  /**
+   * Reports what the part built, for stats: its largest piece's size (metres; a tooth's or
+   * horn's length, an eye's radius) and how many in a row. Sizes may follow the head, so stats
+   * read these rather than the parameters.
+   */
+  measure(size: number, count: number): void;
 }
 
 /** Hooks a part module provides. */
@@ -158,6 +180,16 @@ export class PartSink {
     sclera: [] as number[],
     weights: [] as [number, number][][],
   };
+  /** What each part reported building, by its id in the blueprint (largest over its copies). */
+  readonly sizes = new Map<string, { size: number; count: number }>();
+  /** Eyelids, which join the skin: their geometry, the bone of each vertex, and their chains. */
+  readonly lids = {
+    positions: [] as number[],
+    normals: [] as number[],
+    indices: [] as number[],
+    bones: [] as number[],
+    chains: [] as DrivenChain[],
+  };
 }
 
 export interface PartsInput {
@@ -170,10 +202,12 @@ export interface PartsInput {
     readonly id: string;
     readonly head: number;
     readonly jaw: number;
-    readonly mouth: MouthLine | undefined;
+    readonly mouth: MouthShape | undefined;
   }[];
   readonly main: number;
   readonly palette: Readonly<Record<string, string>>;
+  /** `body.head.lips` (0–1): how far in from the lips the gums sit. */
+  readonly lips: number;
   readonly scale: number;
   readonly seed: number;
   readonly registry: Registry;
@@ -313,6 +347,7 @@ export function buildParts(
     options: EmitOptions,
     material: PartMaterial,
     id: string,
+    inMouth = false,
   ) => {
     if (!sink.markers.has(id))
       sink.markers.set(id, [socket.position.x, socket.position.y, socket.position.z]);
@@ -378,6 +413,61 @@ export function buildParts(
       });
       const bone = input.bones.length - 1;
       eyeBones.push(bone);
+      if (eye.lids) {
+        // The lids' frame leans toward the skin's normal, so both corners of the opening sit at
+        // the skin's depth; they hang from what the eye hangs from, not from the turning eye.
+        const out = socket.normal
+          .clone()
+          .multiplyScalar(0.7)
+          .addScaledVector(look, 0.3)
+          .normalize();
+        const up = Y.clone().addScaledVector(out, -out.y);
+        if (up.lengthSq() < 1e-8) up.copy(eyeUp);
+        up.normalize();
+        const frame = {
+          centre,
+          side: new Vector3().crossVectors(up, out).normalize(),
+          up,
+          out,
+          radius: eye.radius,
+        };
+        const squint = eye.squint ?? 0.15;
+        const angles = lidAngles(squint);
+        const lidBones = (['upper', 'lower'] as const).map((which) => {
+          input.bones.push({
+            name: `eye.${id}.${which}`,
+            parent: dominant,
+            section: 'lid',
+            owner: id,
+            head: centre.clone(),
+            tail: centre.clone().addScaledVector(out, eye.radius),
+            up: up.clone(),
+            r0: eye.radius,
+            r1: eye.radius,
+            cross: [1, 1],
+            t0: 0,
+            t1: 1,
+            skin: false,
+            chain: -1,
+          });
+          return input.bones.length - 1;
+        });
+        // A bone's local X is (along × up), the frame's -side, and a turn by a about +side
+        // takes an edge's angle from φ to φ - a: so each lid turns by (meet - its edge) about
+        // its local X (the upper one down, the lower one up).
+        sink.lids.chains.push({
+          owner: id,
+          bones: lidBones,
+          drive: 'blink',
+          poses: { closed: [angles.meet - angles.upper, angles.meet - angles.lower] },
+        });
+        const mesh = lidMesh(frame, squint);
+        const start = sink.lids.positions.length / 3;
+        sink.lids.positions.push(...mesh.positions);
+        sink.lids.normals.push(...mesh.normals);
+        for (const i of mesh.indices) sink.lids.indices.push(start + i);
+        for (const w of mesh.which) sink.lids.bones.push(lidBones[w] as number);
+      }
       const base = sink.eyes.positions.length / 3;
       const iris = hexToRgb(eye.iris);
       const sclera = hexToRgb(eye.sclera);
@@ -437,7 +527,9 @@ export function buildParts(
       sink.parts.weights.push(weights);
     }
     for (const i of local.indices) sink.parts.indices.push(base + i);
-    // How much of the piece shows: sample its vertices against the skin.
+    // How much of the piece shows: sample its vertices against the skin (not for mouth parts,
+    // which stand inside the mouth by design).
+    if (inMouth) return;
     const seen = exposure.get(id) ?? { total: 0, outside: 0 };
     exposure.set(id, seen);
     const step = Math.max(3, Math.floor(local.positions.length / 3 / 64) * 3);
@@ -448,6 +540,15 @@ export function buildParts(
       const z = sink.parts.positions[v + 2] as number;
       if (evaluator.eval(x, y, z) > 0.002 * input.scale) seen.outside++;
     }
+  };
+
+  // The head a mouth part sits on (`head.L1`, `jaw.L1`), else the main head.
+  const headOf = (on: string) => {
+    const instance = /^(?:head|jaw)(\.[LR]\d+)/.exec(on)?.[1];
+    return (
+      input.heads.find((x) => instance !== undefined && x.id === `head${instance}`) ??
+      input.heads[input.main]
+    );
   };
 
   const contextFor = (
@@ -472,20 +573,34 @@ export function buildParts(
     geo: geometryKit,
     color: resolveColor,
     socket: (at = place.at, angle = place.angle) => socketOn(place.on, at, angle, mirror),
+    around: (t, row, angle) => {
+      const h = headOf(place.on);
+      if (!h?.mouth || h.jaw < 0) return undefined;
+      const shape = h.mouth;
+      const u = Math.min(1, Math.max(0, t));
+      const left = outlineAt(shape, u, 1).point;
+      const right = outlineAt(shape, u, -1).point;
+      const middle = new Vector3().addVectors(left, right).multiplyScalar(0.5);
+      const across = new Vector3().subVectors(left, middle);
+      const half = across.length();
+      // At the very tip the two sides meet: across is then the head's left.
+      if (half < 1e-9) across.copy(shape.line.side);
+      across.normalize();
+      const a = (angle * Math.PI) / 180;
+      const up = shape.line.up.clone().multiplyScalar(row === 'upper' ? 1 : -1);
+      const dir = across.multiplyScalar(Math.cos(a)).addScaledVector(up, Math.sin(a)).normalize();
+      const { position, normal } = toSurface(middle, dir, Math.max(half, shape.radiusAt(0)));
+      return frameOf(position, normal, shape.line.forward, shape.radiusAt(0), [
+        [row === 'upper' ? h.head : h.jaw, 1],
+      ]);
+    },
     mouth: (t, row, side) => {
-      // The mouth of the head the part sits on (`head.L1`, `jaw.L1`), else the main head's.
-      const instance = /^(?:head|jaw)(\.[LR]\d+)/.exec(place.on)?.[1];
-      const h =
-        input.heads.find((x) => instance !== undefined && x.id === `head${instance}`) ??
-        input.heads[input.main];
+      const h = headOf(place.on);
       if (!h?.mouth || h.jaw < 0) return undefined;
       const m = h.mouth;
-      const position = mouthPoint(m, Math.min(1, Math.max(0, t)), side);
-      // Teeth sit just inside the lips.
-      position.addScaledVector(m.side, -side * m.tipHalf * 0.08);
-      const normal = row === 'upper' ? m.up.clone().negate() : m.up.clone();
-      position.addScaledVector(normal, -m.tipHalf * 0.04);
-      return frameOf(position, normal, m.forward, m.tipHalf, [
+      // On the gums, set in from the lips (docs/design/8.3-heads.md).
+      const gum = gumPoint(m, input.lips, Math.min(1, Math.max(0, t)), row, side);
+      return frameOf(gum.position, gum.normal, m.line.forward, gum.radius, [
         [row === 'upper' ? h.head : h.jaw, 1],
       ]);
     },
@@ -493,7 +608,14 @@ export function buildParts(
     frame: (position, normal, forward, bone, radius = 0) =>
       frameOf(position.clone(), normal.clone().normalize(), forward, radius, [[bone, 1]]),
     emit: (piece, socket, options = {}) =>
-      emitInto(piece, socket, mirror, options, module.material, id),
+      emitInto(piece, socket, mirror, options, module.material, id, module.slot === 'mouth'),
+    measure: (size, count) => {
+      const seen = sink.sizes.get(baseId);
+      sink.sizes.set(baseId, {
+        size: Math.max(size, seen?.size ?? 0),
+        count: Math.max(count, seen?.count ?? 0),
+      });
+    },
   });
 
   for (const part of parts) {

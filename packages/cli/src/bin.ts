@@ -29,7 +29,7 @@ Commands:
   describe-module <id> [--kind <kind>]  One module's parameters, ranges, defaults and an example
   validate <file|->  [--expanded]       Errors and warnings with fixes, plus the minimal blueprint
   render <file|-> [--out f.png] [--labels] [--size px] [--quality low|medium|high]
-         [--views 3/4,side,head,front,top,rear,underside]
+         [--views 3/4,side,head,front,top,rear,underside] [--jaw 0-1] [--blink 0-1]
                                         PNG contact sheet of the creature (headless Chromium)
   render <file|-> --filmstrip [--gait id] [--speed m/s] [--frames n] [--view side|3/4|top|front]
                                         One gait cycle as frames with a footfall diagram;
@@ -107,6 +107,8 @@ function parseOptions() {
       expanded: { type: 'boolean' },
       out: { type: 'string' },
       labels: { type: 'boolean' },
+      jaw: { type: 'string' },
+      blink: { type: 'string' },
       size: { type: 'string' },
       views: { type: 'string' },
       quality: { type: 'string' },
@@ -244,6 +246,9 @@ async function render(): Promise<{ output: unknown; exitCode?: number }> {
       ...(views ? { views } : {}),
       ...(values.quality ? { quality: qualityOf(values.quality) } : {}),
       ...(filmstrip ? { filmstrip } : {}),
+      ...(values.jaw || values.blink
+        ? { pose: { jaw: Number(values.jaw ?? 0), blink: Number(values.blink ?? 0) } }
+        : {}),
     });
   } catch (error) {
     // Errors from the page arrive wrapped ("page.evaluate: Error: …"); keep the message.

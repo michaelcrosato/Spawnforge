@@ -1814,7 +1814,7 @@
       "additionalProperties": false
     },
     "part:beak": {
-      "description": "A horny beak in two halves, upper on the head and lower on the jaw, for birds and griffins.",
+      "description": "A horny beak in two halves over the snout, upper on the head and lower on the jaw, for birds and griffins.",
       "type": "object",
       "properties": {
         "shape": {
@@ -1829,7 +1829,7 @@
         },
         "length": {
           "default": 1,
-          "description": "Beak length relative to the snout",
+          "description": "How far the beak runs on past the snout, relative to the snout",
           "type": "number",
           "minimum": 0.2,
           "maximum": 2
@@ -1918,12 +1918,18 @@
       "additionalProperties": false
     },
     "part:eye.basic": {
-      "description": "Round eyeball with an iris and pupil that turns to look at targets and blinks.",
+      "description": "Round eyeball with an iris and pupil, sized to the head, with eyelids that blink (or none).",
       "type": "object",
       "properties": {
+        "scale": {
+          "default": 1,
+          "description": "Eye size relative to the head: 1 is typical, 2 big, 0.5 small",
+          "type": "number",
+          "minimum": 0.2,
+          "maximum": 3
+        },
         "size": {
-          "default": 0.022,
-          "description": "Eyeball radius in torso lengths",
+          "description": "Eyeball radius in torso lengths; when set it wins over `scale`",
           "type": "number",
           "minimum": 0.005,
           "maximum": 0.2
@@ -1960,6 +1966,18 @@
         "bulge": {
           "default": 0.5,
           "description": "How far the eye stands out of the skin",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "lids": {
+          "default": true,
+          "description": "Eyelids that blink; snakes, fish and insects have none",
+          "type": "boolean"
+        },
+        "squint": {
+          "default": 0.15,
+          "description": "How far the upper lid hangs over the eye at rest: 0 wide open, 1 a menacing squint",
           "type": "number",
           "minimum": 0,
           "maximum": 1
@@ -3000,22 +3018,36 @@
       "additionalProperties": false
     },
     "part:teeth.row": {
-      "description": "Teeth along the mouth line; the upper row moves with the head, the lower with the jaw.",
+      "description": "Teeth standing in the gums along the mouth, sized to the head: incisors, fangs, then cheek teeth. The upper row moves with the head, the lower with the jaw.",
       "type": "object",
       "properties": {
-        "count": {
-          "default": 10,
-          "description": "Teeth per row on each side",
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 40
-        },
-        "length": {
-          "default": 0.025,
-          "description": "Tooth length in torso lengths",
+        "scale": {
+          "default": 1,
+          "description": "Tooth size relative to the head: 1 is typical, 2 big, 0.5 small",
           "type": "number",
-          "minimum": 0.005,
-          "maximum": 0.2
+          "minimum": 0.2,
+          "maximum": 3
+        },
+        "fangScale": {
+          "default": 1,
+          "description": "Fang size relative to the head: 1 is typical, 2 sabre-like",
+          "type": "number",
+          "minimum": 0.2,
+          "maximum": 3
+        },
+        "spacing": {
+          "default": 0.15,
+          "description": "Gap between neighbouring teeth as a share of a tooth’s width; 0 packs them tight",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2
+        },
+        "incisors": {
+          "default": 2,
+          "description": "Small front teeth on each side before the fangs (not used when `count` is set)",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4
         },
         "fangs": {
           "default": 1,
@@ -3024,9 +3056,20 @@
           "minimum": 0,
           "maximum": 4
         },
+        "count": {
+          "description": "Teeth per row on each side; without it, as many as `spacing` fits",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 40
+        },
+        "length": {
+          "description": "Tooth length in torso lengths; when set it wins over `scale`",
+          "type": "number",
+          "minimum": 0.005,
+          "maximum": 0.2
+        },
         "fangLength": {
-          "default": 0.06,
-          "description": "Fang length in torso lengths",
+          "description": "Fang length in torso lengths; when set it wins over `fangScale`",
           "type": "number",
           "minimum": 0.01,
           "maximum": 0.4

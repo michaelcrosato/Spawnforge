@@ -6,6 +6,7 @@ import { type HeadRig, mainHead } from '../compile/types.ts';
 import type { ActionModule, Registry } from '../registry.ts';
 import { createRng, type Rng } from '../rng.ts';
 import type { ActionContext, ActionGoals, ActionHooks } from './actions.ts';
+import { applyFace } from './face.ts';
 import { Pose } from './pose.ts';
 import { type FootRoll, footRoll, heelAt, plantToes, poseToes } from './roll.ts';
 
@@ -1108,20 +1109,10 @@ export class MotionController {
     pose.solveSubtree(h.head);
   }
 
-  /** Opens every jaw by the action's `jaw` goal, about its hinge. */
+  /** Opens every jaw by the action's `jaw` goal, about its hinge, and blinks the eyelids. */
   private applyJaw(): void {
-    const open = this.goals.jaw ?? 0;
-    const pose = this.pose;
-    pose.breath = this.goals.breath ?? 0;
-    pose.blink = this.goals.blink ?? 0;
-    if (open <= 0) return;
-    for (const { jaw } of this.compiled.rig.heads) {
-      if (jaw < 0) continue;
-      (pose.rot[jaw] as Quaternion)
-        .copy(pose.restRot[jaw] as Quaternion)
-        .multiply(scratchQ.setFromAxisAngle(X_AXIS, -open * 0.65));
-      pose.solveSubtree(jaw);
-    }
+    this.pose.breath = this.goals.breath ?? 0;
+    applyFace(this.pose, this.compiled.rig, this.goals.jaw ?? 0, this.goals.blink ?? 0);
   }
 
   private applySprings(): void {
@@ -1253,4 +1244,3 @@ const scratch5 = new Vector3();
 const scratch6 = new Vector3();
 const scratch7 = new Vector3();
 const scratchEuler = new Euler();
-const X_AXIS = new Vector3(1, 0, 0);

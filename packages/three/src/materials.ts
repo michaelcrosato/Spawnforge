@@ -1,5 +1,5 @@
 import type { Registry, SkinMaterialSpec, Surface } from '@spawnforge/core';
-import { shadeSkin } from '@spawnforge/core';
+import { EYE_ROUGHNESS, shadeMouth, shadeSkin } from '@spawnforge/core';
 import {
   abs,
   attribute,
@@ -78,13 +78,15 @@ export function skinMaterial(
   };
   const shade = shadeSkin(tslKit, surface, spec, registry);
   const srgb = vec3(shade.r, shade.g, shade.b) as N;
-  // Inside the mouth (body.z = -1) is dark and wet.
-  const inside = step(body.z, float(-0.5));
-  const albedo: N = mix(linear(srgb.clamp(0, 1)), vec3(0.18, 0.025, 0.03), inside);
+  // Inside the mouth (body.z <= -1) is wet: cavity, gums and tongue, darker toward the throat.
+  const mouth = shadeMouth(tslKit, body.z, body.w);
+  const inside = mouth.inside as N;
+  const albedo: N = mix(linear(srgb.clamp(0, 1)), vec3(mouth.r, mouth.g, mouth.b), inside);
   material.colorNode = albedo;
-  material.roughnessNode = mix(shade.roughness as N, float(0.35), inside);
+  material.roughnessNode = mix(shade.roughness as N, mouth.roughness as N, inside);
   material.metalnessNode = float(0);
-  material.normalNode = bumpNormal((shade.height as N).mul(s));
+  // No skin relief inside the mouth: wet surfaces are smooth.
+  material.normalNode = bumpNormal((shade.height as N).mul(s).mul(float(1).sub(inside)));
   // Breathing: the torso swells along its normals, up to about 1% of the torso length.
   if (signals.breath) {
     const swell = (signals.breath as N).mul(s).mul(0.011).mul(region.y);
@@ -132,7 +134,8 @@ export function eyeMaterial(): MeshStandardNodeMaterial {
   const irisColor = (iris.xyz as N).mul(float(1.15).sub(ring.mul(0.45)));
   const c: N = mix(mix(sclera, irisColor, irisMask), vec3(0.02, 0.02, 0.02), pupil);
   material.colorNode = linear(c);
-  material.roughnessNode = float(0.12);
+  // Soft gloss: wet, but not glass (8.3).
+  material.roughnessNode = float(EYE_ROUGHNESS);
   material.metalnessNode = float(0);
   return material;
 }

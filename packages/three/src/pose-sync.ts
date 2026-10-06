@@ -1,7 +1,10 @@
 import type { Pose } from '@spawnforge/core';
 import type { CreatureObject } from './assemble.ts';
 
-/** Copies a motion pose into the creature's Three.js bones, breathing and blinks (once per frame). */
+/**
+ * Copies a motion pose into the creature's Three.js bones and breathing (once per frame). Blinks
+ * are eyelid bones' turns, already in the pose.
+ */
 export function applyPose(creature: CreatureObject, pose: Pose): void {
   const bones = creature.bones;
   for (let i = 0; i < bones.length; i++) {
@@ -13,6 +16,4 @@ export function applyPose(creature: CreatureObject, pose: Pose): void {
     bone.position.set(pos.x, pos.y, pos.z);
   }
   creature.signals.breath.value = pose.breath;
-  // Blinking squashes each eye top to bottom (its bone's local Z is up).
-  for (const i of creature.eyeBones) creature.bones[i]?.scale.set(1, 1, 1 - 0.92 * pose.blink);
 }

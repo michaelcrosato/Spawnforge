@@ -15,3 +15,4 @@ Regenerate the renders with `pnpm render:examples` after changing a blueprint or
 | [grey-wolf.json](grey-wolf.json) | Quadruped | Padded paws on a digitigrade stance (feet that roll as they walk), a bushy tail, mottled coat |
 | [tusk-boar.json](tusk-boar.json) | Quadruped | Cloven hooves (unguligrade), tusks from the jaw, a bristle row, grime |
 | [rust-raptor.json](rust-raptor.json) | Biped | Taloned feet with three toes forward and one back, a long tail, striped scales |
+| [terror-bird.json](terror-bird.json) | Biped | A hooked beak in two halves, a heavy brow and squinting lidded eyes, an S-curved neck, talons |

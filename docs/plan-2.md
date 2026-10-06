@@ -115,7 +115,7 @@ since anatomy comes before the new vocabulary.
 | [7.6 Buildable packages](#76-buildable-packages) | high (lowered) | Standard tooling; an install test is the oracle | | Done ([#15](https://github.com/michaelcrosato/Spawnforge/pull/15)) |
 | [8.1 Muscle and body shape](#81-muscle-masses-joints-and-body-shape) | **max (raised)** | Changes every creature, judged by eye; the rules must fit every body | 7.4, 7.5 | Done ([#16](https://github.com/michaelcrosato/Spawnforge/pull/16)); quality bar amended |
 | [8.2 Feet, hands, stance](#82-feet-hands-and-stance) | xhigh (confirmed) | Modules through existing seams, plus a contained rest-pose change | 7.3, 7.5 | Done ([#17](https://github.com/michaelcrosato/Spawnforge/pull/17)) |
-| [8.3 Heads](#83-heads-mouths-teeth-eyes-and-beaks) | xhigh (confirmed), one max step | Mouth and eye code with renders as the oracle; how lids and lips are built is a max step | 7.4 | Not started |
+| [8.3 Heads](#83-heads-mouths-teeth-eyes-and-beaks) | xhigh (confirmed), one max step | Mouth and eye code with renders as the oracle; how lids and lips are built is a max step | 7.4 | Done |
 | [8.4 Materials and patterns](#84-materials-and-new-pattern-layers) | xhigh (confirmed) | Shader work with a new CPU–GPU parity test; fur is the risk | 7.3, 7.5 | Not started |
 | [9.1 Heads and tails](#91-several-heads-and-split-tails) | xhigh (confirmed) | Builds on 7.4's lists; per-head mouths and targeting are the work | Gate 8 | Not started |
 | [9.2 Eight legs, centaurs](#92-eight-legs-and-centaurs) | xhigh (confirmed) | Upright fronts and four leg pairs reach into posture and balance | Gate 8 | Not started |
@@ -614,6 +614,12 @@ decide it first, as a max step.
 **Done when** the PR shows head views (`render --views head`) of every example, the bite and roar
 filmstrips show the lips and tongue moving with the jaw, exported blinks use the lids, the
 corpus test passes, and the goldens are re-recorded.
+
+**Decision (2026-10-06, max step):** lips and eyelids are skin. Lips are part of the skin mesh:
+the head is refined to its own resolution, cut exactly along the mouth line, and closed by a
+lofted inside (lips' inner faces, gums, palate, floor, corner walls, tongue). Eyelids are two
+shells around each eye, drawn with the skin, on bones of their own that a blink-driven chain
+turns. 9.1 repeats all of it per head. See `docs/design/8.3-heads.md`.
 
 ### 8.4 Materials and new pattern layers
 

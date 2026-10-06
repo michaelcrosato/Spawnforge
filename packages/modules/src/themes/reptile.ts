@@ -136,11 +136,15 @@ export default defineTheme({
     parts: [
       {
         chance: 1,
-        part: { id: 'eyes', params: { pupil: 'slit', size: { min: 0.016, max: 0.026 } } },
+        part: { id: 'eyes', params: { pupil: 'slit', scale: { min: 0.8, max: 1.3 } } },
       },
       {
         chance: 0.8,
-        part: { id: 'teeth', type: 'teeth.row', params: { count: { min: 6, max: 12 }, fangs: 0 } },
+        part: {
+          id: 'teeth',
+          type: 'teeth.row',
+          params: { fangs: 0, scale: { min: 0.8, max: 1.3 }, spacing: { min: 0.1, max: 0.6 } },
+        },
         plans: ['quadruped', 'biped'],
       },
       {
@@ -148,7 +152,7 @@ export default defineTheme({
         part: {
           id: 'fangs',
           type: 'teeth.row',
-          params: { count: 1, fangs: 1, fangLength: { min: 0.05, max: 0.08 }, lower: false },
+          params: { incisors: 0, fangs: 1, fangScale: { min: 0.9, max: 1.4 }, lower: false },
         },
         plans: ['serpent'],
       },

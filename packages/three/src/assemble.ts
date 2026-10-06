@@ -28,7 +28,7 @@ export interface CreatureObject {
   };
   /** Shader inputs the pose drives (`applyPose` sets them). */
   readonly signals: { readonly breath: { value: number } };
-  /** Eye bone indices, which blink by squashing. */
+  /** Eye bone indices (the eyeballs; eyelids are bones of their own that blink). */
   readonly eyeBones: readonly number[];
   /** Rest local transforms per bone, for resetting poses. */
   readonly rest: {

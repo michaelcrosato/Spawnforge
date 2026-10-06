@@ -136,7 +136,7 @@ whatever the target is doing, so test hits yourself, with sockets or hit capsule
   moving, and it switches back when the camera comes near. A creature busy with an action
   finishes it first.
 - Mesh detail is per creature (`quality`). Each creature is three draw calls: the skin (with the
-  inner mouth), the hard parts and the eyes.
+  mouth's inside and the eyelids), the hard parts and the eyes.
 
 ## Exported, as .glb
 
@@ -156,7 +156,8 @@ A `.glb` holds:
   the mesh's average, and no textures.
 - **The skeleton.** Bone names have `.` replaced by `_` (`foreleg_L_1`), since animation tracks
   address nodes as `name.property`.
-- **Baked clips:** `idle` (glances, weight shifts and blinks as eye scale; breathing is a shader
+- **Baked clips:** `idle` (glances, weight shifts and blinks as eyelid bone turns, `eye_eyes_L_upper`
+  and `_lower`; breathing is a shader
   effect and stays out of the file), one cycle of each gait (`walk`, `trot`, `tripod`, `slither`)
   and each action (`bite`, `roar`, `look`). Frames are at `--fps` (default 30).
   - Gait clips are exactly one cycle, in place: the root stays at the origin facing +Z, the clip

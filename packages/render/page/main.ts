@@ -1,16 +1,23 @@
 import {
+  applyFace,
   bakeClips,
   compileCreature,
   createRegistry,
   fingerprint,
   formatIssue,
   mainHead,
+  Pose,
   parseScenario,
   resolveBlueprint,
   validateBlueprint,
 } from '@spawnforge/core';
 import { basicPack } from '@spawnforge/modules';
-import { buildExportScene, createCreatureObject, createRenderer } from '@spawnforge/three';
+import {
+  applyPose,
+  buildExportScene,
+  createCreatureObject,
+  createRenderer,
+} from '@spawnforge/three';
 import * as THREE from 'three';
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 import type {
@@ -161,6 +168,11 @@ window.spawnforgeRender = async (request) => {
   const creature = createCreatureObject(compiled, registry);
   for (const name of request.debug?.hide ?? []) creature.meshes[name].visible = false;
   renderer.shadowMap.enabled = request.debug?.shadows ?? true;
+  if (request.pose && !request.filmstrip) {
+    const pose = new Pose(compiled.bones);
+    applyFace(pose, compiled.rig, request.pose.jaw ?? 0, request.pose.blink ?? 0);
+    applyPose(creature, pose);
+  }
 
   const scene = new THREE.Scene();
   scene.add(new THREE.HemisphereLight('#e8eeff', '#4a4034', 1.15));

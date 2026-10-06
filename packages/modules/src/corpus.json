@@ -23,6 +23,10 @@
     "ok": true,
     "errors": []
   },
+  "examples/terror-bird.json": {
+    "ok": true,
+    "errors": []
+  },
   "examples/tusk-boar.json": {
     "ok": true,
     "errors": []

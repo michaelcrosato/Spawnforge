@@ -49,10 +49,13 @@ compiled rig holds lists of heads, tails and driven chains, with goldens unchang
 every example, and the quality and motion reviews, `eval/README.md`) and 7.6 (every package
 builds to `dist/` for publishing, at 0.1.0; `pnpm smoke` installs the tarballs into a game) and
 8.1 (`muscle` shapes limbs, torso, neck and tail by rules, and `neck.curve` makes an S; `muscle: 0`
-is plan 1's mesh exactly, and the meshing grid keeps the muscle-free lattice; the quality review
+is the mesh without muscle, and the meshing grid keeps the muscle-free lattice; the quality review
 shows both orders at 640 px, `docs/design/8.1-anatomy.md`) and 8.2 (`foot.paw`, `foot.hoof`,
 `foot.talon`, `foot.pad` and `hand.grasp`; each foot stands the leg at its own height, and legs
-with a `stance` roll their planted feet, `docs/design/8.2-feet.md`).
+with a `stance` roll their planted feet, `docs/design/8.2-feet.md`) and 8.3 (heads are meshed
+finer than the body and cut exactly along the mouth; mouths open on lips, gums, a palate, a
+tongue and a throat; eyelids blink on bones of their own; brows, cheekbones and nostrils; teeth
+and eyes sized to the head; `beak`; `render --jaw --blink`, `docs/design/8.3-heads.md`).
 
 ## Repo map
 
@@ -88,6 +91,7 @@ pnpm spawnforge <command>     # the CLI from source: list-modules, describe-modu
 pnpm spawnforge generate --theme reptile --seed 4 --out creatures/lizard.json   # a new creature from a theme
 pnpm spawnforge export examples/bog-troll.json --stats rpg   # a .glb with baked clips, for any engine
 pnpm spawnforge render examples/ridgeback-stalker.json --labels   # PNG contact sheet next to the file
+pnpm spawnforge render examples/grey-wolf.json --views head --jaw 0.8   # the head, mouth open (--blink 1 shuts the eyes)
 pnpm spawnforge analyze examples/ridgeback-stalker.json --scenario examples/scenarios/stalk-and-bite.json
                               # scripted motion (targets, a course, timed calls); render takes it too
 pnpm render:examples          # re-render examples/*.png after changing a blueprint or the pipeline

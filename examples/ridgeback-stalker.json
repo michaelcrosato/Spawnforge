@@ -47,7 +47,7 @@
       "id": "eyes",
       "type": "eye.basic",
       "attach": { "on": "head", "at": 0.4, "angle": 60, "side": "both" },
-      "params": { "size": 0.02, "pupil": "slit" }
+      "params": { "pupil": "slit", "squint": 0.35 }
     }
   ],
   "skin": {

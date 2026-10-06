@@ -34,8 +34,8 @@
       "attach": { "on": "head", "at": 0.85, "angle": 45 },
       "params": { "length": 0.11, "width": 0.04 }
     },
-    { "id": "teeth", "type": "teeth.row", "params": { "count": 8, "fangs": 1 } },
-    { "id": "eyes", "params": { "size": 0.02, "irisColor": "#d9a030" } }
+    { "id": "teeth", "type": "teeth.row", "params": { "fangs": 1 } },
+    { "id": "eyes", "params": { "irisColor": "#d9a030", "squint": 0.3 } }
   ],
   "skin": {
     "palette": { "base": "#7d8083", "belly": "#d6d3cb", "accent": "#4a4d50" },

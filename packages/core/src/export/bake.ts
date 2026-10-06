@@ -1,6 +1,6 @@
 import type { CompiledCreature } from '../compile/compile.ts';
 import type { Registry } from '../registry.ts';
-import { shadeSkin } from '../shading/compose.ts';
+import { shadeMouth, shadeSkin } from '../shading/compose.ts';
 import { cpuKit } from '../shading/cpu.ts';
 import type { Surface } from '../shading/kit.ts';
 
@@ -16,6 +16,9 @@ export function srgbToLinear(c: number): number {
   return x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4;
 }
 
+/** The eyes' roughness: wet, but not glass. The renderer's eye material uses it too. */
+export const EYE_ROUGHNESS = 0.24;
+
 const smooth = (e0: number, e1: number, x: number) => {
   const t = Math.min(1, Math.max(0, (x - e0) / (e1 - e0)));
   return t * t * (3 - 2 * t);
@@ -24,7 +27,7 @@ const smooth = (e0: number, e1: number, x: number) => {
 /**
  * The skin's pattern stack evaluated at every vertex on the CPU, with the same pattern functions
  * the renderer's shader runs (through the CPU kit). Albedo only: relief needs a texture, so bump
- * is left out. Inside the mouth is dark and wet, as in the shader.
+ * is left out. Inside the mouth is wet, from the same `shadeMouth` the shader runs.
  */
 export function bakeSkinColors(compiled: CompiledCreature, registry: Registry): BakedColors {
   const { positions, normals, body, region } = compiled.skin;
@@ -53,12 +56,13 @@ export function bakeSkinColors(compiled: CompiledCreature, registry: Registry): 
       pixel: 0,
     };
     const shade = shadeSkin(cpuKit, surface, compiled.material, registry);
-    const inside = (body[i * 4 + 2] as number) <= -0.5 ? 1 : 0;
+    const mouth = shadeMouth(cpuKit, body[i * 4 + 2] as number, body[i * 4 + 3] as number);
+    const inside = mouth.inside;
     const lin = [shade.r, shade.g, shade.b].map(srgbToLinear);
-    const wet = [0.18, 0.025, 0.03];
+    const wet = [mouth.r, mouth.g, mouth.b];
     for (let c = 0; c < 3; c++)
       color[i * 3 + c] = (lin[c] as number) * (1 - inside) + (wet[c] as number) * inside;
-    roughness[i] = shade.roughness * (1 - inside) + 0.35 * inside;
+    roughness[i] = shade.roughness * (1 - inside) + mouth.roughness * inside;
   }
   return { color, roughness };
 }
@@ -79,7 +83,7 @@ export function bakeEyeColors(compiled: CompiledCreature): BakedColors {
   const { eye, iris, sclera } = compiled.eyes;
   const n = eye.length / 4;
   const color = new Float32Array(n * 3);
-  const roughness = new Float32Array(n).fill(0.12);
+  const roughness = new Float32Array(n).fill(EYE_ROUGHNESS);
   for (let i = 0; i < n; i++) {
     const [ex, ey, ez, kind] = [eye[i * 4], eye[i * 4 + 1], eye[i * 4 + 2], eye[i * 4 + 3]] as [
       number,

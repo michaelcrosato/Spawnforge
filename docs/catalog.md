@@ -13,7 +13,7 @@ until that milestone lands (`list-modules` gives the same as `planned`; `validat
 blueprint uses of it under `notBuilt`).
 
 - **Body plans:** `biped`, `centaur`, `fish`, `hexapod`, `octopod`, `quadruped`, `serpent`, `wyvern`
-- **Parts:** `antenna` (9.4), `armor.bands` (9.5), `beak` (8.3), `ear.pointed`, `eye.basic`, `fin.dorsal` (9.3), `fin.tail` (9.3), `foot.claw`, `foot.hoof`, `foot.pad`, `foot.paw`, `foot.talon`, `frill` (9.5), `hand.grasp`, `hand.pincer` (9.4), `hood` (9.5), `horn.curved`, `mandible` (9.4), `membrane.bat` (9.3), `membrane.case` (9.3), `membrane.feather` (9.3), `membrane.fin` (9.3), `membrane.insect` (9.3), `plates.row` (9.5), `quills` (9.5), `sail` (9.5), `shell` (9.5), `spikes.row`, `teeth.row`
+- **Parts:** `antenna` (9.4), `armor.bands` (9.5), `beak`, `ear.pointed`, `eye.basic`, `fin.dorsal` (9.3), `fin.tail` (9.3), `foot.claw`, `foot.hoof`, `foot.pad`, `foot.paw`, `foot.talon`, `frill` (9.5), `hand.grasp`, `hand.pincer` (9.4), `hood` (9.5), `horn.curved`, `mandible` (9.4), `membrane.bat` (9.3), `membrane.case` (9.3), `membrane.feather` (9.3), `membrane.fin` (9.3), `membrane.insect` (9.3), `plates.row` (9.5), `quills` (9.5), `sail` (9.5), `shell` (9.5), `spikes.row`, `teeth.row`
 - **Patterns:** `bands` (8.4), `bioluminescence` (8.4), `countershade`, `grime`, `mottle`, `rosettes` (8.4), `scales`, `scars` (8.4), `slime` (8.4), `spots`, `stripes`, `veins` (8.4), `warts` (8.4)
 - **Gaits:** `bound` (10.1), `fly` (10.4), `gallop` (10.1), `glide` (10.4), `hover` (10.4), `run` (10.1), `slither`, `swim.flap` (10.3), `swim.paddle` (10.3), `swim.undulate` (10.3), `tripod`, `trot`, `walk`
 - **Actions:** `bite`, `display` (9.5), `idle`, `jump` (10.2), `lash` (9.4), `look`, `pinch` (9.4), `pounce` (10.2), `roar`
@@ -428,7 +428,7 @@ Ids you can override: limb `pectoral`, part `eyes`, part `dorsal`, part `tailfin
       "id": "eyes",
       "type": "eye.basic",
       "attach": { "on": "head", "at": 0.3, "angle": 70 },
-      "params": { "size": 0.025 }
+      "params": { "scale": 1.3, "lids": false }
     },
     { "id": "dorsal", "type": "fin.dorsal", "attach": { "on": "torso", "at": 0.4, "angle": 0 } },
     { "id": "tailfin", "type": "fin.tail" }
@@ -505,7 +505,7 @@ Ids you can override: limb `frontleg`, limb `midleg`, limb `hindleg`, part `eyes
       "id": "eyes",
       "type": "eye.basic",
       "attach": { "on": "head", "at": 0.3, "angle": 60 },
-      "params": { "size": 0.03 }
+      "params": { "scale": 1.6, "lids": false }
     }
   ],
   "skin": {
@@ -590,13 +590,13 @@ Ids you can override: limb `leg1`, limb `leg2`, limb `leg3`, limb `leg4`, part `
       "id": "eyes",
       "type": "eye.basic",
       "attach": { "on": "head", "at": 0.25, "angle": 35 },
-      "params": { "size": 0.022, "scleraColor": "#140c10", "irisColor": "#401020" }
+      "params": { "scale": 1.3, "lids": false, "scleraColor": "#140c10", "irisColor": "#401020" }
     },
     {
       "id": "side-eyes",
       "type": "eye.basic",
       "attach": { "on": "head", "at": 0.4, "angle": 70 },
-      "params": { "size": 0.014, "scleraColor": "#140c10", "irisColor": "#401020" }
+      "params": { "scale": 0.8, "lids": false, "scleraColor": "#140c10", "irisColor": "#401020" }
     }
   ],
   "skin": {
@@ -676,7 +676,15 @@ Ids you can override: part `eyes`.
   "body": {
     "torso": { "radius": [0.07, 0.085, 0.09, 0.085], "pitch": 0, "segments": 8 },
     "neck": { "length": 0.15, "radius": [0.065, 0.07], "pitch": 10, "segments": 2 },
-    "head": { "shape": "wedge", "length": 0.2, "radius": 0.075, "jaw": true, "pitch": 0 },
+    "head": {
+      "shape": "wedge",
+      "length": 0.2,
+      "radius": 0.075,
+      "jaw": true,
+      "pitch": 0,
+      "lips": 0,
+      "tongue": "forked"
+    },
     "tail": { "length": 2.2, "radius": [0.085, 0.01], "pitch": 0, "curl": 0, "segments": 16 }
   },
   "limbs": [],
@@ -685,7 +693,7 @@ Ids you can override: part `eyes`.
       "id": "eyes",
       "type": "eye.basic",
       "attach": { "on": "head", "at": 0.35, "angle": 70 },
-      "params": { "size": 0.016, "pupil": "slit" }
+      "params": { "pupil": "slit", "lids": false }
     }
   ],
   "skin": {
@@ -745,7 +753,7 @@ Ids you can override: limb `leg`, limb `wing`, part `eyes`, part `teeth`.
       "attach": { "on": "head", "at": 0.35, "angle": 55 },
       "params": { "pupil": "slit" }
     },
-    { "id": "teeth", "type": "teeth.row", "params": { "count": 12, "fangs": 2 } }
+    { "id": "teeth", "type": "teeth.row", "params": { "fangs": 2 } }
   ],
   "skin": {
     "palette": { "base": "#5a3a3a", "belly": "#c0a080", "accent": "#2a1a1a" },
@@ -812,18 +820,16 @@ slot: `"area"` · material: `"horn"` · defaultAttach: `{"on":"torso","area":"ba
 
 ### `beak`
 
-A horny beak in two halves, upper on the head and lower on the jaw, for birds and griffins.
+A horny beak in two halves over the snout, upper on the head and lower on the jaw, for birds and griffins.
 
 Add to "parts" with "type": "beak"; parameters go in "params".
-
-**Not built yet** (plan milestone 8.3): it validates, but compile skips it and warns `not_built`.
 
 slot: `"mouth"` · material: `"horn"` · defaultAttach: `{"on":"head"}`
 
 | Parameter | Type | Range | Default | Description |
 | --- | --- | --- | --- | --- |
 | `shape` | "hooked" \| "straight" \| "broad" |  | `"hooked"` | "hooked" like an eagle, "straight" like a heron, "broad" like a duck |
-| `length` | number | 0.2–2 | `1` | Beak length relative to the snout |
+| `length` | number | 0.2–2 | `1` | How far the beak runs on past the snout, relative to the snout |
 | `depth` | number | 0.2–2 | `1` | How deep and heavy the beak is |
 | `color` | string |  | `"#d8b040"` | Beak colour: a palette name or a colour |
 | `tipColor` | string |  | `"#3a3020"` | Colour at the tip |
@@ -862,7 +868,7 @@ slot: `"surface"` · material: `"skin"` · defaultAttach: `{"on":"head","at":0.8
 
 ### `eye.basic`
 
-Round eyeball with an iris and pupil that turns to look at targets and blinks.
+Round eyeball with an iris and pupil, sized to the head, with eyelids that blink (or none).
 
 Add to "parts" with "type": "eye.basic"; parameters go in "params".
 
@@ -870,19 +876,22 @@ slot: `"surface"` · material: `"eye"` · defaultAttach: `{"on":"head","at":0.4,
 
 | Parameter | Type | Range | Default | Description |
 | --- | --- | --- | --- | --- |
-| `size` | number | 0.005–0.2 | `0.022` | Eyeball radius in torso lengths |
+| `scale` | number | 0.2–3 | `1` | Eye size relative to the head: 1 is typical, 2 big, 0.5 small |
+| `size` | number | 0.005–0.2 |  | Eyeball radius in torso lengths; when set it wins over `scale` |
 | `pupil` | "round" \| "slit" \| "goat" |  | `"round"` | Pupil shape |
 | `irisColor` | string |  | `"#c8a030"` | Iris colour: a palette name or a colour |
 | `scleraColor` | string |  | `"#e8e2cc"` | Colour of the eyeball around the iris |
 | `iris` | number | 0.2–1 | `0.7` | Iris size as a share of the visible eye |
 | `bulge` | number | 0–1 | `0.5` | How far the eye stands out of the skin |
+| `lids` | boolean |  | `true` | Eyelids that blink; snakes, fish and insects have none |
+| `squint` | number | 0–1 | `0.15` | How far the upper lid hangs over the eye at rest: 0 wide open, 1 a menacing squint |
 
 ```json
 {
   "id": "eyes",
   "type": "eye.basic",
   "attach": { "on": "head", "at": 0.4, "angle": 60, "side": "both" },
-  "params": { "size": 0.02, "pupil": "slit" }
+  "params": { "scale": 1.2, "pupil": "slit", "squint": 0.4 }
 }
 ```
 
@@ -1432,7 +1441,7 @@ slot: `"row"` · material: `"bone"` · defaultAttach: `{"on":"torso","angle":0}`
 
 ### `teeth.row`
 
-Teeth along the mouth line; the upper row moves with the head, the lower with the jaw.
+Teeth standing in the gums along the mouth, sized to the head: incisors, fangs, then cheek teeth. The upper row moves with the head, the lower with the jaw.
 
 Add to "parts" with "type": "teeth.row"; parameters go in "params".
 
@@ -1440,16 +1449,20 @@ slot: `"mouth"` · material: `"enamel"` · defaultAttach: `{"on":"head"}`
 
 | Parameter | Type | Range | Default | Description |
 | --- | --- | --- | --- | --- |
-| `count` | integer | 1–40 | `10` | Teeth per row on each side |
-| `length` | number | 0.005–0.2 | `0.025` | Tooth length in torso lengths |
+| `scale` | number | 0.2–3 | `1` | Tooth size relative to the head: 1 is typical, 2 big, 0.5 small |
+| `fangScale` | number | 0.2–3 | `1` | Fang size relative to the head: 1 is typical, 2 sabre-like |
+| `spacing` | number | 0–2 | `0.15` | Gap between neighbouring teeth as a share of a tooth’s width; 0 packs them tight |
+| `incisors` | integer | 0–4 | `2` | Small front teeth on each side before the fangs (not used when `count` is set) |
 | `fangs` | integer | 0–4 | `1` | Long fangs at the front of each row |
-| `fangLength` | number | 0.01–0.4 | `0.06` | Fang length in torso lengths |
+| `count` | integer | 1–40 |  | Teeth per row on each side; without it, as many as `spacing` fits |
+| `length` | number | 0.005–0.2 |  | Tooth length in torso lengths; when set it wins over `scale` |
+| `fangLength` | number | 0.01–0.4 |  | Fang length in torso lengths; when set it wins over `fangScale` |
 | `upper` | boolean |  | `true` | Teeth in the upper row |
 | `lower` | boolean |  | `true` | Teeth in the lower row |
 | `color` | string |  | `"#efe8d0"` | A palette name such as "accent", or a colour such as "#2a1e14" |
 
 ```json
-{ "id": "teeth", "type": "teeth.row", "params": { "count": 12, "fangs": 1 } }
+{ "id": "teeth", "type": "teeth.row", "params": { "fangs": 1, "fangScale": 1.3 } }
 ```
 
 ## Patterns

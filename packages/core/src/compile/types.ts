@@ -11,6 +11,8 @@ export type BoneSection =
   | 'limb'
   | 'toe'
   | 'eye'
+  /** Eyelids: skin pieces that turn about the eye, not part of the skin's field. */
+  | 'lid'
   | 'helper';
 
 /** One bone in rest pose, in model space (metres; Y up, the creature faces +Z). */
@@ -65,6 +67,13 @@ export interface MassDef {
   readonly cross: readonly [number, number];
   /** Smooth-min radius against the chain's cones (metres); 0 is a plain union. */
   readonly blend: number;
+  /**
+   * `detail`: a head detail (lips, brow, cheekbones) kept however small, left out of the grid
+   * and shown by the head's refinement. `carve`: a detail subtracted from the chain (nostrils).
+   */
+  readonly kind?: 'detail' | 'carve';
+  /** A small detail the head's refinement splits finer around (brow, cheekbones, nostrils). */
+  readonly fine?: boolean;
 }
 
 /** A run of bones that join with a plain union; chains join their parents with a smooth min. */

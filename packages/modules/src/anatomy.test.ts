@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import {
   buildSkeleton,
   type CompiledCreature,
@@ -13,9 +13,9 @@ import { describe, expect, it } from 'vitest';
 import { basicPack } from './index.ts';
 
 /**
- * Milestone 8.1's anatomy on real bodies (docs/design/8.1-anatomy.md): muscle 0 is plan 1's
- * mesh exactly, each body gets the masses its rules give, and skinning stretches no more than it
- * did.
+ * Milestone 8.1's anatomy on real bodies (docs/design/8.1-anatomy.md): muscle 0 is the mesh
+ * without muscle exactly, each body gets the masses its rules give, and skinning stretches no
+ * more than it did.
  */
 const registry = createRegistry([basicPack]);
 const example = (name: string) =>
@@ -28,16 +28,26 @@ const withMuscle = (blueprint: Record<string, unknown>, muscle: number) => ({
 });
 
 describe('anatomy', () => {
-  // (The bog troll's entry was re-pinned when it got hands in 8.2.)
-  it('compiles muscle 0 to exactly the mesh each example had before it', () => {
-    const before = JSON.parse(
-      readFileSync(new URL('./golden-muscle0.json', import.meta.url), 'utf8'),
-    ) as Record<string, { low: string; medium: string }>;
-    for (const [name, want] of Object.entries(before)) {
-      const zero = withMuscle(example(name), 0);
-      expect(fingerprint(compile(zero, 'low')), name).toBe(want.low);
-      expect(fingerprint(compile(zero, 'medium')), name).toBe(want.medium);
-    }
+  // Pinned in 8.1 as plan 1's meshes; re-pinned when the bog troll got hands (8.2) and when 8.3
+  // rebuilt every head (with UPDATE_GOLDEN=1, as golden.json). Muscle 0 is now the mesh without
+  // muscle: what the masses and profiles add is all that muscle changes.
+  it('compiles muscle 0 to exactly the mesh each example had without muscle', () => {
+    const file = new URL('./golden-muscle0.json', import.meta.url);
+    const before = JSON.parse(readFileSync(file, 'utf8')) as Record<
+      string,
+      { low: string; medium: string }
+    >;
+    const actual = Object.fromEntries(
+      Object.keys(before).map((name) => {
+        const zero = withMuscle(example(name), 0);
+        return [
+          name,
+          { low: fingerprint(compile(zero, 'low')), medium: fingerprint(compile(zero, 'medium')) },
+        ];
+      }),
+    );
+    if (process.env.UPDATE_GOLDEN) writeFileSync(file, `${JSON.stringify(actual, null, 2)}\n`);
+    expect(actual).toEqual(before);
   });
 
   it('leaves the skin it does not reshape exactly where it was', () => {
@@ -55,8 +65,10 @@ describe('anatomy', () => {
           );
       return out.sort();
     };
-    // (A short neck's muscle may reach under the jaw, as the troll's does; these do not.)
-    for (const name of ['ridgeback-stalker', 'ember-beetle']) {
+    // (A short neck's muscle may reach under the jaw, as the troll's does; these do not. A body
+    // near the skin's 30k limit, as the beetle's is, leaves its head less room to be refined in
+    // (8.3), so muscle may change how finely such a head is meshed.)
+    for (const name of ['ridgeback-stalker', 'rust-raptor']) {
       const plain = head(compile(withMuscle(example(name), 0), 'medium'));
       expect(plain.length, name).toBeGreaterThan(100);
       expect(head(compile(example(name), 'medium')), name).toEqual(plain);
@@ -66,8 +78,15 @@ describe('anatomy', () => {
   it('gives each body the masses and shapes its rules call for', () => {
     const build = (blueprint: unknown) =>
       buildSkeleton(resolveBlueprint(blueprint, registry), registry);
+    // Anatomy's own masses; the head's details (8.3) are counted below.
     const masses = (name: string) =>
-      Object.fromEntries(build(example(name)).chains.map((c) => [c.id, c.masses.length]));
+      Object.fromEntries(
+        build(example(name)).chains.map((c) => [c.id, c.masses.filter((m) => !m.kind).length]),
+      );
+    const details = (name: string) =>
+      (build(example(name)).chains.find((c) => c.id === 'head')?.masses ?? [])
+        .filter((m) => m.kind)
+        .map((m) => m.kind);
     const shaped = (name: string) =>
       build(example(name))
         .bones.filter((b) => b.shaped)
@@ -101,6 +120,12 @@ describe('anatomy', () => {
     );
     expect(viper?.cross[0]).toBeGreaterThan(flat?.cross[0] as number);
     expect(viper?.cross[1]).toBeLessThan(flat?.cross[1] as number);
+    // Head details: a brow over each eye, two cheekbones and two nostrils, and lips along the
+    // mouth (24 cones) unless a blueprint sets them to 0, as the serpent preset does.
+    const count = (name: string, kind: string) => details(name).filter((k) => k === kind).length;
+    expect(count('ridgeback-stalker', 'carve')).toBe(2);
+    expect(count('ridgeback-stalker', 'detail')).toBe(2 + 2 + 24);
+    expect(count('reed-viper', 'detail')).toBe(2 + 2);
   });
 
   it.each(['ridgeback-stalker', 'bog-troll'])(
