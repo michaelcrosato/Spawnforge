@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { ActionModule, GaitModule, PartModule, Registry } from '../registry.ts';
+import type { ActionModule, Feature, GaitModule, PartModule, Registry } from '../registry.ts';
 import { toHex } from './colors.ts';
 import type {
   CreatureSpec,
@@ -339,11 +339,34 @@ export function resolveDocument(input: unknown, registry: Registry): ResolveOutc
           )
         : (gaits.filter(Boolean) as ModuleRefSpec[]),
       actions: defaultActions
-        ? resolveDefaults('action', doc.motion.actions)
+        ? resolveDefaults('action', suitableActions(registry, bodyFeatures(doc)))
         : (actions.filter(Boolean) as ModuleRefSpec[]),
     },
   };
   return { doc: resolved, errors, warnings, dropped };
+}
+
+/** Which features a body has, for the actions that need them. */
+export function bodyFeatures(doc: {
+  body: { head: { jaw: boolean }; tail: { length: number } };
+  limbs: readonly { role: string }[];
+}): Record<Feature, boolean> {
+  return {
+    head: true,
+    jaw: doc.body.head.jaw,
+    arm: doc.limbs.some((l) => l.role === 'arm'),
+    tail: doc.body.tail.length > 0,
+    legs: doc.limbs.some((l) => l.role === 'leg'),
+  };
+}
+
+/** Actions whose needs a body meets, in id order. */
+export function suitableActions(registry: Registry, has: Record<Feature, boolean>): string[] {
+  return registry
+    .list('action')
+    .filter((a) => a.needs.every((need) => has[need]))
+    .map((a) => a.id)
+    .sort();
 }
 
 /** Gaits that suit a leg-pair count, slowest first. */
@@ -496,7 +519,23 @@ function semanticChecks(doc: ResolvedDoc, registry: Registry): Issue[] {
       sections.includes(on) || limbIds.has(base) || (partIds.has(base) && base !== part.id);
     if (!known) {
       const candidates = [...sections, ...limbIds, ...[...partIds].filter((id) => id !== part.id)];
-      const guess = didYouMean(on, candidates);
+      // Names models reach for that are parts of a section rather than sections.
+      const snout = 'use "head" with a low "at" (the snout end is at 0)';
+      const near: Record<string, string> = {
+        snout,
+        muzzle: snout,
+        nose: snout,
+        face: 'use "head"',
+        skull: 'use "head"',
+        mouth: 'use "jaw"',
+        chin: 'use "jaw"',
+        back: 'use "spine" (rows) or "torso", with "angle" 0',
+        body: 'use "torso"',
+        chest: 'use "torso" with a low "at"',
+        hips: 'use "torso" with a high "at"',
+      };
+      const hint = near[on.toLowerCase()];
+      const guess = hint ? undefined : didYouMean(on, candidates);
       const missingSection = on === 'neck' || on === 'tail' || on === 'jaw';
       error(
         `${p}.attach.on`,
@@ -508,9 +547,7 @@ function semanticChecks(doc: ResolvedDoc, registry: Registry): Issue[] {
             ? on === 'jaw'
               ? 'set body.head.jaw to true'
               : `give body.${on} a length above 0`
-            : guess
-              ? `did you mean "${guess}"?`
-              : undefined,
+            : (hint ?? (guess ? `did you mean "${guess}"?` : undefined)),
         },
       );
     }

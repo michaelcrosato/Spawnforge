@@ -143,7 +143,7 @@ One pattern layer; its parameters sit beside `type`
 | --- | --- | --- | --- | --- |
 | `temperament` | "calm" \| "stalking" \| "skittish" \| "aggressive" \| "lumbering" |  | `"calm"` | Sets pace, posture and idle behaviour |
 | `gaits` | list of "slither" \| "tripod" \| "trot" \| "walk" or object |  |  | Gaits it may use; by default every gait that suits its legs |
-| `actions` | list of "bite" \| "idle" \| "look" \| "roar" or object |  | `[]` | Actions it can perform |
+| `actions` | list of "bite" \| "idle" \| "look" \| "roar" or object |  |  | Actions it can perform; by default every action its body allows |
 
 ## Body plans
 
@@ -429,7 +429,7 @@ slot: `"surface"` · material: `"horn"` · defaultAttach: `{"on":"head","at":0.7
 | --- | --- | --- | --- | --- |
 | `length` | number | 0.02–1 | `0.2` | Length in torso lengths |
 | `width` | number | 0.005–0.3 | `0.035` | Base radius in torso lengths |
-| `curve` | number | -270–270 | `45` | Total bend in degrees; positive sweeps back toward the tail, negative forward |
+| `curve` | number | -540–540 | `45` | Total bend in degrees; positive sweeps back toward the tail, negative forward; past 360 it coils |
 | `twist` | number | -720–720 | `0` | Spiral in degrees along the horn, like a ram |
 | `lean` | number | -90–90 | `0` | Degrees the root tilts forward (+) or back (-) |
 | `turn` | number | -180–180 | `0` | Degrees the bend turns sideways: 90 curves toward the midline (mandibles), -90 away from it |

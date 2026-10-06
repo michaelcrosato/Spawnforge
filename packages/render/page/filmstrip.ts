@@ -1,4 +1,4 @@
-import { type CompiledCreature, MotionController } from '@spawnforge/core';
+import { type CompiledCreature, MotionController, type Registry } from '@spawnforge/core';
 import { applyPose, type CreatureObject } from '@spawnforge/three';
 import * as THREE from 'three';
 import type { WebGPURenderer } from 'three/webgpu';
@@ -30,8 +30,11 @@ export async function drawFilmstrip(
   request: FilmstripRequest,
   ctx: CanvasRenderingContext2D,
   layout: { top: number; size: number; cols: number },
+  registry: Registry,
 ): Promise<MotionInfo> {
-  const controller = new MotionController(compiled);
+  if (request.action)
+    return drawAction(compiled, creature, stage, request, ctx, layout, registry, request.action);
+  const controller = new MotionController(compiled, { registry });
   if (request.gait) controller.lockGait(request.gait);
   const speed =
     request.speed ?? (request.gait ? controller.gaitSpeed(request.gait) : controller.paceSpeed());
@@ -134,9 +137,77 @@ export async function drawFilmstrip(
   return { gait: controller.gait?.id ?? 'none', speed, cycle, stride, duty, footSlide };
 }
 
-/** Height of the footfall diagram below the frames. */
-export function diagramHeight(legCount: number): number {
-  return 22 + Math.max(1, legCount) * 16 + 24;
+/** Height of the footfall diagram (or action timeline) below the frames. */
+export function diagramHeight(legCount: number, action: boolean): number {
+  return action ? 64 : 22 + Math.max(1, legCount) * 16 + 24;
+}
+
+/** The creature stands and performs one action; frames span it, events on a timeline below. */
+async function drawAction(
+  compiled: CompiledCreature,
+  creature: CreatureObject,
+  stage: Stage,
+  request: FilmstripRequest,
+  ctx: CanvasRenderingContext2D,
+  layout: { top: number; size: number; cols: number },
+  registry: Registry,
+  action: string,
+): Promise<MotionInfo> {
+  const controller = new MotionController(compiled, { registry });
+  for (let i = 0; i < 120; i++) controller.update(STEP);
+  const head = controller.pose.worldPos[compiled.rig.head] as THREE.Vector3;
+  const target = head.clone().add(new THREE.Vector3(0, -0.15, 0.7).multiplyScalar(compiled.scale));
+  controller.act(action, { target });
+  const frames = Math.max(2, Math.min(16, Math.round(request.frames ?? 8)));
+  const { cols, size, top } = layout;
+  const events: { type: string; time: number }[] = [];
+  const start = controller.time;
+  let duration = controller.actionState?.duration ?? 1;
+  let next = 0;
+  for (let i = 0; i < 6000 && next < frames; i++) {
+    const state = controller.actionState;
+    if (state) duration = state.duration;
+    const progress = state ? state.progress : 1;
+    if (progress >= next / (frames - 1) - 1e-9) {
+      await drawFrame(controller, creature, stage, request, ctx, {
+        x: (next % cols) * size,
+        y: top + Math.floor(next / cols) * size,
+        size,
+        label: `${next + 1}  t = ${(controller.time - start).toFixed(2)} s`,
+      });
+      next++;
+      continue;
+    }
+    for (const e of controller.update(STEP))
+      if (e.type !== 'footstep') events.push({ type: e.type, time: e.time - start });
+  }
+  // Timeline of the action's events.
+  const y = top + Math.ceil(frames / cols) * size + 10;
+  const width = cols * size;
+  const x0 = 90;
+  const barW = width - x0 - 20;
+  ctx.font = '11px ui-monospace, monospace';
+  ctx.fillStyle = '#aab';
+  ctx.fillText(`${action}: ${duration.toFixed(2)} s, events`, 14, y + 12);
+  ctx.fillStyle = '#2c3038';
+  ctx.fillRect(x0, y + 22, barW, 6);
+  for (const e of events) {
+    if (e.type === 'action-start' || e.type === 'action-end') continue;
+    const x = x0 + Math.min(1, e.time / duration) * barW;
+    ctx.fillStyle = '#ffd166';
+    ctx.fillRect(x - 1, y + 16, 3, 18);
+    ctx.fillText(`${e.type} ${e.time.toFixed(2)} s`, Math.min(x + 4, width - 150), y + 46);
+  }
+  return {
+    action,
+    events,
+    gait: 'standing',
+    speed: 0,
+    cycle: duration,
+    stride: 0,
+    duty: {},
+    footSlide: 0,
+  };
 }
 
 async function drawFrame(
@@ -166,7 +237,8 @@ async function drawFrame(
   key.position.copy(focus).add(new THREE.Vector3(span * 1.2, span * 2.2, span * 1.6));
   key.target.position.copy(focus);
   key.target.updateMatrixWorld();
-  const view = request.view ?? 'side';
+  // Legless bodies show their wave from above.
+  const view = request.view ?? (controller.legless ? 'top' : 'side');
   let camera: THREE.Camera;
   if (view === 'three-quarter') {
     const persp = new THREE.PerspectiveCamera(30, 1, span * 0.002, span * 20);

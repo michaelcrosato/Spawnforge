@@ -12,6 +12,7 @@ import {
   Uint16BufferAttribute,
   Vector3,
 } from 'three';
+import { uniform } from 'three/tsl';
 import { eyeMaterial, partsMaterial, skinMaterial } from './materials.ts';
 
 /** A compiled creature as Three.js objects: one skinned mesh per draw call, sharing a skeleton. */
@@ -25,6 +26,10 @@ export interface CreatureObject {
     readonly parts: SkinnedMesh;
     readonly eyes: SkinnedMesh;
   };
+  /** Shader inputs the pose drives (`applyPose` sets them). */
+  readonly signals: { readonly breath: { value: number } };
+  /** Eye bone indices, which blink by squashing. */
+  readonly eyeBones: readonly number[];
   /** Rest local transforms per bone, for resetting poses. */
   readonly rest: {
     readonly positions: readonly Vector3[];
@@ -93,9 +98,10 @@ export function createCreatureObject(
   const skeleton = new Skeleton(bones);
   skeleton.calculateInverses();
 
+  const breath = uniform(0);
   const skin = new SkinnedMesh(
     geometryOf(compiled.skin, { body: [compiled.skin.body, 4], region: [compiled.skin.region, 4] }),
-    skinMaterial(compiled.material, compiled.scale, registry),
+    skinMaterial(compiled.material, compiled.scale, registry, { breath }),
   );
   const parts = new SkinnedMesh(
     geometryOf(compiled.parts, {
@@ -128,6 +134,8 @@ export function createCreatureObject(
     skeleton,
     bones,
     meshes: { skin, parts, eyes },
+    signals: { breath },
+    eyeBones: compiled.rig.eyes,
     rest: { positions: restPositions, rotations: restRotations },
     dispose() {
       for (const mesh of [skin, parts, eyes]) {

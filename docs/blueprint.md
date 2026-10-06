@@ -73,7 +73,9 @@ deep, like a fish) or `wide` (flat and broad, like a beetle or a cobra's hood).
 **Tails.** The tail leaves the torso at `pitch`, then bends upward by `curl` degrees in total,
 spread evenly along it; negative `curl` bends down. `curlStart` keeps the first part straight:
 `"curlStart": 0.6` curls only the last 40%. A scorpion tail arching over the back is about
-`"pitch": 20, "curl": 200`; a tail curled at the tip is `"curl": 160, "curlStart": 0.6`.
+`"length": 2.4, "pitch": 40, "curl": 200` on a hexapod's short torso (tails are measured in
+torso lengths, so a short body needs a long tail); a tail curled at the tip is
+`"curl": 160, "curlStart": 0.6`.
 
 **Upright and horizontal bodies.** Legs attach along the torso with `at`, so when you change the
 torso's `pitch`, move the legs with it. On an upright biped (pitch 70–85) legs sit at the back end
@@ -168,7 +170,7 @@ All lengths are in torso lengths.
 
 | Look | Part |
 | --- | --- |
-| Ram horns, coiled | `horn.curved` on `head`, `at` 0.8, `angle` 45; `length` 0.45, `width` 0.05, `curve` 250, `twist` 120, `ridges` 12 |
+| Ram horns, coiled beside the head | `horn.curved` on `head`, `at` 0.8, `angle` 40; `length` 0.65, `width` 0.05, `curve` 400, `turn` -35, `lean` -10, `ridges` 12 |
 | Bull horns, out then forward | `horn.curved` on `head`, `at` 0.85, `angle` 75; `length` 0.3, `width` 0.04, `curve` -70 |
 | Rhino nose horn | `horn.curved` on `head`, `at` 0.12, `angle` 0; `length` 0.22, `width` 0.05, `curve` 25 (add a smaller one at `at` 0.4) |
 | Tusks from the lower jaw | `horn.curved` on `jaw`, `at` 0.25, `angle` 60; `length` 0.16, `width` 0.025, `curve` -60, pale `color` and `tipColor` |
@@ -181,9 +183,10 @@ For `horn.curved`: the horn grows straight out of the skin, then bends by `curve
 backward (toward the tail) for positive values and forward for negative ones. `lean` tilts the
 root first, `twist` spirals it, and `turn` swings the bend sideways (90 toward the midline, -90
 away). Pairs (`side` "both") are mirror images. The attach `angle` also sets the plane the horn
-bends in: near 30–45 a curved horn rises and sweeps back over the head (ram horns), near 75–90 it
-grows out to the side first (bull horns). Coiled horns spend their length on the coil, so a big
-ram's horns need a `length` of 0.5–0.75 to read from a distance.
+bends in: near 30–45 a curved horn rises and sweeps back over the head, near 75–90 it grows out
+to the side first (bull horns). A `curve` past 360 coils; a small negative `turn` (-30 to -45)
+then swings the coil out beside the head instead of over it (ram horns). Coiled horns spend their
+length on the coil, so they need a `length` of 0.5–0.75 to read from a distance.
 
 ## Skin
 
@@ -204,8 +207,8 @@ ram's horns need a `length` of 0.5–0.75 to read from a distance.
 - Colour parameters (`color`, and any field ending in `Color`) take a palette name such as
   `"accent"` or a colour.
 - Pattern sizes are in torso lengths, so they scale with the creature. Details smaller than a few
-  pixels fade out instead of flickering, so on a small creature seen from afar, `scales` at the
-  default size read as plain skin; use a `size` of 0.05–0.1 there.
+  pixels fade out instead of flickering, so on a small creature seen from afar, `scales` and
+  `spots` at their default sizes read as plain skin; use a `size` of 0.08–0.15 there.
 - On a creature with no legs, `countershade` at its default height gives the pale belly of a
   snake; raise `height` toward 0 to pale the flanks too.
 
@@ -214,20 +217,42 @@ when the creature moves.
 
 ## Motion
 
-- **`temperament`**: `calm`, `stalking`, `skittish`, `aggressive` or `lumbering`. It sets pace,
-  posture and idle behaviour.
+- **`temperament`**: `calm`, `stalking`, `skittish`, `aggressive` or `lumbering`. It sets the
+  walking pace, how fast it turns, a crouch and a lowered head for stalkers, and idle behaviour.
 - **Speed is chosen at run time** by whatever moves the creature (a game, or the sandbox).
-  Stride length and timing scale with leg length and speed, so `walk` also covers running on two
-  legs; four-legged creatures switch from walk to trot as they speed up.
+  Stride length and timing scale with leg length and speed (bigger creatures step more slowly),
+  and four-legged creatures switch from walk to trot as they speed up.
 - **`gaits`** are worked out from the legs, so you rarely need to list them. Each suits a leg
   count: `walk` (any legs), `trot` (2 pairs), `tripod` (3 pairs), `slither` (no legs). Leave the
-  field out to use every gait that suits the body.
-- **`actions`**: `bite` and `roar` need a jaw, `look` needs a head, and `idle` needs nothing.
+  field out to use every gait that suits the body. A gait's parameters sit beside its `type`:
+  - `stride` multiplies the natural stride length, but a foot can only travel as far as its leg
+    reaches, so on short or sprawled legs large values change nothing (the legs step faster
+    instead). Long, nearly straight legs take the longest strides.
+  - `duty` is the share of the cycle each foot is planted. Above 0.5 a biped walks; below 0.5
+    it runs, with moments where no foot touches the ground: a raptor's sprint is
+    `{ "type": "walk", "duty": 0.4 }`.
+  - `stepHeight` lifts the feet higher (a share of hip height); `slither` takes `amplitude` and
+    `waves` for the shape of its S-curve.
+- **`actions`**: what the creature can do when asked. `bite` and `roar` need a jaw, `look`
+  needs a head, `idle` needs nothing. Leave the field out to get every action the body allows.
+  `idle` runs by itself (breathing, blinks, glances, weight shifts, tail swish); the others run
+  once when a game or the sandbox calls them, timed by size (a big creature bites slowly) and
+  aimed at a target.
+- **Events**: footsteps, gait changes, the start and end of each action, and moments an action
+  marks, such as `bite-contact` when the jaw snaps shut and `roar-peak`. Games use them for sound
+  and damage.
 - **Check motion with a filmstrip**: `render` with `filmstrip` (CLI: `--filmstrip`, optionally
-  `--gait trot`) draws one gait cycle and a footfall diagram, and reports the cycle time, stride,
-  the share of time each foot is planted and how far planted feet slide (should be near 0). Legs
-  that are too short for their body, or set too far forward or back, show up there as short
-  strides, odd footfall patterns or sliding feet.
+  `--gait trot` or `--speed 2`) draws one gait cycle and a footfall diagram, and reports the
+  cycle time, stride, the share of time each foot is planted and how far planted feet slide (in
+  metres; anything above a centimetre or two is visible). Serpents are drawn from above to show
+  their wave. With `--action bite` (or `roar`, `look`) it draws the action instead, with the
+  times of its events.
+
+What the body model does not do yet: a section bends only as a whole, so a neck raised steeply
+(a cobra) turns at its base rather than in an S; legs are tubes without hooves; and the head
+stays level while walking, by design. For sprawled legs, an attach `angle` around 110–120 keeps
+the legs clear of the body as they swing; angles past about 150 bring both legs under the belly.
+Big eyes need a large `size` (0.06–0.1 for cartoon eyes).
 
 ## Validation
 
@@ -240,8 +265,10 @@ the minimal blueprint is there to show what actually differs from the preset. Ea
 - `expected`, the valid range or values
 - `fix`, e.g. `did you mean "length"?` or `move "length" into "params"`
 
-All problems are reported at once, so fix them all before validating again. Unknown keys are
-always errors, never silently dropped.
+Validation reports every problem it can find in one pass, so fix them all before validating
+again. A few mistakes (an unknown preset, a list where an object belongs) hide the checks that
+depend on them, so a second pass can find more. Unknown keys are always errors, never silently
+dropped.
 
 Compiling and rendering can add warnings that only show once the body is built, such as
 `below_ground` when a drooping tail or head sinks into the floor. They have the same fields and

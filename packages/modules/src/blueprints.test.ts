@@ -65,6 +65,23 @@ describe('defaults', () => {
   });
 });
 
+describe('default gaits and actions', () => {
+  it('gives every action the body allows when the list is left out', () => {
+    const actions = (blueprint: Record<string, unknown>) =>
+      validateBlueprint({ format: FORMAT, ...blueprint }, registry).creature?.motion.actions.map(
+        (a) => a.type,
+      );
+    expect(actions({ extends: 'quadruped' })).toEqual(['bite', 'idle', 'look', 'roar']);
+    // No jaw: no bite or roar.
+    expect(actions({ extends: 'quadruped', body: { head: { jaw: false } } })).toEqual([
+      'idle',
+      'look',
+    ]);
+    // A list replaces the default.
+    expect(actions({ extends: 'quadruped', motion: { actions: ['look'] } })).toEqual(['look']);
+  });
+});
+
 describe('mirroring', () => {
   const creature = validateBlueprint(
     examples.find(([f]) => f === 'ridgeback-stalker.json')?.[1],

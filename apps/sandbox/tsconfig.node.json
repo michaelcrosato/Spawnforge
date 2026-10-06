@@ -1,10 +1,9 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "lib": ["es2023", "dom", "dom.iterable"],
     "module": "preserve",
     "moduleResolution": "bundler",
-    "types": ["vite/client"]
+    "types": ["node"]
   },
-  "include": ["src"]
+  "include": ["vite.config.ts", "creatures-plugin.ts"]
 }

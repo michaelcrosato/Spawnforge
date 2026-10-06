@@ -16,8 +16,25 @@
       <label><input type="checkbox" id="wander" checked /> wander</label>
       <label>pace <input type="range" id="pace" min="0" max="100" value="50" /></label>
       <span id="pace-value"></span>
+      <span id="actions"></span>
+      <label><input type="checkbox" id="watch" /> watch me</label>
+      <button type="button" id="toggle-panel">edit</button>
     </div>
-    <div id="help">Click the ground to walk there · drag to orbit · scroll to zoom</div>
+    <aside id="panel" hidden>
+      <nav>
+        <button type="button" data-tab="sliders" class="active">sliders</button>
+        <button type="button" data-tab="json">JSON</button>
+        <button type="button" data-tab="gallery">gallery</button>
+      </nav>
+      <section id="tab-sliders"></section>
+      <section id="tab-json" hidden>
+        <textarea id="json" spellcheck="false" aria-label="Blueprint JSON"></textarea>
+        <div id="issues"></div>
+      </section>
+      <section id="tab-gallery" hidden></section>
+    </aside>
+    <div id="events"></div>
+    <div id="help">Click the ground to walk there · drag to orbit · scroll to zoom · save blueprints in creatures/ to see them here</div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

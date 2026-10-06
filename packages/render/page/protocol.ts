@@ -25,6 +25,11 @@ export interface RenderRequest {
 }
 
 export interface FilmstripRequest {
+  /**
+   * An action id (one of the creature's actions) to show instead of a gait: the creature stands
+   * and performs it once, aimed at a point in front of its head.
+   */
+  readonly action?: string;
   /** Gait id to show (default: whichever the creature uses at `speed`). */
   readonly gait?: string;
   /** Metres per second (default: typical for the gait, or the temperament's walking pace). */
@@ -35,8 +40,12 @@ export interface FilmstripRequest {
   readonly view?: 'side' | 'three-quarter' | 'top';
 }
 
-/** What a filmstrip measured over the cycle it drew. */
+/** What a filmstrip measured over the cycle (or action) it drew. */
 export interface MotionInfo {
+  /** The action shown, for action filmstrips. */
+  readonly action?: string;
+  /** Events the action fired, with seconds from its start. */
+  readonly events?: readonly { readonly type: string; readonly time: number }[];
   readonly gait: string;
   /** Metres per second. */
   readonly speed: number;

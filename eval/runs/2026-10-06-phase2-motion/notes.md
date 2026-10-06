@@ -4,8 +4,8 @@ Run on commit `36b4502` (the phase 2 PR before this eval was added), with the CL
 `render --filmstrip` alongside the contact sheets.
 
 Format score: **20/20** valid within three fix rounds, 19 on the first attempt (`score.json`).
-The one error was `head.shape: "wide"` (meant `crossSection`), fixed from its "did you mean
-\"wedge\"?" hint. Agents used renders and filmstrips to revise every creature, 1 to 3 times each.
+The one error was `head.shape: "wide"` (meant `crossSection`), fixed from its `did you mean
+"wedge"?` hint. Agents used renders and filmstrips to revise every creature, 1 to 3 times each.
 
 Motion: every gait the agents tried had a clean footfall pattern (lateral-sequence walk,
 diagonal trot, alternating tripods) and planted feet stayed put (`footSlide` 1e-9 to 5e-3 m).

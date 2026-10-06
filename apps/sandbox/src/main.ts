@@ -16,6 +16,7 @@ import {
 } from '@spawnforge/three';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { createEditor } from './editor.ts';
 import { FootstepRings, terrainMesh } from './terrain.ts';
 
 const registry = createRegistry([basicPack]);
@@ -23,12 +24,21 @@ const examples = import.meta.glob('../../../examples/*.json', {
   eager: true,
   import: 'default',
 }) as Record<string, unknown>;
-const byName = new Map(
-  Object.entries(examples).map(([path, json]) => [
-    path.split('/').at(-1)?.replace('.json', '') ?? path,
-    json,
-  ]),
+const thumbnails = import.meta.glob('../../../examples/*.png', {
+  eager: true,
+  query: '?url',
+  import: 'default',
+}) as Record<string, string>;
+const fileName = (path: string) =>
+  path
+    .split('/')
+    .at(-1)
+    ?.replace(/\.(json|png)$/, '') ?? path;
+/** Blueprints by name: the examples, then files from the creatures folder; edits replace them. */
+const byName = new Map<string, unknown>(
+  Object.entries(examples).map(([path, json]) => [fileName(path), json]),
 );
+const exampleNames = new Set(byName.keys());
 
 const $ = <T extends HTMLElement>(selector: string) => {
   const element = document.querySelector<T>(selector);
@@ -54,6 +64,11 @@ async function main(): Promise<void> {
   const herd = $<HTMLInputElement>('#herd');
   const pace = $<HTMLInputElement>('#pace');
   const paceLabel = $<HTMLSpanElement>('#pace-value');
+  const actionBar = $<HTMLSpanElement>('#actions');
+  const watch = $<HTMLInputElement>('#watch');
+  const eventLog = $<HTMLDivElement>('#events');
+  const panel = $<HTMLElement>('#panel');
+  const gallery = $<HTMLElement>('#tab-gallery');
 
   const params = new URLSearchParams(location.search);
   const { renderer, backend } = await createRenderer(canvas, { forceWebGL: params.has('webgl') });
@@ -92,10 +107,13 @@ async function main(): Promise<void> {
   let focus: Walker | undefined;
   let generation = 0;
 
-  const spawn = async (name: string, at: { x: number; z: number; heading: number }) => {
+  const spawn = async (
+    name: string,
+    at: { x: number; z: number; heading: number },
+  ): Promise<Walker> => {
     const { compiled, ms } = await compiler.compile(byName.get(name), quality);
     const creature = createCreatureObject(compiled, registry);
-    const controller = new MotionController(compiled);
+    const controller = new MotionController(compiled, { registry });
     controller.position.set(at.x, course.height(at.x, at.z), at.z);
     controller.heading = at.heading;
     controller.update(0, { ground: course });
@@ -125,6 +143,10 @@ async function main(): Promise<void> {
     walkers = spawned;
     for (const w of walkers) scene.add(w.creature.object);
     focus = walkers.find((w) => w.name === picker.value) ?? walkers[0];
+    const blueprint = byName.get(picker.value);
+    if (blueprint && typeof blueprint === 'object')
+      editor.load(blueprint as Record<string, unknown>);
+    buildActions();
     if (focus) {
       const [x0, y0, z0] = focus.compiled.bounds.min;
       const [x1, y1, z1] = focus.compiled.bounds.max;
@@ -137,6 +159,139 @@ async function main(): Promise<void> {
     }
     updatePaceLabel();
   };
+
+  /** Swaps the focused creature for a recompiled one in the same spot (after an edit). */
+  const replaceFocus = async (blueprint: Record<string, unknown>) => {
+    const old = focus;
+    if (!old) return;
+    byName.set(old.name, blueprint);
+    const run = ++generation;
+    try {
+      const next = await spawn(old.name, {
+        x: old.controller.position.x,
+        z: old.controller.position.z,
+        heading: old.controller.heading,
+      });
+      if (run !== generation) return next.creature.dispose();
+      scene.remove(old.creature.object);
+      old.creature.dispose();
+      walkers = walkers.map((w) => (w === old ? next : w));
+      scene.add(next.creature.object);
+      focus = next;
+      buildActions();
+    } catch (error) {
+      status.textContent = `Compile failed: ${(error as Error).message}`;
+    }
+  };
+
+  const editor = createEditor(
+    registry,
+    {
+      sliders: $<HTMLElement>('#tab-sliders'),
+      json: $<HTMLTextAreaElement>('#json'),
+      issues: $<HTMLElement>('#issues'),
+    },
+    (blueprint) => void replaceFocus(blueprint),
+  );
+
+  /** One button per action the focused creature can perform. */
+  const buildActions = () => {
+    actionBar.replaceChildren(
+      ...(focus?.controller.actions() ?? []).map((id) => {
+        const button = document.createElement('button');
+        button.textContent = id;
+        button.addEventListener('click', () => {
+          const walker = focus;
+          if (!walker) return;
+          const c = walker.controller;
+          // Look and bite at the camera's side of the creature.
+          const toward = camera.position.clone().sub(c.position).setY(0).normalize();
+          const head = c.pose.worldPos[walker.compiled.rig.head] as THREE.Vector3;
+          const target =
+            id === 'look'
+              ? camera.position
+              : head.clone().addScaledVector(toward, walker.compiled.scale * 0.6);
+          c.act(id, { target });
+        });
+        return button;
+      }),
+    );
+  };
+
+  const logEvent = (text: string) => {
+    const line = document.createElement('div');
+    line.textContent = text;
+    eventLog.prepend(line);
+    while (eventLog.childElementCount > 6) eventLog.lastElementChild?.remove();
+  };
+
+  // The gallery: examples with their renders, then the creatures folder.
+  const buildGallery = () => {
+    gallery.replaceChildren(
+      ...[...byName.keys()].map((name) => {
+        const card = document.createElement('button');
+        card.className = 'card';
+        const thumb = thumbnails[`../../../examples/${name}.png`];
+        if (thumb) {
+          const img = document.createElement('img');
+          img.src = thumb;
+          img.alt = '';
+          card.append(img);
+        }
+        const label = document.createElement('span');
+        label.textContent = exampleNames.has(name) ? name : `${name} (creatures/)`;
+        card.append(label);
+        card.addEventListener('click', () => {
+          picker.value = name;
+          void show();
+        });
+        return card;
+      }),
+    );
+  };
+  const refreshPicker = () => {
+    const current = picker.value;
+    picker.replaceChildren(...[...byName.keys()].map((name) => new Option(name, name)));
+    if (byName.has(current)) picker.value = current;
+    buildGallery();
+  };
+
+  // The creatures folder (dev server only): load what is there and follow changes.
+  try {
+    const response = await fetch('/__creatures');
+    if (response.ok) {
+      for (const file of (await response.json()) as { name: string; blueprint?: unknown }[])
+        if (file.blueprint) byName.set(file.name, file.blueprint);
+    }
+  } catch {
+    // Not served by the dev server (a production build): examples only.
+  }
+  import.meta.hot?.on(
+    'spawnforge:creature',
+    (file: { name: string; blueprint?: unknown; removed?: boolean; error?: string }) => {
+      if (file.error) return logEvent(`creatures/${file.name}.json: ${file.error}`);
+      if (file.removed) byName.delete(file.name);
+      else byName.set(file.name, file.blueprint);
+      refreshPicker();
+      logEvent(`creatures/${file.name}.json ${file.removed ? 'removed' : 'saved'}`);
+      if (!file.removed && focus?.name === file.name && file.blueprint) {
+        editor.load(file.blueprint as Record<string, unknown>);
+        void replaceFocus(file.blueprint as Record<string, unknown>);
+      }
+    },
+  );
+
+  $<HTMLButtonElement>('#toggle-panel').addEventListener('click', () => {
+    panel.hidden = !panel.hidden;
+  });
+  for (const tab of panel.querySelectorAll<HTMLButtonElement>('nav button')) {
+    tab.addEventListener('click', () => {
+      for (const other of panel.querySelectorAll<HTMLButtonElement>('nav button'))
+        other.classList.toggle('active', other === tab);
+      for (const section of panel.querySelectorAll<HTMLElement>('section'))
+        section.hidden = section.id !== `tab-${tab.dataset.tab}`;
+    });
+  }
 
   /** The speed slider: 0 is a slow walk, 1 the fastest gait; the middle is the creature's pace. */
   const speedFor = (w: Walker) => {
@@ -179,7 +334,7 @@ async function main(): Promise<void> {
     });
   });
 
-  for (const name of byName.keys()) picker.add(new Option(name, name));
+  refreshPicker();
   picker.value = params.get('creature') ?? 'ridgeback-stalker';
   herd.checked = params.has('herd');
   picker.addEventListener('change', () => void show());
@@ -218,10 +373,17 @@ async function main(): Promise<void> {
           w.rest = rng.float(1, 4);
         }
       }
-      if (w === focus) previous.copy(c.position);
+      if (w === focus) {
+        previous.copy(c.position);
+        c.lookAt(watch.checked ? camera.position : null);
+      }
       for (const event of c.update(dt, { ground: course })) {
         if (event.type === 'footstep' && event.position)
           rings.spawn(event.position, w.compiled.scale * 0.12);
+        else if (w === focus && event.type !== 'footstep')
+          logEvent(
+            [event.time.toFixed(2), 's', event.type, event.action ?? event.gait ?? ''].join(' '),
+          );
       }
       applyPose(w.creature, c.pose);
       // The camera follows the focused creature.
@@ -239,7 +401,10 @@ async function main(): Promise<void> {
       const t = focus.compiled.stats.triangles;
       status.textContent = [
         focus.compiled.name,
-        `${focus.controller.gait?.id ?? 'standing'} ${focus.controller.speed.toFixed(2)} m/s`,
+        focus.controller.action ??
+          (focus.controller.speed > 0.01
+            ? `${focus.controller.gait?.id} ${focus.controller.speed.toFixed(2)} m/s`
+            : 'standing'),
         `${t.skin + t.parts + t.eyes} tris`,
         `compiled in ${focus.ms.toFixed(0)} ms`,
         `motion ${((motionMs / Math.max(1, walkers.length)) * 1000).toFixed(0)} µs/creature`,

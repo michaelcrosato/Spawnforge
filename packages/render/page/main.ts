@@ -113,7 +113,10 @@ window.spawnforgeRender = async (request) => {
   const cols = film ? Math.min(frames, 4) : views.length >= 5 ? 3 : views.length >= 2 ? 2 : 1;
   const rows = Math.ceil((film ? frames : views.length) / cols);
   sheet.width = cols * panelSize;
-  sheet.height = rows * panelSize + header + (film ? diagramHeight(compiled.rig.legs.length) : 0);
+  sheet.height =
+    rows * panelSize +
+    header +
+    (film ? diagramHeight(compiled.rig.legs.length, film.action !== undefined) : 0);
   const ctx = sheet.getContext('2d') as CanvasRenderingContext2D;
   ctx.fillStyle = '#16181c';
   ctx.fillRect(0, 0, sheet.width, sheet.height);
@@ -141,11 +144,14 @@ window.spawnforgeRender = async (request) => {
       film,
       ctx,
       { top: header, size: panelSize, cols },
+      registry,
     );
     ctx.font = '13px system-ui, sans-serif';
     ctx.fillStyle = '#aab';
     ctx.fillText(
-      `${motion.gait} · ${motion.speed.toFixed(2)} m/s · cycle ${motion.cycle.toFixed(2)} s · stride ${fmt(motion.stride)} · ${sizeLine}`,
+      motion.action
+        ? `${motion.action} · ${motion.cycle.toFixed(2)} s · ${sizeLine}`
+        : `${motion.gait} · ${motion.speed.toFixed(2)} m/s · cycle ${motion.cycle.toFixed(2)} s · stride ${fmt(motion.stride)} · ${sizeLine}`,
       14 + nameWidth + 18,
       28,
     );

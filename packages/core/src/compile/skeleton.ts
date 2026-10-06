@@ -248,7 +248,11 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
     const sw = clamp01(limb.splay / 60);
     const tipR = (limb.radius.at(-1) ?? 0.03) * L;
     const footH = Math.max(tipR, 0.012 * L);
-    const frac = lerp(limb.segments === 2 ? 0.9 : 0.84, 0.45, sw);
+    // Upright two-legged walkers stand nearly straight-legged; four-legged ones a little more
+    // flexed; sprawlers low.
+    const biped = lastPair === 0;
+    const upright = biped ? 0.91 : limb.segments === 2 ? 0.9 : 0.84;
+    const frac = lerp(upright, 0.45, sw);
     let v = frac * R;
     let h = R * Math.sin(limb.splay * 0.9 * DEG) * 0.85;
     // Sprawled legs fan out along the body, front feet forward and hind feet back (further, to

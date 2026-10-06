@@ -69,3 +69,151 @@ body {
   color: #aab;
   pointer-events: none;
 }
+
+#controls button,
+#panel nav button {
+  padding: 3px 8px;
+  border-radius: 5px;
+  border: 1px solid #444a55;
+  background: #2b2f37;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+#controls button:hover,
+#panel nav button.active {
+  background: #3a4150;
+}
+
+#actions {
+  display: flex;
+  gap: 4px;
+}
+
+#panel {
+  position: fixed;
+  top: 60px;
+  right: 12px;
+  bottom: 80px;
+  width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 8px;
+  background: rgb(20 22 27 / 92%);
+  overflow: hidden;
+}
+
+#panel[hidden],
+#panel section[hidden] {
+  display: none;
+}
+
+#panel nav {
+  display: flex;
+  gap: 6px;
+}
+
+#panel section {
+  flex: 1;
+  overflow: auto;
+  min-height: 0;
+}
+
+#tab-sliders fieldset {
+  margin: 0 0 8px;
+  border: 1px solid #343944;
+  border-radius: 6px;
+}
+
+#tab-sliders legend {
+  color: #9fb4d8;
+}
+
+#tab-sliders label {
+  display: grid;
+  grid-template-columns: 84px 1fr 52px;
+  gap: 6px;
+  align-items: center;
+}
+
+#tab-sliders output {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: #aab;
+}
+
+#tab-json {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+#json {
+  flex: 1;
+  min-height: 300px;
+  resize: none;
+  background: #15171b;
+  color: #dfe6f3;
+  border: 1px solid #343944;
+  border-radius: 6px;
+  font:
+    12px / 1.4 ui-monospace,
+    monospace;
+}
+
+#issues {
+  max-height: 30%;
+  overflow: auto;
+  font:
+    12px / 1.4 ui-monospace,
+    monospace;
+  color: #9fd49f;
+}
+
+#issues .error {
+  color: #ff8f8f;
+}
+
+#issues .warning {
+  color: #ffd166;
+}
+
+#tab-gallery {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  align-content: start;
+}
+
+#tab-gallery .card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid #343944;
+  border-radius: 6px;
+  background: #1d2026;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+#tab-gallery img {
+  width: 100%;
+  border-radius: 4px;
+}
+
+#events {
+  position: fixed;
+  left: 12px;
+  top: 12px;
+  font:
+    12px / 1.5 ui-monospace,
+    monospace;
+  color: #c3f584;
+  pointer-events: none;
+  text-shadow: 0 1px 2px #000;
+}

@@ -47,12 +47,20 @@ export type * from './compile/types.ts';
 export { FORMAT } from './format.ts';
 export * from './geometry/kit.ts';
 export {
+  type ActionContext,
+  type ActionGoals,
+  type ActionHooks,
+  envelope,
+  ramp,
+} from './motion/actions.ts';
+export {
   type GaitInfo,
   type Ground,
   type GroundSample,
   MotionController,
   type MotionData,
   type MotionEvent,
+  type MotionOptions,
 } from './motion/controller.ts';
 export { motionData } from './motion/gaits.ts';
 export { Pose } from './motion/pose.ts';

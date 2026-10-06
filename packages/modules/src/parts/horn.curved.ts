@@ -6,10 +6,12 @@ const params = z.strictObject({
   width: z.number().min(0.005).max(0.3).default(0.035).describe('Base radius in torso lengths'),
   curve: z
     .number()
-    .min(-270)
-    .max(270)
+    .min(-540)
+    .max(540)
     .default(45)
-    .describe('Total bend in degrees; positive sweeps back toward the tail, negative forward'),
+    .describe(
+      'Total bend in degrees; positive sweeps back toward the tail, negative forward; past 360 it coils',
+    ),
   twist: z
     .number()
     .min(-720)
