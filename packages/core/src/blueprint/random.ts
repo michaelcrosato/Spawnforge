@@ -216,7 +216,7 @@ export function randomBlueprint(registry: Registry, rng: Rng, name = 'Random'): 
   const extraLegs = limbs.some((l) => l.role === 'leg');
   const anyLegs = registry
     .list('gait')
-    .filter((g) => g.legPairs === 'any')
+    .filter((g) => g.legPairs === 'any' && !g.planned)
     .sort((a, b) => a.froude[0] - b.froude[0] || a.id.localeCompare(b.id))[0];
   blueprint.motion = {
     temperament: sampleSchema(at(schema, ['motion', 'temperament']), rng),

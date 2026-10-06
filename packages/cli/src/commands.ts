@@ -100,6 +100,8 @@ export interface DescribeModuleResult {
   details?: Record<string, unknown>;
   /** For body plans: the preset blueprint, whose limb and part ids you can override. */
   preset?: Record<string, unknown>;
+  /** For stubs: the plan milestone that builds the module; until then compile skips it. */
+  planned?: string;
 }
 
 function findModule(id: string, kind: ModuleKind | undefined, registry: Registry) {
@@ -136,6 +138,7 @@ export function describeModule(
     tags: module.tags,
     params: paramsJsonSchema(module.params),
     defaults: (module.params.safeParse({}).data ?? {}) as Record<string, unknown>,
+    ...(module.planned ? { planned: module.planned } : {}),
   };
   switch (module.kind) {
     case 'bodyPlan':

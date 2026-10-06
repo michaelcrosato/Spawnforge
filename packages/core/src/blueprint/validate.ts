@@ -385,7 +385,7 @@ export function bodyFeatures(doc: {
 export function suitableActions(registry: Registry, has: Record<Feature, boolean>): string[] {
   return registry
     .list('action')
-    .filter((a) => a.needs.every((need) => has[need]))
+    .filter((a) => !a.planned && a.needs.every((need) => has[need]))
     .map((a) => a.id)
     .sort();
 }
@@ -394,6 +394,7 @@ export function suitableActions(registry: Registry, has: Record<Feature, boolean
 export function suitableGaits(registry: Registry, pairs: number): string[] {
   return registry
     .list('gait')
+    .filter((g) => !g.planned)
     .filter((g) => (g.legPairs === 'any' ? pairs >= 1 : g.legPairs.includes(pairs)))
     .sort((a, b) => a.froude[0] - b.froude[0] || a.id.localeCompare(b.id))
     .map((g) => g.id);

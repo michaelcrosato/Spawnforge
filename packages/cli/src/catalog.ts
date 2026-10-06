@@ -63,6 +63,11 @@ export function renderCatalog(registry = getRegistry()): string {
     for (const module of modules) {
       const d = describeModule({ id: module.id, kind }, registry);
       lines.push(`### \`${module.id}\``, '', d.summary, '', d.usage, '');
+      if (d.planned)
+        lines.push(
+          `**Not built yet** (plan milestone ${d.planned}): it validates, but compile skips it and warns \`not_built\`.`,
+          '',
+        );
       if (d.details) {
         const facts = Object.entries(d.details)
           .map(([k, v]) => `${k}: \`${JSON.stringify(v)}\``)

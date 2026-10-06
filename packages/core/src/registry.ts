@@ -37,6 +37,12 @@ export interface ModuleBase<K extends ModuleKind, P extends z.ZodType = z.ZodTyp
   /** Strict schema for the module's parameters, each with a default, range and description. */
   readonly params: P;
   /**
+   * The plan milestone that builds this module, e.g. `"9.3"`. Until then the module is a stub:
+   * blueprints may use it and it validates, but compile skips it and warns `not_built`, and it
+   * never joins the default gaits or actions.
+   */
+  readonly planned?: string;
+  /**
    * Turns friendly forms of the module's parameters into canonical ones before validation, as
    * blueprint normalization does for the core's fields: a horn's `aim` into `lean` and `turn`.
    * Gets the parameters as written (possibly invalid) and returns them rewritten; anything it
@@ -205,6 +211,8 @@ export interface CatalogEntry {
   readonly tags: readonly string[];
   /** JSON Schema of the parameters as written: fields with defaults are optional. */
   readonly params: Record<string, unknown>;
+  /** For stubs: the milestone that builds the module. */
+  readonly planned?: string;
 }
 
 export interface Registry {
@@ -301,6 +309,7 @@ export function createRegistry(packs: readonly Pack[]): Registry {
         summary: module.summary,
         tags: module.tags,
         params: paramsJsonSchema(module.params),
+        ...(module.planned ? { planned: module.planned } : {}),
       })),
     defaults: () => defaults,
   };
