@@ -6,6 +6,7 @@ import {
   jointCap,
   limbFactor,
   shapedProfile,
+  slenderness,
   strength,
   tailFactor,
   torsoFactor,
@@ -56,6 +57,13 @@ describe('anatomy rules', () => {
     // Chitin segments swell in the middle and pinch at the joints.
     expect(limbFactor(0.5 / 3, n, 1, true)).toBeGreaterThan(1.15);
     expect(limbFactor(1 / 3, n, 1, true)).toBeLessThan(0.95);
+    // On two segments the one joint is a knee, narrowed like one.
+    expect(limbFactor(1 / 2, 2, 1, false)).toBeCloseTo(limbFactor(1 / 3, n, 1, false), 2);
+    // Stocky segments narrow less at their joints, and slender ones fully.
+    expect(limbFactor(1 / 3, n, 1, false, () => 0)).toBe(1);
+    expect(slenderness(0.02, 0.3)).toBe(1);
+    expect(slenderness(0.2, 0.3)).toBe(0);
+    expect(slenderness(0.13, 0.3)).toBeGreaterThan(0);
   });
 
   it('plan a chest, pelvis and waist from the limbs on the torso', () => {
@@ -98,7 +106,7 @@ describe('anatomy rules', () => {
     // Bent 40°: the knee points away from both bones.
     const bent = new Vector3(Math.sin((40 * Math.PI) / 180), -Math.cos((40 * Math.PI) / 180), 0);
     const cap = jointCap(1, joint, up, bent, 0.1, 1) as MassDef;
-    expect(cap.ra).toBeCloseTo(0.034);
+    expect(cap.ra).toBeCloseTo(0.028);
     expect(cap.a.x).toBeLessThan(0);
     // Bent 17.5°: half way through the fade.
     const half = new Vector3(
@@ -106,7 +114,7 @@ describe('anatomy rules', () => {
       -Math.cos((17.5 * Math.PI) / 180),
       0,
     );
-    expect((jointCap(1, joint, up, half, 0.1, 1) as MassDef).ra).toBeCloseTo(0.017, 3);
+    expect((jointCap(1, joint, up, half, 0.1, 1) as MassDef).ra).toBeCloseTo(0.014, 3);
   });
 });
 

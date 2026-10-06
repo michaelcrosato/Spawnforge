@@ -14,6 +14,8 @@ playwright-report/
 eval/runs/*/work*/
 eval/runs/*/blind/*.png
 eval/runs/*/quality/*.png
+eval/runs/*/quality/swapped/*.png
+eval/runs/*/quality*/*.png
 eval/runs/*/motion/*.png
 
 # Exported .glb files from eval runs are regenerated, not committed

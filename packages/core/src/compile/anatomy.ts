@@ -26,11 +26,18 @@ const smoothstep = (a: number, b: number, x: number) => {
 
 /**
  * Radius multiplier along a limb, at `T` (0 at the root, 1 at the tip; joints at k/n). Ordinary
- * limbs narrow symmetrically at each joint, most at the last one (ankle, wrist); chitin limbs
- * swell in the middle of each segment and narrow at the joints. The tip never changes, so feet
- * stay on the ground and claws keep their size.
+ * limbs narrow symmetrically at each joint, most at the last one (ankle, wrist) when there are
+ * three segments or more (on two, the joint is a knee or elbow); `jointScale(j)` scales joint j
+ * (stocky segments narrow less). Chitin limbs swell in the middle of each segment and narrow at
+ * the joints. The tip never changes, so feet stay on the ground and claws keep their size.
  */
-export function limbFactor(T: number, n: number, s: number, chitin: boolean): number {
+export function limbFactor(
+  T: number,
+  n: number,
+  s: number,
+  chitin: boolean,
+  jointScale: (j: number) => number = () => 1,
+): number {
   if (s <= 0) return 1;
   const keepTip = 1 - smoothstep(0.8, 1, T);
   if (chitin) {
@@ -42,7 +49,8 @@ export function limbFactor(T: number, n: number, s: number, chitin: boolean): nu
     return 1 + f * (k === n - 1 ? 1 - smoothstep(0.6, 1, t) : 1);
   }
   let f = 0;
-  for (let j = 1; j < n; j++) f -= (j === n - 1 ? 0.26 : 0.18) * s * bump(T, j / n, 0.07);
+  for (let j = 1; j < n; j++)
+    f -= (j === n - 1 && n >= 3 ? 0.26 : 0.18) * s * jointScale(j) * bump(T, j / n, 0.07);
   return 1 + f * keepTip;
 }
 
@@ -171,8 +179,8 @@ export function jointCap(
   const out = u.clone().add(v).negate();
   if (out.lengthSq() < 1e-10) return undefined;
   out.normalize();
-  const radius = 0.34 * rJoint * (0.6 + 0.4 * Math.min(1, s)) * fade;
-  const center = joint.clone().addScaledVector(out, 0.78 * rJoint);
+  const radius = 0.28 * rJoint * (0.6 + 0.4 * Math.min(1, s)) * fade;
+  const center = joint.clone().addScaledVector(out, 0.72 * rJoint);
   return {
     bone,
     a: center,
@@ -181,7 +189,7 @@ export function jointCap(
     rb: radius,
     up: out,
     cross: [1, 1],
-    blend: 0.4 * rJoint * Math.min(1, s),
+    blend: 0.5 * rJoint * Math.min(1, s),
   };
 }
 
@@ -224,7 +232,7 @@ export function torsoPlan(
 export function torsoFactor(t: number, plan: TorsoPlan, s: number): number {
   if (s <= 0) return 1;
   let f = 1;
-  if (plan.chest !== undefined) f += 0.14 * s * bump(t, plan.chest, 0.14);
+  if (plan.chest !== undefined) f += 0.08 * s * bump(t, plan.chest, 0.14);
   if (plan.pelvis !== undefined) f += 0.08 * s * bump(t, plan.pelvis, 0.12);
   if (plan.waist !== undefined) f -= 0.09 * s * bump(t, plan.waist, 0.12);
   return f;

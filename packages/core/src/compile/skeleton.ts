@@ -873,6 +873,16 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
 
     const limbBones: number[] = [];
     const n = lengths.length;
+    // How slender each segment is: stocky ones get fewer bellies, and their joints narrow less
+    // and carry smaller caps, which on a column read as knobs.
+    const slender = Array.from({ length: n }, (_, k) =>
+      slenderness(
+        sampleProfile(limb.radius, (k + 0.5) / n) * L,
+        (solved.points[k] as Vector3).distanceTo(solved.points[k + 1] as Vector3),
+      ),
+    );
+    const jointScale = (j: number) =>
+      Math.min(slender[j - 1] as number, slender[Math.min(j, n - 1)] as number);
     for (let k = 0; k < n; k++) {
       const a = solved.points[k] as Vector3;
       const c = solved.points[k + 1] as Vector3;
@@ -893,7 +903,7 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
           ...shaped(
             (u) => sampleProfile(limb.radius, (k + u) / n) * L,
             boneProfile(limb.radius, k / n, (k + 1) / n, L),
-            (u) => limbFactor((k + u) / n, n, sLimb, chitin),
+            (u) => limbFactor((k + u) / n, n, sLimb, chitin, jointScale),
             // A chitin segment's arch needs more points than a joint's narrowing.
             chitin ? 4 : 2,
           ),
@@ -915,7 +925,6 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
         const bulk =
           (k === 0 ? (limb.role === 'arm' ? 0.32 : 0.42) : k === 1 ? 0.2 : 0) * frame.radius;
         const radiusAt = (u: number) => sampleProfile(limb.radius, (k + u) / n) * L;
-        const slender = slenderness(radiusAt(0.5), bone.head.distanceTo(bone.tail));
         limbMasses.push(
           ...bellies(
             limbBones[k] as number,
@@ -924,7 +933,7 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
             bone.up,
             radiusAt,
             rules,
-            sLimb * slender,
+            sLimb * (slender[k] as number),
             bulk,
             k === 0 ? 0.55 : 0.6,
           ),
@@ -937,8 +946,8 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
           solved.points[j] as Vector3,
           solved.points[j - 1] as Vector3,
           solved.points[j + 1] as Vector3,
-          sampleProfile(limb.radius, j / n) * L * limbFactor(j / n, n, sLimb, chitin),
-          sLimb,
+          sampleProfile(limb.radius, j / n) * L * limbFactor(j / n, n, sLimb, chitin, jointScale),
+          sLimb * jointScale(j),
         );
         if (cap) limbMasses.push(cap);
       }
