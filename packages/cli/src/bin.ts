@@ -9,6 +9,7 @@ import {
   CommandError,
   crossbreed,
   describeModule,
+  exportExtras,
   generate,
   instantiate,
   listModules,
@@ -32,8 +33,9 @@ Commands:
                                         prints cycle, stride, duty and foot slide
   render <file|-> --filmstrip --action <id> [--frames n] [--view side|3/4|top|front]
                                         One action (bite, roar, look…) as frames with its events
-  analyze <file|->                      Measurements, mass, speeds, motion checks on flat and
-                                        rough ground, plausibility warnings and a description
+  analyze <file|-> [--stats id]         Measurements, mass, speeds, motion checks on flat and
+                                        rough ground, plausibility warnings and a description;
+                                        --stats adds a game's numbers (e.g. rpg)
   patch <file> <ops|ops-file|-> [--dry-run]
                                         Edits a blueprint file by id-based paths and writes it
                                         back if the result is valid; prints the diff. ops is a
@@ -49,6 +51,10 @@ Commands:
                                         A child of two blueprints; mix is the share from b,
                                         base picks whose body it is built on, locked paths keep
                                         the base parent's values
+  export <file|-> [--out f.glb] [--quality low|medium|high] [--clips idle,walk,bite] [--fps n]
+         [--stats id]                   A .glb for game engines: skinned mesh with baked vertex
+                                        colours, skeleton, baked clips (idle, gaits, actions),
+                                        sockets as nodes, the blueprint and stats as extras
   instantiate <species|-> [--seed n] [--out file]
                                         One individual of a species (a blueprint whose numbers
                                         may be { "min": 0.5, "max": 0.7 } ranges)
@@ -77,38 +83,54 @@ function kindOf(value: string | undefined): ModuleKind | undefined {
   return value as ModuleKind;
 }
 
-const { positionals, values } = parseArgs({
-  allowPositionals: true,
-  options: {
-    help: { type: 'boolean', short: 'h' },
-    kind: { type: 'string' },
-    expanded: { type: 'boolean' },
-    out: { type: 'string' },
-    labels: { type: 'boolean' },
-    size: { type: 'string' },
-    views: { type: 'string' },
-    quality: { type: 'string' },
-    filmstrip: { type: 'boolean' },
-    'dry-run': { type: 'boolean' },
-    gait: { type: 'string' },
-    action: { type: 'string' },
-    speed: { type: 'string' },
-    frames: { type: 'string' },
-    view: { type: 'string' },
-    theme: { type: 'string' },
-    seed: { type: 'string' },
-    'body-plan': { type: 'string' },
-    'max-height': { type: 'string' },
-    'min-height': { type: 'string' },
-    actions: { type: 'string' },
-    parts: { type: 'string' },
-    amount: { type: 'string' },
-    lock: { type: 'string' },
-    'keep-parts': { type: 'boolean' },
-    mix: { type: 'string' },
-    base: { type: 'string' },
-  },
-});
+function parseOptions() {
+  return parseArgs({
+    allowPositionals: true,
+    options: {
+      help: { type: 'boolean', short: 'h' },
+      kind: { type: 'string' },
+      expanded: { type: 'boolean' },
+      out: { type: 'string' },
+      labels: { type: 'boolean' },
+      size: { type: 'string' },
+      views: { type: 'string' },
+      quality: { type: 'string' },
+      filmstrip: { type: 'boolean' },
+      'dry-run': { type: 'boolean' },
+      gait: { type: 'string' },
+      action: { type: 'string' },
+      speed: { type: 'string' },
+      frames: { type: 'string' },
+      view: { type: 'string' },
+      theme: { type: 'string' },
+      seed: { type: 'string' },
+      'body-plan': { type: 'string' },
+      'max-height': { type: 'string' },
+      'min-height': { type: 'string' },
+      actions: { type: 'string' },
+      parts: { type: 'string' },
+      amount: { type: 'string' },
+      lock: { type: 'string' },
+      'keep-parts': { type: 'boolean' },
+      mix: { type: 'string' },
+      base: { type: 'string' },
+      stats: { type: 'string' },
+      clips: { type: 'string' },
+      fps: { type: 'string' },
+    },
+  });
+}
+let parsed: ReturnType<typeof parseOptions>;
+try {
+  parsed = parseOptions();
+} catch (error) {
+  // A missing value or an unknown flag: say so as JSON, like every other error.
+  console.log(
+    JSON.stringify({ error: (error as Error).message, fix: 'see spawnforge --help' }, null, 2),
+  );
+  process.exit(2);
+}
+const { positionals, values } = parsed;
 const [command, arg] = positionals;
 
 const VIEW_NAMES: Record<string, View> = {
@@ -120,6 +142,14 @@ const VIEW_NAMES: Record<string, View> = {
   top: 'top',
   rear: 'rear',
 };
+
+/** --quality: low, medium or high. */
+function qualityOf(value: string | undefined): 'low' | 'medium' | 'high' | undefined {
+  if (value === undefined) return undefined;
+  if (value !== 'low' && value !== 'medium' && value !== 'high')
+    throw new CommandError(`unknown quality "${value}"`, 'use low, medium or high');
+  return value;
+}
 
 function number(name: string, value: string | undefined): number | undefined {
   if (value === undefined) return undefined;
@@ -174,7 +204,7 @@ async function render(): Promise<{ output: unknown; exitCode?: number }> {
       labels: values.labels ?? false,
       ...(values.size ? { size: Number(values.size) } : {}),
       ...(views ? { views } : {}),
-      ...(values.quality ? { quality: values.quality as 'low' | 'medium' | 'high' } : {}),
+      ...(values.quality ? { quality: qualityOf(values.quality) } : {}),
       ...(filmstrip ? { filmstrip } : {}),
     });
   } catch (error) {
@@ -251,7 +281,10 @@ const commands: Record<
   render,
   analyze: () => {
     if (!arg) throw new CommandError('analyze needs a file path, or - for stdin');
-    const result = analyze({ blueprint: readInput(arg) });
+    const result = analyze({
+      blueprint: readInput(arg),
+      ...(values.stats ? { stats: values.stats } : {}),
+    });
     return { output: result, exitCode: result.ok ? 0 : 1 };
   },
   patch: patchCommand,
@@ -317,6 +350,35 @@ const commands: Record<
         ...(locked ? { locked } : {}),
       }),
     );
+  },
+  export: async () => {
+    if (!arg) throw new CommandError('export needs a blueprint file, or - for stdin');
+    const blueprint = readInput(arg);
+    const extras = exportExtras({ blueprint, ...(values.stats ? { stats: values.stats } : {}) });
+    const clips = list(values.clips);
+    const fps = number('fps', values.fps);
+    if (fps !== undefined && !(Number.isInteger(fps) && fps >= 5 && fps <= 120))
+      throw new CommandError(`--fps must be a whole number from 5 to 120, not ${fps}`);
+    const quality = qualityOf(values.quality);
+    const out = values.out ?? (arg === '-' ? 'creature.glb' : `${arg.replace(/\.json$/i, '')}.glb`);
+    const { exportBlueprint } = await import('@spawnforge/render');
+    let result: Awaited<ReturnType<typeof exportBlueprint>>;
+    try {
+      result = await exportBlueprint({
+        blueprint,
+        extras,
+        ...(quality ? { quality } : {}),
+        ...(clips ? { clips } : {}),
+        ...(fps !== undefined ? { fps } : {}),
+      });
+    } catch (error) {
+      const message = (error as Error).message.replace(/^[\s\S]*?Error: /, '').split('\n')[0];
+      throw new CommandError(`export failed: ${message}`);
+    }
+    writeFileSync(out, result.glb);
+    return {
+      output: { ok: true, out, ...result.info, ...(extras.stats ? { stats: extras.stats } : {}) },
+    };
   },
   instantiate: () => {
     if (!arg) throw new CommandError('instantiate needs a species file, or - for stdin');

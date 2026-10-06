@@ -276,7 +276,7 @@ describe('generate', () => {
       registry,
     );
     expect(tall.blueprint.extends).toBe('serpent');
-    expect(tall.measurements?.height).toBeCloseTo(0.5, 2);
+    expect(tall.measurements?.bodyHeight).toBeCloseTo(0.5, 2);
     for (let seed = 1; seed <= 6; seed++) {
       const small = generate(
         {
@@ -287,7 +287,7 @@ describe('generate', () => {
         registry,
       );
       expect(small.ok).toBe(true);
-      expect(small.measurements?.height).toBeLessThanOrEqual(0.8001);
+      expect(small.measurements?.bodyHeight).toBeLessThanOrEqual(0.8001);
       const spec = validateBlueprint(small.blueprint, registry).creature;
       expect(spec?.motion.actions.map((a) => a.type)).toEqual(
         expect.arrayContaining(['bite', 'roar']),

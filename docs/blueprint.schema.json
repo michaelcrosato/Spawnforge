@@ -561,6 +561,17 @@
             "accent": {
               "type": "string",
               "description": "Colour: \"#rrggbb\", \"#rgb\" or a CSS colour name"
+            },
+            "harmony": {
+              "type": "string",
+              "enum": [
+                "analogous",
+                "complementary",
+                "triadic",
+                "split",
+                "monochrome"
+              ],
+              "description": "Generate the base, belly and accent you leave out from the seed: the accent analogous, complementary, triadic, split-complementary or the same hue (monochrome), around the base you give"
             }
           },
           "additionalProperties": {
@@ -1519,6 +1530,20 @@
       "description": "Scaled lizards, raptors and snakes: low sprawling bodies, long tails, wedge or snout heads, slit pupils, greens and browns.",
       "type": "object",
       "properties": {},
+      "additionalProperties": false
+    },
+    "stats:rpg": {
+      "description": "Generic action-RPG numbers: health from mass, speed from legs and gaits, attack from teeth, horns and claws, defence from chitin, scales and spikes, perception from eyes and ears.",
+      "type": "object",
+      "properties": {
+        "level": {
+          "default": 1,
+          "description": "Multiplies health, attack and defence (unitless; 1 is a normal encounter)",
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 10
+        }
+      },
       "additionalProperties": false
     }
   }

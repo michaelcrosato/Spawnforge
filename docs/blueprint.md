@@ -193,7 +193,11 @@ length on the coil, so they need a `length` of 0.5–0.75 to read from a distanc
 
 - **`palette`** names colours. `base` (the main colour), `belly` and `accent` always exist; add
   others by name (`"hornTip": "#ffe0a0"`). Colours are `#rrggbb`, `#rgb` or CSS names (`tan`,
-  `darkolivegreen`).
+  `darkolivegreen`). `"harmony"` makes the colours instead: `analogous`, `complementary`,
+  `triadic`, `split` or `monochrome` picks the accent's hue relative to the base, and the seed picks
+  the rest, with a belly clearly lighter than the base and an accent clearly lighter or darker so
+  patterns read. It fills in only the colours the blueprint leaves out (the preset's give way), so
+  `{ "harmony": "complementary", "base": "#305080" }` keeps that blue and finds the rest.
 - **`material`** is the surface under the patterns: `skin`, `scales` or `chitin`.
 - **`layers`** is the pattern stack, bottom first: `countershade`, `stripes`, `spots`, `mottle`,
   `scales` and `grime`. A layer's parameters sit beside its `type`. Every layer also takes
@@ -259,7 +263,7 @@ when the creature moves.
   the legs' stance), `--frames n` (2–16, default 8) and `--size px` (per frame, default 320).
   Fine patterns fade out in small frames, so judge spots and scales on the contact sheet.
 - **Contact sheet options**: `--views 3/4,side,head,front,top,rear` picks the panels, `--size px`
-  sets the image width, `--quality low|medium|high` the mesh detail, and `--labels` tags every
+  sets the pixels per panel (default 512), `--quality low|medium|high` the mesh detail, and `--labels` tags every
   part and limb by id. Spots and scales on a small creature (under about half a metre) are only a
   few pixels across on the default sheet; check them with `--views top,3/4 --size 900 --quality
   high`. Pattern sizes are in torso lengths, so on a creature with a very long tail a few large

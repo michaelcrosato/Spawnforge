@@ -9,7 +9,7 @@ is the contract.
 
 ## Status
 
-Phases 0 to 5 are done, and so is the proof of concept ([docs/poc.md](docs/poc.md)).
+All seven phases (0 to 6) are done, and so is the proof of concept ([docs/poc.md](docs/poc.md)).
 
 - Phase 0: the blueprint format, the module registry and first pack, the CLI and MCP tools, the
   generated catalogue and the format eval.
@@ -29,8 +29,13 @@ Phases 0 to 5 are done, and so is the proof of concept ([docs/poc.md](docs/poc.m
   locked paths and part swaps by tag), `crossbreed`, theme modules (reptile, insect, demon) and
   `generate` with constraints, as CLI commands, MCP tools and the sandbox's breed tab.
 
-Every gate scored 20/20 on the prompt suite and 20/20 in blind review (`eval/runs/`). Next is
-phase 6: baked clips, .glb export, stats modules and the game runtime API.
+- Phase 6: the path into games. Baked clips, vertex-colour bake, `.glb` export (CLI, MCP and the
+  sandbox), stats modules (`rpg` as the example), and the runtime API (`createBestiary`, spawn,
+  caching, sockets, hit capsules, events, baked level of detail). See
+  [docs/runtime.md](docs/runtime.md).
+
+Every format gate scored 20/20 on the prompt suite and 20/20 in blind review, and the variation
+and export evals passed (`eval/runs/`). New work goes in the plan's "Later" column first.
 
 ## Repo map
 
@@ -60,8 +65,9 @@ pnpm generate                 # rewrite generated files after adding or changing
 pnpm dev                      # sandbox at http://localhost:5173 (add ?webgl to force the WebGL 2 backend)
 pnpm build                    # production build of the sandbox
 pnpm spawnforge <command>     # the CLI from source: list-modules, describe-module, validate, analyze, patch, render,
-                              # generate, mutate, crossbreed, instantiate, schema
+                              # generate, mutate, crossbreed, instantiate, export, schema
 pnpm spawnforge generate --theme reptile --seed 4 --out creatures/lizard.json   # a new creature from a theme
+pnpm spawnforge export examples/bog-troll.json --stats rpg   # a .glb with baked clips, for any engine
 pnpm spawnforge render examples/ridgeback-stalker.json --labels   # PNG contact sheet next to the file
 pnpm render:examples          # re-render examples/*.png after changing a blueprint or the pipeline
 pnpm fuzz [count] [quality]   # compile random blueprints from the schema (the PoC gate runs 1,000)

@@ -38,7 +38,11 @@ export interface CreatureObject {
   dispose(): void;
 }
 
-function geometryOf(data: MeshData, extra: Record<string, [Float32Array, number]>): BufferGeometry {
+/** A skinned geometry from compiled mesh data, with extra per-vertex attributes. */
+export function geometryOf(
+  data: MeshData,
+  extra: Record<string, [Float32Array, number]>,
+): BufferGeometry {
   const g = new BufferGeometry();
   g.setAttribute('position', new Float32BufferAttribute(data.positions, 3));
   g.setAttribute('normal', new Float32BufferAttribute(data.normals, 3));
@@ -52,11 +56,12 @@ function geometryOf(data: MeshData, extra: Record<string, [Float32Array, number]
   return g;
 }
 
-/** Builds the Three.js skeleton and the three skinned meshes for a compiled creature. */
-export function createCreatureObject(
-  compiled: CompiledCreature,
-  registry: Registry,
-): CreatureObject {
+/** The compiled skeleton as Three.js bones in their rest pose, bound into a `Skeleton`. */
+export function buildBones(compiled: CompiledCreature): {
+  bones: Bone[];
+  skeleton: Skeleton;
+  rest: { positions: Vector3[]; rotations: Quaternion[] };
+} {
   const data = compiled.bones;
   const count = data.names.length;
   const worldPos = Array.from({ length: count }, (_, i) =>
@@ -66,8 +71,8 @@ export function createCreatureObject(
     new Quaternion().fromArray(data.rotations, i * 4),
   );
   const bones: Bone[] = [];
-  const restPositions: Vector3[] = [];
-  const restRotations: Quaternion[] = [];
+  const positions: Vector3[] = [];
+  const rotations: Quaternion[] = [];
   for (let i = 0; i < count; i++) {
     const bone = new Bone();
     bone.name = data.names[i] as string;
@@ -86,17 +91,27 @@ export function createCreatureObject(
       bone.position.copy(worldPos[i] as Vector3);
       bone.quaternion.copy(worldRot[i] as Quaternion);
     }
-    restPositions.push(bone.position.clone());
-    restRotations.push(bone.quaternion.clone());
+    positions.push(bone.position.clone());
+    rotations.push(bone.quaternion.clone());
     bones.push(bone);
   }
-  const object = new Group();
-  object.name = compiled.name;
-  const root = bones[0] as Bone;
-  object.add(root);
-  root.updateMatrixWorld(true);
+  (bones[0] as Bone).updateMatrixWorld(true);
   const skeleton = new Skeleton(bones);
   skeleton.calculateInverses();
+  return { bones, skeleton, rest: { positions, rotations } };
+}
+
+/** Builds the Three.js skeleton and the three skinned meshes for a compiled creature. */
+export function createCreatureObject(
+  compiled: CompiledCreature,
+  registry: Registry,
+): CreatureObject {
+  const { bones, skeleton, rest } = buildBones(compiled);
+  const restPositions = rest.positions;
+  const restRotations = rest.rotations;
+  const object = new Group();
+  object.name = compiled.name;
+  object.add(bones[0] as Bone);
 
   const breath = uniform(0);
   const skin = new SkinnedMesh(

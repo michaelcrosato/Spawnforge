@@ -27,6 +27,7 @@ describe('MCP server', () => {
       'analyze',
       'crossbreed',
       'describe_module',
+      'export',
       'generate',
       'instantiate',
       'list_modules',
@@ -82,7 +83,7 @@ describe('MCP server', () => {
       constraints: { maxHeight: 1.5, actions: ['roar'] },
     });
     expect(made.ok).toBe(true);
-    expect(made.measurements.height).toBeLessThanOrEqual(1.5);
+    expect(made.measurements.bodyHeight).toBeLessThanOrEqual(1.5);
     const child = await call('mutate', { blueprint: made.blueprint, seed: 2, locked: ['skin'] });
     expect(child.ok).toBe(true);
     expect(child.diff.some((line: string) => line.includes(' skin.'))).toBe(false);

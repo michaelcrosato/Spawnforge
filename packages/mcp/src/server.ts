@@ -5,6 +5,7 @@ import {
   CommandError,
   crossbreed,
   describeModule,
+  exportExtras,
   generate,
   instantiate,
   listModules,
@@ -26,7 +27,8 @@ Workflow: read the blueprint guide (resource spawnforge://docs/blueprint.md) and
 every error it reports (each has a path, the problem, the valid range and a fix) until ok is true.
 Use describe_module for any part, pattern, gait, action or body plan you use. To start from
 something rather than nothing, generate makes a creature from a theme; mutate and crossbreed make
-children of existing blueprints.`;
+children of existing blueprints. export writes a .glb with baked clips for a game engine
+(spawnforge://docs/runtime.md explains what it holds).`;
 
 type ToolResult = {
   content: { type: 'text'; text: string }[];
@@ -145,10 +147,20 @@ export function createServer(): McpServer {
           .string()
           .optional()
           .describe('Path to a blueprint JSON file, instead of "blueprint"'),
+        stats: z
+          .string()
+          .optional()
+          .describe('A stats module id (list_modules kind "stats"), to add that game\'s numbers'),
       }),
       annotations: { readOnlyHint: true },
     },
-    async (input) => reply(() => analyze({ blueprint: readBlueprint(input) })),
+    async (input) =>
+      reply(() =>
+        analyze({
+          blueprint: readBlueprint(input),
+          ...(input.stats ? { stats: input.stats } : {}),
+        }),
+      ),
   );
 
   server.registerTool(
@@ -201,7 +213,7 @@ export function createServer(): McpServer {
     {
       title: 'Generate a creature from a theme',
       description:
-        'Builds a new, valid creature from a theme (list_modules with kind "theme": reptile, insect, demon) and a seed: the theme weights the body plan, proportions, parts, patterns, colours and temperament. Constraints fix the body plan, a body height range in metres (the creature is rescaled to fit), actions it must be able to do and part types it must have. The same theme, seed and constraints always give the same creature. Returns the minimal blueprint and its body height and length.',
+        'Builds a new, valid creature from a theme (list_modules with kind "theme": reptile, insect, demon) and a seed: the theme weights the body plan, proportions, parts, patterns, colours and temperament. Constraints fix the body plan, a body height range in metres (the creature is rescaled to fit), actions it must be able to do and part types it must have. The same theme, seed and constraints always give the same creature. Returns the minimal blueprint and its body height (bodyHeight, without horns, as analyze reports it) and length.',
       inputSchema: z.object({
         theme: z.string().describe('Theme module id, e.g. "reptile"'),
         seed: z.number().int().optional().describe('Which creature (default 1)'),
@@ -349,6 +361,12 @@ export function createServer(): McpServer {
       'application/schema+json',
       'The blueprint JSON Schema',
     ],
+    [
+      'runtime-guide',
+      'runtime.md',
+      'text/markdown',
+      'Using creatures in a game: the live runtime API, .glb export and stats modules',
+    ],
   ] as const) {
     server.registerResource(
       name,
@@ -460,6 +478,69 @@ export function createServer(): McpServer {
       } catch (error) {
         return reply(() => {
           throw new CommandError(`render failed: ${(error as Error).message}`);
+        });
+      }
+    },
+  );
+
+  server.registerTool(
+    'export',
+    {
+      title: 'Export a .glb',
+      description:
+        'Writes the creature as binary glTF (.glb) for game engines: one skinned mesh each for skin, hard parts and eyes, with the pattern stack baked into vertex colours (albedo only); the skeleton; baked animation clips (idle, one in-place cycle of each gait, each action); gameplay sockets (head, mouth, eyes, claw tips, centre of mass) as nodes; and the minimal blueprint, clip timings, events, hit capsules and optional stats as extras. Metres, Y up, facing +Z.',
+      inputSchema: z.object({
+        blueprint: z
+          .record(z.string(), z.unknown())
+          .optional()
+          .describe('The blueprint JSON object'),
+        path: z
+          .string()
+          .optional()
+          .describe('Path to a blueprint JSON file, instead of "blueprint"'),
+        out: z.string().describe('Where to write the .glb'),
+        quality: z
+          .enum(['low', 'medium', 'high'])
+          .optional()
+          .describe('Mesh detail (default medium)'),
+        clips: z
+          .array(z.string())
+          .optional()
+          .describe('Clips to bake: "idle", gait ids, action ids (default all)'),
+        fps: z.number().int().min(5).max(120).optional().describe('Frames per second (default 30)'),
+        stats: z.string().optional().describe("A stats module id, to store that game's numbers"),
+      }),
+    },
+    async (input) => {
+      let blueprint: unknown;
+      let extras: Record<string, unknown>;
+      try {
+        blueprint = readBlueprint(input);
+        extras = exportExtras({ blueprint, ...(input.stats ? { stats: input.stats } : {}) });
+      } catch (error) {
+        return reply(() => {
+          throw error;
+        });
+      }
+      try {
+        const r = await getRenderer();
+        const result = await r.export({
+          blueprint,
+          extras,
+          ...(input.quality ? { quality: input.quality } : {}),
+          ...(input.clips ? { clips: input.clips } : {}),
+          ...(input.fps ? { fps: input.fps } : {}),
+        });
+        writeFileSync(input.out, result.glb);
+        return reply(() => ({
+          ok: true,
+          out: input.out,
+          ...result.info,
+          ...(extras.stats ? { stats: extras.stats } : {}),
+        }));
+      } catch (error) {
+        return reply(() => {
+          throw new CommandError(`export failed: ${(error as Error).message}`);
         });
       }
     },

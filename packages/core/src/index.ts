@@ -5,6 +5,12 @@ export {
   describeCreature,
   type MotionCheck,
 } from './analysis/analyze.ts';
+export {
+  computeStats,
+  type StatsHooks,
+  type StatsInput,
+  statsInput,
+} from './analysis/stats.ts';
 export * from './blueprint/colors.ts';
 export type * from './blueprint/creature.ts';
 export { formatIssue, formatPath, type Issue } from './blueprint/issues.ts';
@@ -60,6 +66,14 @@ export type {
 export { buildSdf, type Sdf, SdfEvaluator } from './compile/sdf.ts';
 export { buildSkeleton, type SkeletonBuild } from './compile/skeleton.ts';
 export type * from './compile/types.ts';
+export {
+  type BakedColors,
+  bakeEyeColors,
+  bakePartColors,
+  bakeSkinColors,
+  bakeVertexColors,
+  srgbToLinear,
+} from './export/bake.ts';
 export { FORMAT } from './format.ts';
 export * from './geometry/kit.ts';
 export {
@@ -69,6 +83,7 @@ export {
   envelope,
   ramp,
 } from './motion/actions.ts';
+export { type BakedClip, type BakeOptions, bakeClips, clipNames } from './motion/clips.ts';
 export {
   type GaitInfo,
   type Ground,

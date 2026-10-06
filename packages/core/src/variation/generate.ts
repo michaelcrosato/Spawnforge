@@ -85,7 +85,7 @@ export interface GenerateResult {
   readonly errors: readonly Issue[];
   readonly warnings: readonly Issue[];
   /** Body size from the skeleton (metres), as the height constraints see it. */
-  readonly measurements?: { readonly height: number; readonly length: number };
+  readonly measurements?: { readonly bodyHeight: number; readonly length: number };
   /** Tries it took to meet the constraints. */
   readonly attempts: number;
 }
@@ -366,7 +366,7 @@ export function generate(options: GenerateOptions, registry: Registry): Generate
       errors: [],
       warnings: result.warnings,
       measurements: {
-        height: Number(size.height.toFixed(3)),
+        bodyHeight: Number(size.height.toFixed(3)),
         length: Number(size.length.toFixed(3)),
       },
       attempts: attempt + 1,

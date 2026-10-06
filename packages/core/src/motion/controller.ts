@@ -266,6 +266,35 @@ export class MotionController {
     };
   }
 
+  /**
+   * Puts the creature at (x, z) facing `heading`, standing: no target, feet planted around it,
+   * tail at rest. Use it to spawn or teleport a creature, or to take one back from a baked
+   * animation.
+   */
+  place(x: number, z: number, heading = this.heading, ground: Ground = FLAT): void {
+    this.position.set(x, ground(x, z).height, z);
+    this.heading = heading;
+    this.speed = 0;
+    this.yawRate = 0;
+    this.target = null;
+    this.desiredSpeed = 0;
+    this.driveHeading = undefined;
+    this.trail.length = 0;
+    const turn = new Quaternion().setFromAxisAngle(UP, heading);
+    for (const leg of this.legs) {
+      const foot = leg.neutral.clone().applyQuaternion(turn).add(this.position);
+      foot.y = ground(foot.x, foot.z).height + leg.footLift;
+      leg.planted.copy(foot);
+      leg.liftoff.copy(foot);
+      leg.target.copy(foot);
+      leg.swinging = false;
+      leg.armed = true;
+    }
+    this.applyPose(ground);
+    for (const [i, spring] of this.springs.entries())
+      this.springs[i] = this.makeSpring(spring.bones, spring.stiffness);
+  }
+
   /** Walk toward a point on the ground. `speed` in m/s (default: the temperament's pace). */
   moveTo(target: { x: number; z: number } | null, options: { speed?: number } = {}): void {
     if (!target) {
@@ -424,6 +453,7 @@ export class MotionController {
         this.target = null;
         wantSpeed = 0;
         this.desiredSpeed = 0;
+        this.events.push({ type: 'arrive', time: this.time });
       } else {
         wantHeading = Math.atan2(to.x, to.z);
         wantSpeed = Math.min(wantSpeed, distance * 1.5);

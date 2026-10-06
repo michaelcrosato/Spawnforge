@@ -224,3 +224,72 @@ export function colorName(color: string): string {
   if (h < 290) return muted('purple');
   return l > 0.6 ? 'pink' : shade('magenta');
 }
+
+/** Ways `palette.harmony` relates the accent's hue to the base's. */
+export const HARMONIES = ['analogous', 'complementary', 'triadic', 'split', 'monochrome'] as const;
+export type Harmony = (typeof HARMONIES)[number];
+
+/** `#rrggbb` from hue (degrees), saturation and lightness (0 to 1). */
+export function hslToHex(hue: number, saturation: number, lightness: number): string {
+  const h = ((hue % 360) + 360) % 360;
+  const s = Math.min(1, Math.max(0, saturation));
+  const l = Math.min(0.95, Math.max(0.04, lightness));
+  const a = s * Math.min(l, 1 - l);
+  const f = (n: number) => {
+    const k = (n + h / 30) % 12;
+    return Math.round(255 * (l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1))));
+  };
+  return `#${[f(0), f(8), f(4)].map((c) => c.toString(16).padStart(2, '0')).join('')}`;
+}
+
+/** Hue (degrees), saturation and lightness (0 to 1) of `#rrggbb`. */
+export function hexToHsl(hex: string): [number, number, number] {
+  const [r, g, b] = hexToRgb(hex);
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  const d = max - min;
+  if (d === 0) return [0, 0, l];
+  const s = d / (1 - Math.abs(2 * l - 1));
+  const h =
+    max === r
+      ? (60 * ((g - b) / d) + 360) % 360
+      : max === g
+        ? 60 * ((b - r) / d + 2)
+        : 60 * ((r - g) / d + 4);
+  return [h, s, l];
+}
+
+/**
+ * Base, belly and accent colours in a harmony, from `random` (0 to 1 draws), around `base`'s hue
+ * when one is given. Value contrast keeps patterns readable: the belly is at least 0.18 lighter
+ * than the base, and the accent at least 0.18 away from it.
+ */
+export function harmonyPalette(
+  harmony: Harmony,
+  random: () => number,
+  base?: string,
+): { base: string; belly: string; accent: string } {
+  const between = (lo: number, hi: number) => lo + (hi - lo) * random();
+  const [hue, sat, light] = base
+    ? hexToHsl(base)
+    : [between(0, 360), between(0.25, 0.6), between(0.22, 0.45)];
+  const offset = {
+    analogous: between(25, 45) * (random() < 0.5 ? -1 : 1),
+    complementary: 180 + between(-12, 12),
+    triadic: 120 * (random() < 0.5 ? -1 : 1),
+    split: 180 + 30 * (random() < 0.5 ? -1 : 1),
+    monochrome: 0,
+  }[harmony];
+  // The accent goes darker on light bases and lighter on dark ones, with room to spare.
+  // The accent goes darker on light bases and lighter on dark ones, keeping enough lightness
+  // for its hue to show.
+  const accentLight =
+    light >= 0.34 ? Math.max(0.14, light - between(0.18, 0.26)) : light + between(0.2, 0.3);
+  const bellyLight = Math.min(0.9, Math.max(light + 0.18, light + between(0.22, 0.35)));
+  return {
+    base: base ?? hslToHex(hue, sat, light),
+    belly: hslToHex(hue + between(-8, 18), sat * 0.55, bellyLight),
+    accent: hslToHex(hue + offset, Math.min(1, sat * between(0.9, 1.3)), accentLight),
+  };
+}

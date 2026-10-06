@@ -1,0 +1,26 @@
+{
+  "passed": 4,
+  "total": 4,
+  "rows": [
+    {
+      "id": "x01-clip-subset",
+      "pass": true,
+      "note": "clips bite, tripod, low quality"
+    },
+    {
+      "id": "x02-insect-stats",
+      "pass": true,
+      "note": "rpg stats, health 45"
+    },
+    {
+      "id": "x03-small-demon",
+      "pass": true,
+      "note": "body height 1.10 m, clips idle, walk, bite, roar"
+    },
+    {
+      "id": "x04-read-export",
+      "pass": true,
+      "note": "socket_mouth, bite 0.8333 s, contact 0.275 s"
+    }
+  ]
+}

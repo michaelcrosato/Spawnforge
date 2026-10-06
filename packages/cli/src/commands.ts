@@ -4,11 +4,13 @@ import {
   applyPatch,
   blueprintSchemaFor,
   type CatalogEntry,
+  computeStats,
   createRegistry,
   crossbreed as crossbreedBlueprints,
   didYouMean,
   FORMAT,
   formatDiff,
+  formatIssue,
   type GenerateConstraints,
   generate as generateBlueprint,
   type Issue,
@@ -197,8 +199,14 @@ export function describeModule(
           temperaments: module.bias.temperaments,
         },
       };
+    case 'stats':
+      return {
+        ...base,
+        usage: `Game numbers from a creature's body: spawnforge analyze creature.json --stats ${module.id} (MCP: analyze with "stats": "${module.id}").`,
+        details: { outputs: module.outputs },
+      };
     default:
-      return { ...base, usage: `A ${module.kind} module.` };
+      return { ...base, usage: `A ${base.kind} module.` };
   }
 }
 
@@ -328,17 +336,30 @@ export function patch(
   };
 }
 
-export type AnalyzeResult = { ok: false; errors: readonly Issue[] } | ({ ok: true } & Analysis);
+export type AnalyzeResult =
+  | { ok: false; errors: readonly Issue[] }
+  | ({ ok: true; stats?: { module: string; values: Record<string, number> } } & Analysis);
 
 /**
  * Measures a valid blueprint, runs its motion for two gait cycles on flat and rough ground and
  * returns measurements, speeds, motion checks, plausibility warnings and a description.
  */
 export function analyze(
-  options: { blueprint: unknown; terrainSeed?: number },
+  options: {
+    blueprint: unknown;
+    terrainSeed?: number;
+    /** A stats module id, to add that game's numbers. */
+    stats?: string;
+    statsParams?: Record<string, unknown>;
+  },
   registry = getRegistry(),
 ): AnalyzeResult {
   needIndividual(options.blueprint, 'analyze');
+  if (options.stats !== undefined && !registry.get('stats', options.stats))
+    throw new CommandError(
+      `no stats module "${options.stats}"`,
+      `use one of ${registry.ids('stats').join(', ')}`,
+    );
   const checked = validateBlueprint(options.blueprint, registry, { minimal: false });
   if (!checked.ok || !checked.creature) return { ok: false, errors: checked.errors };
   const analysis = analyzeCreature(checked.creature, registry, {
@@ -350,10 +371,24 @@ export function analyze(
       typeof value === 'number' ? Number(value.toFixed(3)) : value,
     ),
   ) as Analysis;
+  const stats =
+    options.stats === undefined
+      ? undefined
+      : {
+          module: options.stats,
+          values: computeStats(
+            checked.creature,
+            analysis,
+            registry,
+            options.stats,
+            options.statsParams,
+          ),
+        };
   return {
     ok: true,
     ...rounded,
     warnings: [...checked.warnings, ...analysis.warnings],
+    ...(stats ? { stats } : {}),
   };
 }
 
@@ -498,4 +533,27 @@ export function instantiate(
     errors: result.errors,
     warnings: result.warnings,
   };
+}
+
+/**
+ * What an exported .glb carries besides the creature: the format, the minimal blueprint (so the
+ * file can be rebuilt or edited) and, with a stats module, that game's numbers. Throws with the
+ * validation errors when the blueprint is invalid.
+ */
+export function exportExtras(
+  options: { blueprint: unknown; stats?: string },
+  registry = getRegistry(),
+): Record<string, unknown> {
+  const checked = validate({ blueprint: options.blueprint }, registry);
+  if (!checked.ok)
+    throw new CommandError(
+      `the blueprint is invalid: ${checked.errors.map(formatIssue).join('; ')}`,
+      'fix it with validate first',
+    );
+  let stats: { module: string; values: Record<string, number> } | undefined;
+  if (options.stats !== undefined) {
+    const analysis = analyze({ blueprint: options.blueprint, stats: options.stats }, registry);
+    if (analysis.ok && analysis.stats) stats = analysis.stats;
+  }
+  return { format: FORMAT, blueprint: checked.blueprint, ...(stats ? { stats } : {}) };
 }

@@ -172,6 +172,30 @@ every result is an ordinary blueprint that validates, diffs and compiles like a 
   required parts, retry with the next attempt's stream, and meet height limits by rescaling,
   measured from the skeleton without meshing.
 
+## Export and the game runtime
+
+See [runtime.md](runtime.md) for how games use them.
+
+- **Clips** (`packages/core/src/motion/clips.ts`): `bakeClips` runs the motion controller on
+  flat ground and samples every bone's local transform: `idle`, one in-place cycle per gait
+  (locked gait at its natural speed, timed between two phase wraps, at least 12 frames, the seam
+  spread over the cycle so it loops exactly) and each action aimed in front of the head. Roots
+  stay at the origin facing +Z. Plain typed arrays, like everything core produces.
+- **Vertex colours** (`packages/core/src/export/bake.ts`): the skin's pattern stack evaluated
+  per vertex through the CPU kit, the same pattern functions the TSL shader runs; parts and eyes
+  convert their own colours. Linear, albedo only.
+- **Stats** (`packages/core/src/analysis/stats.ts`): `computeStats` gives a stats module a
+  `StatsInput` of measured body numbers; modules never see the blueprint.
+- **Export scene** (`packages/three/src/export.ts`): `buildExportScene` assembles the skeleton,
+  three skinned meshes with vertex colours and plain `MeshStandardMaterial`s, socket nodes,
+  `AnimationClip`s and the extras. The render page writes it with `GLTFExporter` in headless
+  Chromium (`Renderer.export`), as the sandbox does in the browser.
+- **Runtime** (`packages/three/src/runtime.ts`): `createBestiary` compiles through workers or on
+  the calling thread with an LRU cache keyed by stable JSON, format and packs. A `Creature` wraps
+  the Three.js object, a `MotionController`, sockets and events. Its baked level of detail steers
+  with simple kinematics and samples baked gait cycles at the speed's rate; going back to full
+  motion calls `MotionController.place`, which plants the feet around the creature's spot.
+
 ## Runtime conventions
 
 - World units follow glTF: metres, Y up, creatures face +Z.

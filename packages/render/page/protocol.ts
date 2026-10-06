@@ -81,3 +81,37 @@ export interface RenderResponse {
   readonly height: number;
   readonly info: RenderInfo;
 }
+
+/** Asks the page for a .glb of the creature. */
+export interface ExportRequest {
+  readonly blueprint: unknown;
+  readonly quality?: 'low' | 'medium' | 'high';
+  /** Clips to bake: "idle", gait ids, action ids (default: all the creature has). */
+  readonly clips?: readonly string[];
+  /** Frames per second for baked clips (default 30). */
+  readonly fps?: number;
+  /** JSON stored in the file's extras (`extras.spawnforge`), e.g. the blueprint and stats. */
+  readonly extras?: Record<string, unknown>;
+}
+
+export interface ExportInfo {
+  readonly name: string;
+  readonly bytes: number;
+  readonly triangles: number;
+  readonly bones: number;
+  readonly sockets: readonly string[];
+  readonly clips: readonly {
+    readonly name: string;
+    readonly duration: number;
+    readonly loop: boolean;
+  }[];
+  /** Things worth knowing about the file, e.g. an idle that is only a standing pose. */
+  readonly notes: readonly string[];
+  readonly exportMs: number;
+}
+
+export interface ExportResponse {
+  /** The .glb, base64. */
+  readonly glb: string;
+  readonly info: ExportInfo;
+}

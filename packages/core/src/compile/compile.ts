@@ -166,6 +166,8 @@ export function compileCreature(
 ): CompiledCreature {
   const quality = options.quality ?? 'medium';
   const cells = QUALITY_CELLS[quality];
+  if (cells === undefined)
+    throw new Error(`unknown quality "${String(quality)}"; use low, medium or high`);
   const timings: Record<string, number> = {};
   let clock = performance.now();
   const lap = (name: string) => {
