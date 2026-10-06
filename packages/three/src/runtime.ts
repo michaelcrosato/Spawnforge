@@ -82,6 +82,8 @@ export class Creature {
   lod: 'full' | 'baked' = 'full';
   private readonly view: CreatureObject;
   private readonly listeners = new Map<string, Set<Listener>>();
+  /** The ground from the last update, for placing feet when switching back to full motion. */
+  private ground: Ground | undefined;
   private readonly clips: () => readonly BakedClip[];
   private baked = {
     time: 0,
@@ -116,6 +118,7 @@ export class Creature {
       options.heading ?? 0,
       options.ground,
     );
+    this.ground = options.ground;
     applyPose(this.view, this.controller.pose);
   }
 
@@ -173,6 +176,7 @@ export class Creature {
 
   /** Advances motion by `dt` seconds and poses the meshes; returns the events it fired. */
   update(dt: number, input: UpdateInput = {}): MotionEvent[] {
+    if (input.ground) this.ground = input.ground;
     let events: MotionEvent[];
     if (this.lod === 'baked') events = this.updateBaked(dt, input.ground);
     else {
@@ -203,7 +207,7 @@ export class Creature {
     if (this.lod === 'full') return;
     this.lod = 'full';
     const target = this.baked.target;
-    this.controller.place(this.position.x, this.position.z, this.heading, ground);
+    this.controller.place(this.position.x, this.position.z, this.heading, ground ?? this.ground);
     if (target) this.controller.moveTo({ x: target.x, z: target.z }, { speed: this.desired });
   }
 

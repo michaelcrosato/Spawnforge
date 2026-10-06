@@ -28,23 +28,26 @@ The full example is [examples/ridgeback-stalker.json](examples/ridgeback-stalker
 
 ## Status
 
-Phases 0 and 1 are done: the blueprint format and its tools, then the pipeline that turns a
-blueprint into a textured, skinned monster with a six-view render. On the 20-prompt eval a model
-using only the docs and tools wrote a valid blueprint for every prompt, and a blind reviewer
-matched all 20 renders to their prompts
-([phase 0](eval/runs/2026-10-06-phase0-format/notes.md),
-[phase 1](eval/runs/2026-10-06-phase1-render/notes.md)). Phase 2 added procedural
-locomotion: creatures walk, trot, scuttle and slither over uneven ground, and `render
---filmstrip` draws a gait cycle with its footfalls. Phase 3 added actions (bite, roar, look,
-and an idle with breathing and blinks) and the sandbox editor: run `pnpm dev`, pick a creature,
-drag sliders or edit its JSON, press its action buttons, and save blueprints in `creatures/` to
-see them appear live. Phase 4 added `patch` and `analyze` and passed the proof-of-concept gate
-([evidence](docs/poc.md)). Phase 5 added variation: species with ranges, `mutate`,
-`crossbreed`, and `generate` from a theme (`spawnforge generate --theme demon --seed 3`), also in
-the sandbox's breed tab. Phase 6 added the path into games: `spawnforge export` writes a `.glb`
-with baked clips, vertex colours, sockets and stats, and `createBestiary` runs creatures live in
-a Three.js game ([docs/runtime.md](docs/runtime.md)). All the plan's phases are done; see
-[docs/plan.md](docs/plan.md) for what comes later.
+All seven phases of [the plan](docs/plan.md) are done, and the proof of concept passed its gate
+([evidence](docs/poc.md)).
+
+- **Format and tools** (phase 0): the blueprint format, the module registry, `validate` with
+  id-based errors and fixes, the CLI and the MCP server.
+- **Bodies and skin** (phase 1): skeleton, SDF skin, parts, eyes and layered TSL patterns, with
+  six-view contact sheets from `render`.
+- **Motion** (phases 2 and 3): gaits from any legs, foot IK on uneven ground, tails on springs,
+  slithering, actions (bite, roar, look, idle) with events, and the sandbox editor (`pnpm dev`).
+- **Checking and editing** (phase 4): `analyze` (measurements, motion checks, plausibility
+  warnings, a description), `patch`, fuzzing, golden determinism and budgets.
+- **Variation** (phase 5): species with ranges, `mutate`, `crossbreed`, and `generate` from a
+  theme (`spawnforge generate --theme demon --seed 3`), also in the sandbox's breed tab.
+- **Into games** (phase 6): `spawnforge export` writes a `.glb` with baked clips, vertex colours,
+  sockets and stats, and `createBestiary` runs creatures live in a Three.js game
+  ([docs/runtime.md](docs/runtime.md)).
+
+At every gate a model using only the docs and tools did the prompt suite: 20/20 valid blueprints
+and 20/20 renders matched in blind review, then 8/8 variation tasks ([eval/runs](eval/runs)).
+What comes next is in the plan's "Later" column.
 
 ![Ridgeback stalker](examples/ridgeback-stalker.png)
 
