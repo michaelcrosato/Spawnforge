@@ -888,13 +888,19 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
   const rig: Rig = {
     root,
     spine,
-    neck,
-    head,
-    jaw,
-    tail,
+    // One head and one tail until milestone 9.1 builds several; eyes join after the parts.
+    heads: [{ id: 'head', neck, head, jaw, eyes: [] }],
+    main: 0,
+    tails: tail.length > 0 ? [{ id: 'tail', bones: tail, branch: 0 }] : [],
+    chains:
+      tail.length > 1
+        ? [{ owner: 'tail', bones: tail, drive: 'spring', stiffness: 0.35, swish: true }]
+        : [],
     legs: legRigs,
     arms: armRigs,
-    eyes: [],
+    wings: [],
+    fins: [],
+    tentacles: [],
     hipHeight:
       legRoots.length > 0 ? legRoots.reduce((a, c) => a + c, 0) / legRoots.length : center.y,
     posture,

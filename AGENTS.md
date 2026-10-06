@@ -43,7 +43,8 @@ tentacles, shells, extra heads), motion for games (run, jump, swim, fly, hits, d
 maps and levels of detail in exports, installable packages, and editing tools. Its status table
 tracks each milestone. Done so far: 7.1 (carry-overs), 7.2 (`migrate` and the corpus test) and
 7.3 (format 0.2, which holds all of plan 2's vocabulary as stub modules before it is built; its
-format eval scored 20/20 on suite B, `eval/runs/2026-10-06-phase7-format/`).
+format eval scored 20/20 on suite B, `eval/runs/2026-10-06-phase7-format/`) and 7.4 (the
+compiled rig holds lists of heads, tails and driven chains, with goldens unchanged).
 
 ## Repo map
 

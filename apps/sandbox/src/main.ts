@@ -5,6 +5,7 @@ import {
   createRng,
   FORMAT,
   MotionController,
+  mainHead,
   testCourse,
 } from '@spawnforge/core';
 import { basicPack } from '@spawnforge/modules';
@@ -212,7 +213,7 @@ async function main(): Promise<void> {
           const c = walker.controller;
           // Look and bite at the camera's side of the creature.
           const toward = camera.position.clone().sub(c.position).setY(0).normalize();
-          const head = c.pose.worldPos[walker.compiled.rig.head] as THREE.Vector3;
+          const head = c.pose.worldPos[mainHead(walker.compiled.rig).head] as THREE.Vector3;
           const target =
             id === 'look'
               ? camera.position

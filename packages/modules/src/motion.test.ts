@@ -4,6 +4,7 @@ import {
   FORMAT,
   MotionController,
   type MotionEvent,
+  mainHead,
   resolveBlueprint,
 } from '@spawnforge/core';
 import type { Vector3 } from 'three';
@@ -120,7 +121,7 @@ describe('locomotion', () => {
     controller.drive(controller.paceSpeed(), 0);
     run(controller, 8);
     // Sideways spread of the spine around the travel line (heading +Z).
-    const xs = [...compiled.rig.spine, ...compiled.rig.tail].map(
+    const xs = [...compiled.rig.spine, ...(compiled.rig.tails[0]?.bones ?? [])].map(
       (b) => (controller.pose.worldPos[b] as Vector3).x,
     );
     expect(Math.max(...xs) - Math.min(...xs)).toBeGreaterThan(0.15 * compiled.scale);
@@ -130,10 +131,10 @@ describe('locomotion', () => {
     const { compiled, controller } = creature('serpent', {
       body: { neck: { length: 0.5, pitch: 80, segments: 4 }, head: { pitch: 0 } },
     });
-    const rest = compiled.bones.positions[compiled.rig.head * 3 + 1] as number;
+    const rest = compiled.bones.positions[mainHead(compiled.rig).head * 3 + 1] as number;
     controller.moveTo({ x: 0, z: 2 });
     run(controller, 6);
-    const head = controller.pose.worldPos[compiled.rig.head] as Vector3;
+    const head = controller.pose.worldPos[mainHead(compiled.rig).head] as Vector3;
     expect(head.y).toBeGreaterThan(rest * 0.8);
     expect(controller.position.z).toBeGreaterThan(1);
   });
@@ -196,13 +197,13 @@ describe('actions', () => {
   it('bites: winds up, lunges at the target, snaps shut and fires bite-contact', () => {
     const { compiled, controller } = creature('quadruped');
     act(controller, 1);
-    const head = () => (controller.pose.worldPos[compiled.rig.head] as Vector3).clone();
+    const head = () => (controller.pose.worldPos[mainHead(compiled.rig).head] as Vector3).clone();
     const start = head();
     const target = { x: start.x, y: start.y - 0.1, z: start.z + 0.8 };
     controller.act('bite', { target });
     let closest = Infinity;
     let widest = 0;
-    const jaw = compiled.rig.jaw;
+    const { jaw } = mainHead(compiled.rig);
     const events = act(controller, 2, () => {
       closest = Math.min(closest, head().distanceTo(target as Vector3));
       const q = controller.pose.rot[jaw];
@@ -224,7 +225,7 @@ describe('actions', () => {
     let raised = -1;
     let slowest = Infinity;
     const events = act(controller, 1.2, () => {
-      raised = Math.max(raised, controller.pose.direction(compiled.rig.head).y);
+      raised = Math.max(raised, controller.pose.direction(mainHead(compiled.rig).head).y);
       slowest = Math.min(slowest, controller.speed);
     });
     expect(events.some((e) => e.type === 'roar-peak')).toBe(true);
@@ -273,7 +274,7 @@ describe('actions', () => {
     const { compiled, controller } = creature('quadruped', {
       motion: { actions: ['bite'] },
     });
-    const tip = compiled.rig.tail.at(-1) as number;
+    const tip = compiled.rig.tails[0]?.bones.at(-1) as number;
     controller.update(0);
     const rest = controller.pose.tail(tip).sub(controller.position);
     controller.moveTo({ x: 1.5, z: 2 });

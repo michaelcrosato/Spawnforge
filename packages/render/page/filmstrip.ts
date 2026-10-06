@@ -1,4 +1,4 @@
-import { type CompiledCreature, MotionController, type Registry } from '@spawnforge/core';
+import { type CompiledCreature, MotionController, mainHead, type Registry } from '@spawnforge/core';
 import { applyPose, type CreatureObject } from '@spawnforge/three';
 import * as THREE from 'three';
 import type { WebGPURenderer } from 'three/webgpu';
@@ -155,7 +155,8 @@ async function drawAction(
 ): Promise<MotionInfo> {
   const controller = new MotionController(compiled, { registry });
   for (let i = 0; i < 120; i++) controller.update(STEP);
-  const head = (controller.pose.worldPos[compiled.rig.head] as THREE.Vector3).clone();
+  const main = mainHead(compiled.rig);
+  const head = (controller.pose.worldPos[main.head] as THREE.Vector3).clone();
   // Bite and roar at a point ahead; look to one side, so the turn shows.
   const target = head
     .clone()
@@ -165,12 +166,12 @@ async function drawAction(
       ),
     );
   controller.act(action, { target });
-  // Frame the head and neck, with room for a lunge or a raised head.
-  const neckRoot = compiled.rig.neck[0];
+  // Frame the main head and neck, with room for a lunge or a raised head.
+  const neckRoot = main.neck[0];
   const base = (
     neckRoot === undefined ? head : (controller.pose.worldPos[neckRoot] as THREE.Vector3)
   ).clone();
-  const headLength = compiled.bones.lengths[compiled.rig.head] ?? 0.2 * compiled.scale;
+  const headLength = compiled.bones.lengths[main.head] ?? 0.2 * compiled.scale;
   const closeUp = {
     centre: head.clone().lerp(base, 0.35),
     radius: Math.max(head.distanceTo(base) * 0.75 + headLength * 1.6, 0.3 * compiled.scale),

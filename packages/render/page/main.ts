@@ -4,6 +4,7 @@ import {
   createRegistry,
   fingerprint,
   formatIssue,
+  mainHead,
   resolveBlueprint,
   validateBlueprint,
 } from '@spawnforge/core';
@@ -257,9 +258,10 @@ window.spawnforgeRender = async (request) => {
     ctx.fillText(sizeLine, 14 + nameWidth + 18, 28);
   }
 
-  // The head close-up frames everything skinned mostly to the head or jaw: skin, teeth, eyes,
-  // horns.
-  const headBones = new Set([compiled.rig.head, compiled.rig.jaw, ...compiled.rig.eyes]);
+  // The head close-up frames everything skinned mostly to the main head or its jaw: skin, teeth,
+  // eyes, horns.
+  const main = mainHead(compiled.rig);
+  const headBones = new Set([main.head, main.jaw, ...main.eyes]);
   const headBox = new THREE.Box3();
   for (const mesh of [compiled.skin, compiled.parts, compiled.eyes]) {
     for (let v = 0; v < mesh.positions.length / 3; v++) {

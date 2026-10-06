@@ -118,7 +118,9 @@ whatever the target is doing, so test hits yourself, with sockets or hit capsule
 
 - **Sockets.** `creature.sockets` holds nodes that follow the body: `head`, `mouth`, each eye
   (`eye.eyes.L`), each claw tip (`claw.foreleg.L.0`) and `centerOfMass`. Parent effects to them,
-  or read a world position with `creature.socket('mouth')`.
+  or read a world position with `creature.socket('mouth')`. With several heads (milestone 9.1),
+  `head` and `mouth` are the main (middle) head's, and the others add their instance:
+  `head.L1`, `mouth.L1`.
 - **Hit volumes.** `creature.hitCapsules()` returns one world-space capsule per body bone
   (`bone`, `start`, `end`, `radius`) for the current pose.
 - **Stats.** `bestiary.stats(creature, 'rpg')` runs a stats module on the creature's measured
@@ -226,8 +228,8 @@ export default defineStats({
   outputs: { hp: 'Hit points', damage: 'Damage per bite' },
   hooks: {
     compute(input, params) {
-      // input: measurements (mass, height, bodyHeight, legLength…), speed, biteReach, legs,
-      // arms, material, temperament, actions, parts (type, tags, size, count) and claws.
+      // input: measurements (mass, height, bodyHeight, legLength…), speed, biteReach, heads,
+      // legs, arms, material, temperament, actions, parts (type, tags, size, count) and claws.
       const level = params.level as number;
       return { hp: Math.round(input.measurements.mass ** (1 / 3) * 10 * level), damage: 3 };
     },

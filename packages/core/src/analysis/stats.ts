@@ -8,8 +8,10 @@ export interface StatsInput {
   readonly measurements: Analysis['measurements'];
   /** m/s: walking pace and top speed. */
   readonly speed: { readonly walk: number; readonly max: number };
-  /** Bite reach in metres, or null without a jaw. */
+  /** The main head's bite reach in metres, or null without a jaw. */
   readonly biteReach: number | null;
+  /** Heads (each with its jaw, if the head has one). */
+  readonly heads: number;
   readonly legs: number;
   readonly arms: number;
   /** Skin material: "skin", "scales" or "chitin". */
@@ -53,8 +55,9 @@ export function statsInput(spec: CreatureSpec, analysis: Analysis, registry: Reg
     measurements: analysis.measurements,
     speed: { walk: analysis.speed.walk, max: analysis.speed.max },
     biteReach: analysis.reach.bite,
+    heads: spec.body.neck.count,
     legs: legs.length,
-    arms: spec.limbs.length - legs.length,
+    arms: spec.limbs.filter((l) => l.role === 'arm').length,
     material: spec.skin.material,
     temperament: spec.motion.temperament,
     actions: spec.motion.actions.map((a) => a.type),

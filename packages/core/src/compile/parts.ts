@@ -142,9 +142,14 @@ export interface PartsInput {
   readonly paths: Map<string, readonly PathSegment[]>;
   readonly sdf: Sdf;
   readonly weightOptions: WeightOptions;
-  readonly mouth: MouthLine | undefined;
-  readonly head: number;
-  readonly jaw: number;
+  /** Every head with its jaw (-1 without) and mouth line; `main` indexes the main one. */
+  readonly heads: readonly {
+    readonly id: string;
+    readonly head: number;
+    readonly jaw: number;
+    readonly mouth: MouthLine | undefined;
+  }[];
+  readonly main: number;
   readonly palette: Readonly<Record<string, string>>;
   readonly scale: number;
   readonly seed: number;
@@ -326,7 +331,9 @@ export function buildParts(
         .multiplyScalar(0.45)
         .add(new Vector3(0, 0, 1).multiplyScalar(0.55));
       look.addScaledVector(Y, -look.y * 0.5).normalize();
-      const dominant = [...socket.weights].sort((a, b) => b[1] - a[1])[0]?.[0] ?? input.head;
+      const dominant =
+        [...socket.weights].sort((a, b) => b[1] - a[1])[0]?.[0] ??
+        (input.heads[input.main]?.head as number);
       const centre = origin.clone();
       const eyeUp = Y.clone().addScaledVector(look, -look.y).normalize();
       const eyeSide = new Vector3().crossVectors(eyeUp, look).normalize();
@@ -443,15 +450,20 @@ export function buildParts(
     color: resolveColor,
     socket: (at = place.at, angle = place.angle) => socketOn(place.on, at, angle, mirror),
     mouth: (t, row, side) => {
-      if (!input.mouth || input.jaw < 0) return undefined;
-      const m = input.mouth;
+      // The mouth of the head the part sits on (`head.L1`, `jaw.L1`), else the main head's.
+      const instance = /^(?:head|jaw)(\.[LR]\d+)/.exec(place.on)?.[1];
+      const h =
+        input.heads.find((x) => instance !== undefined && x.id === `head${instance}`) ??
+        input.heads[input.main];
+      if (!h?.mouth || h.jaw < 0) return undefined;
+      const m = h.mouth;
       const position = mouthPoint(m, Math.min(1, Math.max(0, t)), side);
       // Teeth sit just inside the lips.
       position.addScaledVector(m.side, -side * m.tipHalf * 0.08);
       const normal = row === 'upper' ? m.up.clone().negate() : m.up.clone();
       position.addScaledVector(normal, -m.tipHalf * 0.04);
       return frameOf(position, normal, m.forward, m.tipHalf, [
-        [row === 'upper' ? input.head : input.jaw, 1],
+        [row === 'upper' ? h.head : h.jaw, 1],
       ]);
     },
     toes,

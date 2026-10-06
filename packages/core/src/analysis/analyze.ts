@@ -3,6 +3,7 @@ import { colorName } from '../blueprint/colors.ts';
 import type { CreatureSpec } from '../blueprint/creature.ts';
 import type { Issue } from '../blueprint/issues.ts';
 import { type CompiledCreature, compileCreature, type Quality } from '../compile/compile.ts';
+import { allEyes, mainHead } from '../compile/types.ts';
 import { type Ground, MotionController } from '../motion/controller.ts';
 import { testCourse } from '../motion/terrain.ts';
 import type { ActionModule, PartModule, PatternModule, Registry } from '../registry.ts';
@@ -73,7 +74,19 @@ export interface Analysis {
     readonly steps: number;
   }[];
   /** How far the head can lunge (m) for a bite, and the head's height. */
-  readonly reach: { readonly bite: number | null; readonly headHeight: number };
+  /**
+   * The main head's bite reach (null without a jaw) and height, in metres; with several heads,
+   * `heads` gives each one's, the main head first.
+   */
+  readonly reach: {
+    readonly bite: number | null;
+    readonly headHeight: number;
+    readonly heads?: readonly {
+      readonly id: string;
+      readonly bite: number | null;
+      readonly headHeight: number;
+    }[];
+  };
   /** Centre of mass over the feet: `margin` is its distance inside the support area (m). */
   readonly stability: {
     readonly supported: boolean;
@@ -168,14 +181,20 @@ export function analyzeCreature(
     );
   }
 
-  const head = new Vector3().fromArray(compiled.bones.positions, compiled.rig.head * 3);
-  const neckBones = compiled.rig.neck;
-  let neckLen = 0;
-  for (const b of neckBones) neckLen += compiled.bones.lengths[b] ?? 0;
-  const reach = {
-    bite: compiled.rig.jaw >= 0 ? neckLen * 0.6 + 0.12 * L : null,
-    headHeight: head.y,
+  // Reach per head, the main head first; its numbers are the creature's.
+  const reachOf = (h: (typeof compiled.rig.heads)[number]) => {
+    let neckLen = 0;
+    for (const b of h.neck) neckLen += compiled.bones.lengths[b] ?? 0;
+    return {
+      id: h.id,
+      bite: h.jaw >= 0 ? neckLen * 0.6 + 0.12 * L : null,
+      headHeight: compiled.bones.positions[h.head * 3 + 1] as number,
+    };
   };
+  const main = mainHead(compiled.rig);
+  const perHead = [main, ...compiled.rig.heads.filter((h) => h !== main)].map(reachOf);
+  const { bite, headHeight } = perHead[0] as (typeof perHead)[number];
+  const reach = { bite, headHeight, ...(perHead.length > 1 ? { heads: perHead } : {}) };
 
   // --- Stability: the centre of mass over the feet's support area -------------------------
   const feet = compiled.rig.legs.map((l) => [l.restFoot[0], l.restFoot[2]] as [number, number]);
@@ -208,7 +227,7 @@ export function analyzeCreature(
 
   // --- Eyes facing backwards ---------------------------------------------------------------
   const eyeParts = spec.parts.filter((p) => registry.get('part', p.type)?.material === 'eye');
-  compiled.rig.eyes.forEach((bone, i) => {
+  allEyes(compiled.rig).forEach((bone, i) => {
     const dir = new Vector3(0, 1, 0).applyQuaternion(
       new Quaternion().fromArray(compiled.bones.rotations, bone * 4),
     );
