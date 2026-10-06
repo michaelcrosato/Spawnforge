@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { McpServer } from '@modelcontextprotocol/server';
 import { CommandError, describeModule, listModules, validate } from '@spawnforge/cli';
 import { MODULE_KINDS } from '@spawnforge/core';
+import type { Renderer } from '@spawnforge/render';
 import { z } from 'zod';
 
 const docsDir = new URL('../../../docs/', import.meta.url);
@@ -143,6 +144,80 @@ export function createServer(): McpServer {
       }),
     );
   }
+
+  let renderer: Promise<Renderer> | undefined;
+  const getRenderer = async () => {
+    if (!renderer) {
+      const { Renderer } = await import('@spawnforge/render');
+      renderer = Renderer.launch();
+      renderer.catch(() => {
+        renderer = undefined;
+      });
+    }
+    return renderer;
+  };
+  server.registerTool(
+    'render',
+    {
+      title: 'Render a blueprint',
+      description:
+        'Renders the creature as a PNG contact sheet: three-quarter, side, front and top views with a scale bar. With labels, every part and limb is tagged by id, so you can check placement. Use it to see whether a blueprint looks like what you meant.',
+      inputSchema: z.object({
+        blueprint: z
+          .record(z.string(), z.unknown())
+          .optional()
+          .describe('The blueprint JSON object'),
+        path: z
+          .string()
+          .optional()
+          .describe('Path to a blueprint JSON file, instead of "blueprint"'),
+        labels: z.boolean().optional().describe('Tag every part and limb by id'),
+        size: z
+          .number()
+          .int()
+          .min(128)
+          .max(1024)
+          .optional()
+          .describe('Pixels per panel (default 512)'),
+        views: z
+          .array(z.enum(['three-quarter', 'side', 'front', 'top']))
+          .optional()
+          .describe('Panels to draw'),
+      }),
+      annotations: { readOnlyHint: true },
+    },
+    async (input) => {
+      let blueprint: unknown;
+      try {
+        blueprint = readBlueprint(input);
+      } catch (error) {
+        return reply(() => {
+          throw error;
+        });
+      }
+      const checked = validate({ blueprint });
+      if (!checked.ok) return reply(() => ({ ok: false, errors: checked.errors }));
+      try {
+        const r = await getRenderer();
+        const result = await r.render({
+          blueprint,
+          labels: input.labels ?? false,
+          ...(input.size ? { size: input.size } : {}),
+          ...(input.views ? { views: input.views } : {}),
+        });
+        return {
+          content: [
+            { type: 'image' as const, data: result.png.toString('base64'), mimeType: 'image/png' },
+            { type: 'text' as const, text: JSON.stringify(result.info, null, 2) },
+          ],
+        };
+      } catch (error) {
+        return reply(() => {
+          throw new CommandError(`render failed: ${(error as Error).message}`);
+        });
+      }
+    },
+  );
 
   return server;
 }

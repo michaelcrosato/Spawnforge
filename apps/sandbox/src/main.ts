@@ -1,47 +1,92 @@
-import { FORMAT } from '@spawnforge/core';
-import { createRenderer, placeholderSkinMaterial } from '@spawnforge/three';
+import { createRegistry, FORMAT } from '@spawnforge/core';
+import { basicPack } from '@spawnforge/modules';
+import {
+  type CreatureObject,
+  createCreatureObject,
+  createRenderer,
+  createWorkerCompiler,
+} from '@spawnforge/three';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-// Placeholder scene: proves the workspace, Three.js r186 and TSL run end to end.
-// Compiled creatures replace the capsule once the pipeline lands.
+const registry = createRegistry([basicPack]);
+const examples = import.meta.glob('../../../examples/*.json', {
+  eager: true,
+  import: 'default',
+}) as Record<string, unknown>;
+const byName = new Map(
+  Object.entries(examples).map(([path, json]) => [
+    path.split('/').at(-1)?.replace('.json', '') ?? path,
+    json,
+  ]),
+);
 
 const canvas = document.querySelector<HTMLCanvasElement>('#view');
 const status = document.querySelector<HTMLDivElement>('#status');
-if (!canvas || !status) throw new Error('index.html is missing #view or #status');
+const picker = document.querySelector<HTMLSelectElement>('#picker');
+if (!canvas || !status || !picker)
+  throw new Error('index.html is missing #view, #status or #picker');
 
-async function main(canvas: HTMLCanvasElement, status: HTMLDivElement): Promise<void> {
-  const forceWebGL = new URLSearchParams(location.search).has('webgl');
-  const { renderer, backend } = await createRenderer(canvas, { forceWebGL });
+async function main(
+  canvas: HTMLCanvasElement,
+  status: HTMLDivElement,
+  picker: HTMLSelectElement,
+): Promise<void> {
+  const params = new URLSearchParams(location.search);
+  const { renderer, backend } = await createRenderer(canvas, { forceWebGL: params.has('webgl') });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color('#1b1d22');
-  scene.add(new THREE.HemisphereLight('#dfe8ff', '#3a3226', 1.2));
-  const sun = new THREE.DirectionalLight('#ffffff', 2.5);
-  sun.position.set(3, 5, 2);
+  scene.add(new THREE.HemisphereLight('#dfe8ff', '#3a3226', 1.1));
+  const sun = new THREE.DirectionalLight('#ffffff', 2.6);
+  sun.position.set(3, 6, 4);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(2048, 2048);
+  sun.shadow.camera.left = sun.shadow.camera.bottom = -4;
+  sun.shadow.camera.right = sun.shadow.camera.top = 4;
   scene.add(sun);
-
   const ground = new THREE.Mesh(
-    new THREE.PlaneGeometry(10, 10),
+    new THREE.PlaneGeometry(20, 20),
     new THREE.MeshStandardMaterial({ color: '#3b4048', roughness: 1 }),
   );
   ground.rotation.x = -Math.PI / 2;
-  scene.add(ground, new THREE.GridHelper(10, 20, '#555b66', '#2c3038'));
+  ground.receiveShadow = true;
+  scene.add(ground, new THREE.GridHelper(20, 40, '#555b66', '#2c3038'));
 
-  // A 1.2 m torso stand-in, facing +Z like every creature (glTF conventions: metres, Y up).
-  // The geometry itself is turned so local Y stays up and the belly-to-back shading reads right.
-  const radius = 0.25;
-  const torso = new THREE.CapsuleGeometry(radius, 1.2 - 2 * radius, 8, 24).rotateX(Math.PI / 2);
-  const body = new THREE.Mesh(torso, placeholderSkinMaterial('#5b6b3a', '#d8cfa0', radius));
-  body.position.y = 0.6;
-  scene.add(body);
-
-  const camera = new THREE.PerspectiveCamera(45, 1, 0.05, 100);
-  camera.position.set(2.2, 1.4, 2.2);
+  const camera = new THREE.PerspectiveCamera(40, 1, 0.02, 200);
   const controls = new OrbitControls(camera, canvas);
-  controls.target.set(0, 0.5, 0);
   controls.enableDamping = true;
+
+  const compiler = createWorkerCompiler([
+    new Worker(new URL('./compile.worker.ts', import.meta.url), { type: 'module' }),
+  ]);
+  let current: CreatureObject | undefined;
+  const show = async (name: string) => {
+    const blueprint = byName.get(name);
+    if (!blueprint) return;
+    status.textContent = `Compiling ${name}…`;
+    const quality = (params.get('quality') as 'low' | 'medium' | 'high' | null) ?? 'medium';
+    const { compiled, ms } = await compiler.compile(blueprint, quality);
+    current?.dispose();
+    if (current) scene.remove(current.object);
+    current = createCreatureObject(compiled, registry);
+    scene.add(current.object);
+    const [x0, y0, z0] = compiled.bounds.min;
+    const [x1, y1, z1] = compiled.bounds.max;
+    const centre = new THREE.Vector3((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2);
+    const size = Math.max(x1 - x0, y1 - y0, z1 - z0);
+    controls.target.copy(centre);
+    camera.position.copy(centre).add(new THREE.Vector3(size * 1.1, size * 0.55, size * 1.25));
+    const t = compiled.stats.triangles;
+    status.textContent = `${compiled.name} · ${t.skin + t.parts + t.eyes} tris · compiled in ${ms.toFixed(0)} ms (worker) · ${backend} · ${FORMAT}`;
+  };
+
+  for (const name of byName.keys()) picker.add(new Option(name, name));
+  picker.value = params.get('creature') ?? 'ridgeback-stalker';
+  picker.addEventListener('change', () => void show(picker.value));
+  await show(picker.value);
 
   const resize = () => {
     renderer.setSize(innerWidth, innerHeight, false);
@@ -50,15 +95,13 @@ async function main(canvas: HTMLCanvasElement, status: HTMLDivElement): Promise<
   };
   addEventListener('resize', resize);
   resize();
-
-  status.textContent = `Spawnforge sandbox · ${backend} · ${FORMAT}`;
   renderer.setAnimationLoop(() => {
     controls.update();
     renderer.render(scene, camera);
   });
 }
 
-main(canvas, status).catch((error: unknown) => {
+main(canvas, status, picker).catch((error: unknown) => {
   status.textContent = `Failed to start: ${error instanceof Error ? error.message : String(error)}`;
   throw error;
 });

@@ -1,0 +1,9 @@
+{
+  "phase": 1,
+  "kind": "format eval with renders, plus blind review",
+  "date": "2026-10-06",
+  "model": "Claude Sonnet (Claude Code subagent, model alias \"sonnet\")",
+  "tools": "spawnforge CLI: validate, list-modules, describe-module, render (contact sheets, labels)",
+  "docs": ["docs/blueprint.md", "docs/catalog.md", "examples/"],
+  "agents": "4 independent agents, 5 prompts each, no shared context; a separate blind reviewer"
+}

@@ -16,4 +16,14 @@ export default definePattern({
     softness: z.number().min(0.01).max(1).default(0.35).describe('Width of the blend'),
   }),
   example: { type: 'countershade', strength: 0.6 },
+  hooks: {
+    shade(k, s, p) {
+      const height = k.param(p.height as number);
+      const soft = k.param(p.softness as number);
+      // Pale below `height`, blending over `softness`.
+      return {
+        mask: k.sub(k.num(1), k.smoothstep(k.sub(height, soft), k.add(height, soft), s.height)),
+      };
+    },
+  },
 });

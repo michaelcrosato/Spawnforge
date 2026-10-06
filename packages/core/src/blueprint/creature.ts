@@ -91,6 +91,8 @@ export interface LimbSpec {
   readonly segments: number;
   readonly radius: readonly number[];
   readonly splay: number;
+  /** Arms: degrees raised forward from hanging. */
+  readonly lift: number;
   readonly foot: FootSpec | null;
   /** For legs: pair index counted from the back (0 is the hindmost pair). */
   readonly pair: number | undefined;

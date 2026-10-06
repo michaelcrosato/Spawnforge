@@ -1,0 +1,128 @@
+{
+  "correct": 20,
+  "total": 20,
+  "threshold": 16,
+  "gate": true,
+  "rows": [
+    {
+      "render": "r01",
+      "truth": "p02-spiked-lizard",
+      "answer": "p02-spiked-lizard",
+      "correct": true
+    },
+    {
+      "render": "r02",
+      "truth": "p01-wolf",
+      "answer": "p01-wolf",
+      "correct": true
+    },
+    {
+      "render": "r03",
+      "truth": "p15-gecko",
+      "answer": "p15-gecko",
+      "correct": true
+    },
+    {
+      "render": "r04",
+      "truth": "p19-rhino",
+      "answer": "p19-rhino",
+      "correct": true
+    },
+    {
+      "render": "r05",
+      "truth": "p04-green-serpent",
+      "answer": "p04-green-serpent",
+      "correct": true
+    },
+    {
+      "render": "r06",
+      "truth": "p17-goblin",
+      "answer": "p17-goblin",
+      "correct": true
+    },
+    {
+      "render": "r07",
+      "truth": "p03-horn-beetle",
+      "answer": "p03-horn-beetle",
+      "correct": true
+    },
+    {
+      "render": "r08",
+      "truth": "p07-sprawl-lizard",
+      "answer": "p07-sprawl-lizard",
+      "correct": true
+    },
+    {
+      "render": "r09",
+      "truth": "p11-sea-serpent",
+      "answer": "p11-sea-serpent",
+      "correct": true
+    },
+    {
+      "render": "r10",
+      "truth": "p20-nightmare-hound",
+      "answer": "p20-nightmare-hound",
+      "correct": true
+    },
+    {
+      "render": "r11",
+      "truth": "p16-ant-soldier",
+      "answer": "p16-ant-soldier",
+      "correct": true
+    },
+    {
+      "render": "r12",
+      "truth": "p09-long-neck",
+      "answer": "p09-long-neck",
+      "correct": true
+    },
+    {
+      "render": "r13",
+      "truth": "p08-boar",
+      "answer": "p08-boar",
+      "correct": true
+    },
+    {
+      "render": "r14",
+      "truth": "p06-ram-demon",
+      "answer": "p06-ram-demon",
+      "correct": true
+    },
+    {
+      "render": "r15",
+      "truth": "p05-swamp-troll",
+      "answer": "p05-swamp-troll",
+      "correct": true
+    },
+    {
+      "render": "r16",
+      "truth": "p10-scorpion",
+      "answer": "p10-scorpion",
+      "correct": true
+    },
+    {
+      "render": "r17",
+      "truth": "p14-leopard-stalker",
+      "answer": "p14-leopard-stalker",
+      "correct": true
+    },
+    {
+      "render": "r18",
+      "truth": "p12-raptor",
+      "answer": "p12-raptor",
+      "correct": true
+    },
+    {
+      "render": "r19",
+      "truth": "p18-cobra",
+      "answer": "p18-cobra",
+      "correct": true
+    },
+    {
+      "render": "r20",
+      "truth": "p13-cave-bear",
+      "answer": "p13-cave-bear",
+      "correct": true
+    }
+  ]
+}

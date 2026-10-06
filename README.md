@@ -28,11 +28,15 @@ The full example is [examples/ridgeback-stalker.json](examples/ridgeback-stalker
 
 ## Status
 
-Phase 0 is done: the blueprint format, validation with errors written for models, the module
-catalogue, the `spawnforge` CLI and an MCP server. On the 20-prompt format eval, a model using only
-the docs and tools wrote a valid blueprint for every prompt on its first try
-([eval](eval/runs/2026-10-06-phase0-format/notes.md)). Phase 1 (bodies, skin, parts, textures and
-renders) is in progress; see [docs/plan.md](docs/plan.md) for the milestones.
+Phases 0 and 1 are done: the blueprint format and its tools, then the pipeline that turns a
+blueprint into a textured, skinned monster with a six-view render. On the 20-prompt eval a model
+using only the docs and tools wrote a valid blueprint for every prompt, and a blind reviewer
+matched all 20 renders to their prompts
+([phase 0](eval/runs/2026-10-06-phase0-format/notes.md),
+[phase 1](eval/runs/2026-10-06-phase1-render/notes.md)). Phase 2 (procedural locomotion) is in
+progress; see [docs/plan.md](docs/plan.md) for the milestones.
+
+![Ridgeback stalker](examples/ridgeback-stalker.png)
 
 ## Getting started
 

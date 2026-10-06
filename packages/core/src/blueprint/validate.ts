@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { ActionModule, GaitModule, PartModule, PatternModule, Registry } from '../registry.ts';
+import type { ActionModule, GaitModule, PartModule, Registry } from '../registry.ts';
 import { toHex } from './colors.ts';
 import type {
   CreatureSpec,
@@ -713,6 +713,7 @@ export function expandCreature(doc: ResolvedDoc, registry: Registry): CreatureSp
         segments: limb.segments,
         radius: asProfile(limb.radius),
         splay: limb.splay,
+        lift: limb.lift,
         foot,
         pair: limb.role === 'leg' ? legOrder.indexOf(limb.id) : undefined,
       };

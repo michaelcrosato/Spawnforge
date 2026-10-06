@@ -1,0 +1,38 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Ant Soldier",
+  "seed": 16,
+  "extends": "hexapod",
+  "scale": 0.6,
+  "body": {
+    "head": { "shape": "wedge", "length": 0.3, "radius": 0.16, "jaw": true, "pitch": -5 }
+  },
+  "limbs": [
+    { "id": "frontleg", "length": 0.8 },
+    { "id": "midleg", "length": 0.85 },
+    { "id": "hindleg", "length": 0.9 }
+  ],
+  "parts": [
+    {
+      "id": "mandibles",
+      "type": "horn.curved",
+      "attach": { "on": "head", "at": 0.08, "angle": 100 },
+      "params": {
+        "length": 0.2,
+        "width": 0.025,
+        "lean": 60,
+        "curve": 110,
+        "turn": 90,
+        "color": "#4a0a08",
+        "tipColor": "#1a0504"
+      }
+    },
+    { "id": "eyes", "params": { "size": 0.035, "irisColor": "#1a0a08" } }
+  ],
+  "skin": {
+    "palette": { "base": "#b0201a", "belly": "#7a1410", "accent": "#3a0a08" },
+    "material": "chitin",
+    "layers": [{ "type": "countershade", "softness": 0.2 }]
+  },
+  "motion": { "temperament": "aggressive", "actions": ["bite", "look"] }
+}

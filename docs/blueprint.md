@@ -40,6 +40,10 @@ The workflow is always the same:
 - **`scale` is the torso length in metres.** Every other length and radius in the blueprint is a
   multiple of it, so a `"length": 0.5` leg on a `"scale": 2` creature is 1 m long. Resize a whole
   monster by changing `scale`.
+- **Sizing.** With the presets' proportions, an upright biped stands about 2.5 × `scale` tall (a
+  2 m giant is `scale` 0.8), a quadruped is about 2.2 × `scale` from snout to tail tip and 0.75 ×
+  `scale` tall (a wolf is about 0.7), a hexapod is about 1.3 × `scale` long, and a serpent about
+  3.5 × `scale`. Longer legs, necks and tails change these, so check the size line on a render.
 - **Angles are degrees.**
 - **The creature faces +Z with Y up** (glTF conventions). Its left side is +X.
 - **Profiles.** Any `radius` (and a spike row's `height`) is either one number, or a list of up to
@@ -157,6 +161,30 @@ part sits depends on its slot (shown in `describe_module`):
 Parameters go inside `params`: `{ "id": "horns", "type": "horn.curved", "params": { "length": 0.3 } }`.
 Each part has a default anchor, so `{ "id": "teeth", "type": "teeth.row" }` is complete.
 
+### Recipes
+
+These were checked against renders (`render` with `labels: true` shows where every part landed).
+All lengths are in torso lengths.
+
+| Look | Part |
+| --- | --- |
+| Ram horns, coiled | `horn.curved` on `head`, `at` 0.8, `angle` 45; `length` 0.45, `width` 0.05, `curve` 250, `twist` 120, `ridges` 12 |
+| Bull horns, out then forward | `horn.curved` on `head`, `at` 0.85, `angle` 75; `length` 0.3, `width` 0.04, `curve` -70 |
+| Rhino nose horn | `horn.curved` on `head`, `at` 0.12, `angle` 0; `length` 0.22, `width` 0.05, `curve` 25 (add a smaller one at `at` 0.4) |
+| Tusks from the lower jaw | `horn.curved` on `jaw`, `at` 0.25, `angle` 60; `length` 0.16, `width` 0.025, `curve` -60, pale `color` and `tipColor` |
+| Insect mandibles | `horn.curved` on `head`, `at` 0.08, `angle` 100; `length` 0.2, `width` 0.025, `lean` 60, `curve` 110, `turn` 90, dark colours |
+| Spikes down the whole back | `spikes.row` on `spine`, `from` 0.1, `to` 0.95, `angle` 0; a `height` profile such as `[0.06, 0.12, 0.05]` |
+| A stinger on the tail tip | `horn.curved` on `tail`, `at` 0.97, `angle` 0; `curve` 60 |
+| Pointed ears | `horn.curved` on `head`, `at` 0.85, `angle` 40; `length` 0.1, `width` 0.04, `curve` -15, `color` and `tipColor` set to `base` |
+
+For `horn.curved`: the horn grows straight out of the skin, then bends by `curve` degrees,
+backward (toward the tail) for positive values and forward for negative ones. `lean` tilts the
+root first, `twist` spirals it, and `turn` swings the bend sideways (90 toward the midline, -90
+away). Pairs (`side` "both") are mirror images. The attach `angle` also sets the plane the horn
+bends in: near 30–45 a curved horn rises and sweeps back over the head (ram horns), near 75–90 it
+grows out to the side first (bull horns). Coiled horns spend their length on the coil, so a big
+ram's horns need a `length` of 0.5–0.75 to read from a distance.
+
 ## Skin
 
 - **`palette`** names colours. `base` (the main colour), `belly` and `accent` always exist; add
@@ -175,6 +203,11 @@ Each part has a default anchor, so `{ "id": "teeth", "type": "teeth.row" }` is c
   choose. Use either or both.
 - Colour parameters (`color`, and any field ending in `Color`) take a palette name such as
   `"accent"` or a colour.
+- Pattern sizes are in torso lengths, so they scale with the creature. Details smaller than a few
+  pixels fade out instead of flickering, so on a small creature seen from afar, `scales` at the
+  default size read as plain skin; use a `size` of 0.05–0.1 there.
+- On a creature with no legs, `countershade` at its default height gives the pale belly of a
+  snake; raise `height` toward 0 to pale the flanks too.
 
 Patterns follow the body: stripes run across the spine, bellies come out paler, and nothing slides
 when the creature moves.
@@ -205,12 +238,16 @@ the minimal blueprint is there to show what actually differs from the preset. Ea
 All problems are reported at once, so fix them all before validating again. Unknown keys are
 always errors, never silently dropped.
 
+Compiling and rendering can add warnings that only show once the body is built, such as
+`below_ground` when a drooping tail or head sinks into the floor. They have the same fields and
+name the section to change.
+
 ## Not in this version
 
-Wings, fins, tentacles, mandibles, shells, armour plates, quills, antennae, frills, multiple heads
-and branching tails are planned but not available yet (see the scope table in
-[plan.md](plan.md)). Approximate them with what exists, for example horns for mandibles or a spike
-row for a frill.
+Wings, fins, tentacles, shells, armour plates, quills, antennae, frills, multiple heads and
+branching tails are planned but not available yet (see the scope table in [plan.md](plan.md)), and
+there are no dedicated mandible or ear parts. Approximate them with what exists, as the recipes
+above do: horns for mandibles, ears and stingers, a spike row for a frill.
 
 ## Format versions
 

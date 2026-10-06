@@ -17,11 +17,14 @@
     "test:watch": "vitest",
     "check": "pnpm lint && pnpm typecheck && pnpm test",
     "spawnforge": "node packages/cli/src/bin.ts",
-    "generate": "node scripts/generate.ts"
+    "generate": "node scripts/generate.ts",
+    "render:examples": "node scripts/render-examples.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.15",
     "@spawnforge/cli": "workspace:*",
+    "@spawnforge/core": "workspace:*",
+    "@spawnforge/render": "workspace:*",
     "@types/node": "^22.19.0",
     "@types/three": "catalog:",
     "typescript": "^7.0.2",

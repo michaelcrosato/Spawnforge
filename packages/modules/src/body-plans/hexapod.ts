@@ -7,7 +7,13 @@ export default defineBodyPlan({
   preset: {
     scale: 0.8,
     body: {
-      torso: { radius: [0.11, 0.14, 0.17, 0.14], pitch: 0, segments: 6, crossSection: 'wide' },
+      // A thorax for the legs, a narrow waist, then a broad abdomen.
+      torso: {
+        radius: [0.1, 0.14, 0.085, 0.17, 0.15, 0.1],
+        pitch: 0,
+        segments: 8,
+        crossSection: 'wide',
+      },
       neck: { length: 0.06, radius: [0.07, 0.08], pitch: 0, segments: 1 },
       head: { shape: 'round', length: 0.22, radius: 0.09, jaw: true, pitch: -10 },
       tail: { length: 0 },
@@ -16,7 +22,7 @@ export default defineBodyPlan({
       {
         id: 'frontleg',
         role: 'leg',
-        attach: { on: 'torso', at: 0.18, side: 'both', angle: 120 },
+        attach: { on: 'torso', at: 0.1, side: 'both', angle: 120 },
         length: 0.6,
         segments: 3,
         radius: [0.035, 0.015],
@@ -26,7 +32,7 @@ export default defineBodyPlan({
       {
         id: 'midleg',
         role: 'leg',
-        attach: { on: 'torso', at: 0.38, side: 'both', angle: 120 },
+        attach: { on: 'torso', at: 0.22, side: 'both', angle: 120 },
         length: 0.62,
         segments: 3,
         radius: [0.035, 0.015],
@@ -36,7 +42,7 @@ export default defineBodyPlan({
       {
         id: 'hindleg',
         role: 'leg',
-        attach: { on: 'torso', at: 0.58, side: 'both', angle: 120 },
+        attach: { on: 'torso', at: 0.34, side: 'both', angle: 120 },
         length: 0.7,
         segments: 3,
         radius: [0.035, 0.015],

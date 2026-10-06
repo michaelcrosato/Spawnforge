@@ -14,6 +14,7 @@
     "@modelcontextprotocol/server": "2.3.1",
     "@spawnforge/cli": "workspace:*",
     "@spawnforge/core": "workspace:*",
+    "@spawnforge/render": "workspace:*",
     "zod": "catalog:"
   },
   "devDependencies": {

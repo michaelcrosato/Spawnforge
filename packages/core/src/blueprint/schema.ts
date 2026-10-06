@@ -179,6 +179,11 @@ export function buildBlueprintSchema(ids: ModuleIds = NO_IDS) {
     splay: range(-30, 90)
       .default(0)
       .describe('Degrees the limb swings out from under the body; about 50 for sprawlers'),
+    lift: range(0, 150)
+      .default(0)
+      .describe(
+        'Arms only: degrees the arm is raised forward from hanging; 90 holds it straight out (pincers)',
+      ),
     foot: z
       .union([foot, z.null()])
       .prefault({})
@@ -187,7 +192,12 @@ export function buildBlueprintSchema(ids: ModuleIds = NO_IDS) {
   });
 
   const partAttach = z.strictObject({
-    on: z.string().optional().describe('Body section, limb id or part id to attach to'),
+    on: z
+      .string()
+      .optional()
+      .describe(
+        'Body section (head, jaw, neck, torso, tail; spine runs neck to tail tip), limb id or part id',
+      ),
     at: range(0, 1)
       .optional()
       .describe('Where along it: snout-to-tail on sections, root-to-tip on limbs and parts'),

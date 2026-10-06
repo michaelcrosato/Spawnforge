@@ -25,3 +25,15 @@ body {
   background: rgb(0 0 0 / 45%);
   pointer-events: none;
 }
+
+#picker {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid #444a55;
+  background: #23262d;
+  color: inherit;
+  font: inherit;
+}

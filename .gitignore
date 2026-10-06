@@ -9,3 +9,7 @@ playwright-report/
 .env
 .env.*
 .DS_Store
+
+# Eval renders are regenerated from the committed blueprints
+eval/runs/*/work/
+eval/runs/*/blind/*.png

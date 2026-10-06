@@ -1,0 +1,47 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Raptor",
+  "seed": 1201,
+  "extends": "biped",
+  "scale": 1.2,
+  "body": {
+    "torso": {
+      "radius": [0.1, 0.16, 0.15, 0.1],
+      "arch": 0.03,
+      "pitch": 10,
+      "crossSection": "round"
+    },
+    "neck": { "length": 0.35, "radius": [0.05, 0.08], "pitch": 45 },
+    "head": { "shape": "snout", "length": 0.3, "radius": 0.09, "pitch": -10 },
+    "tail": { "length": 1.5, "radius": [0.1, 0.01], "pitch": 5, "curl": 0 }
+  },
+  "limbs": [
+    {
+      "id": "leg",
+      "attach": { "on": "torso", "at": 0.6, "angle": 110 },
+      "length": 1.0,
+      "segments": 3,
+      "radius": [0.1, 0.035],
+      "foot": { "type": "foot.claw", "toes": 3, "toeLength": 0.1, "clawLength": 0.05 }
+    },
+    {
+      "id": "arm",
+      "attach": { "on": "torso", "at": 0.1, "angle": 100 },
+      "length": 0.3,
+      "radius": [0.03, 0.015],
+      "foot": { "type": "foot.claw", "toes": 3, "toeLength": 0.04, "clawLength": 0.04 }
+    }
+  ],
+  "parts": [
+    { "id": "teeth", "type": "teeth.row", "params": { "count": 10, "fangs": 0, "length": 0.03 } },
+    { "id": "eyes", "params": { "size": 0.02, "pupil": "slit" } }
+  ],
+  "skin": {
+    "palette": { "base": "#7a5a2c", "belly": "#e2d4a4", "accent": "#2c1e10" },
+    "layers": [
+      { "type": "countershade" },
+      { "type": "stripes", "count": 12, "region": "back", "jitter": 0.4 }
+    ]
+  },
+  "motion": { "temperament": "skittish", "actions": ["bite", "roar", "look"] }
+}

@@ -1,0 +1,30 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Green Serpent",
+  "seed": 8,
+  "extends": "serpent",
+  "scale": 2.5,
+  "body": {
+    "torso": { "radius": [0.1, 0.12, 0.13, 0.12] },
+    "neck": { "length": 0.5, "radius": [0.09, 0.12], "pitch": 45, "segments": 4 },
+    "head": { "length": 0.28, "radius": 0.1, "pitch": -15 },
+    "tail": { "radius": [0.12, 0.1, 0.06, 0.01] }
+  },
+  "parts": [
+    {
+      "id": "fangs",
+      "type": "teeth.row",
+      "params": { "count": 5, "length": 0.015, "fangs": 2, "fangLength": 0.12, "lower": false }
+    }
+  ],
+  "skin": {
+    "palette": { "base": "#2e8b3a", "belly": "#e6dc7c", "accent": "#1c4a22", "stripe": "#f2d824" },
+    "material": "scales",
+    "layers": [
+      { "type": "countershade" },
+      { "type": "stripes", "color": "stripe", "count": 22, "width": 0.3, "jitter": 0.15 },
+      { "type": "scales", "size": 0.02 }
+    ]
+  },
+  "motion": { "temperament": "stalking", "actions": ["bite", "look"] }
+}

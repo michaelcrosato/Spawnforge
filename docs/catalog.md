@@ -84,6 +84,7 @@ Runs back from the torso. `at` runs from the root (0) to the tip (1).
 | `segments` | integer | 2–4 | `3` | Bones from hip or shoulder to ankle |
 | `radius` | number or list of number | 0.005–0.5 | `[0.06, 0.03]` | Radius from root to tip, in torso lengths |
 | `splay` | number | -30–90 | `0` | Degrees the limb swings out from under the body; about 50 for sprawlers |
+| `lift` | number | 0–150 | `0` | Arms only: degrees the arm is raised forward from hanging; 90 holds it straight out (pincers) |
 | `foot` | object or null |  | `{}` | Foot part at the limb tip (default { "type": "foot.claw" }), or null for none |
 | `remove` | boolean |  |  | Delete an inherited limb with this id |
 
@@ -110,7 +111,7 @@ Runs back from the torso. `at` runs from the root (0) to the tip (1).
 
 | Field | Type | Range | Default | Description |
 | --- | --- | --- | --- | --- |
-| `on` | string |  |  | Body section, limb id or part id to attach to |
+| `on` | string |  |  | Body section (head, jaw, neck, torso, tail; spine runs neck to tail tip), limb id or part id |
 | `at` | number | 0–1 |  | Where along it: snout-to-tail on sections, root-to-tip on limbs and parts |
 | `from` | number | 0–1 |  | Start of a row |
 | `to` | number | 0–1 |  | End of a row |
@@ -161,22 +162,22 @@ Ids you can override: limb `leg`, limb `arm`, part `eyes`.
   "scale": 0.7,
   "body": {
     "torso": {
-      "radius": [0.17, 0.2, 0.18, 0.17],
-      "arch": 0.05,
-      "pitch": 80,
+      "radius": [0.13, 0.2, 0.18, 0.16],
+      "arch": 0.04,
+      "pitch": 82,
       "segments": 5,
       "crossSection": "wide"
     },
-    "neck": { "length": 0.12, "radius": [0.07, 0.085], "pitch": 80, "segments": 2 },
-    "head": { "shape": "round", "length": 0.28, "radius": 0.13, "jaw": true, "pitch": 0 },
+    "neck": { "length": 0.2, "radius": [0.065, 0.075], "pitch": 82, "segments": 2 },
+    "head": { "shape": "round", "length": 0.3, "radius": 0.13, "jaw": true, "pitch": 0 },
     "tail": { "length": 0 }
   },
   "limbs": [
     {
       "id": "leg",
       "role": "leg",
-      "attach": { "on": "torso", "at": 0.92, "side": "both", "angle": 125 },
-      "length": 1.15,
+      "attach": { "on": "torso", "at": 0.94, "side": "both", "angle": 130 },
+      "length": 1.3,
       "segments": 2,
       "radius": [0.1, 0.05],
       "foot": { "type": "foot.claw", "toes": 3 }
@@ -184,10 +185,10 @@ Ids you can override: limb `leg`, limb `arm`, part `eyes`.
     {
       "id": "arm",
       "role": "arm",
-      "attach": { "on": "torso", "at": 0.1, "side": "both", "angle": 95 },
-      "length": 1,
+      "attach": { "on": "torso", "at": 0.12, "side": "both", "angle": 92 },
+      "length": 1.05,
       "segments": 2,
-      "radius": [0.07, 0.04],
+      "radius": [0.065, 0.04],
       "foot": { "type": "foot.claw", "toes": 4 }
     }
   ],
@@ -216,7 +217,12 @@ Ids you can override: limb `frontleg`, limb `midleg`, limb `hindleg`, part `eyes
 {
   "scale": 0.8,
   "body": {
-    "torso": { "radius": [0.11, 0.14, 0.17, 0.14], "pitch": 0, "segments": 6, "crossSection": "wide" },
+    "torso": {
+      "radius": [0.1, 0.14, 0.085, 0.17, 0.15, 0.1],
+      "pitch": 0,
+      "segments": 8,
+      "crossSection": "wide"
+    },
     "neck": { "length": 0.06, "radius": [0.07, 0.08], "pitch": 0, "segments": 1 },
     "head": { "shape": "round", "length": 0.22, "radius": 0.09, "jaw": true, "pitch": -10 },
     "tail": { "length": 0 }
@@ -225,7 +231,7 @@ Ids you can override: limb `frontleg`, limb `midleg`, limb `hindleg`, part `eyes
     {
       "id": "frontleg",
       "role": "leg",
-      "attach": { "on": "torso", "at": 0.18, "side": "both", "angle": 120 },
+      "attach": { "on": "torso", "at": 0.1, "side": "both", "angle": 120 },
       "length": 0.6,
       "segments": 3,
       "radius": [0.035, 0.015],
@@ -235,7 +241,7 @@ Ids you can override: limb `frontleg`, limb `midleg`, limb `hindleg`, part `eyes
     {
       "id": "midleg",
       "role": "leg",
-      "attach": { "on": "torso", "at": 0.38, "side": "both", "angle": 120 },
+      "attach": { "on": "torso", "at": 0.22, "side": "both", "angle": 120 },
       "length": 0.62,
       "segments": 3,
       "radius": [0.035, 0.015],
@@ -245,7 +251,7 @@ Ids you can override: limb `frontleg`, limb `midleg`, limb `hindleg`, part `eyes
     {
       "id": "hindleg",
       "role": "leg",
-      "attach": { "on": "torso", "at": 0.58, "side": "both", "angle": 120 },
+      "attach": { "on": "torso", "at": 0.34, "side": "both", "angle": 120 },
       "length": 0.7,
       "segments": 3,
       "radius": [0.035, 0.015],
@@ -404,6 +410,8 @@ slot: `"foot"` · material: `"horn"` · defaultAttach: `{"on":"limb"}`
 | `spread` | number | 0–150 | `50` | Degrees between the outermost toes |
 | `clawLength` | number | 0–0.3 | `0.035` | Claw length in torso lengths; 0 for none |
 | `clawCurve` | number | 0–180 | `70` | Degrees each claw bends down |
+| `clawWidth` | number | 0.2–3 | `1` | Claw thickness relative to the toe |
+| `clawColor` | string |  | `"#2a221c"` | Claw colour: a palette name or a colour |
 
 ```json
 { "type": "foot.claw", "toes": 3, "clawLength": 0.05 }
@@ -421,10 +429,13 @@ slot: `"surface"` · material: `"horn"` · defaultAttach: `{"on":"head","at":0.7
 | --- | --- | --- | --- | --- |
 | `length` | number | 0.02–1 | `0.2` | Length in torso lengths |
 | `width` | number | 0.005–0.3 | `0.035` | Base radius in torso lengths |
-| `curve` | number | -270–270 | `45` | Total bend in degrees; positive sweeps back toward the tail |
+| `curve` | number | -270–270 | `45` | Total bend in degrees; positive sweeps back toward the tail, negative forward |
 | `twist` | number | -720–720 | `0` | Spiral in degrees along the horn, like a ram |
 | `lean` | number | -90–90 | `0` | Degrees the root tilts forward (+) or back (-) |
+| `turn` | number | -180–180 | `0` | Degrees the bend turns sideways: 90 curves toward the midline (mandibles), -90 away from it |
 | `ridges` | integer | 0–30 | `0` | Rings along the horn |
+| `color` | string |  | `"#d4c6a2"` | Colour at the root: a palette name or a colour |
+| `tipColor` | string |  | `"#3d3329"` | Colour at the tip |
 
 ```json
 {
@@ -450,6 +461,8 @@ slot: `"row"` · material: `"bone"` · defaultAttach: `{"on":"torso","angle":0}`
 | `width` | number | 0.005–0.2 | `0.025` | Base radius in torso lengths |
 | `curve` | number | -90–90 | `20` | Degrees each spike sweeps back toward the tail |
 | `jitter` | number | 0–1 | `0` | Irregular heights and angles, for jagged rows |
+| `color` | string |  | `"#ddd1b4"` | Colour at the root: a palette name or a colour |
+| `tipColor` | string |  | `"#5e5040"` | Colour at the tip |
 
 ```json
 {
@@ -508,7 +521,7 @@ Add to skin.layers as { "type": "grime", ...params }; every layer also takes "re
 
 | Parameter | Type | Range | Default | Description |
 | --- | --- | --- | --- | --- |
-| `color` | string |  | `"#2a2218"` | A palette name such as "accent", or a colour such as "#2a1e14" |
+| `color` | string |  | `"#5c4c3a"` | A palette name such as "accent", or a colour such as "#2a1e14" |
 | `amount` | number | 0–1 | `0.5` | Overall strength |
 | `creases` | number | 0–1 | `0.7` | Dirt in creases and joints |
 | `feet` | number | 0–1 | `0.6` | Dirt rising from the ground up the legs |

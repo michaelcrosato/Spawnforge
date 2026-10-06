@@ -31,6 +31,35 @@ export {
   type ValidationResult,
   validateBlueprint,
 } from './blueprint/validate.ts';
+export * from './compile/compile.ts';
+export { type LimbIkSetup, solveLimb } from './compile/ik.ts';
+export { type MouthLine, mouthLine, mouthPoint } from './compile/mouth.ts';
+export type {
+  EmitOptions,
+  EyeOptions,
+  PartBuildContext,
+  PartHooks,
+  Socket,
+} from './compile/parts.ts';
+export { buildSdf, type Sdf, SdfEvaluator } from './compile/sdf.ts';
+export { buildSkeleton, type SkeletonBuild } from './compile/skeleton.ts';
+export type * from './compile/types.ts';
 export { FORMAT } from './format.ts';
+export * from './geometry/kit.ts';
+export {
+  type GaitInfo,
+  type Ground,
+  type GroundSample,
+  MotionController,
+  type MotionData,
+  type MotionEvent,
+} from './motion/controller.ts';
+export { motionData } from './motion/gaits.ts';
+export { Pose } from './motion/pose.ts';
+export { testCourse } from './motion/terrain.ts';
 export * from './registry.ts';
 export { createRng, deriveSeed, type Rng } from './rng.ts';
+export * from './shading/compose.ts';
+export { cpuKit, hash3u } from './shading/cpu.ts';
+export type { Kit, LayerOutput, PatternHooks, Surface } from './shading/kit.ts';
+export { cells, fbm, valueNoise } from './shading/noise.ts';
