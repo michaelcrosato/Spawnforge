@@ -6,7 +6,13 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**", "!**/dist", "!**/coverage"]
+    "includes": [
+      "**",
+      "!**/dist",
+      "!**/coverage",
+      "!packages/modules/src/index.ts",
+      "!docs/blueprint.schema.json"
+    ]
   },
   "formatter": {
     "indentStyle": "space",

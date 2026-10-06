@@ -15,14 +15,8 @@ export type ModuleKind = (typeof MODULE_KINDS)[number];
 /** Lowercase words joined by dots or dashes, e.g. `horn.curved`, `spikes.row`, `quadruped`. */
 const MODULE_ID = /^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$/;
 
-/**
- * What every module declares. Kind-specific hooks (a part's `build`, a pattern's shader, a
- * gait's phase pattern) join this as each pipeline stage lands.
- */
-export interface ModuleDefinition<
-  K extends ModuleKind = ModuleKind,
-  P extends z.ZodType = z.ZodType,
-> {
+/** Fields every module declares. */
+export interface ModuleBase<K extends ModuleKind, P extends z.ZodType = z.ZodType> {
   readonly kind: K;
   /** Unique within its kind. */
   readonly id: string;
@@ -33,8 +27,112 @@ export interface ModuleDefinition<
   readonly params: P;
 }
 
+/** Where a part sits. Each slot has its own placement rules (docs/blueprint.md). */
+export type PartSlot =
+  /** One point on a section, limb or part: `at` and `angle`. */
+  | 'surface'
+  /** A run of copies between `from` and `to`. */
+  | 'row'
+  /** The end of a limb, set through the limb's `foot` field. */
+  | 'foot'
+  /** Along the mouth line of a head with a jaw. */
+  | 'mouth';
+
+/** Base materials hard parts can use. */
+export type PartMaterial = 'bone' | 'horn' | 'chitin' | 'enamel' | 'eye' | 'skin';
+
+export interface PartModule<P extends z.ZodType = z.ZodType> extends ModuleBase<'part', P> {
+  readonly slot: PartSlot;
+  readonly material: PartMaterial;
+  /** Default anchor when a blueprint leaves `attach` fields out. */
+  readonly attach: { readonly on: string; readonly at?: number; readonly angle?: number };
+  /** A complete `parts[]` entry (or `foot` object for foot parts) showing typical use. */
+  readonly example: Record<string, unknown>;
+  /** Phase hooks (geometry, bones) are attached by the compile pipeline types. */
+  readonly hooks?: unknown;
+}
+
+export interface PatternModule<P extends z.ZodType = z.ZodType> extends ModuleBase<'pattern', P> {
+  /** A complete `skin.layers[]` entry showing typical use. */
+  readonly example: Record<string, unknown>;
+  readonly hooks?: unknown;
+}
+
+export interface GaitModule<P extends z.ZodType = z.ZodType> extends ModuleBase<'gait', P> {
+  /** Leg pairs the gait works with. `0` is a legless spine gait; `'any'` is one pair or more. */
+  readonly legPairs: 'any' | readonly number[];
+  /** Phase offset between successive leg pairs, counted from the back, for a given pair count. */
+  readonly wave: (pairs: number) => number;
+  /** Default share of the cycle each foot is planted. */
+  readonly duty: number;
+  /** Speeds the gait suits, as Froude numbers v²/(g·h). */
+  readonly froude: readonly [number, number];
+  readonly hooks?: unknown;
+}
+
+/** Body features an action may need. */
+export type Feature = 'head' | 'jaw' | 'arm' | 'tail' | 'legs';
+
+export interface ActionModule<P extends z.ZodType = z.ZodType> extends ModuleBase<'action', P> {
+  readonly needs: readonly Feature[];
+  readonly hooks?: unknown;
+}
+
+export interface BodyPlanModule extends ModuleBase<'bodyPlan', z.ZodType> {
+  /** The blueprint fragment `extends` starts from. Lists carry ids so blueprints can edit them. */
+  readonly preset: Record<string, unknown>;
+}
+
+export interface ThemeModule<P extends z.ZodType = z.ZodType> extends ModuleBase<'theme', P> {
+  readonly hooks?: unknown;
+}
+
+export interface StatsModule<P extends z.ZodType = z.ZodType> extends ModuleBase<'stats', P> {
+  readonly hooks?: unknown;
+}
+
+export interface ModuleByKind {
+  bodyPlan: BodyPlanModule;
+  part: PartModule;
+  pattern: PatternModule;
+  gait: GaitModule;
+  action: ActionModule;
+  theme: ThemeModule;
+  stats: StatsModule;
+}
+
+export type ModuleDefinition = ModuleByKind[ModuleKind];
+
 export function defineModule<const M extends ModuleDefinition>(module: M): M {
   return module;
+}
+
+const EMPTY_PARAMS = z.strictObject({});
+
+export function definePart<P extends z.ZodType>(m: Omit<PartModule<P>, 'kind'>): PartModule<P> {
+  return { kind: 'part', ...m };
+}
+export function definePattern<P extends z.ZodType>(
+  m: Omit<PatternModule<P>, 'kind'>,
+): PatternModule<P> {
+  return { kind: 'pattern', ...m };
+}
+export function defineGait<P extends z.ZodType>(m: Omit<GaitModule<P>, 'kind'>): GaitModule<P> {
+  return { kind: 'gait', ...m };
+}
+export function defineAction<P extends z.ZodType>(
+  m: Omit<ActionModule<P>, 'kind'>,
+): ActionModule<P> {
+  return { kind: 'action', ...m };
+}
+export function defineBodyPlan(m: Omit<BodyPlanModule, 'kind' | 'params'>): BodyPlanModule {
+  return { kind: 'bodyPlan', params: EMPTY_PARAMS, ...m };
+}
+export function defineTheme<P extends z.ZodType>(m: Omit<ThemeModule<P>, 'kind'>): ThemeModule<P> {
+  return { kind: 'theme', ...m };
+}
+export function defineStats<P extends z.ZodType>(m: Omit<StatsModule<P>, 'kind'>): StatsModule<P> {
+  return { kind: 'stats', ...m };
 }
 
 /** A named set of modules. Games include only the packs they want. */
@@ -59,10 +157,22 @@ export interface CatalogEntry {
 }
 
 export interface Registry {
-  get(kind: ModuleKind, id: string): ModuleDefinition | undefined;
+  get<K extends ModuleKind>(kind: K, id: string): ModuleByKind[K] | undefined;
   /** Modules sorted by kind, then id, so output is stable. */
-  list(kind?: ModuleKind): ModuleDefinition[];
+  list<K extends ModuleKind>(kind: K): ModuleByKind[K][];
+  list(): ModuleDefinition[];
+  ids(kind: ModuleKind): string[];
+  packOf(kind: ModuleKind, id: string): string | undefined;
   catalog(): CatalogEntry[];
+}
+
+export function paramsJsonSchema(params: z.ZodType): Record<string, unknown> {
+  const schema = z.toJSONSchema(params, { io: 'input', unrepresentable: 'any' }) as Record<
+    string,
+    unknown
+  >;
+  delete schema.$schema;
+  return schema;
 }
 
 export function createRegistry(packs: readonly Pack[]): Registry {
@@ -97,10 +207,16 @@ export function createRegistry(packs: readonly Pack[]): Registry {
       x.module.id.localeCompare(y.module.id),
   );
 
+  function list(kind?: ModuleKind): ModuleDefinition[] {
+    return sorted.map((e) => e.module).filter((m) => kind === undefined || m.kind === kind);
+  }
+
   return {
-    get: (kind, id) => byKey.get(key(kind, id))?.module,
-    list: (kind) =>
-      sorted.map((e) => e.module).filter((m) => kind === undefined || m.kind === kind),
+    get: <K extends ModuleKind>(kind: K, id: string) =>
+      byKey.get(key(kind, id))?.module as ModuleByKind[K] | undefined,
+    list: list as Registry['list'],
+    ids: (kind) => list(kind).map((m) => m.id),
+    packOf: (kind, id) => byKey.get(key(kind, id))?.pack,
     catalog: () =>
       sorted.map(({ module, pack }) => ({
         kind: module.kind,
@@ -108,7 +224,7 @@ export function createRegistry(packs: readonly Pack[]): Registry {
         pack,
         summary: module.summary,
         tags: module.tags,
-        params: z.toJSONSchema(module.params, { io: 'input' }) as Record<string, unknown>,
+        params: paramsJsonSchema(module.params),
       })),
   };
 }

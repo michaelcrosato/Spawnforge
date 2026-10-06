@@ -5,5 +5,7 @@
     "lib": ["es2023"],
     "types": []
   },
-  "include": ["src"]
+  "include": ["src"],
+  // Tests run in Node; tsconfig.tests.json at the root checks them with Node types.
+  "exclude": ["src/**/*.test.ts"]
 }

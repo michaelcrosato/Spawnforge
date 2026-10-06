@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
-import { createRegistry, defineModule, definePack } from './registry.ts';
+import { createRegistry, definePack, definePart, definePattern } from './registry.ts';
 
-const horn = defineModule({
-  kind: 'part',
+const horn = definePart({
   id: 'horn.curved',
+  slot: 'surface',
+  material: 'horn',
+  attach: { on: 'head', at: 0.75, angle: 40 },
+  example: { id: 'horns', type: 'horn.curved' },
   summary: 'Tapered horn bent along an arc; use side "both" for a pair.',
   tags: ['head', 'weapon', 'bone'],
   params: z.strictObject({
@@ -13,9 +16,9 @@ const horn = defineModule({
   }),
 });
 
-const stripes = defineModule({
-  kind: 'pattern',
+const stripes = definePattern({
   id: 'stripes',
+  example: { type: 'stripes' },
   summary: 'Bands across the spine.',
   tags: ['skin'],
   params: z.strictObject({ count: z.number().int().min(1).max(64).default(8) }),

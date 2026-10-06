@@ -2,10 +2,8 @@ packages:
   - packages/*
   - apps/*
 
-# Runtime dependencies are pinned here, once, for every package (`"three": "catalog:"`).
-# Three.js stays on one release until we deliberately upgrade it (see docs/plan.md, Tech stack).
 catalog:
-  three: 0.186.1
   '@types/three': 0.186.0
+  three: 0.186.1
   vite: ^8.3.2
   zod: 4.6.5
