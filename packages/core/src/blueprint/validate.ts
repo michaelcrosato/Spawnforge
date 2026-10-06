@@ -15,6 +15,7 @@ import { formatPath, fromZodIssues, type Issue, type PathKey } from './issues.ts
 import { cloneJson, isRecord, mergeBlueprint } from './merge.ts';
 import { migrate } from './migrate.ts';
 import { isColorField, normalizeBlueprint, normalizeModules } from './normalize.ts';
+import { notBuilt } from './planned.ts';
 import {
   type BlueprintDoc,
   type BlueprintSchema,
@@ -1029,6 +1030,7 @@ export function validateBlueprint(
   }
   if (errors.length > 0) return { ok: false, errors, warnings };
   const creature = expandCreature(outcome.doc, registry);
+  warnings.push(...notBuilt(creature, registry));
   const blueprint =
     options.minimal === false
       ? undefined

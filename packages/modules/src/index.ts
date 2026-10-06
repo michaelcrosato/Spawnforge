@@ -12,12 +12,19 @@ import partsFootClaw from './parts/foot.claw.ts';
 import partsHornCurved from './parts/horn.curved.ts';
 import partsSpikesRow from './parts/spikes.row.ts';
 import partsTeethRow from './parts/teeth.row.ts';
+import patternsBands from './patterns/bands.ts';
+import patternsBioluminescence from './patterns/bioluminescence.ts';
 import patternsCountershade from './patterns/countershade.ts';
 import patternsGrime from './patterns/grime.ts';
 import patternsMottle from './patterns/mottle.ts';
+import patternsRosettes from './patterns/rosettes.ts';
 import patternsScales from './patterns/scales.ts';
+import patternsScars from './patterns/scars.ts';
+import patternsSlime from './patterns/slime.ts';
 import patternsSpots from './patterns/spots.ts';
 import patternsStripes from './patterns/stripes.ts';
+import patternsVeins from './patterns/veins.ts';
+import patternsWarts from './patterns/warts.ts';
 import gaitsSlither from './gaits/slither.ts';
 import gaitsTripod from './gaits/tripod.ts';
 import gaitsTrot from './gaits/trot.ts';
@@ -45,12 +52,19 @@ export const basicPack = definePack({
     partsHornCurved,
     partsSpikesRow,
     partsTeethRow,
+    patternsBands,
+    patternsBioluminescence,
     patternsCountershade,
     patternsGrime,
     patternsMottle,
+    patternsRosettes,
     patternsScales,
+    patternsScars,
+    patternsSlime,
     patternsSpots,
     patternsStripes,
+    patternsVeins,
+    patternsWarts,
     gaitsSlither,
     gaitsTripod,
     gaitsTrot,

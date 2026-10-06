@@ -479,7 +479,10 @@ export function analyze(
   return {
     ok: true,
     ...rounded,
-    warnings: [...checked.warnings, ...analysis.warnings],
+    // Compile repeats a few validation warnings (`not_built`); each is said once.
+    warnings: [...checked.warnings, ...analysis.warnings].filter(
+      (w, i, all) => all.findIndex((o) => o.path === w.path && o.code === w.code) === i,
+    ),
     ...(stats ? { stats } : {}),
   };
 }

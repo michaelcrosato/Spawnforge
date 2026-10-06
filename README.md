@@ -14,7 +14,7 @@ made by code. The same blueprint and seed give the same monster every time.
 
 ```json
 {
-  "format": "spawnforge/0.1",
+  "format": "spawnforge/0.2",
   "name": "Ridgeback Stalker",
   "seed": 4127,
   "extends": "quadruped",

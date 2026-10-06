@@ -1,5 +1,5 @@
 {
-  "format": "spawnforge/0.1",
+  "format": "spawnforge/0.2",
   "name": "Bog Troll",
   "seed": 77,
   "extends": "biped",

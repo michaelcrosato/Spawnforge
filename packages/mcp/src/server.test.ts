@@ -63,7 +63,7 @@ describe('MCP server', () => {
     const out = textOf(
       await client.callTool({
         name: 'validate',
-        arguments: { blueprint: { format: 'spawnforge/0.1', extends: 'quadrupd' } },
+        arguments: { blueprint: { format: 'spawnforge/0.2', extends: 'quadrupd' } },
       }),
     );
     expect(out.ok).toBe(false);
@@ -94,7 +94,7 @@ describe('MCP server', () => {
     expect(cross.ok).toBe(true);
     expect(['a', 'b']).toContain(cross.base);
     const one = await call('instantiate', {
-      blueprint: { format: 'spawnforge/0.1', extends: 'quadruped', scale: { min: 0.8, max: 1.2 } },
+      blueprint: { format: 'spawnforge/0.2', extends: 'quadruped', scale: { min: 0.8, max: 1.2 } },
       seed: 4,
     });
     expect(one.ok).toBe(true);

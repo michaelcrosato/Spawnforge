@@ -105,7 +105,7 @@ describe('migrate', () => {
   it('upgrades an older blueprint step by step and validates it', () => {
     const result = migrate({ blueprint: old });
     expect(result).toMatchObject({ ok: true, from: 'bestiary/0.1', to: FORMAT, changed: true });
-    expect(result.steps).toHaveLength(1);
+    expect(result.steps).toHaveLength(2);
     expect(result.blueprint).toEqual({ ...old, format: FORMAT });
     expect(migrate({ blueprint: result.blueprint })).toMatchObject({ changed: false, steps: [] });
   });

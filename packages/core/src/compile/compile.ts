@@ -1,6 +1,7 @@
 import { Matrix4, Quaternion, Vector3 } from 'three';
 import type { CreatureSpec } from '../blueprint/creature.ts';
 import type { Issue } from '../blueprint/issues.ts';
+import { notBuilt } from '../blueprint/planned.ts';
 import { sweep } from '../geometry/kit.ts';
 import type { MotionData } from '../motion/controller.ts';
 import { motionData } from '../motion/gaits.ts';
@@ -176,7 +177,8 @@ export function compileCreature(
     clock = now;
   };
   const L = spec.scale;
-  const warnings: Issue[] = [];
+  // What the format holds but the pipeline cannot draw yet is skipped below; say so.
+  const warnings: Issue[] = notBuilt(spec, registry);
 
   // 1. Skeleton.
   const skeleton = buildSkeleton(spec, registry);

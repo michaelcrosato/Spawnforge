@@ -9,7 +9,7 @@ blueprint plus its `seed` always produces the same creature. This guide explains
 
 ```json
 {
-  "format": "spawnforge/0.1",
+  "format": "spawnforge/0.2",
   "name": "Ash Hound",
   "seed": 12,
   "extends": "quadruped",
@@ -333,7 +333,7 @@ make an individual first:
 
 ```json
 {
-  "format": "spawnforge/0.1",
+  "format": "spawnforge/0.2",
   "name": "Marsh Hound",
   "extends": "quadruped",
   "scale": { "min": 0.8, "max": 1.2 },
@@ -424,3 +424,4 @@ step by step, with a `migrated` warning per step; commands that write a blueprin
 | From | To | What changed |
 | --- | --- | --- |
 | `bestiary/0.1` | `spawnforge/0.1` | The project's working name; nothing else |
+| `spawnforge/0.1` | `spawnforge/0.2` | Plan 2's vocabulary is added; no 0.1 field changes meaning |

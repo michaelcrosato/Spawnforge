@@ -4,7 +4,7 @@
   "properties": {
     "format": {
       "type": "string",
-      "const": "spawnforge/0.1",
+      "const": "spawnforge/0.2",
       "description": "Format id and version"
     },
     "name": {
@@ -605,12 +605,19 @@
               "type": {
                 "type": "string",
                 "enum": [
+                  "bands",
+                  "bioluminescence",
                   "countershade",
                   "grime",
                   "mottle",
+                  "rosettes",
                   "scales",
+                  "scars",
+                  "slime",
                   "spots",
-                  "stripes"
+                  "stripes",
+                  "veins",
+                  "warts"
                 ],
                 "description": "Pattern module id"
               },
@@ -751,7 +758,7 @@
     "format"
   ],
   "additionalProperties": false,
-  "$id": "https://spawnforge.dev/schema/spawnforge-0.1.json",
+  "$id": "https://spawnforge.dev/schema/spawnforge-0.2.json",
   "title": "Spawnforge blueprint",
   "description": "A creature blueprint. Lengths are multiples of `scale` (torso length in metres). Module parameters are listed under $defs as \"<kind>:<id>\": part params go in a part's \"params\"; foot, layer, gait and action params sit beside \"type\".",
   "$defs": {
@@ -1119,6 +1126,90 @@
       },
       "additionalProperties": false
     },
+    "pattern:bands": {
+      "description": "Wide, even rings of colour around the body and tail, like a coral snake or a lemur tail.",
+      "type": "object",
+      "properties": {
+        "color": {
+          "default": "accent",
+          "description": "Band colour: a palette name or a colour",
+          "type": "string",
+          "minLength": 1
+        },
+        "count": {
+          "default": 8,
+          "description": "Bands from snout to tail tip",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 64
+        },
+        "width": {
+          "default": 0.5,
+          "description": "Band width as a share of the spacing",
+          "type": "number",
+          "minimum": 0.05,
+          "maximum": 0.95
+        },
+        "sharpness": {
+          "default": 0.8,
+          "description": "How crisp the band edges are",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "pattern:bioluminescence": {
+      "description": "Glowing spots or lines that light up in the dark and pulse slowly.",
+      "type": "object",
+      "properties": {
+        "color": {
+          "default": "#7fffd0",
+          "description": "Glow colour: a palette name or a colour",
+          "type": "string",
+          "minLength": 1
+        },
+        "shape": {
+          "default": "spots",
+          "description": "\"spots\" scattered over the skin, or \"lines\" along the body",
+          "type": "string",
+          "enum": [
+            "spots",
+            "lines"
+          ]
+        },
+        "size": {
+          "default": 0.03,
+          "description": "Spot radius or line width in torso lengths",
+          "type": "number",
+          "minimum": 0.005,
+          "maximum": 0.3
+        },
+        "density": {
+          "default": 0.5,
+          "description": "Share of possible spots that glow",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "brightness": {
+          "default": 1.5,
+          "description": "Emissive strength; 1 matches a lit surface",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 4
+        },
+        "pulse": {
+          "default": 0.3,
+          "description": "Pulses per second; 0 glows steadily",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2
+        }
+      },
+      "additionalProperties": false
+    },
     "pattern:countershade": {
       "description": "Paler belly blending into a darker back, as on most animals.",
       "type": "object",
@@ -1214,6 +1305,46 @@
       },
       "additionalProperties": false
     },
+    "pattern:rosettes": {
+      "description": "Leopard-like rosettes: broken rings of dark marks around a tinted centre.",
+      "type": "object",
+      "properties": {
+        "color": {
+          "default": "accent",
+          "description": "Ring colour: a palette name or a colour",
+          "type": "string",
+          "minLength": 1
+        },
+        "centerColor": {
+          "default": "base",
+          "description": "Colour inside each ring",
+          "type": "string",
+          "minLength": 1
+        },
+        "size": {
+          "default": 0.06,
+          "description": "Rosette radius in torso lengths",
+          "type": "number",
+          "minimum": 0.01,
+          "maximum": 0.4
+        },
+        "density": {
+          "default": 0.7,
+          "description": "Share of possible rosettes that appear",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "broken": {
+          "default": 0.6,
+          "description": "How broken each ring is into separate marks",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "additionalProperties": false
+    },
     "pattern:scales": {
       "description": "Overlapping scales as bump and darker gaps between them.",
       "type": "object",
@@ -1241,6 +1372,81 @@
         "gap": {
           "default": 0.3,
           "description": "How dark and wide the gaps are",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "pattern:scars": {
+      "description": "Old healed scars: pale, raised streaks and claw rakes across the skin.",
+      "type": "object",
+      "properties": {
+        "color": {
+          "default": "belly",
+          "description": "Scar colour: a palette name or a colour",
+          "type": "string",
+          "minLength": 1
+        },
+        "count": {
+          "default": 6,
+          "description": "How many scars over the body",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 40
+        },
+        "length": {
+          "default": 0.15,
+          "description": "Scar length in torso lengths",
+          "type": "number",
+          "minimum": 0.02,
+          "maximum": 0.6
+        },
+        "rake": {
+          "default": 1,
+          "description": "Parallel cuts per scar: 3 or 4 read as claw marks",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5
+        },
+        "depth": {
+          "default": 0.5,
+          "description": "How raised and creased the scars are",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "pattern:slime": {
+      "description": "A wet, glossy coat of slime with drips and a faint tint.",
+      "type": "object",
+      "properties": {
+        "color": {
+          "default": "#a8c890",
+          "description": "Slime tint: a palette name or a colour",
+          "type": "string",
+          "minLength": 1
+        },
+        "wetness": {
+          "default": 0.8,
+          "description": "How glossy the skin gets (1 is mirror-wet)",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "drips": {
+          "default": 0.4,
+          "description": "How many drips run down the flanks",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "tint": {
+          "default": 0.2,
+          "description": "How much the slime colours the skin",
           "type": "number",
           "minimum": 0,
           "maximum": 1
@@ -1332,6 +1538,74 @@
         "fade": {
           "default": 0.6,
           "description": "How much stripes fade toward the belly",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "pattern:veins": {
+      "description": "Branching veins under thin skin, darker or glowing.",
+      "type": "object",
+      "properties": {
+        "color": {
+          "default": "#5a1a2a",
+          "description": "Vein colour: a palette name or a colour",
+          "type": "string",
+          "minLength": 1
+        },
+        "density": {
+          "default": 0.5,
+          "description": "How many branches",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "width": {
+          "default": 0.006,
+          "description": "Vein width in torso lengths",
+          "type": "number",
+          "minimum": 0.001,
+          "maximum": 0.05
+        },
+        "raised": {
+          "default": 0.3,
+          "description": "How far the veins stand out",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "pattern:warts": {
+      "description": "Raised bumps and warts, like a toad or a troll.",
+      "type": "object",
+      "properties": {
+        "color": {
+          "default": "accent",
+          "description": "Wart colour: a palette name or a colour",
+          "type": "string",
+          "minLength": 1
+        },
+        "size": {
+          "default": 0.025,
+          "description": "Wart radius in torso lengths",
+          "type": "number",
+          "minimum": 0.005,
+          "maximum": 0.2
+        },
+        "density": {
+          "default": 0.5,
+          "description": "Share of possible warts that appear",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "height": {
+          "default": 0.6,
+          "description": "How far the warts stand out",
           "type": "number",
           "minimum": 0,
           "maximum": 1
