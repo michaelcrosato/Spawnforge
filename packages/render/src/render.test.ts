@@ -54,6 +54,21 @@ describe('headless renders', () => {
     expect(motion?.footSlide).toBeLessThan(0.01);
   }, 120_000);
 
+  it('renders an action as a filmstrip with its events', async () => {
+    const result = await renderer.render({
+      blueprint: { format: FORMAT, extends: 'quadruped' },
+      size: 100,
+      filmstrip: { action: 'bite', frames: 4 },
+    });
+    const motion = result.info.motion;
+    expect(motion?.action).toBe('bite');
+    expect(motion?.events?.map((e) => e.type)).toEqual([
+      'action-start',
+      'bite-contact',
+      'action-end',
+    ]);
+  }, 120_000);
+
   it('refuses invalid blueprints with the validation errors', async () => {
     await expect(renderer.render({ blueprint: { format: FORMAT, scale: 99 } })).rejects.toThrow(
       /scale/,

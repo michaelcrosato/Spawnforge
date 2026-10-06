@@ -3,7 +3,7 @@ import {
   createRegistry,
   FORMAT,
   MotionController,
-  motionData,
+  type MotionEvent,
   resolveBlueprint,
 } from '@spawnforge/core';
 import type { Vector3 } from 'three';
@@ -14,7 +14,7 @@ const registry = createRegistry([basicPack]);
 function creature(plan: string, extra: Record<string, unknown> = {}) {
   const spec = resolveBlueprint({ format: FORMAT, extends: plan, ...extra }, registry);
   const compiled = compileCreature(spec, registry, { quality: 'low' });
-  return { compiled, controller: new MotionController(compiled, motionData(spec, registry)) };
+  return { compiled, controller: new MotionController(compiled, { registry }) };
 }
 
 /** Steps a controller, recording each leg's ankle while planted. */
@@ -179,5 +179,110 @@ describe('locomotion', () => {
     expect(a.pose.worldPos.map((p) => p.toArray())).toEqual(
       b.pose.worldPos.map((p) => p.toArray()),
     );
+  });
+});
+
+describe('actions', () => {
+  /** Steps until the running action ends, collecting events. */
+  function act(controller: MotionController, seconds: number, each?: () => void) {
+    const events: MotionEvent[] = [];
+    for (let t = 0; t < seconds; t += 1 / 60) {
+      events.push(...controller.update(1 / 60));
+      each?.();
+    }
+    return events;
+  }
+
+  it('bites: winds up, lunges at the target, snaps shut and fires bite-contact', () => {
+    const { compiled, controller } = creature('quadruped');
+    act(controller, 1);
+    const head = () => (controller.pose.worldPos[compiled.rig.head] as Vector3).clone();
+    const start = head();
+    const target = { x: start.x, y: start.y - 0.1, z: start.z + 0.8 };
+    controller.act('bite', { target });
+    let closest = Infinity;
+    let widest = 0;
+    const jaw = compiled.rig.jaw;
+    const events = act(controller, 2, () => {
+      closest = Math.min(closest, head().distanceTo(target as Vector3));
+      const q = controller.pose.rot[jaw];
+      const rest = controller.pose.restRot[jaw];
+      if (q && rest) widest = Math.max(widest, q.angleTo(rest));
+    });
+    const types = events.map((e) => e.type).filter((t) => t !== 'footstep');
+    expect(types).toEqual(['action-start', 'bite-contact', 'action-end']);
+    expect(closest).toBeLessThan(start.distanceTo(target as Vector3) - 0.1);
+    expect(widest).toBeGreaterThan(0.3);
+    expect(controller.action).toBe(null);
+  });
+
+  it('roars standing still, head high, with a roar-peak', () => {
+    const { compiled, controller } = creature('quadruped');
+    controller.drive(controller.paceSpeed(), 0);
+    act(controller, 2);
+    controller.act('roar');
+    let raised = -1;
+    let slowest = Infinity;
+    const events = act(controller, 1.2, () => {
+      raised = Math.max(raised, controller.pose.direction(compiled.rig.head).y);
+      slowest = Math.min(slowest, controller.speed);
+    });
+    expect(events.some((e) => e.type === 'roar-peak')).toBe(true);
+    expect(raised).toBeGreaterThan(0.3);
+    expect(slowest).toBeLessThan(0.05);
+  });
+
+  it('refuses actions the creature does not have, naming the ones it has', () => {
+    const { controller } = creature('serpent', { motion: { actions: ['look'] } });
+    expect(() => controller.act('bite')).toThrow(/look/);
+    expect(controller.actions()).toEqual(['look']);
+  });
+
+  it('breathes and blinks while idle, the same way every run', () => {
+    const run = () => {
+      const { controller } = creature('biped');
+      const breaths: number[] = [];
+      let blinks = 0;
+      let shut = false;
+      act(controller, 12, () => {
+        breaths.push(controller.pose.breath);
+        if (controller.pose.blink > 0.5 && !shut) blinks++;
+        shut = controller.pose.blink > 0.5;
+      });
+      return { breaths, blinks };
+    };
+    const a = run();
+    expect(Math.max(...a.breaths) - Math.min(...a.breaths)).toBeGreaterThan(0.3);
+    expect(a.blinks).toBeGreaterThan(1);
+    expect(run()).toEqual(a);
+  });
+
+  it('times actions by size: a creature twice as big bites about √2 times slower', () => {
+    const time = (scale: number) => {
+      const { controller } = creature('quadruped', { scale });
+      controller.act('bite');
+      const events = act(controller, 4);
+      return events.find((e) => e.type === 'action-end')?.time ?? 0;
+    };
+    const ratio = time(2) / time(1);
+    expect(ratio).toBeGreaterThan(1.3);
+    expect(ratio).toBeLessThan(1.5);
+  });
+
+  it('lets the tail spring back to its rest shape after moving', () => {
+    const { compiled, controller } = creature('quadruped', {
+      motion: { actions: ['bite'] },
+    });
+    const tip = compiled.rig.tail.at(-1) as number;
+    controller.update(0);
+    const rest = controller.pose.tail(tip).sub(controller.position);
+    controller.moveTo({ x: 1.5, z: 2 });
+    act(controller, 10);
+    // Back to facing +Z for comparison.
+    const settled = controller.pose
+      .tail(tip)
+      .sub(controller.position)
+      .applyAxisAngle(new (rest.constructor as typeof Vector3)(0, 1, 0), -controller.heading);
+    expect(settled.distanceTo(rest)).toBeLessThan(0.1 * compiled.scale);
   });
 });

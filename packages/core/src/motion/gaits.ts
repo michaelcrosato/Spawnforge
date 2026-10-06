@@ -29,5 +29,6 @@ export function motionData(spec: CreatureSpec, registry: Registry): MotionData {
   }
   // Slowest first, so the controller starts walking.
   gaits.sort((a, b) => a.froude[0] - b.froude[0]);
-  return { temperament: spec.motion.temperament, gaits };
+  const actions = spec.motion.actions.map((ref) => ({ id: ref.type, params: ref.params }));
+  return { temperament: spec.motion.temperament, gaits, actions };
 }

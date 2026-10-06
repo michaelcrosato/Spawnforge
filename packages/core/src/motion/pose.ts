@@ -23,6 +23,10 @@ export class Pose {
   readonly worldRot: Quaternion[];
   readonly worldPos: Vector3[];
   readonly lengths: Float32Array;
+  /** Chest expansion, 0 to 1, for the renderer (breathing). */
+  breath = 0;
+  /** Eyelids, 0 open to 1 shut, for the renderer. */
+  blink = 0;
 
   constructor(bones: BonesData) {
     const n = bones.names.length;

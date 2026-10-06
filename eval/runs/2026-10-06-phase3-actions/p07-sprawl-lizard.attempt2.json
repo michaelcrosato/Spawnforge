@@ -1,0 +1,121 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Pebble Lizard",
+  "seed": 207,
+  "extends": "quadruped",
+  "scale": 0.15,
+  "body": {
+    "torso": {
+      "radius": [0.12, 0.16, 0.15, 0.11],
+      "arch": 0
+    },
+    "neck": {
+      "length": 0.15,
+      "radius": [0.08, 0.1],
+      "pitch": 5
+    },
+    "head": {
+      "shape": "wedge",
+      "length": 0.32,
+      "radius": 0.11,
+      "jaw": true,
+      "pitch": 0
+    },
+    "tail": {
+      "length": 3,
+      "radius": [0.08, 0.008],
+      "pitch": -4,
+      "curl": 0,
+      "segments": 16
+    }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "attach": {
+        "on": "torso",
+        "at": 0.12,
+        "angle": 120
+      },
+      "length": 0.42,
+      "splay": 68,
+      "radius": [0.065, 0.03],
+      "foot": {
+        "type": "foot.claw",
+        "toes": 5,
+        "toeLength": 0.06,
+        "clawLength": 0.03
+      }
+    },
+    {
+      "id": "hindleg",
+      "attach": {
+        "on": "torso",
+        "at": 0.88,
+        "angle": 120
+      },
+      "length": 0.46,
+      "splay": 68,
+      "radius": [0.065, 0.03],
+      "foot": {
+        "type": "foot.claw",
+        "toes": 5,
+        "toeLength": 0.06,
+        "clawLength": 0.03
+      }
+    }
+  ],
+  "parts": [
+    {
+      "id": "eyes",
+      "attach": {
+        "on": "head",
+        "at": 0.35,
+        "angle": 65
+      },
+      "params": {
+        "size": 0.035,
+        "pupil": "round",
+        "irisColor": "#e0a020"
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#5f8a3c",
+      "belly": "#d9d6a0",
+      "accent": "#2c3d1a",
+      "spot": "#f0e070"
+    },
+    "material": "scales",
+    "layers": [
+      {
+        "type": "countershade",
+        "strength": 0.8
+      },
+      {
+        "type": "spots",
+        "color": "spot",
+        "size": 0.11,
+        "density": 0.75,
+        "jitter": 0.5,
+        "region": "back"
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "skittish",
+    "gaits": [
+      {
+        "type": "trot",
+        "stride": 1.6,
+        "stepHeight": 0.3
+      },
+      {
+        "type": "walk",
+        "stride": 1.6
+      }
+    ],
+    "actions": ["bite", "look", "idle"]
+  }
+}

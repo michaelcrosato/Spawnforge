@@ -1,0 +1,61 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Nightmare Hound",
+  "seed": 2001,
+  "extends": "quadruped",
+  "scale": 1.1,
+  "body": {
+    "torso": { "radius": [0.13, 0.18, 0.15, 0.1], "arch": 0.12 },
+    "neck": { "length": 0.36, "radius": [0.07, 0.11], "pitch": 25 },
+    "head": { "shape": "snout", "length": 0.36, "radius": 0.1, "jaw": true, "pitch": -12 },
+    "tail": { "length": 0.8, "radius": [0.07, 0.01], "curl": 20 }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "length": 0.65,
+      "radius": [0.06, 0.03],
+      "foot": { "type": "foot.claw", "toes": 4, "clawLength": 0.05 }
+    },
+    {
+      "id": "hindleg",
+      "length": 0.7,
+      "radius": [0.07, 0.03],
+      "foot": { "type": "foot.claw", "toes": 4, "clawLength": 0.05 }
+    }
+  ],
+  "parts": [
+    {
+      "id": "spines",
+      "type": "spikes.row",
+      "attach": { "on": "spine", "from": 0.08, "to": 0.9, "angle": 0 },
+      "params": {
+        "count": 20,
+        "height": [0.07, 0.15, 0.2, 0.12, 0.06],
+        "width": 0.022,
+        "curve": 35,
+        "jitter": 0.8,
+        "color": "#2a2024",
+        "tipColor": "#7a2a24"
+      }
+    },
+    {
+      "id": "teeth",
+      "type": "teeth.row",
+      "params": { "count": 8, "fangs": 2, "fangLength": 0.07 }
+    },
+    {
+      "id": "eyes",
+      "attach": { "on": "head", "at": 0.4, "angle": 58 },
+      "params": { "size": 0.032, "pupil": "slit", "irisColor": "#ff2010", "scleraColor": "#8a1008" }
+    }
+  ],
+  "skin": {
+    "palette": { "base": "#0e0d10", "belly": "#1c1a20", "accent": "#3a2a24" },
+    "layers": [
+      { "type": "countershade", "strength": 0.4 },
+      { "type": "grime", "color": "#4a3c30", "amount": 0.8, "creases": 0.9, "feet": 0.8 }
+    ]
+  },
+  "motion": { "temperament": "aggressive", "actions": ["bite", "roar", "look", "idle"] }
+}

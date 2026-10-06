@@ -2,6 +2,9 @@ import { Euler, Quaternion, Vector3 } from 'three';
 import type { Temperament } from '../blueprint/creature.ts';
 import type { CompiledCreature, LegRigData } from '../compile/compile.ts';
 import { type PreparedLimb, prepareLimb, solvePrepared } from '../compile/ik.ts';
+import type { ActionModule, Registry } from '../registry.ts';
+import { createRng, type Rng } from '../rng.ts';
+import type { ActionContext, ActionGoals, ActionHooks } from './actions.ts';
 import { Pose } from './pose.ts';
 
 const G = 9.81;
@@ -28,6 +31,8 @@ export interface GaitInfo {
 export interface MotionData {
   readonly temperament: Temperament;
   readonly gaits: readonly GaitInfo[];
+  /** Actions the creature can perform, with resolved parameters. */
+  readonly actions: readonly { readonly id: string; readonly params: Record<string, unknown> }[];
 }
 
 export interface GroundSample {
@@ -38,12 +43,18 @@ export interface GroundSample {
 export type Ground = (x: number, z: number) => GroundSample;
 const FLAT: Ground = () => ({ height: 0 });
 
+/**
+ * Something that happened during `update`: a `footstep` (with `leg` and `position`), a `gait`
+ * change, an action's start and end (`action-start`, `action-end`), or an event an action
+ * declares, such as `bite-contact` or `roar-peak` (with `action` and the head's `position`).
+ */
 export interface MotionEvent {
-  readonly type: 'footstep' | 'gait';
+  readonly type: string;
   readonly time: number;
   readonly leg?: string;
   readonly position?: readonly [number, number, number];
   readonly gait?: string;
+  readonly action?: string;
 }
 
 /** Pace, posture and attitude per temperament. */
@@ -81,6 +92,25 @@ interface Spring {
   readonly previous: Vector3[];
   readonly lengths: number[];
   readonly stiffness: number;
+}
+
+export interface MotionOptions {
+  /** Module registry, for the action modules' code. Without it the creature only moves. */
+  readonly registry?: Registry;
+  /** Gait and action data (default: the compiled creature's own). */
+  readonly motion?: MotionData;
+}
+
+interface RunningAction {
+  readonly id: string;
+  readonly hooks: ActionHooks;
+  readonly params: Record<string, unknown>;
+  readonly target: Vector3 | null;
+  readonly start: number;
+  readonly duration: number;
+  readonly events: readonly { at: number; type: string }[];
+  readonly rng: Rng;
+  progress: number;
 }
 
 const damp = (current: number, target: number, rate: number, dt: number) =>
@@ -123,8 +153,25 @@ export class MotionController {
   private readonly halfStride: number;
   /** A legless body whose neck rises well above it in the rest pose. */
   private readonly rearing: boolean;
+  /** √(hip height / 1 m): actions and springs run slower on big creatures. */
+  readonly timeScale: number;
+  private readonly actionDefs = new Map<
+    string,
+    { hooks: ActionHooks; params: Record<string, unknown> }
+  >();
+  private readonly ambient: {
+    id: string;
+    hooks: ActionHooks;
+    params: Record<string, unknown>;
+    rng: Rng;
+  }[] = [];
+  private current: RunningAction | null = null;
+  private actionCount = 0;
+  private goals: ActionGoals = {};
+  private readonly springRest: Vector3[] = [];
 
-  constructor(compiled: CompiledCreature, motion: MotionData = compiled.motion) {
+  constructor(compiled: CompiledCreature, options: MotionOptions = {}) {
+    const motion = options.motion ?? compiled.motion;
     this.compiled = compiled;
     this.motion = motion;
     this.pose = new Pose(compiled.bones);
@@ -167,7 +214,9 @@ export class MotionController {
           const hip = this.pose.restWorldPos[leg.rig.bones[0] as number] as Vector3;
           const dx = leg.neutral.x - hip.x;
           const dy = hip.y - leg.neutral.y;
-          const across = Math.sqrt(Math.max(0, (0.93 * leg.rig.reach) ** 2 - dx * dx - dy * dy));
+          // Bipeds stand nearly straight-legged and use more of their reach.
+          const most = (this.legs.length <= 2 ? 0.97 : 0.93) * leg.rig.reach;
+          const across = Math.sqrt(Math.max(0, most * most - dx * dx - dy * dy));
           return Math.max(0, across - Math.abs(leg.neutral.z - hip.z)) * 0.85;
         }),
         Number.POSITIVE_INFINITY,
@@ -180,6 +229,21 @@ export class MotionController {
       (this.pose.restWorldPos[compiled.rig.head] as Vector3).y -
         (this.pose.restWorldPos[neckRoot] as Vector3).y >
         3 * (compiled.bones.radii[neckRoot] ?? 0);
+    this.timeScale = Math.sqrt(this.hipHeight / 1);
+    const rng = createRng(compiled.seed);
+    for (const action of motion.actions) {
+      const module = options.registry?.get('action', action.id) as ActionModule | undefined;
+      const hooks = module?.hooks;
+      if (!hooks) continue;
+      this.actionDefs.set(action.id, { hooks, params: action.params });
+      if (hooks.ambient)
+        this.ambient.push({
+          id: action.id,
+          hooks,
+          params: action.params,
+          rng: rng.stream(`action.${action.id}`),
+        });
+    }
     this.springs = [];
     if (compiled.rig.tail.length > 1) this.springs.push(this.makeSpring(compiled.rig.tail, 0.35));
     this.pose.solve();
@@ -222,10 +286,69 @@ export class MotionController {
     this.moveTo(null);
   }
 
+  /**
+   * Starts an action by id (one of the creature's `motion.actions`), aimed at `target` if given.
+   * A running action is replaced. Needs the registry passed to the constructor.
+   */
+  act(id: string, options: { target?: { x: number; y: number; z: number } | null } = {}): void {
+    const def = this.actionDefs.get(id);
+    if (!def || def.hooks.ambient) {
+      const known = this.motion.actions.map((a) => a.id);
+      throw new Error(
+        !known.includes(id)
+          ? `"${id}" is not one of this creature's actions (${known.join(', ') || 'none'})`
+          : def
+            ? `"${id}" runs by itself and cannot be started`
+            : `no code for action "${id}": pass the module registry to the MotionController`,
+      );
+    }
+    if (this.current)
+      this.events.push({ type: 'action-end', time: this.time, action: this.current.id });
+    const target = options.target
+      ? new Vector3(options.target.x, options.target.y, options.target.z)
+      : null;
+    this.current = {
+      id,
+      hooks: def.hooks,
+      params: def.params,
+      target,
+      start: this.time,
+      duration: Math.max(0.05, def.hooks.duration(def.params) * this.timeScale),
+      events: [...(def.hooks.events?.(def.params) ?? [])].sort((a, b) => a.at - b.at),
+      rng: createRng(this.compiled.seed).stream(`act.${id}.${this.actionCount++}`),
+      progress: -1,
+    };
+    this.events.push({ type: 'action-start', time: this.time, action: id });
+  }
+
+  /** True for bodies without legs (they slither). */
+  get legless(): boolean {
+    return this.compiled.rig.posture === 'legless';
+  }
+
+  /** The main action running now, if any. */
+  get action(): string | null {
+    return this.current?.id ?? null;
+  }
+
+  /** The running action's progress (0 to 1) and length in seconds, if one is running. */
+  get actionState(): { id: string; progress: number; duration: number } | null {
+    const c = this.current;
+    return c ? { id: c.id, progress: Math.max(0, c.progress), duration: c.duration } : null;
+  }
+
+  /** Actions `act` can start (ambient ones such as idle run by themselves). */
+  actions(): string[] {
+    return [...this.actionDefs].filter(([, d]) => !d.hooks.ambient).map(([id]) => id);
+  }
+
   /** Use only this gait (by id) whatever the speed, or `null` to choose by speed again. */
   lockGait(id: string | null): void {
     this.lockedGait = id ? this.motion.gaits.find((g) => g.id === id) : undefined;
-    if (id && !this.lockedGait) throw new Error(`no gait "${id}" for this creature`);
+    if (id && !this.lockedGait)
+      throw new Error(
+        `no gait "${id}" for this creature; it has ${this.motion.gaits.map((g) => g.id).join(', ') || 'none'}`,
+      );
     if (this.lockedGait && this.lockedGait !== this.gait) {
       this.gait = this.lockedGait;
       this.retimeLegs();
@@ -236,7 +359,10 @@ export class MotionController {
   /** Speed (m/s) at which a gait looks typical: mid-range of its Froude numbers, capped at 1. */
   gaitSpeed(id: string): number {
     const gait = this.motion.gaits.find((g) => g.id === id);
-    if (!gait) throw new Error(`no gait "${id}" for this creature`);
+    if (!gait)
+      throw new Error(
+        `no gait "${id}" for this creature; it has ${this.motion.gaits.map((g) => g.id).join(', ') || 'none'}`,
+      );
     const [lo, hi] = gait.froude;
     const fr = Math.max(lo + 0.05, Math.min((lo + hi) / 2, 1, hi));
     return Math.sqrt(fr * G * this.hipHeight);
@@ -282,9 +408,10 @@ export class MotionController {
   private step(dt: number, ground: Ground): void {
     this.time += dt;
     const temperament = TEMPERAMENTS[this.motion.temperament];
+    this.updateGoals();
 
     // Steering.
-    let wantSpeed = this.desiredSpeed;
+    let wantSpeed = this.goals.stop ? 0 : this.desiredSpeed;
     let wantHeading = this.driveHeading ?? this.heading;
     if (this.target) {
       const to = new Vector3(this.target.x - this.position.x, 0, this.target.z - this.position.z);
@@ -296,7 +423,7 @@ export class MotionController {
         this.desiredSpeed = 0;
       } else {
         wantHeading = Math.atan2(to.x, to.z);
-        wantSpeed = Math.min(this.desiredSpeed, distance * 1.5);
+        wantSpeed = Math.min(wantSpeed, distance * 1.5);
       }
     }
     let turn = wrapAngle(wantHeading - this.heading);
@@ -337,6 +464,66 @@ export class MotionController {
       this.stepLegs(dt, ground, froude);
     }
     this.stepSprings(dt);
+  }
+
+  /** Ambient goals, then the main action's on top; fires the action's events as it passes them. */
+  private updateGoals(): void {
+    const goals: ActionGoals = {};
+    const rig = this.compiled.rig;
+    const head = this.pose.worldPos[rig.head] as Vector3;
+    const forward = scratch3.set(Math.sin(this.heading), 0, Math.cos(this.heading));
+    const base = {
+      timeScale: this.timeScale,
+      head,
+      forward,
+      speed: this.speed,
+      busy: this.current !== null,
+    };
+    for (const a of this.ambient) {
+      const ctx: ActionContext = {
+        ...base,
+        t: 0,
+        elapsed: this.time,
+        duration: 0,
+        params: a.params,
+        target: null,
+        rng: a.rng,
+      };
+      a.hooks.goals(ctx, goals);
+    }
+    const c = this.current;
+    if (c) {
+      const before = c.progress;
+      c.progress = Math.min(1, (this.time - c.start) / c.duration);
+      for (const e of c.events) {
+        if (e.at > before && e.at <= c.progress)
+          this.events.push({
+            type: e.type,
+            time: this.time,
+            action: c.id,
+            position: [head.x, head.y, head.z],
+          });
+      }
+      const main: ActionGoals = {};
+      c.hooks.goals(
+        {
+          ...base,
+          t: c.progress,
+          elapsed: this.time - c.start,
+          duration: c.duration,
+          params: c.params,
+          target: c.target,
+          rng: c.rng,
+        },
+        main,
+      );
+      Object.assign(goals, main);
+      if (c.progress >= 1) {
+        this.events.push({ type: 'action-end', time: this.time, action: c.id });
+        this.current = null;
+      }
+    }
+    this.goals = goals;
   }
 
   private retimeLegs(): void {
@@ -557,13 +744,43 @@ export class MotionController {
     return Math.max(len, 1e-3);
   }
 
+  /**
+   * Where a chain's joints would be in its rest pose, hanging off its posed parent and swung
+   * sideways by `swish`: the shape a spring pulls toward.
+   */
+  private restChain(bones: readonly number[], swish: number): Vector3[] {
+    const pose = this.pose;
+    const first = bones[0] as number;
+    const parent = pose.parents[first] as number;
+    const rot = scratchQ3.copy(parent >= 0 ? (pose.worldRot[parent] as Quaternion) : IDENTITY);
+    if (swish) rot.premultiply(scratchQ.setFromAxisAngle(UP, swish));
+    const at = scratch4.copy(pose.worldPos[first] as Vector3);
+    bones.forEach((b, i) => {
+      if (i > 0) at.add(scratch1.copy(pose.restPos[b] as Vector3).applyQuaternion(rot));
+      rot.multiply(pose.restRot[b] as Quaternion);
+      const out = this.springRest[i] ?? new Vector3();
+      this.springRest[i] = out;
+      out
+        .set(0, pose.lengths[b] as number, 0)
+        .applyQuaternion(rot)
+        .add(at);
+    });
+    return this.springRest;
+  }
+
   private stepSprings(dt: number): void {
     for (const spring of this.springs) {
       const pts = spring.points;
       // The root follows its bone; the rest feel inertia, gravity and a pull toward rest.
       this.pose.solve();
       (pts[0] as Vector3).copy(this.pose.worldPos[spring.bones[0] as number] as Vector3);
-      const rest = spring.bones.map((b) => this.pose.tail(b));
+      // Sprawlers carry the body's side-to-side wave on into the tail.
+      const moving = Math.min(1, this.speed / Math.max(1e-3, this.paceSpeed()));
+      const wave =
+        this.compiled.rig.posture === 'sprawl'
+          ? Math.sin(this.phase * Math.PI * 2 - 1.2) * 0.15 * moving
+          : 0;
+      const rest = this.restChain(spring.bones, (this.goals.swish ?? 0) + wave);
       for (let i = 1; i < pts.length; i++) {
         const p = pts[i] as Vector3;
         const prev = spring.previous[i] as Vector3;
@@ -600,14 +817,26 @@ export class MotionController {
       return;
     }
 
-    // Body: height, bob and sway, pitch and roll, bend into turns.
+    // Body: height, bob and sway, pitch and roll, bend into turns, plus the action's crouch,
+    // rear and weight shift.
+    const g = this.goals;
     const spine0 = rig.spine[0] as number;
     const h = this.hipHeight;
     const moving = Math.min(1, this.speed / Math.max(1e-3, this.paceSpeed()));
     const bob = -Math.cos(this.phase * Math.PI * 4) * 0.025 * h * moving;
-    const sway = rig.legs.length <= 2 ? Math.sin(this.phase * Math.PI * 2) * 0.02 * h * moving : 0;
-    (pose.pos[spine0] as Vector3).set(sway, this.bodyY + bob, (pose.restPos[spine0] as Vector3).z);
-    const tilt = new Quaternion().setFromEuler(new Euler(-this.pitch, 0, this.roll, 'YXZ'));
+    const sway =
+      (rig.legs.length <= 2 ? Math.sin(this.phase * Math.PI * 2) * 0.02 * h * moving : 0) +
+      (g.shift ?? 0) * h;
+    // A lunge throws the whole body forward a little, not just the neck.
+    const lunge = (g.reach ?? 0) * 0.12 * this.compiled.scale;
+    (pose.pos[spine0] as Vector3).set(
+      sway,
+      this.bodyY + bob - (g.crouch ?? 0) * h,
+      (pose.restPos[spine0] as Vector3).z + lunge,
+    );
+    const tilt = scratchQ3.setFromEuler(
+      scratchEuler.set(-this.pitch - (g.rear ?? 0), 0, this.roll, 'YXZ'),
+    );
     (pose.rot[spine0] as Quaternion).premultiply(tilt);
     const sprawl = rig.posture === 'sprawl';
     const bendBones = [...rig.spine.slice(1), ...rig.neck];
@@ -618,8 +847,9 @@ export class MotionController {
     });
     pose.solve();
 
-    // Head: keep it level, facing the way it walks (or toward a look target).
+    // Head: keep it level, facing the way it walks (or toward a look target); jaw.
     this.applyHead();
+    this.applyJaw();
 
     // Legs: IK from the posed hips to the planted feet.
     for (const leg of this.legs) {
@@ -660,20 +890,36 @@ export class MotionController {
   private applyHead(): void {
     const pose = this.pose;
     const rig = this.compiled.rig;
+    const g = this.goals;
     const head = rig.head;
-    const restDir = new Vector3(0, 1, 0).applyQuaternion(pose.restWorldRot[head] as Quaternion);
-    const desired = restDir.clone().applyAxisAngle(UP, this.heading);
+    const restDir = scratch1.set(0, 1, 0).applyQuaternion(pose.restWorldRot[head] as Quaternion);
+    const desired = scratch5.copy(restDir).applyAxisAngle(UP, this.heading);
     const drop = TEMPERAMENTS[this.motion.temperament].headDrop;
     if (drop) desired.y -= drop;
-    if (this.lookTarget) {
-      const from = pose.worldPos[head] as Vector3;
-      const to = this.lookTarget.clone().sub(from).normalize();
-      // Limit how far the head turns from the body's facing.
-      const facing = new Vector3(Math.sin(this.heading), 0, Math.cos(this.heading));
-      const angle = facing.angleTo(new Vector3(to.x, 0, to.z));
-      const limit = (100 * Math.PI) / 180;
-      desired.copy(angle > limit ? desired.lerp(to, limit / angle) : to);
+    desired.normalize();
+    // Glances (look-around), then a look target, then raising and shaking.
+    const side = scratch6.crossVectors(desired, UP);
+    if (side.lengthSq() < 1e-8) side.set(Math.cos(this.heading), 0, -Math.sin(this.heading));
+    side.normalize();
+    if (g.glance) {
+      desired.applyAxisAngle(side, g.glance.pitch).applyAxisAngle(UP, g.glance.yaw);
     }
+    const look = g.look ?? this.lookTarget;
+    const weight = g.look ? (g.lookWeight ?? 1) : 1;
+    const from = pose.worldPos[head] as Vector3;
+    if (look && weight > 0) {
+      const to = scratch2.subVectors(look, from).normalize();
+      // Limit how far the head turns from the body's facing.
+      const facing = scratch4.set(Math.sin(this.heading), 0, Math.cos(this.heading));
+      const flat = scratch7.set(to.x, 0, to.z);
+      const angle = flat.lengthSq() > 1e-8 ? facing.angleTo(flat) : 0;
+      const limit = (100 * Math.PI) / 180;
+      if (angle > limit) to.lerp(desired, 1 - limit / angle).normalize();
+      desired.lerp(to, weight).normalize();
+    }
+    if (g.raise) desired.applyAxisAngle(side, g.raise);
+    if (g.shake)
+      desired.applyAxisAngle(UP, Math.sin((this.time * Math.PI * 14) / this.timeScale) * g.shake);
     desired.normalize();
     // Turn the neck by part of the rotation the head needs, keeping its shape (a raised neck
     // stays raised), then aim the head.
@@ -689,6 +935,54 @@ export class MotionController {
     pose.solveBone(head);
     pose.aim(head, desired);
     pose.solveSubtree(head);
+    if (g.reach && look) this.lunge(look, g.reach, desired);
+  }
+
+  /**
+   * Stretches the neck (or the front of the spine) so the head moves toward `point` by `amount`
+   * of what it can reach, then re-aims the head (cyclic coordinate descent).
+   */
+  private lunge(point: Vector3, amount: number, facing: Vector3): void {
+    const pose = this.pose;
+    const rig = this.compiled.rig;
+    const chain = rig.neck.length > 0 ? rig.neck : rig.spine.slice(-2);
+    let length = 0;
+    for (const b of chain) length += pose.lengths[b] as number;
+    const start = pose.worldPos[rig.head] as Vector3;
+    const toward = scratch2.subVectors(point, start);
+    const distance = toward.length();
+    if (distance < 1e-6) return;
+    const goal = scratch7
+      .copy(start)
+      .addScaledVector(toward, (Math.min(distance * 0.9, length * 0.6) * amount) / distance);
+    for (let iteration = 0; iteration < 3; iteration++) {
+      for (let k = chain.length - 1; k >= 0; k--) {
+        const b = chain[k] as number;
+        const base = pose.worldPos[b] as Vector3;
+        const a = scratch1.subVectors(pose.worldPos[rig.head] as Vector3, base).normalize();
+        const c = scratch4.subVectors(goal, base).normalize();
+        const turn = scratchQ.setFromUnitVectors(a, c);
+        scratchQ2.identity().slerp(turn, 0.6);
+        pose.aim(b, pose.direction(b, scratch6).applyQuaternion(scratchQ2));
+        pose.solveSubtree(b);
+      }
+    }
+    pose.aim(rig.head, facing);
+    pose.solveSubtree(rig.head);
+  }
+
+  /** Opens the jaw by the action's `jaw` goal, about its hinge. */
+  private applyJaw(): void {
+    const rig = this.compiled.rig;
+    const open = this.goals.jaw ?? 0;
+    const pose = this.pose;
+    pose.breath = this.goals.breath ?? 0;
+    pose.blink = this.goals.blink ?? 0;
+    if (rig.jaw < 0 || open <= 0) return;
+    (pose.rot[rig.jaw] as Quaternion)
+      .copy(pose.restRot[rig.jaw] as Quaternion)
+      .multiply(scratchQ.setFromAxisAngle(X_AXIS, -open * 0.65));
+    pose.solveSubtree(rig.jaw);
   }
 
   private applySprings(): void {
@@ -784,6 +1078,7 @@ export class MotionController {
       });
     pose.solveSubtree(rig.head);
     this.applyHead();
+    this.applyJaw();
     rig.tail.forEach((b, k) => {
       const from = joints[hipIndex + k] as Vector3;
       const to = joints[hipIndex + k + 1] as Vector3;
@@ -802,3 +1097,12 @@ const scratch1 = new Vector3();
 const scratch2 = new Vector3();
 const scratchQ = new Quaternion();
 const scratchQ2 = new Quaternion();
+const scratchQ3 = new Quaternion();
+const scratch3 = new Vector3();
+const scratch4 = new Vector3();
+const IDENTITY = new Quaternion();
+const scratch5 = new Vector3();
+const scratch6 = new Vector3();
+const scratch7 = new Vector3();
+const scratchEuler = new Euler();
+const X_AXIS = new Vector3(1, 0, 0);

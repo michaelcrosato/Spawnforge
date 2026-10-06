@@ -161,7 +161,7 @@ export function createServer(): McpServer {
     {
       title: 'Render a blueprint',
       description:
-        'Renders the creature as a PNG contact sheet: three-quarter, side, head close-up, front, top and rear views with scale bars. With labels, every part and limb is tagged by id, so you can check placement. With filmstrip, it renders one gait cycle as frames plus a footfall diagram and returns the gait, speed, cycle time, stride, duty per leg and foot slide, so you can check how the creature moves. Use it to see whether a blueprint looks and moves like what you meant.',
+        'Renders the creature as a PNG contact sheet: three-quarter, side, head close-up, front, top and rear views with scale bars. With labels, every part and limb is tagged by id, so you can check placement. With filmstrip, it renders one gait cycle as frames plus a footfall diagram and returns the gait, speed, cycle time, stride, duty per leg and foot slide, so you can check how the creature moves; with filmstrip.action it shows one action (bite, roar, look) and the events it fires. Use it to see whether a blueprint looks and moves like what you meant.',
       inputSchema: z.object({
         blueprint: z
           .record(z.string(), z.unknown())
@@ -185,6 +185,10 @@ export function createServer(): McpServer {
           .describe('Panels to draw (default all six)'),
         filmstrip: z
           .object({
+            action: z
+              .string()
+              .optional()
+              .describe('An action id (bite, roar, look…) to show instead of a gait cycle'),
             gait: z
               .string()
               .optional()

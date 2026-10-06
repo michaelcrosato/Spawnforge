@@ -15,8 +15,10 @@ import {
   max,
   mix,
   normalGeometry,
+  normalLocal,
   normalView,
   positionGeometry,
+  positionLocal,
   positionView,
   sign,
   smoothstep,
@@ -48,6 +50,7 @@ export function skinMaterial(
   spec: SkinMaterialSpec,
   scale: number,
   registry: Registry,
+  signals: { breath?: N } = {},
 ): MeshStandardNodeMaterial {
   const material = new MeshStandardNodeMaterial();
   const s = uniform(scale);
@@ -82,6 +85,11 @@ export function skinMaterial(
   material.roughnessNode = mix(shade.roughness as N, float(0.35), inside);
   material.metalnessNode = float(0);
   material.normalNode = bumpNormal((shade.height as N).mul(s));
+  // Breathing: the torso swells along its normals, up to about 1% of the torso length.
+  if (signals.breath) {
+    const swell = (signals.breath as N).mul(s).mul(0.011).mul(region.y);
+    material.positionNode = (positionLocal as N).add((normalLocal as N).normalize().mul(swell));
+  }
   return material;
 }
 

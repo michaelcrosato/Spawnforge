@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { PartHooks } from './compile/parts.ts';
+import type { ActionHooks } from './motion/actions.ts';
 import type { PatternHooks } from './shading/kit.ts';
 
 /** The kinds of module the core can run. See docs/plan.md, "Modularity and variation". */
@@ -78,7 +79,8 @@ export type Feature = 'head' | 'jaw' | 'arm' | 'tail' | 'legs';
 
 export interface ActionModule<P extends z.ZodType = z.ZodType> extends ModuleBase<'action', P> {
   readonly needs: readonly Feature[];
-  readonly hooks?: unknown;
+  /** Body-relative goals over time (see `ActionHooks`). */
+  readonly hooks?: ActionHooks;
 }
 
 export interface BodyPlanModule extends ModuleBase<'bodyPlan', z.ZodType> {

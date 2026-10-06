@@ -694,8 +694,7 @@
           }
         },
         "actions": {
-          "default": [],
-          "description": "Actions it can perform",
+          "description": "Actions it can perform; by default every action its body allows",
           "maxItems": 12,
           "type": "array",
           "items": {
@@ -869,10 +868,10 @@
         },
         "curve": {
           "default": 45,
-          "description": "Total bend in degrees; positive sweeps back toward the tail, negative forward",
+          "description": "Total bend in degrees; positive sweeps back toward the tail, negative forward; past 360 it coils",
           "type": "number",
-          "minimum": -270,
-          "maximum": 270
+          "minimum": -540,
+          "maximum": 540
         },
         "twist": {
           "default": 0,

@@ -9,15 +9,22 @@ is the contract.
 
 ## Status
 
-Phases 0 and 1 are done. Phase 0: the blueprint format, the module registry and first pack, the
-CLI and MCP tools, the generated catalogue and the format eval (20/20). Phase 1: the compile
-pipeline (skeleton, SDF skin, surface nets, skin weights, mouth cut, parts, eyes, TSL materials),
-the Three.js adapter, compiling in a worker, and headless six-view contact sheets through the CLI
-and MCP `render` tool; its eval scored 20/20 valid and 20/20 in blind review. Phase 2 is done:
-procedural locomotion (gaits from leg pairs, foot planting with IK on uneven ground, body
-posture, turning, tail springs, slither), pose sync, the sandbox's terrain course with walking
-creatures, and filmstrip renders with footfall diagrams. Next is phase 3: actions (bite, roar,
-look, idle), look-at, events, and the sandbox editor (sliders, JSON panel, gallery).
+Phases 0 to 3 are done.
+
+- Phase 0: the blueprint format, the module registry and first pack, the CLI and MCP tools, the
+  generated catalogue and the format eval.
+- Phase 1: the compile pipeline (skeleton, SDF skin, surface nets, skin weights, mouth cut,
+  parts, eyes, TSL materials), the Three.js adapter, compiling in a worker, and six-view contact
+  sheets through the CLI and MCP `render` tool.
+- Phase 2: procedural locomotion (gaits from leg pairs, foot planting with IK on uneven ground,
+  posture, turning, tail springs, slither), pose sync, the sandbox's terrain course, filmstrips.
+- Phase 3: actions as modules (bite, roar, look, idle with breathing and blinks), look-at,
+  events, action filmstrips, and the sandbox editor (sliders, JSON panel, gallery, live
+  `creatures/` folder).
+
+Every gate so far scored 20/20 on the prompt suite and 20/20 in blind review (`eval/runs/`).
+Next is phase 4: `patch`, `analyze` (measurements, motion checks, plausibility warnings,
+`describe`), the 1,000-blueprint fuzz, golden determinism, budgets and the PoC checklist.
 
 ## Repo map
 
@@ -29,7 +36,7 @@ look, idle), look-at, events, and the sandbox editor (sliders, JSON panel, galle
 | `packages/cli`     | The `spawnforge` command. Every command prints JSON. Headless renderer later                     | core, modules                    |
 | `packages/mcp`     | MCP server: a thin wrapper over the CLI command functions                                        | cli, render                      |
 | `packages/render`  | Headless contact sheets through Chromium (Playwright) and a Vite-served page, WebGL 2 backend     | core, modules, three             |
-| `apps/sandbox`     | Vite app: live 3D view, sliders, JSON panel, terrain test course, gallery                         | core, modules, three             |
+| `apps/sandbox`     | Vite app: terrain course, walking creatures, actions, sliders, JSON panel, gallery, `creatures/` watch | core, modules, three   |
 | `examples/`        | Blueprints beside their renders; also the golden test set                                        |                                  |
 | `eval/`            | The 20-prompt agent eval: prompts, scorer and one folder per run                                  |                                  |
 | `scripts/`         | `generate.ts`: writes every generated file (pack index, catalogue, JSON Schema)                  |                                  |

@@ -108,9 +108,22 @@ same code runs live in the browser, checks motion in Node and renders filmstrips
   out of reach. Bob and sway follow the steps, the spine bends into turns, sprawlers undulate.
 - **Legless bodies** lay a trail behind a weaving head and place each spine joint along it, so
   the body follows its own path in S-curves. A rearing neck (a cobra) keeps its raised pose.
-- **Layering per step:** body, head (stabilised, turned toward `lookAt` with the neck taking a
-  share), leg IK, arm swing, tail springs (Verlet), helper bones.
-- **Events:** `footstep` (leg id and position) and `gait` changes, returned by `update`.
+- **Actions** are modules (`hooks.goals` in an action module) that write body-relative goals
+  each step: a point to look at, how far to lunge toward it, head raise and shake, jaw opening,
+  crouch, rear, weight shift, breath, blink and tail swish. Ambient actions (idle) run all the
+  time; main actions (`act(id, { target })`) run one at a time on top and override the goals
+  they set. Durations scale by √(hip height / 1 m). The core never names an action: it only
+  applies goals, and it needs the module registry (`new MotionController(compiled,
+  { registry })`) to run their code.
+- **Layering per step:** goals; body (with crouch, rear and shift); head (stabilised, glances,
+  look target with the neck taking a share, raise, shake, lunge by cyclic coordinate descent on
+  the neck); jaw; leg IK to the planted feet (so actions never make feet slide); arm swing; tail
+  springs pulling toward the rest shape (plus swish); helper bones.
+- **Events**, returned by `update`: `footstep` (leg id and position), `gait` changes,
+  `action-start` and `action-end`, and the moments actions declare (`bite-contact`,
+  `roar-peak`) with the head's position.
+- **Breathing and blinks** travel with the pose as two numbers: `applyPose` feeds breath to the
+  skin shader (the torso swells along its normals) and squashes the eye bones to blink.
 
 `applyPose` in `@spawnforge/three` copies the pose into the Three.js bones each frame. The
 sandbox runs creatures on `testCourse` terrain; the render page's filmstrip mode walks one on

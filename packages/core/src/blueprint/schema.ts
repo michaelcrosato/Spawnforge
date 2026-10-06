@@ -263,8 +263,8 @@ export function buildBlueprintSchema(ids: ModuleIds = NO_IDS) {
     actions: z
       .array(moduleRef(ids.action, 'Action'))
       .max(12)
-      .default([])
-      .describe('Actions it can perform'),
+      .optional()
+      .describe('Actions it can perform; by default every action its body allows'),
   });
 
   return z.strictObject({

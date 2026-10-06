@@ -1,0 +1,37 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Cobra",
+  "seed": 1801,
+  "extends": "serpent",
+  "scale": 0.8,
+  "body": {
+    "torso": { "pitch": 18 },
+    "neck": {
+      "length": 0.8,
+      "pitch": 78,
+      "radius": [0.06, 0.15, 0.2, 0.13, 0.085, 0.08, 0.08, 0.08],
+      "crossSection": "wide",
+      "segments": 8
+    },
+    "head": { "shape": "wedge", "length": 0.22, "radius": 0.08, "pitch": -8 },
+    "tail": { "length": 2.4 }
+  },
+  "parts": [
+    {
+      "id": "fangs",
+      "type": "teeth.row",
+      "params": { "count": 3, "fangs": 1, "fangLength": 0.05, "lower": false }
+    },
+    { "id": "eyes", "params": { "size": 0.018, "irisColor": "#d0a020" } }
+  ],
+  "skin": {
+    "palette": { "base": "#6b4a2a", "belly": "#b09060", "accent": "#26160a" },
+    "material": "scales",
+    "layers": [
+      { "type": "countershade", "strength": 0.6, "height": -0.5 },
+      { "type": "stripes", "count": 22, "width": 0.45, "jitter": 0.15, "fade": 0.1 },
+      { "type": "scales", "size": 0.03 }
+    ]
+  },
+  "motion": { "temperament": "stalking", "actions": ["bite", "roar", "look", "idle"] }
+}

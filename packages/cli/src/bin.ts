@@ -23,6 +23,8 @@ Commands:
   render <file|-> --filmstrip [--gait id] [--speed m/s] [--frames n] [--view side|3/4|top]
                                         One gait cycle as frames with a footfall diagram;
                                         prints cycle, stride, duty and foot slide
+  render <file|-> --filmstrip --action <id> [--frames n] [--view side|3/4|top]
+                                        One action (bite, roar, look…) as frames with its events
   schema                                The blueprint JSON Schema
 
 Options:
@@ -61,6 +63,7 @@ const { positionals, values } = parseArgs({
     quality: { type: 'string' },
     filmstrip: { type: 'boolean' },
     gait: { type: 'string' },
+    action: { type: 'string' },
     speed: { type: 'string' },
     frames: { type: 'string' },
     view: { type: 'string' },
@@ -108,24 +111,32 @@ async function render(): Promise<{ output: unknown; exitCode?: number }> {
   const frames = number('frames', values.frames);
   const filmstrip = values.filmstrip
     ? {
+        ...(values.action ? { action: values.action } : {}),
         ...(values.gait ? { gait: values.gait } : {}),
         ...(speed !== undefined ? { speed } : {}),
         ...(frames !== undefined ? { frames } : {}),
         ...(filmView ? { view: filmView as 'side' | 'three-quarter' | 'top' } : {}),
       }
     : undefined;
-  const suffix = filmstrip ? '.walk.png' : '.png';
+  const suffix = filmstrip ? (values.action ? `.${values.action}.png` : '.walk.png') : '.png';
   const out =
     values.out ?? (arg === '-' ? `creature${suffix}` : `${arg.replace(/\.json$/i, '')}${suffix}`);
   const { renderBlueprint } = await import('@spawnforge/render');
-  const result = await renderBlueprint({
-    blueprint,
-    labels: values.labels ?? false,
-    ...(values.size ? { size: Number(values.size) } : {}),
-    ...(views ? { views } : {}),
-    ...(values.quality ? { quality: values.quality as 'low' | 'medium' | 'high' } : {}),
-    ...(filmstrip ? { filmstrip } : {}),
-  });
+  let result: Awaited<ReturnType<typeof renderBlueprint>>;
+  try {
+    result = await renderBlueprint({
+      blueprint,
+      labels: values.labels ?? false,
+      ...(values.size ? { size: Number(values.size) } : {}),
+      ...(views ? { views } : {}),
+      ...(values.quality ? { quality: values.quality as 'low' | 'medium' | 'high' } : {}),
+      ...(filmstrip ? { filmstrip } : {}),
+    });
+  } catch (error) {
+    // Errors from the page arrive wrapped ("page.evaluate: Error: …"); keep the message.
+    const message = (error as Error).message.replace(/^[\s\S]*?Error: /, '').split('\n')[0];
+    throw new CommandError(`render failed: ${message}`);
+  }
   writeFileSync(out, result.png);
   return {
     output: { ok: true, out, width: result.width, height: result.height, info: result.info },

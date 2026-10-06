@@ -1,0 +1,75 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Spiked Lizard",
+  "seed": 202,
+  "extends": "quadruped",
+  "scale": 1.2,
+  "body": {
+    "torso": { "radius": [0.2, 0.27, 0.27, 0.2], "arch": 0.02, "crossSection": "wide" },
+    "neck": { "length": 0.18, "radius": [0.13, 0.18], "pitch": 8 },
+    "head": {
+      "shape": "wedge",
+      "length": 0.3,
+      "radius": 0.13,
+      "jaw": true,
+      "pitch": -5,
+      "crossSection": "wide"
+    },
+    "tail": {
+      "length": 0.95,
+      "radius": [0.16, 0.08, 0.07, 0.09, 0.2, 0.16],
+      "pitch": -5,
+      "curl": 0
+    }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "length": 0.42,
+      "radius": [0.11, 0.06],
+      "splay": 45,
+      "attach": { "at": 0.12, "angle": 120 },
+      "foot": { "type": "foot.claw", "toes": 5, "clawLength": 0.04 }
+    },
+    {
+      "id": "hindleg",
+      "length": 0.45,
+      "radius": [0.13, 0.06],
+      "splay": 45,
+      "attach": { "at": 0.88, "angle": 120 },
+      "foot": { "type": "foot.claw", "toes": 5, "clawLength": 0.04 }
+    }
+  ],
+  "parts": [
+    {
+      "id": "dorsal",
+      "type": "spikes.row",
+      "attach": { "on": "spine", "from": 0.08, "to": 0.7, "angle": 0 },
+      "params": {
+        "count": 16,
+        "height": [0.07, 0.14, 0.1, 0.06],
+        "width": 0.03,
+        "curve": 15,
+        "jitter": 0.2
+      }
+    },
+    {
+      "id": "clubspikes",
+      "type": "spikes.row",
+      "attach": { "on": "tail", "from": 0.72, "to": 0.98, "angle": 90 },
+      "params": { "count": 5, "height": 0.07, "width": 0.025, "curve": 0 }
+    },
+    { "id": "teeth", "type": "teeth.row", "params": { "count": 8, "fangs": 0 } },
+    { "id": "eyes", "params": { "size": 0.022, "pupil": "slit", "irisColor": "#c88a20" } }
+  ],
+  "skin": {
+    "palette": { "base": "#5e6140", "belly": "#a89a70", "accent": "#2c2a1a" },
+    "material": "scales",
+    "layers": [
+      { "type": "countershade" },
+      { "type": "scales", "size": 0.05, "bump": 0.7, "gap": 0.5 },
+      { "type": "mottle", "scale": 0.12, "strength": 0.4 }
+    ]
+  },
+  "motion": { "temperament": "lumbering", "actions": ["bite", "roar", "look", "idle"] }
+}
