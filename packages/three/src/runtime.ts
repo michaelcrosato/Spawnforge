@@ -206,12 +206,15 @@ export class Creature {
       this.lod = 'baked';
       this.baked.speed = this.controller.speed;
       this.baked.time = 0;
+      // Fur shells cost fill rate a distant creature does not repay.
+      if (this.view.meshes.fur) this.view.meshes.fur.visible = false;
     }
   }
 
   private toFull(ground?: Ground): void {
     if (this.lod === 'full') return;
     this.lod = 'full';
+    if (this.view.meshes.fur) this.view.meshes.fur.visible = true;
     const target = this.baked.target;
     this.controller.place(this.position.x, this.position.z, this.heading, ground ?? this.ground);
     if (target) this.controller.moveTo({ x: target.x, z: target.z }, { speed: this.desired });
@@ -258,6 +261,8 @@ export class Creature {
       b.clip = clip;
       b.time = 0;
     }
+    // Pulsing patterns keep time.
+    this.view.signals.time.value += dt;
     if (!clip) return [];
     // Cycles play at the rate the speed calls for; idle plays in real time.
     const rate = clip.speed > 0 ? b.speed / clip.speed : 1;

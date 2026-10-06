@@ -17,6 +17,7 @@ import {
   buildExportScene,
   createCreatureObject,
   createRenderer,
+  stackMaterial,
 } from '@spawnforge/three';
 import * as THREE from 'three';
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
@@ -24,6 +25,8 @@ import type {
   ExportRequest,
   ExportResponse,
   MotionInfo,
+  ParityRequest,
+  ParityResponse,
   RenderRequest,
   RenderResponse,
   View,
@@ -48,6 +51,7 @@ declare global {
     spawnforgeRender?: (request: RenderRequest) => Promise<RenderResponse>;
     spawnforgeFingerprint?: (blueprint: unknown, quality: 'low' | 'medium' | 'high') => string;
     spawnforgeExport?: (request: ExportRequest) => Promise<ExportResponse>;
+    spawnforgeParity?: (request: ParityRequest) => Promise<ParityResponse>;
     spawnforgeDiff?: (
       a: string,
       b: string,
@@ -103,7 +107,7 @@ window.spawnforgeExport = async (request) => {
     ...(request.clips ? { clips: request.clips } : {}),
     ...(request.fps ? { fps: request.fps } : {}),
   });
-  const { scene, animations } = buildExportScene(compiled, registry, {
+  const { scene, animations, notes } = buildExportScene(compiled, registry, {
     clips,
     ...(request.extras ? { extras: request.extras } : {}),
   });
@@ -126,14 +130,108 @@ window.spawnforgeExport = async (request) => {
       bones: compiled.bones.names.length,
       sockets: compiled.sockets.map((s) => s.name),
       clips: clips.map((c) => ({ name: c.name, duration: c.duration, loop: c.loop })),
-      notes: clips.some((c) => c.name === 'idle' && c.frames <= 2)
-        ? [
-            'idle is only the standing pose: the creature has no ambient action; add "idle" to motion.actions for breathing, blinks and glances',
-          ]
-        : [],
+      notes: [
+        ...(clips.some((c) => c.name === 'idle' && c.frames <= 2)
+          ? [
+              'idle is only the standing pose: the creature has no ambient action; add "idle" to motion.actions for breathing, blinks and glances',
+            ]
+          : []),
+        ...notes,
+      ],
       exportMs: performance.now() - started,
     },
   };
+};
+
+/**
+ * The parity test's GPU side: one pixel per sampled skin vertex, drawn unlit by three's
+ * `stackMaterial` into a float render target and read back (docs/design/8.4-materials.md).
+ */
+window.spawnforgeParity = async (request) => {
+  const compiled = compileCreature(resolveBlueprint(request.blueprint, registry), registry, {
+    quality: request.quality ?? 'low',
+  });
+  const { positions, normals, body, region } = compiled.skin;
+  const count = request.samples.length;
+  const width = 64;
+  const height = Math.max(1, Math.ceil(count / width));
+  // A quad per sample, covering its pixel, with the vertex's surface on all four corners.
+  const quad = [
+    [0, 0],
+    [1, 0],
+    [1, 1],
+    [0, 1],
+  ];
+  const at = new Float32Array(count * 4 * 3);
+  const rest = new Float32Array(count * 4 * 3);
+  const restNormal = new Float32Array(count * 4 * 3);
+  const bodyAt = new Float32Array(count * 4 * 4);
+  const regionAt = new Float32Array(count * 4 * 4);
+  const index: number[] = [];
+  request.samples.forEach((v, i) => {
+    const col = i % width;
+    const row = Math.floor(i / width);
+    quad.forEach(([dx, dy], c) => {
+      const k = i * 4 + c;
+      at[k * 3] = -1 + (2 * (col + (dx as number))) / width;
+      at[k * 3 + 1] = -1 + (2 * (row + (dy as number))) / height;
+      for (let j = 0; j < 3; j++) {
+        rest[k * 3 + j] = positions[v * 3 + j] as number;
+        restNormal[k * 3 + j] = normals[v * 3 + j] as number;
+      }
+      for (let j = 0; j < 4; j++) {
+        bodyAt[k * 4 + j] = body[v * 4 + j] as number;
+        regionAt[k * 4 + j] = region[v * 4 + j] as number;
+      }
+    });
+    index.push(i * 4, i * 4 + 1, i * 4 + 2, i * 4, i * 4 + 2, i * 4 + 3);
+  });
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.BufferAttribute(at, 3));
+  geometry.setAttribute('rest', new THREE.BufferAttribute(rest, 3));
+  geometry.setAttribute('restNormal', new THREE.BufferAttribute(restNormal, 3));
+  geometry.setAttribute('body', new THREE.BufferAttribute(bodyAt, 4));
+  geometry.setAttribute('region', new THREE.BufferAttribute(regionAt, 4));
+  geometry.setIndex(index);
+  const scene = new THREE.Scene();
+  const mesh = new THREE.Mesh(geometry);
+  mesh.frustumCulled = false;
+  scene.add(mesh);
+  const camera = new THREE.OrthographicCamera();
+  let precision: 'float' | 'half' = 'float';
+  const passes: number[][] = [];
+  for (const pass of [0, 1, 2] as const) {
+    mesh.material = stackMaterial(compiled.material, compiled.scale, registry, pass);
+    let pixels: ArrayLike<number> | undefined;
+    for (const type of precision === 'float'
+      ? [THREE.FloatType, THREE.HalfFloatType]
+      : [THREE.HalfFloatType]) {
+      const target = new THREE.RenderTarget(width, height, { type, depthBuffer: false });
+      try {
+        renderer.setRenderTarget(target);
+        renderer.render(scene, camera);
+        const read = (await renderer.readRenderTargetPixelsAsync(target, 0, 0, width, height)) as
+          | Float32Array
+          | Uint16Array;
+        pixels =
+          type === THREE.HalfFloatType
+            ? Array.from(read as Uint16Array, (h) => THREE.DataUtils.fromHalfFloat(h))
+            : (read as Float32Array);
+        if (type === THREE.HalfFloatType) precision = 'half';
+        break;
+      } catch {
+        // Float targets need EXT_color_buffer_float; fall back to half floats.
+      } finally {
+        renderer.setRenderTarget(null);
+        target.dispose();
+      }
+    }
+    (mesh.material as THREE.Material).dispose();
+    if (!pixels) throw new Error('could not read a float render target');
+    passes.push(Array.from(pixels).slice(0, count * 4));
+  }
+  geometry.dispose();
+  return { passes, precision };
 };
 
 const canvas = document.createElement('canvas');

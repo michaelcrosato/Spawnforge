@@ -27,6 +27,8 @@ export class Pose {
   breath = 0;
   /** Eyelids, 0 open to 1 shut, for the renderer. */
   blink = 0;
+  /** Seconds on the creature's clock, for pulsing patterns (0 in stills). */
+  time = 0;
 
   constructor(bones: BonesData) {
     const n = bones.names.length;

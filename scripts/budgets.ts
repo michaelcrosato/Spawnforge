@@ -58,7 +58,10 @@ try {
       compileMs: Number(median(times).toFixed(0)),
       chromeCompileMs: Number(chrome.toFixed(0)),
       skinTriangles: c.stats.triangles.skin,
-      drawCalls: [c.skin, c.parts, c.eyes].filter((m) => m.indices.length > 0).length,
+      // Fur adds one instanced call (none at low quality).
+      drawCalls:
+        [c.skin, c.parts, c.eyes].filter((m) => m.indices.length > 0).length +
+        (c.material.fur && c.quality !== 'low' ? 1 : 0),
       motionMsPerFrame: Number(((performance.now() - t) / 3000).toFixed(3)),
     });
   }
@@ -87,6 +90,7 @@ const report = {
     compileMs: 500,
     skinTriangles: 30000,
     drawCalls: 3,
+    furDrawCalls: 1,
     motionMsPerCreature: 0.1,
     motionMsFor50: 5,
   },

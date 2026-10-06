@@ -3139,7 +3139,7 @@
         },
         "shape": {
           "default": "spots",
-          "description": "\"spots\" scattered over the skin, or \"lines\" along the body",
+          "description": "\"spots\" scattered over the skin, or \"lines\" of dots along the body",
           "type": "string",
           "enum": [
             "spots",
@@ -3313,7 +3313,7 @@
       "additionalProperties": false
     },
     "pattern:scales": {
-      "description": "Overlapping scales as bump and darker gaps between them.",
+      "description": "Overlapping scales in staggered rows down the body: each one raised at its free rear edge, with darker gaps.",
       "type": "object",
       "properties": {
         "size": {
@@ -3358,7 +3358,7 @@
         },
         "count": {
           "default": 6,
-          "description": "How many scars over the body",
+          "description": "About how many scars over the whole body",
           "type": "integer",
           "minimum": 1,
           "maximum": 40
@@ -3432,14 +3432,14 @@
           "minLength": 1
         },
         "size": {
-          "default": 0.05,
+          "default": 0.04,
           "description": "Spot radius in torso lengths",
           "type": "number",
           "minimum": 0.005,
           "maximum": 0.5
         },
         "density": {
-          "default": 0.5,
+          "default": 0.75,
           "description": "Share of possible spots that appear",
           "type": "number",
           "minimum": 0,
@@ -3530,7 +3530,7 @@
           "maximum": 1
         },
         "width": {
-          "default": 0.006,
+          "default": 0.01,
           "description": "Vein width in torso lengths",
           "type": "number",
           "minimum": 0.001,

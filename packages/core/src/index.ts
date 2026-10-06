@@ -84,6 +84,7 @@ export {
   bakeVertexColors,
   EYE_ROUGHNESS,
   srgbToLinear,
+  surfaceAt,
 } from './export/bake.ts';
 export { FORMAT } from './format.ts';
 export * from './geometry/kit.ts';

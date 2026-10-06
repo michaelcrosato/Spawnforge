@@ -134,9 +134,13 @@ whatever the target is doing, so test hits yourself, with sockets or hit capsule
 - Pass `camera` to `bestiary.update`: beyond `lodDistance` (default 30) times the creature's
   torso length it drops foot IK and tail springs and plays baked gait cycles at the speed it is
   moving, and it switches back when the camera comes near. A creature busy with an action
-  finishes it first.
+  finishes it first. Baked creatures hide their fur.
 - Mesh detail is per creature (`quality`). Each creature is three draw calls: the skin (with the
-  mouth's inside and the eyelids), the hard parts and the eyes.
+  mouth's inside and the eyelids), the hard parts and the eyes. Fur adds a fourth at medium and
+  high quality: the skin's geometry drawn as 12 or 16 instanced shells in one call, which costs
+  fill rate more than vertices. Spawn at `quality: 'low'` for none.
+- Glowing patterns (`bioluminescence`) pulse on the creature's own clock, which `update`
+  advances; `applyPose` passes it to the shader with the pose (`Pose.time`).
 
 ## Exported, as .glb
 
@@ -147,13 +151,16 @@ spawnforge export creature.json --clips idle,walk,bite --quality low --fps 24
 
 (MCP: the `export` tool. The sandbox's "export .glb" button does the same in the browser.) The
 output lists the clips, sockets and stats, and `notes` such as an idle that is only a standing
-pose (the blueprint lists `motion.actions` without `idle`).
+pose (the blueprint lists `motion.actions` without `idle`), or what the file leaves out: fur (its
+shells need the live shader; the skin under it is exported) and glow (it needs an emissive
+texture, milestone 11.1).
 
 A `.glb` holds:
 
 - **Three skinned meshes** sharing one skeleton: `skin`, `parts` and `eyes`. The pattern stack is
   baked into vertex colours (`COLOR_0`, linear, albedo only); each material has one roughness,
-  the mesh's average, and no textures.
+  the mesh's average, and no textures. Chitin keeps its lacquer as a clearcoat
+  (`KHR_materials_clearcoat`); the live skin's soft wrap lighting has no glTF form.
 - **The skeleton.** Bone names have `.` replaced by `_` (`foreleg_L_1`), since animation tracks
   address nodes as `name.property`.
 - **Baked clips:** `idle` (glances, weight shifts and blinks as eyelid bone turns, `eye_eyes_L_upper`

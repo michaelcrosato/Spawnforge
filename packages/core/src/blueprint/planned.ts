@@ -91,8 +91,6 @@ export function notBuilt(
     const milestone = !kept.has(part.id) && hostMilestone(part.on);
     if (milestone) add(`parts[id=${part.baseId}].attach.on`, `"${part.type}"`, milestone, part.on);
   }
-  if (spec.skin.fur) add('skin.fur', 'fur', '8.4');
-  if (spec.skin.material === 'hide') add('skin.material', 'the hide material', '8.4');
 
   // Fields whose defaults have a value: only when the blueprint writes them.
   if (written) {

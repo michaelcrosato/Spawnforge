@@ -1112,6 +1112,7 @@ export class MotionController {
   /** Opens every jaw by the action's `jaw` goal, about its hinge, and blinks the eyelids. */
   private applyJaw(): void {
     this.pose.breath = this.goals.breath ?? 0;
+    this.pose.time = this.time;
     applyFace(this.pose, this.compiled.rig, this.goals.jaw ?? 0, this.goals.blink ?? 0);
   }
 

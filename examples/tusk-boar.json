@@ -63,10 +63,12 @@
   ],
   "skin": {
     "palette": { "base": "#7a5c40", "belly": "#b8a088", "accent": "#3a2a1e" },
+    "material": "hide",
     "layers": [
       { "type": "countershade", "strength": 0.6 },
       { "type": "mottle", "scale": 0.12, "coverage": 0.5, "contrast": 0.25, "strength": 0.6 },
-      { "type": "grime", "amount": 0.4 }
+      { "type": "grime", "amount": 0.4 },
+      { "type": "scars", "count": 6, "rake": 3, "length": 0.3, "region": "torso" }
     ]
   },
   "motion": { "temperament": "lumbering", "actions": ["bite", "roar", "look", "idle"] }

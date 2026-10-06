@@ -782,6 +782,7 @@ export function compileCreature(
       spec.skin.material,
       spec.skin.layers,
       spec.seed,
+      spec.skin.fur,
     ),
     rig,
     motion: motionData(spec, registry),

@@ -3,6 +3,8 @@ import {
   type BakedColors,
   bakeVertexColors,
   type CompiledCreature,
+  MATERIAL_LOOK,
+  type MaterialLook,
   type Registry,
 } from '@spawnforge/core';
 import {
@@ -11,6 +13,7 @@ import {
   Group,
   type KeyframeTrack,
   Matrix4,
+  MeshPhysicalMaterial,
   MeshStandardMaterial,
   Object3D,
   QuaternionKeyframeTrack,
@@ -39,15 +42,21 @@ function bakedMesh(
   data: CompiledCreature['skin'] | CompiledCreature['parts'] | CompiledCreature['eyes'],
   colors: BakedColors,
   name: string,
+  look?: MaterialLook,
 ): SkinnedMesh {
   const geometry = geometryOf(data, {});
   geometry.setAttribute('color', new BufferAttribute(colors.color, 3));
-  // glTF keeps one roughness per material without textures: use the mesh's average.
-  const material = new MeshStandardMaterial({
-    vertexColors: true,
-    roughness: average(colors.roughness),
-    metalness: 0,
-  });
+  // glTF keeps one roughness per material without textures: use the mesh's average. A lacquered
+  // material (chitin) keeps its clearcoat, which glTF has as KHR_materials_clearcoat.
+  const settings = { vertexColors: true, roughness: average(colors.roughness), metalness: 0 };
+  const material =
+    look && look.clearcoat > 0
+      ? new MeshPhysicalMaterial({
+          ...settings,
+          clearcoat: look.clearcoat,
+          clearcoatRoughness: look.clearcoatRoughness,
+        })
+      : new MeshStandardMaterial(settings);
   material.name = name;
   const mesh = new SkinnedMesh(geometry, material);
   mesh.name = name;
@@ -96,7 +105,7 @@ export function buildExportScene(
   compiled: CompiledCreature,
   registry: Registry,
   options: ExportSceneOptions = {},
-): { scene: Group; animations: AnimationClip[] } {
+): { scene: Group; animations: AnimationClip[]; notes: string[] } {
   const { bones, skeleton } = buildBones(compiled);
   for (const bone of bones) bone.name = exportName(bone.name);
   const scene = new Group();
@@ -104,7 +113,7 @@ export function buildExportScene(
   scene.add(bones[0] as Object3D);
   const colors = bakeVertexColors(compiled, registry);
   const meshes = [
-    bakedMesh(compiled.skin, colors.skin, 'skin'),
+    bakedMesh(compiled.skin, colors.skin, 'skin', MATERIAL_LOOK[compiled.material.material]),
     bakedMesh(compiled.parts, colors.parts, 'parts'),
     bakedMesh(compiled.eyes, colors.eyes, 'eyes'),
   ];
@@ -150,5 +159,18 @@ export function buildExportScene(
       ...options.extras,
     },
   };
-  return { scene, animations };
+  return { scene, animations, notes: exportNotes(compiled, colors.skin.glow ?? 0) };
+}
+
+/**
+ * What the live creature shows that the file leaves out: shell fur and glow need shaders or
+ * texture maps, which milestone 11.1 brings (docs/design/8.4-materials.md).
+ */
+function exportNotes(compiled: CompiledCreature, glow: number): string[] {
+  const notes: string[] = [];
+  if (compiled.material.fur)
+    notes.push('fur is left out: its shells need the live shader; the skin under it is exported');
+  if (glow > 0)
+    notes.push('glowing layers are left out: glow needs an emissive texture (plan milestone 11.1)');
+  return notes;
 }

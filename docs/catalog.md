@@ -14,7 +14,7 @@ blueprint uses of it under `notBuilt`).
 
 - **Body plans:** `biped`, `centaur`, `fish`, `hexapod`, `octopod`, `quadruped`, `serpent`, `wyvern`
 - **Parts:** `antenna` (9.4), `armor.bands` (9.5), `beak`, `ear.pointed`, `eye.basic`, `fin.dorsal` (9.3), `fin.tail` (9.3), `foot.claw`, `foot.hoof`, `foot.pad`, `foot.paw`, `foot.talon`, `frill` (9.5), `hand.grasp`, `hand.pincer` (9.4), `hood` (9.5), `horn.curved`, `mandible` (9.4), `membrane.bat` (9.3), `membrane.case` (9.3), `membrane.feather` (9.3), `membrane.fin` (9.3), `membrane.insect` (9.3), `plates.row` (9.5), `quills` (9.5), `sail` (9.5), `shell` (9.5), `spikes.row`, `teeth.row`
-- **Patterns:** `bands` (8.4), `bioluminescence` (8.4), `countershade`, `grime`, `mottle`, `rosettes` (8.4), `scales`, `scars` (8.4), `slime` (8.4), `spots`, `stripes`, `veins` (8.4), `warts` (8.4)
+- **Patterns:** `bands`, `bioluminescence`, `countershade`, `grime`, `mottle`, `rosettes`, `scales`, `scars`, `slime`, `spots`, `stripes`, `veins`, `warts`
 - **Gaits:** `bound` (10.1), `fly` (10.4), `gallop` (10.1), `glide` (10.4), `hover` (10.4), `run` (10.1), `slither`, `swim.flap` (10.3), `swim.paddle` (10.3), `swim.undulate` (10.3), `tripod`, `trot`, `walk`
 - **Actions:** `bite`, `display` (9.5), `idle`, `jump` (10.2), `lash` (9.4), `look`, `pinch` (9.4), `pounce` (10.2), `roar`
 - **Themes:** `demon`, `insect`, `reptile`
@@ -1473,8 +1473,6 @@ Wide, even rings of colour around the body and tail, like a coral snake or a lem
 
 Add to skin.layers as { "type": "bands", ...params }; every layer also takes "region" and "strength".
 
-**Not built yet** (plan milestone 8.4): it validates, but compile skips it and warns `not_built`.
-
 | Parameter | Type | Range | Default | Description |
 | --- | --- | --- | --- | --- |
 | `color` | string |  | `"accent"` | Band colour: a palette name or a colour |
@@ -1492,12 +1490,10 @@ Glowing spots or lines that light up in the dark and pulse slowly.
 
 Add to skin.layers as { "type": "bioluminescence", ...params }; every layer also takes "region" and "strength".
 
-**Not built yet** (plan milestone 8.4): it validates, but compile skips it and warns `not_built`.
-
 | Parameter | Type | Range | Default | Description |
 | --- | --- | --- | --- | --- |
 | `color` | string |  | `"#7fffd0"` | Glow colour: a palette name or a colour |
-| `shape` | "spots" \| "lines" |  | `"spots"` | "spots" scattered over the skin, or "lines" along the body |
+| `shape` | "spots" \| "lines" |  | `"spots"` | "spots" scattered over the skin, or "lines" of dots along the body |
 | `size` | number | 0.005–0.3 | `0.03` | Spot radius or line width in torso lengths |
 | `density` | number | 0–1 | `0.5` | Share of possible spots that glow |
 | `brightness` | number | 0–4 | `1.5` | Emissive strength; 1 matches a lit surface |
@@ -1569,8 +1565,6 @@ Leopard-like rosettes: broken rings of dark marks around a tinted centre.
 
 Add to skin.layers as { "type": "rosettes", ...params }; every layer also takes "region" and "strength".
 
-**Not built yet** (plan milestone 8.4): it validates, but compile skips it and warns `not_built`.
-
 | Parameter | Type | Range | Default | Description |
 | --- | --- | --- | --- | --- |
 | `color` | string |  | `"accent"` | Ring colour: a palette name or a colour |
@@ -1585,7 +1579,7 @@ Add to skin.layers as { "type": "rosettes", ...params }; every layer also takes 
 
 ### `scales`
 
-Overlapping scales as bump and darker gaps between them.
+Overlapping scales in staggered rows down the body: each one raised at its free rear edge, with darker gaps.
 
 Add to skin.layers as { "type": "scales", ...params }; every layer also takes "region" and "strength".
 
@@ -1606,12 +1600,10 @@ Old healed scars: pale, raised streaks and claw rakes across the skin.
 
 Add to skin.layers as { "type": "scars", ...params }; every layer also takes "region" and "strength".
 
-**Not built yet** (plan milestone 8.4): it validates, but compile skips it and warns `not_built`.
-
 | Parameter | Type | Range | Default | Description |
 | --- | --- | --- | --- | --- |
 | `color` | string |  | `"belly"` | Scar colour: a palette name or a colour |
-| `count` | integer | 1–40 | `6` | How many scars over the body |
+| `count` | integer | 1–40 | `6` | About how many scars over the whole body |
 | `length` | number | 0.02–0.6 | `0.15` | Scar length in torso lengths |
 | `rake` | integer | 1–5 | `1` | Parallel cuts per scar: 3 or 4 read as claw marks |
 | `depth` | number | 0–1 | `0.5` | How raised and creased the scars are |
@@ -1625,8 +1617,6 @@ Add to skin.layers as { "type": "scars", ...params }; every layer also takes "re
 A wet, glossy coat of slime with drips and a faint tint.
 
 Add to skin.layers as { "type": "slime", ...params }; every layer also takes "region" and "strength".
-
-**Not built yet** (plan milestone 8.4): it validates, but compile skips it and warns `not_built`.
 
 | Parameter | Type | Range | Default | Description |
 | --- | --- | --- | --- | --- |
@@ -1648,8 +1638,8 @@ Add to skin.layers as { "type": "spots", ...params }; every layer also takes "re
 | Parameter | Type | Range | Default | Description |
 | --- | --- | --- | --- | --- |
 | `color` | string |  | `"accent"` | A palette name such as "accent", or a colour such as "#2a1e14" |
-| `size` | number | 0.005–0.5 | `0.05` | Spot radius in torso lengths |
-| `density` | number | 0–1 | `0.5` | Share of possible spots that appear |
+| `size` | number | 0.005–0.5 | `0.04` | Spot radius in torso lengths |
+| `density` | number | 0–1 | `0.75` | Share of possible spots that appear |
 | `jitter` | number | 0–1 | `0.8` | Irregularity of placement and size |
 | `ring` | number | 0–1 | `0` | Hollow the spots into rings (rosettes) |
 
@@ -1682,13 +1672,11 @@ Branching veins under thin skin, darker or glowing.
 
 Add to skin.layers as { "type": "veins", ...params }; every layer also takes "region" and "strength".
 
-**Not built yet** (plan milestone 8.4): it validates, but compile skips it and warns `not_built`.
-
 | Parameter | Type | Range | Default | Description |
 | --- | --- | --- | --- | --- |
 | `color` | string |  | `"#5a1a2a"` | Vein colour: a palette name or a colour |
 | `density` | number | 0–1 | `0.5` | How many branches |
-| `width` | number | 0.001–0.05 | `0.006` | Vein width in torso lengths |
+| `width` | number | 0.001–0.05 | `0.01` | Vein width in torso lengths |
 | `raised` | number | 0–1 | `0.3` | How far the veins stand out |
 
 ```json
@@ -1700,8 +1688,6 @@ Add to skin.layers as { "type": "veins", ...params }; every layer also takes "re
 Raised bumps and warts, like a toad or a troll.
 
 Add to skin.layers as { "type": "warts", ...params }; every layer also takes "region" and "strength".
-
-**Not built yet** (plan milestone 8.4): it validates, but compile skips it and warns `not_built`.
 
 | Parameter | Type | Range | Default | Description |
 | --- | --- | --- | --- | --- |

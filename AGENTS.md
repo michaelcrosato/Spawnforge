@@ -55,7 +55,10 @@ shows both orders at 640 px, `docs/design/8.1-anatomy.md`) and 8.2 (`foot.paw`, 
 with a `stance` roll their planted feet, `docs/design/8.2-feet.md`) and 8.3 (heads are meshed
 finer than the body and cut exactly along the mouth; mouths open on lips, gums, a palate, a
 tongue and a throat; eyelids blink on bones of their own; brows, cheekbones and nostrils; teeth
-and eyes sized to the head; `beak`; `render --jaw --blink`, `docs/design/8.3-heads.md`).
+and eyes sized to the head; `beak`; `render --jaw --blink`, `docs/design/8.3-heads.md`) and 8.4
+(materials with their own surface and light, shell fur in one draw call, seven new pattern
+layers including glow, and a CPU–GPU parity test of the pattern kit,
+`docs/design/8.4-materials.md`).
 
 ## Repo map
 
