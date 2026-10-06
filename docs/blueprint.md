@@ -223,6 +223,11 @@ when the creature moves.
   count: `walk` (any legs), `trot` (2 pairs), `tripod` (3 pairs), `slither` (no legs). Leave the
   field out to use every gait that suits the body.
 - **`actions`**: `bite` and `roar` need a jaw, `look` needs a head, and `idle` needs nothing.
+- **Check motion with a filmstrip**: `render` with `filmstrip` (CLI: `--filmstrip`, optionally
+  `--gait trot`) draws one gait cycle and a footfall diagram, and reports the cycle time, stride,
+  the share of time each foot is planted and how far planted feet slide (should be near 0). Legs
+  that are too short for their body, or set too far forward or back, show up there as short
+  strides, odd footfall patterns or sliding feet.
 
 ## Validation
 

@@ -1,0 +1,41 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Ram Demon",
+  "seed": 666,
+  "extends": "biped",
+  "scale": 0.8,
+  "body": {
+    "torso": { "radius": [0.16, 0.22, 0.2, 0.15], "pitch": 78 },
+    "head": { "shape": "wedge", "length": 0.3, "radius": 0.13, "jaw": true }
+  },
+  "limbs": [
+    { "id": "leg", "length": 1.2, "radius": [0.1, 0.055] },
+    { "id": "arm", "length": 1.0, "foot": { "type": "foot.claw", "toes": 4, "clawLength": 0.06 } }
+  ],
+  "parts": [
+    {
+      "id": "horns",
+      "type": "horn.curved",
+      "attach": { "on": "head", "at": 0.8, "angle": 45 },
+      "params": { "length": 0.6, "width": 0.05, "curve": 250, "twist": 120, "ridges": 12 }
+    },
+    { "id": "teeth", "type": "teeth.row", "params": { "fangs": 2 } },
+    { "id": "eyes", "params": { "pupil": "goat", "irisColor": "#ffb000" } }
+  ],
+  "skin": {
+    "palette": { "base": "#b3201a", "belly": "#d9503a", "accent": "#120808" },
+    "layers": [
+      { "type": "countershade", "strength": 0.4 },
+      {
+        "type": "stripes",
+        "color": "accent",
+        "count": 14,
+        "width": 0.3,
+        "jitter": 0.3,
+        "region": "all",
+        "fade": 0.3
+      }
+    ]
+  },
+  "motion": { "temperament": "aggressive", "actions": ["roar", "bite", "idle"] }
+}

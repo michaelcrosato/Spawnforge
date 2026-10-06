@@ -1,0 +1,186 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Mace-tail Armourback",
+  "seed": 202,
+  "extends": "quadruped",
+  "scale": 1.2,
+  "body": {
+    "torso": {
+      "radius": [0.19, 0.25, 0.25, 0.18],
+      "arch": 0.06,
+      "crossSection": "wide"
+    },
+    "neck": {
+      "length": 0.24,
+      "radius": [0.12, 0.18],
+      "pitch": 12
+    },
+    "head": {
+      "shape": "flat",
+      "length": 0.34,
+      "radius": 0.13,
+      "jaw": true,
+      "pitch": -8
+    },
+    "tail": {
+      "length": 0.9,
+      "radius": [0.16, 0.12, 0.09, 0.1, 0.19, 0.16],
+      "pitch": -5,
+      "curl": 0
+    }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "length": 0.48,
+      "radius": [0.1, 0.06],
+      "splay": 35,
+      "attach": {
+        "on": "torso",
+        "at": 0.15,
+        "angle": 100
+      },
+      "foot": {
+        "type": "foot.claw",
+        "toes": 4,
+        "toeLength": 0.07,
+        "clawLength": 0.03
+      }
+    },
+    {
+      "id": "hindleg",
+      "length": 0.51,
+      "radius": [0.12, 0.07],
+      "splay": 35,
+      "attach": {
+        "on": "torso",
+        "at": 0.85,
+        "angle": 100
+      },
+      "foot": {
+        "type": "foot.claw",
+        "toes": 4,
+        "toeLength": 0.07,
+        "clawLength": 0.03
+      }
+    }
+  ],
+  "parts": [
+    {
+      "id": "eyes",
+      "params": {
+        "size": 0.022,
+        "pupil": "slit",
+        "irisColor": "#d08020"
+      }
+    },
+    {
+      "id": "teeth",
+      "type": "teeth.row",
+      "params": {
+        "count": 8,
+        "fangs": 0,
+        "length": 0.02
+      }
+    },
+    {
+      "id": "club-spikes",
+      "type": "spikes.row",
+      "attach": {
+        "on": "tail",
+        "from": 0.65,
+        "to": 1.0,
+        "angle": 0
+      },
+      "params": {
+        "count": 4,
+        "height": [0.1, 0.1],
+        "width": 0.035,
+        "curve": 10
+      }
+    },
+    {
+      "id": "club-spikes-side",
+      "type": "spikes.row",
+      "attach": {
+        "on": "tail",
+        "from": 0.7,
+        "to": 0.95,
+        "angle": 90
+      },
+      "params": {
+        "count": 3,
+        "height": 0.08,
+        "width": 0.03,
+        "curve": 10
+      }
+    },
+    {
+      "id": "dorsal",
+      "type": "spikes.row",
+      "attach": {
+        "on": "spine",
+        "from": 0.12,
+        "to": 0.78,
+        "angle": 0
+      },
+      "params": {
+        "count": 16,
+        "height": [0.06, 0.13, 0.16, 0.12, 0.05],
+        "width": 0.035,
+        "curve": 15,
+        "jitter": 0.15
+      }
+    },
+    {
+      "id": "brow",
+      "type": "horn.curved",
+      "attach": {
+        "on": "head",
+        "at": 0.7,
+        "angle": 50
+      },
+      "params": {
+        "length": 0.1,
+        "width": 0.035,
+        "curve": 30,
+        "color": "#cfc3a0",
+        "tipColor": "#4a3f30"
+      }
+    }
+  ],
+  "skin": {
+    "material": "scales",
+    "palette": {
+      "base": "#6a6a48",
+      "belly": "#b5ab82",
+      "accent": "#35331f"
+    },
+    "layers": [
+      {
+        "type": "countershade"
+      },
+      {
+        "type": "mottle",
+        "color": "accent",
+        "scale": 0.12,
+        "contrast": 0.4,
+        "coverage": 0.4,
+        "region": "back"
+      },
+      {
+        "type": "scales",
+        "size": 0.04,
+        "bump": 0.6
+      },
+      {
+        "type": "grime",
+        "amount": 0.3
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "lumbering",
+    "actions": ["bite", "roar", "idle"]
+  }
+}

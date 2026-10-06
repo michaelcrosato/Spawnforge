@@ -18,22 +18,54 @@ body {
 
 #status {
   position: fixed;
-  top: 12px;
+  bottom: 44px;
   left: 12px;
+  max-width: calc(100vw - 48px);
   padding: 6px 10px;
   border-radius: 6px;
   background: rgb(0 0 0 / 45%);
   pointer-events: none;
 }
 
-#picker {
+#controls {
   position: fixed;
   top: 12px;
   right: 12px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: rgb(0 0 0 / 45%);
+}
+
+#controls select {
   padding: 4px 8px;
   border-radius: 6px;
   border: 1px solid #444a55;
   background: #23262d;
   color: inherit;
   font: inherit;
+}
+
+#controls label {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+#pace-value {
+  min-width: 64px;
+  font-variant-numeric: tabular-nums;
+}
+
+#help {
+  position: fixed;
+  bottom: 12px;
+  left: 12px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgb(0 0 0 / 35%);
+  color: #aab;
+  pointer-events: none;
 }

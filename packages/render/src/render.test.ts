@@ -37,6 +37,23 @@ describe('headless renders', () => {
     expect(pngSize(result.png)).toEqual({ width: 160, height: 204 });
   }, 120_000);
 
+  it('renders a filmstrip of one gait cycle with its measurements', async () => {
+    const result = await renderer.render({
+      blueprint: { format: FORMAT, extends: 'quadruped' },
+      size: 120,
+      filmstrip: { gait: 'trot', frames: 4 },
+    });
+    // Four frames in a row, a header and a footfall diagram for four legs.
+    expect(pngSize(result.png).width).toBe(480);
+    const motion = result.info.motion;
+    expect(motion?.gait).toBe('trot');
+    expect(motion?.cycle).toBeGreaterThan(0.1);
+    expect(motion?.stride).toBeGreaterThan(0.1);
+    expect(Object.keys(motion?.duty ?? {})).toHaveLength(4);
+    for (const duty of Object.values(motion?.duty ?? {})) expect(duty).toBeCloseTo(0.5, 1);
+    expect(motion?.footSlide).toBeLessThan(0.01);
+  }, 120_000);
+
   it('refuses invalid blueprints with the validation errors', async () => {
     await expect(renderer.render({ blueprint: { format: FORMAT, scale: 99 } })).rejects.toThrow(
       /scale/,

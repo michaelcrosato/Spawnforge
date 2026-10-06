@@ -1,0 +1,82 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Mace-tail Armourback",
+  "seed": 202,
+  "extends": "quadruped",
+  "scale": 1.2,
+  "body": {
+    "torso": { "radius": [0.19, 0.25, 0.25, 0.18], "arch": 0.06, "crossSection": "wide" },
+    "neck": { "length": 0.18, "radius": [0.11, 0.17], "pitch": 10 },
+    "head": { "shape": "flat", "length": 0.3, "radius": 0.12, "jaw": true, "pitch": -5 },
+    "tail": {
+      "length": 0.85,
+      "radius": [0.14, 0.09, 0.06, 0.07, 0.15, 0.13],
+      "pitch": -5,
+      "curl": 0
+    }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "length": 0.42,
+      "radius": [0.1, 0.06],
+      "splay": 35,
+      "attach": { "on": "torso", "at": 0.15, "angle": 100 },
+      "foot": { "type": "foot.claw", "toes": 4, "toeLength": 0.07, "clawLength": 0.03 }
+    },
+    {
+      "id": "hindleg",
+      "length": 0.45,
+      "radius": [0.12, 0.07],
+      "splay": 35,
+      "attach": { "on": "torso", "at": 0.85, "angle": 100 },
+      "foot": { "type": "foot.claw", "toes": 4, "toeLength": 0.07, "clawLength": 0.03 }
+    }
+  ],
+  "parts": [
+    { "id": "eyes", "params": { "size": 0.022, "pupil": "slit", "irisColor": "#d08020" } },
+    { "id": "teeth", "type": "teeth.row", "params": { "count": 8, "fangs": 0, "length": 0.02 } },
+    {
+      "id": "back-spikes",
+      "type": "spikes.row",
+      "attach": { "on": "torso", "from": 0.02, "to": 1.0, "angle": 0 },
+      "params": {
+        "count": 11,
+        "height": [0.09, 0.16, 0.12],
+        "width": 0.035,
+        "curve": 15,
+        "jitter": 0.15
+      }
+    },
+    {
+      "id": "club-spikes",
+      "type": "spikes.row",
+      "attach": { "on": "tail", "from": 0.65, "to": 1.0, "angle": 0 },
+      "params": { "count": 4, "height": [0.1, 0.1], "width": 0.035, "curve": 10 }
+    },
+    {
+      "id": "club-spikes-side",
+      "type": "spikes.row",
+      "attach": { "on": "tail", "from": 0.7, "to": 0.95, "angle": 90 },
+      "params": { "count": 3, "height": 0.08, "width": 0.03, "curve": 10 }
+    }
+  ],
+  "skin": {
+    "material": "scales",
+    "palette": { "base": "#6a6a48", "belly": "#b5ab82", "accent": "#35331f" },
+    "layers": [
+      { "type": "countershade" },
+      {
+        "type": "mottle",
+        "color": "accent",
+        "scale": 0.12,
+        "contrast": 0.4,
+        "coverage": 0.4,
+        "region": "back"
+      },
+      { "type": "scales", "size": 0.04, "bump": 0.6 },
+      { "type": "grime", "amount": 0.3 }
+    ]
+  },
+  "motion": { "temperament": "lumbering", "actions": ["bite", "roar", "idle"] }
+}

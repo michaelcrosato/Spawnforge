@@ -41,8 +41,12 @@ if (mode === 'prepare') {
       }
     }
   }
-  // Shuffle deterministically by the run folder name.
-  const rng = createRng(dir.length * 7919 + finals.length);
+  // Shuffle deterministically by the run folder's name (FNV-1a), so each run gets its own order.
+  let hash = 2166136261;
+  for (const ch of dir.replace(/\/+$/, '').split('/').at(-1) ?? dir) {
+    hash = Math.imul(hash ^ (ch.codePointAt(0) ?? 0), 16777619) >>> 0;
+  }
+  const rng = createRng(hash);
   const order = finals
     .map((f) => ({ f, k: rng.next() }))
     .sort((a, b) => a.k - b.k)

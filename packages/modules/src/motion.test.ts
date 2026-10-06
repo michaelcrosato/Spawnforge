@@ -58,10 +58,32 @@ describe('locomotion', () => {
     const { steps, worstSlide } = run(controller, 12);
     expect(controller.position.z).toBeGreaterThan(2.4);
     expect(steps.length).toBeGreaterThan(8);
-    // Walk order: hind left, fore left, hind right, fore right.
-    const order = steps.slice(4, 8).map((s) => s.leg);
-    expect(new Set(order).size).toBe(4);
+    // Lateral sequence walk: hind left, fore left, hind right, fore right.
+    const order = steps.slice(4, 12).map((s) => s.leg);
+    const next: Record<string, string> = {
+      'hindleg.L': 'foreleg.L',
+      'foreleg.L': 'hindleg.R',
+      'hindleg.R': 'foreleg.R',
+      'foreleg.R': 'hindleg.L',
+    };
+    for (let i = 1; i < order.length; i++) expect(order[i]).toBe(next[order[i - 1] as string]);
     expect(worstSlide).toBeLessThan(0.02 * compiled.scale);
+  });
+
+  it('keeps planted feet still in every gait', () => {
+    for (const [plan, gait] of [
+      ['quadruped', 'walk'],
+      ['quadruped', 'trot'],
+      ['biped', 'walk'],
+      ['hexapod', 'tripod'],
+      ['hexapod', 'walk'],
+    ] as const) {
+      const { compiled, controller } = creature(plan);
+      controller.lockGait(gait);
+      controller.drive(controller.gaitSpeed(gait), 0);
+      const { worstSlide } = run(controller, 4);
+      expect(worstSlide, `${plan} ${gait}`).toBeLessThan(0.01 * compiled.scale);
+    }
   });
 
   it('trots with diagonal pairs moving together', () => {
@@ -91,6 +113,29 @@ describe('locomotion', () => {
     run(controller, 10);
     expect(controller.position.z).toBeGreaterThan(1.5);
     for (const p of controller.pose.worldPos) expect(Number.isFinite(p.x + p.y + p.z)).toBe(true);
+  });
+
+  it('slithers in S-curves', () => {
+    const { compiled, controller } = creature('serpent');
+    controller.drive(controller.paceSpeed(), 0);
+    run(controller, 8);
+    // Sideways spread of the spine around the travel line (heading +Z).
+    const xs = [...compiled.rig.spine, ...compiled.rig.tail].map(
+      (b) => (controller.pose.worldPos[b] as Vector3).x,
+    );
+    expect(Math.max(...xs) - Math.min(...xs)).toBeGreaterThan(0.15 * compiled.scale);
+  });
+
+  it('keeps a rearing neck raised while slithering', () => {
+    const { compiled, controller } = creature('serpent', {
+      body: { neck: { length: 0.5, pitch: 80, segments: 4 }, head: { pitch: 0 } },
+    });
+    const rest = compiled.bones.positions[compiled.rig.head * 3 + 1] as number;
+    controller.moveTo({ x: 0, z: 2 });
+    run(controller, 6);
+    const head = controller.pose.worldPos[compiled.rig.head] as Vector3;
+    expect(head.y).toBeGreaterThan(rest * 0.8);
+    expect(controller.position.z).toBeGreaterThan(1);
   });
 
   it('plants feet on uneven ground', () => {

@@ -89,6 +89,33 @@ for patterns is built from the same `Kit` functions the CPU uses (`packages/core
 Compilation runs in a Web Worker in the browser (`@spawnforge/three/worker`) and returns
 transferable typed arrays.
 
+## Motion
+
+`MotionController` (`packages/core/src/motion`) animates a compiled creature from its rig and
+`compiled.motion` (gait timing and temperament). It is pure math at a fixed 120 Hz step, so the
+same code runs live in the browser, checks motion in Node and renders filmstrips.
+
+- **Steering.** `moveTo`, `drive` and `stop` set a target and speed; turning rate and pace come
+  from the temperament.
+- **Gait.** Leg pairs are numbered from the back; leg phase is φ = (i·w + 0.5·s) mod 1 with the
+  gait's wave offset w and duty factor. The gait is chosen by Froude number (walk to trot near
+  0.5) unless `lockGait` pins one. Stride follows λ/h = 2.3·Fr^0.3, capped by how far each foot
+  can travel within the leg's reach; past the cap, and when a planted foot would run out of reach
+  (starting off, speeding up), the legs step faster instead of sliding.
+- **Feet.** Planted feet stay fixed in the world. Swinging feet arc to a spot predicted half a
+  stance ahead of the hip, on the ground the caller supplies (`update(dt, { ground })`).
+- **Body.** Height, pitch and roll follow the planted feet; the body sinks if a foot in a dip is
+  out of reach. Bob and sway follow the steps, the spine bends into turns, sprawlers undulate.
+- **Legless bodies** lay a trail behind a weaving head and place each spine joint along it, so
+  the body follows its own path in S-curves. A rearing neck (a cobra) keeps its raised pose.
+- **Layering per step:** body, head (stabilised, turned toward `lookAt` with the neck taking a
+  share), leg IK, arm swing, tail springs (Verlet), helper bones.
+- **Events:** `footstep` (leg id and position) and `gait` changes, returned by `update`.
+
+`applyPose` in `@spawnforge/three` copies the pose into the Three.js bones each frame. The
+sandbox runs creatures on `testCourse` terrain; the render page's filmstrip mode walks one on
+flat ground, draws a gait cycle and reports cycle time, stride, duty per leg and foot slide.
+
 ## Runtime conventions
 
 - World units follow glTF: metres, Y up, creatures face +Z.

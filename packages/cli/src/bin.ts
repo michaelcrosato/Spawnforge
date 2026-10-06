@@ -17,8 +17,12 @@ Commands:
   list-modules [--kind <kind>]          Catalogue of parts, patterns, gaits, actions and presets
   describe-module <id> [--kind <kind>]  One module's parameters, ranges, defaults and an example
   validate <file|->  [--expanded]       Errors and warnings with fixes, plus the minimal blueprint
-  render <file|-> [--out f.png] [--labels] [--size px] [--views 3/4,side,front,top]
+  render <file|-> [--out f.png] [--labels] [--size px] [--quality low|medium|high]
+         [--views 3/4,side,head,front,top,rear]
                                         PNG contact sheet of the creature (headless Chromium)
+  render <file|-> --filmstrip [--gait id] [--speed m/s] [--frames n] [--view side|3/4|top]
+                                        One gait cycle as frames with a footfall diagram;
+                                        prints cycle, stride, duty and foot slide
   schema                                The blueprint JSON Schema
 
 Options:
@@ -55,6 +59,11 @@ const { positionals, values } = parseArgs({
     size: { type: 'string' },
     views: { type: 'string' },
     quality: { type: 'string' },
+    filmstrip: { type: 'boolean' },
+    gait: { type: 'string' },
+    speed: { type: 'string' },
+    frames: { type: 'string' },
+    view: { type: 'string' },
   },
 });
 const [command, arg] = positionals;
@@ -63,9 +72,18 @@ const VIEW_NAMES: Record<string, View> = {
   '3/4': 'three-quarter',
   'three-quarter': 'three-quarter',
   side: 'side',
+  head: 'head',
   front: 'front',
   top: 'top',
+  rear: 'rear',
 };
+
+function number(name: string, value: string | undefined): number | undefined {
+  if (value === undefined) return undefined;
+  const n = Number(value);
+  if (!Number.isFinite(n)) throw new CommandError(`--${name} must be a number, not "${value}"`);
+  return n;
+}
 
 async function render(): Promise<{ output: unknown; exitCode?: number }> {
   if (!arg) throw new CommandError('render needs a file path, or - for stdin');
@@ -74,10 +92,31 @@ async function render(): Promise<{ output: unknown; exitCode?: number }> {
   if (!checked.ok) return { output: { ok: false, errors: checked.errors }, exitCode: 1 };
   const views = values.views?.split(',').map((v) => {
     const view = VIEW_NAMES[v.trim()];
-    if (!view) throw new CommandError(`unknown view "${v}"`, 'use 3/4, side, front or top');
+    if (!view)
+      throw new CommandError(`unknown view "${v}"`, 'use 3/4, side, head, front, top or rear');
     return view;
   });
-  const out = values.out ?? (arg === '-' ? 'creature.png' : `${arg.replace(/\.json$/i, '')}.png`);
+  const filmView = values.view === undefined ? undefined : VIEW_NAMES[values.view];
+  if (
+    values.view !== undefined &&
+    filmView !== 'side' &&
+    filmView !== 'three-quarter' &&
+    filmView !== 'top'
+  )
+    throw new CommandError(`unknown filmstrip view "${values.view}"`, 'use side, 3/4 or top');
+  const speed = number('speed', values.speed);
+  const frames = number('frames', values.frames);
+  const filmstrip = values.filmstrip
+    ? {
+        ...(values.gait ? { gait: values.gait } : {}),
+        ...(speed !== undefined ? { speed } : {}),
+        ...(frames !== undefined ? { frames } : {}),
+        ...(filmView ? { view: filmView as 'side' | 'three-quarter' | 'top' } : {}),
+      }
+    : undefined;
+  const suffix = filmstrip ? '.walk.png' : '.png';
+  const out =
+    values.out ?? (arg === '-' ? `creature${suffix}` : `${arg.replace(/\.json$/i, '')}${suffix}`);
   const { renderBlueprint } = await import('@spawnforge/render');
   const result = await renderBlueprint({
     blueprint,
@@ -85,6 +124,7 @@ async function render(): Promise<{ output: unknown; exitCode?: number }> {
     ...(values.size ? { size: Number(values.size) } : {}),
     ...(views ? { views } : {}),
     ...(values.quality ? { quality: values.quality as 'low' | 'medium' | 'high' } : {}),
+    ...(filmstrip ? { filmstrip } : {}),
   });
   writeFileSync(out, result.png);
   return {

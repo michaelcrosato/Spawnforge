@@ -161,7 +161,7 @@ export function createServer(): McpServer {
     {
       title: 'Render a blueprint',
       description:
-        'Renders the creature as a PNG contact sheet: three-quarter, side, front and top views with a scale bar. With labels, every part and limb is tagged by id, so you can check placement. Use it to see whether a blueprint looks like what you meant.',
+        'Renders the creature as a PNG contact sheet: three-quarter, side, head close-up, front, top and rear views with scale bars. With labels, every part and limb is tagged by id, so you can check placement. With filmstrip, it renders one gait cycle as frames plus a footfall diagram and returns the gait, speed, cycle time, stride, duty per leg and foot slide, so you can check how the creature moves. Use it to see whether a blueprint looks and moves like what you meant.',
       inputSchema: z.object({
         blueprint: z
           .record(z.string(), z.unknown())
@@ -180,9 +180,26 @@ export function createServer(): McpServer {
           .optional()
           .describe('Pixels per panel (default 512)'),
         views: z
-          .array(z.enum(['three-quarter', 'side', 'front', 'top']))
+          .array(z.enum(['three-quarter', 'side', 'head', 'front', 'top', 'rear']))
           .optional()
-          .describe('Panels to draw'),
+          .describe('Panels to draw (default all six)'),
+        filmstrip: z
+          .object({
+            gait: z
+              .string()
+              .optional()
+              .describe('Gait id to show, e.g. walk or trot (default: chosen by speed)'),
+            speed: z
+              .number()
+              .min(0.01)
+              .max(50)
+              .optional()
+              .describe('Metres per second (default: typical for the gait)'),
+            frames: z.number().int().min(2).max(16).optional().describe('Frames (default 8)'),
+            view: z.enum(['side', 'three-quarter', 'top']).optional().describe('Camera'),
+          })
+          .optional()
+          .describe('Render one gait cycle instead of the contact sheet'),
       }),
       annotations: { readOnlyHint: true },
     },
@@ -204,6 +221,7 @@ export function createServer(): McpServer {
           labels: input.labels ?? false,
           ...(input.size ? { size: input.size } : {}),
           ...(input.views ? { views: input.views } : {}),
+          ...(input.filmstrip ? { filmstrip: stripUndefined(input.filmstrip) } : {}),
         });
         return {
           content: [
@@ -220,4 +238,9 @@ export function createServer(): McpServer {
   );
 
   return server;
+}
+
+/** Drops undefined fields (the render protocol uses exact optional properties). */
+function stripUndefined<T extends object>(value: T): T {
+  return Object.fromEntries(Object.entries(value).filter(([, v]) => v !== undefined)) as T;
 }

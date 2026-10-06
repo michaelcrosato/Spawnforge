@@ -1,0 +1,99 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Rhino Beast",
+  "seed": 1901,
+  "extends": "quadruped",
+  "scale": 1.8,
+  "body": {
+    "torso": { "radius": [0.23, 0.29, 0.27, 0.21], "arch": 0.05 },
+    "neck": { "length": 0.2, "radius": [0.18, 0.26], "pitch": 12 },
+    "head": { "shape": "wedge", "length": 0.5, "radius": 0.165, "pitch": -25 },
+    "tail": { "length": 0.35, "radius": [0.06, 0.015], "pitch": -30, "curl": 0 }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "length": 0.58,
+      "radius": [0.14, 0.09],
+      "foot": {
+        "type": "foot.claw",
+        "toes": 3,
+        "toeLength": 0.07,
+        "clawLength": 0.015,
+        "spread": 60,
+        "clawColor": "#3a3a38"
+      }
+    },
+    {
+      "id": "hindleg",
+      "length": 0.6,
+      "radius": [0.15, 0.09],
+      "foot": {
+        "type": "foot.claw",
+        "toes": 3,
+        "toeLength": 0.07,
+        "clawLength": 0.015,
+        "spread": 60,
+        "clawColor": "#3a3a38"
+      }
+    }
+  ],
+  "parts": [
+    {
+      "id": "nosehorn",
+      "type": "horn.curved",
+      "attach": { "on": "head", "at": 0.12, "angle": 0 },
+      "params": {
+        "length": 0.3,
+        "width": 0.065,
+        "curve": 35,
+        "color": "#cfc6b0",
+        "tipColor": "#5a5248"
+      }
+    },
+    {
+      "id": "browhorn",
+      "type": "horn.curved",
+      "attach": { "on": "head", "at": 0.42, "angle": 0 },
+      "params": {
+        "length": 0.14,
+        "width": 0.045,
+        "curve": 25,
+        "color": "#cfc6b0",
+        "tipColor": "#5a5248"
+      }
+    },
+    {
+      "id": "ears",
+      "type": "horn.curved",
+      "attach": { "on": "head", "at": 0.88, "angle": 50 },
+      "params": {
+        "length": 0.1,
+        "width": 0.05,
+        "curve": -15,
+        "color": "base",
+        "tipColor": "accent"
+      }
+    },
+    {
+      "id": "eyes",
+      "attach": { "on": "head", "at": 0.45, "angle": 70 },
+      "params": { "size": 0.014, "irisColor": "#3a2a1a" }
+    }
+  ],
+  "skin": {
+    "palette": { "base": "#7d7d7a", "belly": "#a5a59f", "accent": "#4a4a47" },
+    "material": "scales",
+    "layers": [
+      { "type": "countershade", "strength": 0.5 },
+      { "type": "mottle", "scale": 0.2, "coverage": 0.35, "contrast": 0.3 },
+      { "type": "scales", "size": 0.07, "bump": 0.6 },
+      { "type": "grime", "amount": 0.3 }
+    ]
+  },
+  "motion": {
+    "temperament": "lumbering",
+    "gaits": ["walk", "trot"],
+    "actions": ["bite", "roar", "look", "idle"]
+  }
+}
