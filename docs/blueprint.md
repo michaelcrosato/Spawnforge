@@ -98,9 +98,14 @@ heads apart (`validate` warns `heads_overlap` with the spread that clears it). T
 the main one and keeps the plain names (`head`, `jaw`); the others are `head.L1`, `head.R1`, …
 from it outward (with an even count the extra one is on the right: four heads are `head.L1`,
 `head`, `head.R1`, `head.R2`), so `"on": "head.R1"` puts a part on that head only, while `"on": "head"` gives
-every head a copy. `"tail": { "count": 2 }` gives two tails (`spread`, 20° per extra tail);
-`"forkAt": 0.7` makes one tail fork 70% of the way along instead of the tails leaving the torso
-separately. _(Built in milestone 9.1.)_
+every head a copy (`horns.L1.L` is the left horn on `head.L1`). Each head has its own mouth,
+eyes and teeth, looks about on its own, and the one nearest a target bites (its events name it
+in `head`); `analyze` warns `head_intersection` when heads or necks hit each other in motion,
+with the spread or length that clears it. Big heads need room: three wolf-sized heads want about
+`spread` 90 and `length` 0.45. `"tail": { "count": 2 }` gives two tails (`spread`, 20° per extra
+tail), each swinging on its own; `"forkAt": 0.7` makes one tail fork 70% of the way along
+instead of the tails leaving the torso separately, and a part that sits wholly on the trunk
+before the fork is placed once.
 
 **Neck shape, muscle and head details.** `neck.curve` (degrees) bends the neck into an S: forward
 at the base and back up below the head, like a swan or a rearing cobra (a C on necks of fewer than
@@ -568,7 +573,7 @@ name the section to change.
 ## Not drawn yet
 
 Everything format 0.1 had is drawn today: legs and arms, `foot.claw`, horns, ears, eyes, teeth,
-mouths with lips, gums and tongues, eyelids, brows, beaks, spike rows, every material, fur, every pattern layer, walking,
+mouths with lips, gums and tongues, eyelids, brows, beaks, spike rows, every material, fur, every pattern layer, several heads and tails, walking,
 trotting, the tripod gait, slithering, and the bite, roar, look and idle actions. Everything in
 this table validates but is **not drawn yet**: compile skips it, and `validate` lists it under
 `notBuilt`. Each row goes when its milestone lands. Until then, approximate with what exists if
@@ -577,7 +582,6 @@ neck for a cobra's hood (see the recipes).
 
 | Not drawn yet | Milestone that draws it |
 | --- | --- |
-| Several heads and tails (`count`, `spread`, `forkAt`) | 9.1 |
 | Wings, fins, membranes, `fin.dorsal`, `fin.tail` | 9.3 |
 | Tentacles, `antenna`, `mandible`, `hand.pincer`, `pinch`, `lash` | 9.4 |
 | `shell`, `armor.bands`, `quills`, `plates.row`, `frill`, `hood`, `sail`, `display` | 9.5 |
@@ -596,13 +600,13 @@ milestones land.
 | Dragon | `quadruped` plus `{ "id": "wing", "role": "wing", "length": 1.5 }`; horns with `aim` "back"; `"material": "scales"` |
 | Wyvern | `wyvern` (its wings are its forelimbs); a stinger as in the recipe above |
 | Bat | `wyvern` with bat proportions: `"neck": { "length": 0.15 }`, `"tail": { "length": 0.3 }`, short legs (`length` 0.4) set back (`at` 0.85), `"head": { "shape": "snout" }`; wings `length` 2 with `"membrane": { "type": "membrane.bat", "fingers": 5 }`, big `ear.pointed`, and fur with `"region": ["head", "torso", "limbs"]` |
-| Hydra or cerberus | `quadruped` with `"neck": { "count": 5, "length": 0.9 }` (or 3 with `length` 0.4 for a cerberus); parts on `head` appear on every head |
+| Hydra or cerberus | `quadruped` with `"neck": { "count": 5, "length": 0.75 }` and a small head (examples/hydra.json), or 3 with `length` 0.45 and `spread` 90 for a cerberus (examples/cerberus.json); parts on `head` appear on every head |
 | Kraken | No `extends`; a round torso, `"tail": { "length": 0 }`, four `tentacle` entries with `side` "both" at `at` 0.9 and `angle`s 60, 100, 130 and 160 (they trail like a squid's; on the `head` they ring the mouth) |
 | Shark or fish | `fish`, whose preset already has the fins: override its parts `dorsal` (`fin.dorsal`) and `tailfin` (`fin.tail`, `"shape": "forked"`) and its limb `pectoral` by id, and add `teeth.row`; `scale` 0.9 for a 1.8 m reef shark |
 | Spider or scorpion | `octopod`; `mandible` (`"shape": "fang"`) for a spider; for a scorpion arms with `"foot": "hand.pincer"` and a tail with `curl` 200 |
 | Centaur | `centaur`; give its legs `foreleg` and `hindleg` `"foot": "foot.hoof"`, its `arm`s `"foot": "hand.grasp"`, and the head horns |
 | Turtle | `quadruped` with `{ "id": "shell", "type": "shell" }`, its `foreleg` and `hindleg` removed (`"remove": true`) and fin limbs with `"membrane": null` (flippers) instead; fins and no legs make it a swimmer |
-| Two-tailed fox | `quadruped` with `"tail": { "count": 2 }`, `"foot": "foot.paw"` on both leg pairs and `"skin": { "fur": {} }` |
+| Two-tailed fox | `quadruped` with `"tail": { "count": 2, "spread": 22, "pitch": 12, "curl": 35 }` (raised, like a kitsune's), `"foot": "foot.paw"` on both leg pairs and `"skin": { "fur": {} }` (examples/two-tailed-fox.json) |
 | Griffin | `quadruped`; `beak`, `{ "role": "wing", "membrane": "membrane.feather" }`, `foot.talon` on the forelegs and `foot.paw` on the hindlegs, fur with `"region": ["torso", "limbs", "tail"]` |
 | Moth | `hexapod`; two wing pairs with their own ids, `forewing` at `at` 0.15 and `hindwing` at 0.3, each with `membrane.insect` (`"shape": "broad"`); `antenna` with `"shape": "feather"`, fur on the torso |
 | Slug or snail | `serpent` with a short tail and `"material": "skin"`; eyes on stalks: a tentacle pair on the `head` (`length` 0.3, 4 segments) with `eye.basic` on it at `at` 1; `slime` |

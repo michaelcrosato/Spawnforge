@@ -60,7 +60,9 @@ and eyes sized to the head; `beak`; `render --jaw --blink`, `docs/design/8.3-hea
 layers including glow, and a CPU–GPU parity test of the pattern kit,
 `docs/design/8.4-materials.md`). Gate 8 passed: suite A 20/20 valid and matched, suite B
 re-scored 20/20, the new look preferred in 20 of 20 quality pairs, budgets met
-(`eval/runs/2026-10-06-gate8/`).
+(`eval/runs/2026-10-06-gate8/`). Then 9.1 (several heads fanned across the chest, each with its
+own mouth, eyes and parts, the nearest one biting; tails apart or forked, each a spring;
+`head_intersection`, `docs/design/9.1-heads-tails.md`).
 
 ## Repo map
 

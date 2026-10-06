@@ -65,7 +65,11 @@ flowchart LR
 each a pure function of the creature spec, seed and quality:
 
 1. **Skeleton** (`skeleton.ts`). Torso, neck, head, jaw and tail become bone chains; standing
-   height and body pitch come from where the legs need their hips. Limbs are posed by the
+   height and body pitch come from where the legs need their hips. Several heads are one builder
+   run per instance, each turned about the vertical and shifted across the chest after it is
+   built, so the main head's bones never change; tails do the same at the rear, or fork from one
+   trunk (`forkAt`). Instance bones carry their suffix after the section (`neck.L1.0`, `head.L1`,
+   `jaw.L1`, `tail.R1.3`), and take their main counterpart's body coordinates. Limbs are posed by the
    coupled-joint IK (`ik.ts`) so the feet rest on the ground, at the height each foot module (or
    the leg's stance) asks for, then foot parts add toe chains. Knee, hock, elbow and jaw joints
    get helper bones.
@@ -155,13 +159,14 @@ same code runs live in the browser, checks motion in Node and renders filmstrips
   they set. Durations scale by √(hip height / 1 m). The core never names an action: it only
   applies goals, and it needs the module registry (`new MotionController(compiled,
   { registry })`) to run their code.
-- **Layering per step:** goals; body (with crouch, rear and shift); head (stabilised, glances,
+- **Layering per step:** goals; body (with crouch, rear and shift); heads (stabilised, glances,
   look target with the neck taking a share, raise, shake, lunge by cyclic coordinate descent on
-  the neck); jaw; leg IK to the planted feet (so actions never make feet slide); arm swing; tail
+  the neck; with several heads, the others replay the main head's glances after a seeded delay,
+  and only the head nearest an action's target lunges); jaws; leg IK to the planted feet (so actions never make feet slide); arm swing; tail
   springs pulling toward the rest shape (plus swish); helper bones.
 - **Events**, returned by `update`: `footstep` (leg id and position), `gait` changes,
   `action-start` and `action-end`, and the moments actions declare (`bite-contact`,
-  `roar-peak`) with the head's position.
+  `roar-peak`) with the head's position (and, with several heads, which one in `head`).
 - **Jaws and blinks** are bone turns (`applyFace`, shared with the render page's `--jaw` and
   `--blink`): every jaw about its hinge, every blink-driven chain toward its `closed` pose (turns
   about each bone's local X). **Breathing** travels with the pose as a number that `applyPose`

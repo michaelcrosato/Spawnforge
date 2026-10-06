@@ -963,7 +963,11 @@ function bodyCoordinates(
     (a, s) => a + (bones[s.bone] as BoneDef).head.distanceTo((bones[s.bone] as BoneDef).tail),
     0,
   );
-  const headIdx = bones.findIndex((b) => b.section === 'head');
+  // The main head (plain `head` at every count; docs/design/9.1-heads-tails.md).
+  const headIdx = Math.max(
+    0,
+    bones.findIndex((b) => b.name === 'head'),
+  );
   const headBone = bones[headIdx] as BoneDef;
   const headDir = new Vector3().subVectors(headBone.tail, headBone.head).normalize();
   const tip = headBone.tail.clone().addScaledVector(headDir, headBone.r1);
@@ -984,6 +988,15 @@ function bodyCoordinates(
       axis[i * 2] = tip.distanceTo(b.head) / total;
       axis[i * 2 + 1] = tip.distanceTo(b.tail) / total;
     }
+  });
+  // Extra heads and tails (`head.L1`, `neck.L1.2`, `tail.R1.5`) take their main counterpart's
+  // values, bone for bone, so patterns lie the same way on every one.
+  const byName = new Map(bones.map((b, i) => [b.name, i]));
+  bones.forEach((b, i) => {
+    const main = byName.get(b.name.replace(/^(neck|head|jaw|tail)\.[LR]\d+/, '$1'));
+    if (main === undefined || main === i) return;
+    axis[i * 2] = axis[main * 2] as number;
+    axis[i * 2 + 1] = axis[main * 2 + 1] as number;
   });
   // Limbs, toes and others take the axis value where they attach.
   bones.forEach((b, i) => {
@@ -1107,7 +1120,8 @@ function belowGround(
     const y = Math.min(b.head.y - b.r0, b.tail.y - b.r1);
     if (y < low) {
       low = y;
-      owner = b.owner;
+      // Extra heads and tails (`head.L1`) answer to their section's fields.
+      owner = b.owner.replace(/^(head|jaw|neck|tail)\.[LR]\d+$/, '$1');
     }
   }
   const section = ['head', 'jaw', 'neck', 'torso', 'tail'].includes(owner);

@@ -80,8 +80,9 @@ interface Rig {
   the same. `wings`, `fins` and `tentacles` are empty until phase 9.
 - Bone names and random streams stay keyed by id. The main head keeps the names `neck.0`,
   `head`, `jaw` at every count, so its bones, its seeded glances and the goldens never move.
-  Other heads' bones take their instance as a prefix (`head.L1/neck.0`, `head.L1`,
-  `head.L1/jaw`); instance tokens start with a letter, so they never read as a bone index.
+  Other heads' bones carry their instance after the section (`neck.L1.0`, `head.L1`,
+  `jaw.L1`; 9.1 changed this from a prefix); instance tokens start with a letter, so they never
+  read as a bone index.
 - Paths (`b.path`) get one entry per instance (`head.L1`, `jaw.R1`, `tail.L2`) and keep the plain
   name for the main one. Expanding parts into copies loops over every instance of the section a
   part names; limbs use the main instance unless they name another. A copy's id is the part's id
@@ -166,6 +167,13 @@ head whose bones it hangs from; an action aimed at a target uses the nearest hea
 head lunges, while every head turns to look; `analyze` adds `reach.heads` (main first) when
 there are several, and stats modules get `heads`. Glances still come from one stream for all
 heads; 9.1 keys them per head when heads differ.
+
+**Built in 9.1** ([the design](9.1-heads-tails.md)): several heads and tails fill these lists.
+Extra heads replay the main head's glances after a delay from `glance:<head id>`, rather than
+glancing on their own, so their necks do not cross; every neck bends into turns. Each tail is a
+spring chain; a forked tail's main chain runs trunk then main branch, and the other branches
+hang from the last trunk bone. `analyze` warns `head_intersection`, and action events name their
+`head`.
 
 **Built in 8.3:** eyelids are the first driven chains with poses. Each eye that asks for lids
 gets two bones (`eye.<id>.upper`, `.lower`, section `lid`), parented to what the eye hangs from,

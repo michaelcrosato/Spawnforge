@@ -44,6 +44,23 @@ describe('runtime', () => {
     bestiary.dispose();
   }, 30_000);
 
+  it('gives every head its sockets, and says which head bit', async () => {
+    const bestiary = await createBestiary({ packs: [basicPack] });
+    const cerberus = await bestiary.spawn(example('cerberus'), { quality: 'low' });
+    for (let i = 0; i < 30; i++) bestiary.update(1 / 60);
+    const left = cerberus.socket('mouth.L1');
+    const right = cerberus.socket('mouth.R1');
+    expect(left.distanceTo(cerberus.socket('head.L1'))).toBeLessThan(0.5);
+    expect(left.x).toBeGreaterThan(cerberus.socket('mouth').x);
+    expect(right.x).toBeLessThan(cerberus.socket('mouth').x);
+    const heads: (string | undefined)[] = [];
+    cerberus.on('bite-contact', (e) => heads.push(e.head));
+    cerberus.act('bite', { target: { x: left.x + 0.3, y: left.y, z: left.z + 0.3 } });
+    for (let i = 0; i < 180; i++) bestiary.update(1 / 60);
+    expect(heads).toEqual(['head.L1']);
+    bestiary.dispose();
+  }, 30_000);
+
   it('caches compiled creatures and lets the seed vary individuals', async () => {
     const bestiary = await createBestiary({ packs: [basicPack] });
     const blueprint = example('reed-viper');

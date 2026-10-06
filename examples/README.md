@@ -16,3 +16,6 @@ Regenerate the renders with `pnpm render:examples` after changing a blueprint or
 | [tusk-boar.json](tusk-boar.json) | Quadruped | Cloven hooves (unguligrade), tusks from the jaw, a bristle row, grime |
 | [rust-raptor.json](rust-raptor.json) | Biped | Taloned feet with three toes forward and one back, a long tail, striped scales |
 | [terror-bird.json](terror-bird.json) | Biped | A hooked beak in two halves, a heavy brow and squinting lidded eyes, an S-curved neck, talons |
+| [hydra.json](hydra.json) | Quadruped | Five heads on long S-curved necks, each with its own mouth, slit-pupilled eyes and teeth; a spine crest; scales |
+| [cerberus.json](cerberus.json) | Quadruped | Three wolf-sized heads fanned wide, ears and long fangs copied onto each, fur |
+| [two-tailed-fox.json](two-tailed-fox.json) | Quadruped | Two raised tails, each its own spring; paws, fur and a pale belly |
