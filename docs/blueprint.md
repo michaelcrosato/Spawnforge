@@ -35,6 +35,12 @@ The workflow is always the same:
 3. Run `validate` (the MCP tool, or `spawnforge validate file.json`). Fix every error using its
    `fix`, then validate again until `ok` is true. Read the warnings too.
 
+Format 0.2 already holds everything plan 2 adds (wings, fins, tentacles, several heads and tails,
+shells, quills, fur, swimming and flying, …), but not all of it is built yet. A blueprint may use
+all of it: it validates, and `validate` lists what is not drawn yet under `notBuilt`, with the
+milestone that builds it. **Keep those features**; they appear once built. [What is built so
+far](#what-is-built-so-far) has the list.
+
 ## Units and directions
 
 - **`scale` is the torso length in metres.** Every other length and radius in the blueprint is a
@@ -77,6 +83,22 @@ spread evenly along it; negative `curl` bends down. `curlStart` keeps the first 
 torso lengths, so a short body needs a long tail); a tail curled at the tip is
 `"curl": 160, "curlStart": 0.6`.
 
+**Several heads and tails.** `"neck": { "count": 3 }` gives three necks, each with a head shaped
+like `body.head` (same jaw, same parts): a hydra or a cerberus. They fan out over `spread` degrees
+(left out, 25° per extra neck) from roots across the chest; give them `length` enough to keep the
+heads apart (`validate` warns `heads_overlap` with the spread that clears it). The middle head is
+the main one and keeps the plain names (`head`, `jaw`); the others are `head.L1`, `head.R1`, …
+from it outward, so `"on": "head.R1"` puts a part on that head only, while `"on": "head"` gives
+every head a copy. `"tail": { "count": 2 }` gives two tails (`spread`, 20° per extra tail);
+`"forkAt": 0.7` makes one tail fork 70% of the way along instead of the tails leaving the torso
+separately. _(Built in milestone 9.1.)_
+
+**Neck shape, muscle and head details.** `neck.curve` (degrees) bends the neck into an S: forward
+at the base and back up below the head, like a swan. `body.muscle` (0 to 1, default 0.5) sets how
+muscled the body is, and `limbs[].muscle` overrides it per limb (_8.1_). `head.lips` (0–1),
+`head.tongue` (`none`, `flat` or `forked`) and `head.brow` (0–1) shape the mouth and the brow
+(_8.3_).
+
 **Upright and horizontal bodies.** Legs attach along the torso with `at`, so when you change the
 torso's `pitch`, move the legs with it. On an upright biped (pitch 70–85) legs sit at the back end
 (`at` 0.9). On a horizontal biped such as a raptor (pitch 5–20, with a tail as counterweight), put
@@ -114,7 +136,9 @@ mirroring never change what a path points at.
 
 ## Presets and editing them
 
-`extends` starts from a body plan: `biped`, `quadruped`, `hexapod` or `serpent`.
+`extends` starts from a body plan: `biped`, `quadruped`, `hexapod`, `serpent`, `octopod` (eight
+legs: spiders, scorpions), `centaur` (a horse-like body with an upright, torso-like neck carrying
+arms), `wyvern` (two legs, wings for forelimbs) or `fish` (fins, lives in water).
 `describe_module` (or the catalogue) shows each preset with the ids you can edit. The blueprint is
 merged on top of the preset:
 
@@ -123,6 +147,9 @@ merged on top of the preset:
   fields it gives; a new id adds an item; `{ "id": "eyes", "remove": true }` deletes an inherited
   one.
 - Every other list (profiles, `layers`, `gaits`, `actions`) replaces the inherited list.
+- An item or object that changes `type` (a foot, a membrane, a part) or a limb that changes `role`
+  replaces the inherited one instead of merging into it, so `{ "id": "foreleg", "foot": "foot.hoof" }`
+  does not inherit the claw's `toes`, and `{ "id": "arm", "role": "wing" }` is a fresh wing.
 
 So to make a quadruped's back legs longer, write only
 `"limbs": [{ "id": "hindleg", "length": 0.8 }]`.
@@ -132,21 +159,40 @@ limbs.
 
 ## Limbs
 
-Limbs are legs (`"role": "leg"`, they carry the body) or arms (`"role": "arm"`, they are free for
-actions). Each has a total `length`, 2 to 4 `segments` (bones from hip or shoulder to ankle), a
-`radius` profile from root to tip, and a `foot`.
+Every limb has a `role`, which decides how it moves and which fields it takes; each role has its
+own defaults, so `{ "id": "wing", "role": "wing" }` is already a usable wing. Every limb has a total
+`length`, `segments` (bones from root to tip), a `radius` profile from root to tip and an `attach`.
+
+| Role | What it does | Its own fields | Defaults |
+| --- | --- | --- | --- |
+| `leg` (the default) | Carries the body; legs come in mirrored pairs, up to 6 | `splay`, `lift`, `stance`, `foot` | `at` 0.5, `angle` 100, `length` 0.5, 3 segments, `foot.claw` |
+| `arm` | Hangs free for grabbing and striking | `splay`, `lift`, `foot` | as a leg |
+| `wing` | Folds at rest, beats in the air (_9.3_) | `membrane`, `foot` (the wrist claw) | `at` 0.2, `angle` 40, `length` 1.2, `membrane.bat` |
+| `fin` | Steers and beats in water (_9.3_) | `membrane` | `at` 0.25, `angle` 115, `length` 0.35, 2 segments, `membrane.fin` |
+| `tentacle` | A long spring chain that curls and reaches (_9.4_) | `curl`, `curlStart`, up to 16 `segments` | `at` 0.9, `angle` 150, `length` 1.5, 10 segments |
 
 - **Legs come in mirrored pairs** (`side: "both"`), up to 6 pairs. Legs are ordered from the back;
-  where they attach (`at`) decides the order.
-- **`splay`** swings a limb out from under the body: 0 for upright walkers (dogs, horses), around
-  50–60 for sprawlers (insects, lizards).
-- **`angle`** on a limb's `attach` is where around the torso it starts; the default 100 is just
-  below the side.
-- **Feet**: `"foot": { "type": "foot.claw", "toes": 3 }` puts toes with claws on the tip; its
-  parameters sit beside `type`. `foot.claw` also serves as a hand on arms. `"foot": null` ends the
-  limb in a stump.
+  where they attach (`at`) decides the order. Only legs carry the body.
+- **`splay`** swings a leg or arm out from under the body: 0 for upright walkers (dogs, horses),
+  around 50–60 for sprawlers (insects, lizards).
+- **`angle`** on a limb's `attach` is where around the section it starts; 100 is just below the
+  side. Limbs attach to the torso, a neck or the tail; tentacles also to the head.
+- **Feet and hands** go in `foot`, whatever the limb: `"foot": { "type": "foot.claw", "toes": 3 }`
+  puts toes with claws on the tip (parameters sit beside `type`), and the bare id works too:
+  `"foot": "foot.hoof"`. Feet: `foot.claw`, `foot.hoof` (single or cloven), `foot.paw`,
+  `foot.talon` (bird-like), `foot.pad` (column feet); hands: `hand.grasp`, `hand.pincer`.
+  `"foot": null` ends the limb in a stump. _(The new feet are built in 8.2, pincers in 9.4.)_
+- **`stance`** (legs): `plantigrade` (on the whole sole, like a bear), `digitigrade` (on the toes,
+  like a dog) or `unguligrade` (on hoof tips, like a horse). Left out, the foot suggests one (_8.2_).
+- **Wings and fins** carry a `membrane`, set like a foot: `membrane.bat` (leathery, between finger
+  bones), `membrane.insect` (thin veined plates), `membrane.feather` (flight feathers),
+  `membrane.case` (a beetle's hard wing case, which covers the wing behind it) and `membrane.fin`
+  (rays and skin). A flipper is a fin with `"membrane": null`. A bat membrane's trailing edge runs
+  to the nearest leg behind the wing, or to the body (`trailing`).
+- **Tentacles** take `curl` (degrees of rest curl) and `curlStart` (the straight share before it).
+  For eight tentacles write four entries with `side: "both"` at different `angle`s.
 - Typical lengths: a dog-like quadruped's legs are 0.5–0.6 torso lengths, an upright biped's legs
-  1–1.6, insect legs 0.6–0.8 with `splay` 55.
+  1–1.6, insect legs 0.6–0.8 with `splay` 55, a dragon's wings 1.2–1.8.
 
 ## Parts
 
@@ -155,10 +201,17 @@ part sits depends on its slot (shown in `describe_module`):
 
 | Slot | Placement | Parts |
 | --- | --- | --- |
-| surface | `at` and `angle` on `on` | `horn.curved`, `ear.pointed`, `eye.basic` |
-| row | copies from `from` to `to` | `spikes.row` |
-| mouth | along the mouth line; needs `head.jaw` | `teeth.row` |
-| foot | a limb's `foot` field, not `parts` | `foot.claw` |
+| surface | `at` and `angle` on `on` | `horn.curved`, `ear.pointed`, `eye.basic`, `antenna`, `fin.dorsal`, `fin.tail`, `frill`, `hood` |
+| row | copies from `from` to `to` | `spikes.row`, `plates.row`, `sail` |
+| mouth | along the mouth line; needs `head.jaw` | `teeth.row`, `beak`, `mandible` |
+| area | over an `area` of `on` (`back`, `belly`, `sides` or `all`), optionally `from` and `to` | `shell`, `armor.bands`, `quills` |
+| foot | a limb's `foot` field, not `parts` | `foot.claw`, `foot.hoof`, `foot.paw`, `foot.talon`, `foot.pad`, `hand.grasp`, `hand.pincer` |
+| membrane | a wing's or fin's `membrane` field, not `parts` | `membrane.bat`, `membrane.insect`, `membrane.feather`, `membrane.case`, `membrane.fin` |
+
+Fins come two ways: paired fins (pectoral fins, flippers) are limbs with `"role": "fin"`, and
+fins on the midline are parts: `fin.dorsal` stands at one point on the back, `fin.tail` sits on
+the tail tip. Area parts carry their own placement, so `{ "id": "shell", "type": "shell" }` alone
+covers the back of the torso; `area` is only for them (skin layers use `region`).
 
 Parameters go inside `params`: `{ "id": "horns", "type": "horn.curved", "params": { "length": 0.3 } }`.
 Each part has a default anchor, so `{ "id": "teeth", "type": "teeth.row" }` is complete.
@@ -204,10 +257,17 @@ length on the coil, so they need a `length` of 0.5–0.75 to read from a distanc
   the rest, with a belly clearly lighter than the base and an accent clearly lighter or darker so
   patterns read. It fills in only the colours the blueprint leaves out (the preset's give way), so
   `{ "harmony": "complementary", "base": "#305080" }` keeps that blue and finds the rest.
-- **`material`** is the surface under the patterns: `skin`, `scales` or `chitin`.
+- **`material`** is the surface under the patterns: `skin`, `scales`, `chitin` or `hide` (thick
+  and creased, _8.4_).
+- **`fur`** grows a coat over the material: `"fur": { "length": 0.03, "density": 0.8, "region":
+  ["torso", "limbs", "tail"] }` (length in torso lengths; `region` one layer region or a list,
+  default `all`), so a griffin can have a furry body and a bare head. `"fur": {}` is a full coat;
+  `null` removes an inherited one (_8.4_).
 - **`layers`** is the pattern stack, bottom first: `countershade`, `stripes`, `spots`, `mottle`,
-  `scales` and `grime`. A layer's parameters sit beside its `type`. Every layer also takes
-  **`region`** (`all`, `back`, `belly`, `head`, `torso`, `limbs` or `tail`) and **`strength`**
+  `scales` and `grime`, and from 8.4 `scars`, `bioluminescence`, `slime`, `warts`, `veins`,
+  `rosettes` and `bands`. A layer's parameters sit beside its `type`. Every layer also takes
+  **`region`** (`all`, `back`, `belly`, `head`, `torso`, `limbs`, `tail` or `wings`, which
+  covers wing and fin membranes) and **`strength`**
   (0 to 1). A region only masks where the layer shows; the pattern itself is laid out over the
   whole body, so `stripes.count` counts stripes from snout to tail tip whatever the region.
 - The base colour is `palette.base`. `countershade` blends toward its `color` (the belly colour by
@@ -236,9 +296,18 @@ when the creature moves.
 - **Speed is chosen at run time** by whatever moves the creature (a game, or the sandbox).
   Stride length and timing scale with leg length and speed (bigger creatures step more slowly),
   and four-legged creatures switch from walk to trot as they speed up.
-- **`gaits`** are worked out from the legs, so you rarely need to list them. Each suits a leg
-  count: `walk` (any legs), `trot` (2 pairs), `tripod` (3 pairs), `slither` (no legs). Leave the
-  field out to use every gait that suits the body. A gait's parameters sit beside its `type`:
+- **`media`**: where the creature moves, as switches `land`, `water` and `air`. Left out, each
+  follows the body: `land` with legs (or no legs and no fins or tentacles), `water` for a body
+  with fins or tentacles and no legs, `air` with wings. Switches merge over that:
+  `"media": { "water": true }` adds swimming to a walker (_10.3_), `{ "air": false }` grounds a
+  winged one; flying needs a wing limb (_10.4_).
+- **`gaits`** are worked out from the body and its media, so you rarely need to list them. On
+  land each suits a leg count: `walk` (any legs), `trot` (2 pairs), `tripod` (3 pairs), `slither`
+  (no legs), and from 10.1 `run` (2 legs), `gallop` and `bound` (4 legs). In water (_10.3_):
+  `swim.undulate`, `swim.paddle`, `swim.flap`; in the air (_10.4_): `fly`, `glide`, `hover`
+  (insect wings). Leave the field out to use every gait that suits the body; a list replaces
+  the defaults only for the media its gaits serve, so `["walk"]` on a dragon still flies. A
+  gait's parameters sit beside its `type`:
   - `stride` multiplies the natural stride length, but a foot can only travel as far as its leg
     reaches, so on short or sprawled legs large values change nothing (the legs step faster
     instead). Long, nearly straight legs take the longest strides.
@@ -248,11 +317,13 @@ when the creature moves.
   - Each gait covers a range of speeds for the leg length (Froude number v²/(g·hip) up to 0.5
     for `walk`, 1.5 for `trot`), so `stride` does not raise the top speed. A biped's top speed is
     about √(0.5·9.8·hip), 2.1 m/s for a 0.9 m hip; `analyze` reports it as `speed.max`. Running
-    and galloping gaits are not in this version.
+    and galloping arrive with milestone 10.1.
   - `stepHeight` lifts the feet higher (a share of hip height); `slither` takes `amplitude` and
     `waves` for the shape of its S-curve.
 - **`actions`**: what the creature can do when asked. `bite` and `roar` need a jaw, `look`
-  needs a head, `idle` needs nothing. Leave the field out to get every action the body allows.
+  needs a head, `idle` needs nothing; later milestones add `jump` and `pounce` (_10.2_), `pinch`
+  (a pincer) and `lash` (a tail or tentacle, _9.4_), and `display` (opens frills and hoods, raises
+  quills, _9.5_). Leave the field out to get every action the body allows.
   `idle` runs by itself (breathing, blinks, glances, weight shifts, tail swish); the others run
   once when a game or the sandbox calls them, timed by size (a big creature bites slowly) and
   aimed at a target.
@@ -396,6 +467,10 @@ the minimal blueprint is there to show what actually differs from the preset. Ea
 - `fix`, e.g. `did you mean "length"?`, `move "length" into "params"` or, for a value that
   belongs to a neighbouring field, `"wide" is a crossSection, not a shape`
 
+`notBuilt`, when present, lists what the blueprint uses that the format has but the pipeline
+does not draw yet, each with the milestone that builds it. It is neither an error nor a warning:
+keep those features.
+
 Validation reports every problem it can find in one pass, so fix them all before validating
 again. A few mistakes (an unknown preset, a list where an object belongs) hide the checks that
 depend on them, so a second pass can find more. Unknown keys are always errors, never silently
@@ -405,13 +480,48 @@ Compiling and rendering can add warnings that only show once the body is built, 
 `below_ground` when a drooping tail or head sinks into the floor. They have the same fields and
 name the section to change.
 
-## Not in this version
+## What is built so far
 
-Wings, fins, tentacles, shells, armour plates, quills, antennae, frills, multiple heads and
-branching tails are planned but not available yet (see the scope table in [plan 2](plan-2.md)), and
-there are no dedicated mandible parts. Approximate them with what exists, as the recipes above
-do: horns for mandibles and stingers, a spike row for a frill. Skins are smooth: there is no fur
-yet, so a furry animal reads best with a soft `mottle` and a `countershade`.
+Everything below validates now. Compile draws what is built and skips the rest, and `validate`
+lists the skipped things under `notBuilt`. Until then, approximate with what exists if you need
+to see it: horns for mandibles and stingers, a spike row for a frill or plates, a wide neck for a
+cobra's hood (see the recipes).
+
+| Feature | Built in milestone |
+| --- | --- |
+| Muscle (`body.muscle`, `limbs[].muscle`), `neck.curve` | 8.1 |
+| `foot.hoof`, `foot.paw`, `foot.talon`, `foot.pad`, `hand.grasp`, `stance` | 8.2 |
+| `head.lips`, `head.tongue`, `head.brow`, `beak` | 8.3 |
+| `hide`, `fur`, the new pattern layers | 8.4 |
+| Several heads and tails (`count`, `spread`, `forkAt`) | 9.1 |
+| Wings, fins, membranes, `fin.dorsal`, `fin.tail` | 9.3 |
+| Tentacles, `antenna`, `mandible`, `hand.pincer`, `pinch`, `lash` | 9.4 |
+| `shell`, `armor.bands`, `quills`, `plates.row`, `frill`, `hood`, `sail`, `display` | 9.5 |
+| `run`, `gallop`, `bound` | 10.1 |
+| `jump`, `pounce` | 10.2 |
+| Swimming (`media.water`, `swim.*`) | 10.3 |
+| Flying (`media.air`, `fly`, `glide`, `hover`) | 10.4 |
+
+### Recipes for the new bodies
+
+These say how plan 2's bodies are written; they validate today and take shape as their
+milestones land.
+
+| Creature | Blueprint |
+| --- | --- |
+| Dragon | `quadruped` plus `{ "id": "wing", "role": "wing", "length": 1.5 }`; horns with `aim` "back"; `"material": "scales"` |
+| Wyvern or bat | `wyvern` (its wings are its forelimbs); for a bat, `"membrane": { "type": "membrane.bat", "fingers": 5 }`, ears and `"skin": { "fur": {} }` |
+| Hydra or cerberus | `quadruped` with `"neck": { "count": 5, "length": 0.9 }` (or 3 with `length` 0.4 for a cerberus); parts on `head` appear on every head |
+| Kraken | No `extends`; a round torso, `"tail": { "length": 0 }`, four `tentacle` entries with `side` "both" at `at` 0.9 and `angle`s 60, 100, 130 and 160 |
+| Shark or fish | `fish`; `fin.dorsal` and `fin.tail` (`"shape": "forked"`) parts, `teeth.row` |
+| Spider or scorpion | `octopod`; `mandible` (`"shape": "fang"`) for a spider; for a scorpion arms with `"foot": "hand.pincer"` and a tail with `curl` 200 |
+| Centaur | `centaur`; give the legs `"foot": "foot.hoof"` and the head horns |
+| Turtle | `quadruped` with `{ "id": "shell", "type": "shell" }` and fin limbs with `"membrane": null` (flippers) instead of legs; `"media": { "water": true }` |
+| Two-tailed fox | `quadruped` with `"tail": { "count": 2 }`, `"foot": "foot.paw"` on both leg pairs and `"skin": { "fur": {} }` |
+| Griffin | `quadruped`; `beak`, `{ "role": "wing", "membrane": "membrane.feather" }`, `foot.talon` on the forelegs and `foot.paw` on the hindlegs, fur with `"region": ["torso", "limbs", "tail"]` |
+| Moth | `hexapod`; two wing pairs with `membrane.insect` (`"shape": "broad"`), `antenna` with `"shape": "feather"`, fur on the torso |
+| Stegosaur, sail-back, porcupine | `plates.row`, `sail` or `quills` along the `spine` |
+| Frilled lizard or cobra | `frill` or `hood` on the `neck`, and `display` in `motion.actions` |
 
 ## Format versions
 

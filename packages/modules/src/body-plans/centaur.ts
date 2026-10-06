@@ -12,12 +12,12 @@ export default defineBodyPlan({
       // The upright front: a neck shaped like a human torso, chest to waist.
       neck: {
         length: 0.7,
-        radius: [0.08, 0.15, 0.13, 0.12],
+        radius: [0.055, 0.12, 0.13, 0.1, 0.12],
         pitch: 84,
         segments: 4,
         crossSection: 'wide',
       },
-      head: { shape: 'round', length: 0.24, radius: 0.1, jaw: true, pitch: 0 },
+      head: { shape: 'round', length: 0.26, radius: 0.11, jaw: true, pitch: 0 },
       tail: { length: 0.6, radius: [0.05, 0.02], pitch: -40, segments: 8 },
     },
     limbs: [
@@ -42,10 +42,11 @@ export default defineBodyPlan({
       {
         id: 'arm',
         role: 'arm',
-        attach: { on: 'neck', at: 0.3, side: 'both', angle: 90 },
-        length: 0.75,
+        attach: { on: 'neck', at: 0.22, side: 'both', angle: 90 },
+        length: 0.6,
         segments: 2,
-        radius: [0.055, 0.035],
+        radius: [0.05, 0.03],
+        lift: 25,
         foot: { type: 'foot.claw', toes: 4 },
       },
     ],

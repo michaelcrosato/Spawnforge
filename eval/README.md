@@ -26,3 +26,21 @@ of 20 renders matched by the blind reviewer.
 
 Each run folder records the model name and version in `run.json`, so results can be compared
 across models and phases.
+
+## Suite B (plan 2)
+
+[prompts-b.json](prompts-b.json) holds 20 prompts that need plan 2's vocabulary: wings, fins,
+tentacles, several heads and tails, shells, quills, fur, swimming and more. Each lists `expects`:
+feature checks on the creature the last valid attempt resolves to (`eval/expects.ts`), such as
+"two limbs with role wing" or "`body.neck.count` is 5". A run whose `run.json` says
+`"suite": "b"` is scored against it, and the gate counts both validity and expects:
+
+```sh
+node eval/score.ts eval/runs/<run>              # suite from run.json
+node eval/score.ts eval/runs/<run> --prompts eval/prompts-b.json
+```
+
+In milestone 7.3 suite B runs as a **format eval**: the model gets the docs and `validate` (with
+`list-modules` and `describe-module`), since renders cannot show features that are not built
+yet. `validate` lists those under `notBuilt`; the protocol tells the model to keep them. From
+gate 9 it runs with renders and a blind review, as suite A does.

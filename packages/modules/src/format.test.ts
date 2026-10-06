@@ -182,4 +182,112 @@ describe('format 0.2', () => {
       expect.arrayContaining(['limbs[id=wing].role', 'body.neck.count']),
     );
   });
+
+  // The recipes in docs/blueprint.md, "Recipes for the new bodies", written out.
+  const tentacle = (angle: number) => ({
+    id: `t${angle}`,
+    role: 'tentacle',
+    attach: { at: 0.9, angle, side: 'both' },
+  });
+  const recipes: Record<string, Record<string, unknown>> = {
+    dragon: {
+      extends: 'quadruped',
+      limbs: [{ id: 'wing', role: 'wing', length: 1.5 }],
+      parts: [{ id: 'horns', type: 'horn.curved', params: { aim: 'back' } }],
+      skin: { material: 'scales' },
+    },
+    bat: {
+      extends: 'wyvern',
+      limbs: [{ id: 'wing', membrane: { type: 'membrane.bat', fingers: 5 } }],
+      parts: [{ id: 'ears', type: 'ear.pointed', attach: { side: 'both' } }],
+      skin: { fur: {} },
+    },
+    hydra: { extends: 'quadruped', body: { neck: { count: 5, length: 0.9 } } },
+    cerberus: { extends: 'quadruped', body: { neck: { count: 3, length: 0.4 } } },
+    kraken: {
+      body: { torso: { radius: [0.2, 0.3, 0.25] }, tail: { length: 0 } },
+      limbs: [60, 100, 130, 160].map(tentacle),
+    },
+    shark: {
+      extends: 'fish',
+      parts: [
+        { id: 'tailfin', type: 'fin.tail', params: { shape: 'forked' } },
+        { id: 'teeth', type: 'teeth.row' },
+      ],
+    },
+    spider: {
+      extends: 'octopod',
+      parts: [{ id: 'fangs', type: 'mandible', params: { shape: 'fang' } }],
+    },
+    scorpion: {
+      extends: 'octopod',
+      body: { tail: { length: 2.4, pitch: 40, curl: 200 } },
+      limbs: [{ id: 'claw', role: 'arm', attach: { at: 0.02 }, foot: 'hand.pincer' }],
+    },
+    centaur: {
+      extends: 'centaur',
+      limbs: [
+        { id: 'foreleg', foot: 'foot.hoof' },
+        { id: 'hindleg', foot: 'foot.hoof' },
+      ],
+      parts: [{ id: 'horns', type: 'horn.curved', attach: { side: 'both' } }],
+    },
+    turtle: {
+      extends: 'quadruped',
+      limbs: [
+        { id: 'foreleg', role: 'fin', membrane: null },
+        { id: 'hindleg', role: 'fin', membrane: null },
+      ],
+      parts: [{ id: 'shell', type: 'shell' }],
+      motion: { media: { water: true } },
+    },
+    fox: {
+      extends: 'quadruped',
+      body: { tail: { count: 2 } },
+      limbs: [
+        { id: 'foreleg', foot: 'foot.paw' },
+        { id: 'hindleg', foot: 'foot.paw' },
+      ],
+      skin: { fur: {} },
+    },
+    griffin: {
+      extends: 'quadruped',
+      limbs: [
+        { id: 'wing', role: 'wing', membrane: 'membrane.feather' },
+        { id: 'foreleg', foot: 'foot.talon' },
+        { id: 'hindleg', foot: 'foot.paw' },
+      ],
+      parts: [{ id: 'beak', type: 'beak' }],
+      skin: { fur: { region: ['torso', 'limbs', 'tail'] } },
+    },
+    moth: {
+      extends: 'hexapod',
+      limbs: [
+        { id: 'wing', role: 'wing', membrane: { type: 'membrane.insect', shape: 'broad' } },
+        { id: 'hindwing', role: 'wing', attach: { at: 0.3 }, membrane: 'membrane.insect' },
+      ],
+      parts: [
+        { id: 'antennae', type: 'antenna', attach: { side: 'both' }, params: { shape: 'feather' } },
+      ],
+      skin: { fur: { region: 'torso' } },
+    },
+    stegosaur: { extends: 'quadruped', parts: [{ id: 'plates', type: 'plates.row' }] },
+    sailback: { extends: 'quadruped', parts: [{ id: 'sail', type: 'sail' }] },
+    porcupine: { extends: 'quadruped', parts: [{ id: 'quills', type: 'quills' }] },
+    frilled: {
+      extends: 'quadruped',
+      parts: [{ id: 'frill', type: 'frill' }],
+      motion: { actions: ['display', 'bite'] },
+    },
+    cobra: {
+      extends: 'serpent',
+      parts: [{ id: 'hood', type: 'hood' }],
+      motion: { actions: ['display'] },
+    },
+  };
+  it.each(Object.entries(recipes))('the %s recipe validates', (_, blueprint) => {
+    const result = check(blueprint);
+    expect(result.errors).toEqual([]);
+    expect(result.warnings).toEqual([]);
+  });
 });

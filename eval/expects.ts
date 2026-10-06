@@ -7,19 +7,21 @@
  *   { "what": "parts", "where": { "type": "fin.*" }, "min": 1 }
  *   { "what": "field", "path": "body.neck.count", "min": 3 }
  *
- * `what` is `limbs`, `parts`, `layers` or `field`. `where` matches item fields by dotted path
- * (`foot.type`); a string with `*` matches as a glob, and a list matches any of its values.
- * Counts need `min` (default 1) and may set `max`; fields compare with `min`, `max`, `equals` or
- * `oneOf`.
+ * `what` is `limbs`, `parts`, `layers`, `actions` or `field`. `where` matches item fields by
+ * dotted path (`foot.type`); a string with `*` matches as a glob, and a list matches any of its
+ * values. Counts need `min` (default 1) and may set `max`; fields compare with `min`, `max`,
+ * `equals`, `oneOf` or `exists`.
  */
 export interface Expect {
-  readonly what: 'limbs' | 'parts' | 'layers' | 'field';
+  readonly what: 'limbs' | 'parts' | 'layers' | 'actions' | 'field';
   readonly where?: Readonly<Record<string, unknown>>;
   readonly path?: string;
   readonly min?: number;
   readonly max?: number;
   readonly equals?: unknown;
   readonly oneOf?: readonly unknown[];
+  /** The field is set to something other than null. */
+  readonly exists?: boolean;
   /** What the check means, in words, for the score table. */
   readonly says?: string;
 }
@@ -55,11 +57,15 @@ export function failedExpects(creature: unknown, expects: readonly Expect[]): st
         (e.min === undefined || (typeof value === 'number' && value >= e.min)) &&
         (e.max === undefined || (typeof value === 'number' && value <= e.max)) &&
         (e.equals === undefined || matches(value, e.equals)) &&
-        (e.oneOf === undefined || matches(value, e.oneOf));
+        (e.oneOf === undefined || matches(value, e.oneOf)) &&
+        (e.exists === undefined || (value !== undefined && value !== null) === e.exists);
       if (!ok) failed.push(`${label} (${e.path} is ${JSON.stringify(value)})`);
       continue;
     }
-    const list = get(creature, e.what === 'layers' ? 'skin.layers' : e.what);
+    const list = get(
+      creature,
+      e.what === 'layers' ? 'skin.layers' : e.what === 'actions' ? 'motion.actions' : e.what,
+    );
     const items = Array.isArray(list) ? list : [];
     const count = items.filter((item) =>
       Object.entries(e.where ?? {}).every(([path, wanted]) => matches(get(item, path), wanted)),

@@ -1,82 +1,575 @@
 [
   {
     "id": "b01-dragon",
-    "prompt": "A four-legged red dragon with bat-like wings, horns swept back, scaly skin and a row of spikes down its tail."
+    "prompt": "A four-legged red dragon with bat-like wings, horns swept back, scaly skin and a row of spikes down its tail.",
+    "expects": [
+      {
+        "what": "limbs",
+        "where": {
+          "role": "wing"
+        },
+        "min": 2,
+        "says": "a pair of wings"
+      },
+      {
+        "what": "limbs",
+        "where": {
+          "role": "leg"
+        },
+        "min": 4,
+        "says": "four legs"
+      },
+      {
+        "what": "parts",
+        "where": {
+          "type": "horn.curved"
+        },
+        "min": 1,
+        "says": "horns"
+      },
+      {
+        "what": "parts",
+        "where": {
+          "type": ["spikes.row", "plates.row"],
+          "on": ["tail", "spine"]
+        },
+        "min": 1,
+        "says": "spikes along the tail"
+      }
+    ]
   },
   {
     "id": "b02-wyvern",
-    "prompt": "A wyvern: it walks on two legs, its wings are its arms, and it has a stinger on the tip of its tail."
+    "prompt": "A wyvern: it walks on two legs, its wings are its arms, and it has a stinger on the tip of its tail.",
+    "expects": [
+      {
+        "what": "limbs",
+        "where": {
+          "role": "leg"
+        },
+        "min": 2,
+        "max": 2,
+        "says": "two legs"
+      },
+      {
+        "what": "limbs",
+        "where": {
+          "role": "wing"
+        },
+        "min": 2,
+        "says": "a pair of wings"
+      },
+      {
+        "what": "parts",
+        "where": {
+          "on": "tail*"
+        },
+        "min": 1,
+        "says": "a stinger on the tail"
+      }
+    ]
   },
   {
     "id": "b03-giant-bat",
-    "prompt": "A giant bat with dark brown fur, big pointed ears and leathery wings."
+    "prompt": "A giant bat with dark brown fur, big pointed ears and leathery wings.",
+    "expects": [
+      {
+        "what": "limbs",
+        "where": {
+          "role": "wing",
+          "membrane.type": "membrane.bat"
+        },
+        "min": 2,
+        "says": "leathery wings"
+      },
+      {
+        "what": "field",
+        "path": "skin.fur",
+        "says": "fur",
+        "exists": true
+      },
+      {
+        "what": "parts",
+        "where": {
+          "type": "ear.pointed"
+        },
+        "min": 1,
+        "says": "ears"
+      }
+    ]
   },
   {
     "id": "b04-hydra",
-    "prompt": "A hydra: a heavy four-legged body with five long necks, each ending in a snapping head."
+    "prompt": "A hydra: a heavy four-legged body with five long necks, each ending in a snapping head.",
+    "expects": [
+      {
+        "what": "field",
+        "path": "body.neck.count",
+        "says": "five heads",
+        "min": 5,
+        "max": 5
+      },
+      {
+        "what": "limbs",
+        "where": {
+          "role": "leg"
+        },
+        "min": 4,
+        "says": "four legs"
+      }
+    ]
   },
   {
     "id": "b05-cerberus",
-    "prompt": "Cerberus: a three-headed hound with paws and a black coat."
+    "prompt": "Cerberus: a three-headed hound with paws and a black coat.",
+    "expects": [
+      {
+        "what": "field",
+        "path": "body.neck.count",
+        "says": "three heads",
+        "min": 3,
+        "max": 3
+      },
+      {
+        "what": "limbs",
+        "where": {
+          "role": "leg",
+          "foot.type": "foot.paw"
+        },
+        "min": 4,
+        "says": "paws"
+      }
+    ]
   },
   {
     "id": "b06-kraken",
-    "prompt": "A kraken from the deep sea: a bulbous body, eight long tentacles and huge eyes. It swims."
+    "prompt": "A kraken from the deep sea: a bulbous body, eight long tentacles and huge eyes. It swims.",
+    "expects": [
+      {
+        "what": "limbs",
+        "where": {
+          "role": "tentacle"
+        },
+        "min": 8,
+        "says": "eight tentacles"
+      },
+      {
+        "what": "field",
+        "path": "motion.media.water",
+        "says": "it swims",
+        "equals": true
+      }
+    ]
   },
   {
     "id": "b07-reef-shark",
-    "prompt": "A reef shark with a tall dorsal fin, two pectoral fins, a tall tail fin and rows of teeth. It lives in the water."
+    "prompt": "A reef shark with a tall dorsal fin, two pectoral fins, a tall tail fin and rows of teeth. It lives in the water.",
+    "expects": [
+      {
+        "what": "parts",
+        "where": {
+          "type": "fin.dorsal"
+        },
+        "min": 1,
+        "says": "a dorsal fin"
+      },
+      {
+        "what": "parts",
+        "where": {
+          "type": "fin.tail"
+        },
+        "min": 1,
+        "says": "a tail fin"
+      },
+      {
+        "what": "limbs",
+        "where": {
+          "role": "fin"
+        },
+        "min": 2,
+        "says": "pectoral fins"
+      },
+      {
+        "what": "parts",
+        "where": {
+          "type": "teeth.row"
+        },
+        "min": 1,
+        "says": "teeth"
+      },
+      {
+        "what": "field",
+        "path": "motion.media.water",
+        "says": "it swims",
+        "equals": true
+      }
+    ]
   },
   {
     "id": "b08-cave-spider",
-    "prompt": "A cave spider with eight legs, venomous fangs and a bulbous abdomen."
+    "prompt": "A cave spider with eight legs, venomous fangs and a bulbous abdomen.",
+    "expects": [
+      {
+        "what": "limbs",
+        "where": {
+          "role": "leg"
+        },
+        "min": 8,
+        "max": 8,
+        "says": "eight legs"
+      },
+      {
+        "what": "parts",
+        "where": {
+          "type": ["mandible", "teeth.row"]
+        },
+        "min": 1,
+        "says": "fangs"
+      }
+    ]
   },
   {
     "id": "b09-scorpion-king",
-    "prompt": "A scorpion king: six legs, a pair of arms ending in pincers, and a stinger tail curled up over its armoured back."
+    "prompt": "A scorpion king: six legs, a pair of arms ending in pincers, and a stinger tail curled up over its armoured back.",
+    "expects": [
+      {
+        "what": "limbs",
+        "where": {
+          "role": "leg"
+        },
+        "min": 6,
+        "says": "six legs"
+      },
+      {
+        "what": "limbs",
+        "where": {
+          "foot.type": "hand.pincer"
+        },
+        "min": 2,
+        "says": "pincers"
+      },
+      {
+        "what": "field",
+        "path": "body.tail.curl",
+        "says": "a tail curled over the back",
+        "min": 90
+      }
+    ]
   },
   {
     "id": "b10-centaur",
-    "prompt": "A centaur: a horse-like body on four hooved legs, an upright human-like torso with two arms, and a horned head."
+    "prompt": "A centaur: a horse-like body on four hooved legs, an upright human-like torso with two arms, and a horned head.",
+    "expects": [
+      {
+        "what": "limbs",
+        "where": {
+          "role": "leg",
+          "foot.type": "foot.hoof"
+        },
+        "min": 4,
+        "says": "four hooved legs"
+      },
+      {
+        "what": "limbs",
+        "where": {
+          "role": "arm"
+        },
+        "min": 2,
+        "says": "two arms"
+      },
+      {
+        "what": "parts",
+        "where": {
+          "type": "horn.curved"
+        },
+        "min": 1,
+        "says": "horns"
+      }
+    ]
   },
   {
     "id": "b11-sea-turtle",
-    "prompt": "A sea turtle with a domed shell and four flippers. It swims."
+    "prompt": "A sea turtle with a domed shell and four flippers. It swims.",
+    "expects": [
+      {
+        "what": "parts",
+        "where": {
+          "type": "shell"
+        },
+        "min": 1,
+        "says": "a shell"
+      },
+      {
+        "what": "limbs",
+        "where": {
+          "role": "fin"
+        },
+        "min": 4,
+        "says": "four flippers"
+      },
+      {
+        "what": "field",
+        "path": "motion.media.water",
+        "says": "it swims",
+        "equals": true
+      }
+    ]
   },
   {
     "id": "b12-quillback-boar",
-    "prompt": "A quillback boar: quills down its back, old scars on its hide, tusks and hooves."
+    "prompt": "A quillback boar: quills down its back, old scars on its hide, tusks and hooves.",
+    "expects": [
+      {
+        "what": "parts",
+        "where": {
+          "type": "quills"
+        },
+        "min": 1,
+        "says": "quills"
+      },
+      {
+        "what": "layers",
+        "where": {
+          "type": "scars"
+        },
+        "min": 1,
+        "says": "scars"
+      },
+      {
+        "what": "limbs",
+        "where": {
+          "role": "leg",
+          "foot.type": "foot.hoof"
+        },
+        "min": 4,
+        "says": "hooves"
+      },
+      {
+        "what": "parts",
+        "where": {
+          "type": ["horn.curved", "teeth.row", "mandible"]
+        },
+        "min": 1,
+        "says": "tusks"
+      }
+    ]
   },
   {
     "id": "b13-frilled-lizard",
-    "prompt": "A frilled lizard with a wide frill around its neck that it opens when threatened."
+    "prompt": "A frilled lizard with a wide frill around its neck that it opens when threatened.",
+    "expects": [
+      {
+        "what": "parts",
+        "where": {
+          "type": "frill"
+        },
+        "min": 1,
+        "says": "a frill"
+      },
+      {
+        "what": "actions",
+        "where": {
+          "type": "display"
+        },
+        "min": 1,
+        "says": "it opens the frill (display)"
+      }
+    ]
   },
   {
     "id": "b14-stegosaur",
-    "prompt": "A stegosaur with a row of tall alternating plates along its back and spikes on its tail."
+    "prompt": "A stegosaur with a row of tall alternating plates along its back and spikes on its tail.",
+    "expects": [
+      {
+        "what": "parts",
+        "where": {
+          "type": "plates.row"
+        },
+        "min": 1,
+        "says": "plates along the back"
+      },
+      {
+        "what": "parts",
+        "where": {
+          "type": ["spikes.row", "horn.curved"],
+          "on": ["tail", "spine"]
+        },
+        "min": 1,
+        "says": "tail spikes"
+      }
+    ]
   },
   {
     "id": "b15-sail-back",
-    "prompt": "A sail-backed reptile with a tall sail of skin stretched over spines along its back."
+    "prompt": "A sail-backed reptile with a tall sail of skin stretched over spines along its back.",
+    "expects": [
+      {
+        "what": "parts",
+        "where": {
+          "type": "sail"
+        },
+        "min": 1,
+        "says": "a sail"
+      }
+    ]
   },
   {
     "id": "b16-giant-moth",
-    "prompt": "A giant moth with feathery antennae, four broad patterned wings and a furry body."
+    "prompt": "A giant moth with feathery antennae, four broad patterned wings and a furry body.",
+    "expects": [
+      {
+        "what": "parts",
+        "where": {
+          "type": "antenna"
+        },
+        "min": 2,
+        "says": "antennae"
+      },
+      {
+        "what": "limbs",
+        "where": {
+          "role": "wing",
+          "membrane.type": "membrane.insect"
+        },
+        "min": 4,
+        "says": "four insect wings"
+      },
+      {
+        "what": "field",
+        "path": "skin.fur",
+        "says": "fur",
+        "exists": true
+      }
+    ]
   },
   {
     "id": "b17-two-tailed-fox",
-    "prompt": "A fox with soft orange fur, paws and two bushy tails."
+    "prompt": "A fox with soft orange fur, paws and two bushy tails.",
+    "expects": [
+      {
+        "what": "field",
+        "path": "body.tail.count",
+        "says": "two tails",
+        "min": 2,
+        "max": 2
+      },
+      {
+        "what": "field",
+        "path": "skin.fur",
+        "says": "fur",
+        "exists": true
+      },
+      {
+        "what": "limbs",
+        "where": {
+          "role": "leg",
+          "foot.type": "foot.paw"
+        },
+        "min": 4,
+        "says": "paws"
+      }
+    ]
   },
   {
     "id": "b18-griffin",
-    "prompt": "A griffin: an eagle's head with a hooked beak, feathered wings, talons on its front legs and a lion's body behind."
+    "prompt": "A griffin: an eagle's head with a hooked beak, feathered wings, talons on its front legs and a lion's body behind.",
+    "expects": [
+      {
+        "what": "parts",
+        "where": {
+          "type": "beak"
+        },
+        "min": 1,
+        "says": "a beak"
+      },
+      {
+        "what": "limbs",
+        "where": {
+          "role": "wing",
+          "membrane.type": "membrane.feather"
+        },
+        "min": 2,
+        "says": "feathered wings"
+      },
+      {
+        "what": "limbs",
+        "where": {
+          "role": "leg",
+          "foot.type": "foot.talon"
+        },
+        "min": 2,
+        "says": "talons"
+      },
+      {
+        "what": "limbs",
+        "where": {
+          "role": "leg"
+        },
+        "min": 4,
+        "says": "four legs"
+      }
+    ]
   },
   {
     "id": "b19-armoured-burrower",
-    "prompt": "An armadillo-like burrower covered in bands of armour, with big digging claws."
+    "prompt": "An armadillo-like burrower covered in bands of armour, with big digging claws.",
+    "expects": [
+      {
+        "what": "parts",
+        "where": {
+          "type": "armor.bands"
+        },
+        "min": 1,
+        "says": "bands of armour"
+      },
+      {
+        "what": "limbs",
+        "where": {
+          "role": ["leg", "arm"],
+          "foot.type": ["foot.claw", "foot.paw"]
+        },
+        "min": 2,
+        "says": "digging claws"
+      }
+    ]
   },
   {
     "id": "b20-glow-slug",
-    "prompt": "A giant glowing slug with slimy skin, glowing spots and eyes on stalks."
+    "prompt": "A giant glowing slug with slimy skin, glowing spots and eyes on stalks.",
+    "expects": [
+      {
+        "what": "layers",
+        "where": {
+          "type": "slime"
+        },
+        "min": 1,
+        "says": "slime"
+      },
+      {
+        "what": "layers",
+        "where": {
+          "type": "bioluminescence"
+        },
+        "min": 1,
+        "says": "glowing spots"
+      },
+      {
+        "what": "limbs",
+        "where": {
+          "role": "leg"
+        },
+        "min": 0,
+        "max": 0,
+        "says": "no legs"
+      },
+      {
+        "what": "parts",
+        "where": {
+          "type": "eye.basic"
+        },
+        "min": 1,
+        "says": "eyes"
+      }
+    ]
   }
 ]
