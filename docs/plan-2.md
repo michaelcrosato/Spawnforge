@@ -108,7 +108,7 @@ since anatomy comes before the new vocabulary.
 | Milestone | Effort | Why this level | Needs | Status |
 | --- | --- | --- | --- | --- |
 | [7.1 Carry-overs](#71-carry-overs-and-tidying) | high (lowered) | Small, local fixes, each specified here and testable | | Done ([#10](https://github.com/michaelcrosato/Spawnforge/pull/10)) |
-| [7.2 Migrations](#72-migrations-a-command-and-a-corpus-test) | high (lowered) | The migration chain exists; this adds a command, writers and a corpus test | | Not started |
+| [7.2 Migrations](#72-migrations-a-command-and-a-corpus-test) | high (lowered) | The migration chain exists; this adds a command, writers and a corpus test | | Done ([#11](https://github.com/michaelcrosato/Spawnforge/pull/11)) |
 | [7.3 Format 0.2](#73-format-02-the-new-vocabulary-and-a-format-eval) | **max (raised)** | The format is the contract for models, saved files and phases 8–12 | 7.2 | Not started |
 | [7.4 Rig lists](#74-rig-lists-without-a-visible-change) | xhigh (confirmed) | A wide refactor, but unchanged goldens are a strict oracle | 7.3 | Not started |
 | [7.5 Eval and test tools](#75-eval-and-test-tools) | high (lowered) | Scripts and harnesses in the style of plan 1's, with clear outputs | | Not started |
@@ -389,6 +389,10 @@ cache key and `.glb` extras already carry the format). This milestone finishes i
 
 **Done when** the corpus test passes, the goldens are unchanged, and blueprint.md's "Format
 versions" explains `migrate`. 7.3 makes the first real bump.
+
+**Measured (2026-10-06).** The corpus is 293 blueprints and species (4 examples, 289 saved
+attempts); 291 are valid, and the other two fail at `body.head.shape` ("wide", a
+`crossSection`). The test also relabels every 0.1 file `bestiary/0.1` to run the whole chain.
 
 ### 7.3 Format 0.2: the new vocabulary and a format eval
 

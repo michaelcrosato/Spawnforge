@@ -1,6 +1,7 @@
 import type { Registry } from '../registry.ts';
 import type { Issue } from './issues.ts';
 import { cloneJson, ID_LISTS, isRecord, mergeBlueprint } from './merge.ts';
+import { toCurrentFormat } from './migrate.ts';
 import { didYouMean } from './suggest.ts';
 import { validateBlueprint } from './validate.ts';
 
@@ -85,7 +86,8 @@ export function parsePath(path: string): Step[] {
 
 /** Applies edit operations to a blueprint, validates the result and lists what changed. */
 export function applyPatch(input: Json, ops: readonly PatchOp[], registry: Registry): PatchResult {
-  const blueprint = cloneJson(input);
+  // Edits are written in the current format, so an older blueprint is upgraded first.
+  const blueprint = cloneJson(toCurrentFormat(input));
   const errors: Issue[] = [];
   const planPreset = (): Json => {
     const plan =

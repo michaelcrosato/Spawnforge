@@ -14,6 +14,7 @@ import {
   generate,
   instantiate,
   listModules,
+  migrate,
   mutate,
   needIndividual,
   patch,
@@ -37,6 +38,9 @@ Commands:
   analyze <file|-> [--stats id]         Measurements, mass, speeds, motion checks on flat and
                                         rough ground, plausibility warnings and a description;
                                         --stats adds a game's numbers (e.g. rpg)
+  migrate <file|-> [--out file] [--dry-run]
+                                        Upgrades an older blueprint or species to the current
+                                        format and writes it back (or to --out)
   diff <a> <b>                          The patch operations that turn blueprint a into b, by
                                         id-based paths, with one line per change
   patch <file> <ops|ops-file|-> [--dry-run]
@@ -334,6 +338,26 @@ const commands: Record<
         ...(values['keep-parts'] ? { structure: false } : {}),
       }),
     );
+  },
+  migrate: () => {
+    if (!arg) throw new CommandError('migrate needs a file path, or - for stdin');
+    const result = migrate({ blueprint: readInput(arg) });
+    const target = values.out ?? (arg === '-' ? undefined : arg);
+    const write =
+      result.ok &&
+      !values['dry-run'] &&
+      target !== undefined &&
+      (result.changed || values.out !== undefined);
+    if (write) writeFileSync(target as string, `${JSON.stringify(result.blueprint, null, 2)}\n`);
+    const { blueprint, ...rest } = result;
+    return {
+      output: {
+        ...rest,
+        written: write ? target : false,
+        ...(target === undefined ? { blueprint } : {}),
+      },
+      exitCode: result.ok ? 0 : 1,
+    };
   },
   diff: () => {
     const other = positionals[2];

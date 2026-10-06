@@ -150,6 +150,9 @@ flat ground, draws a gait cycle and reports cycle time, stride, duty per leg and
   and returns a leaf-by-leaf diff. The CLI and MCP write the file back only when it is valid.
   `diffBlueprints` (`blueprint/diff.ts`) goes the other way: it compares two blueprints by the
   creatures they resolve to and returns the fewest operations that turn one into the other.
+- **Migrations** (`blueprint/migrate.ts`, one step per file in `blueprint/migrations/`) upgrade an
+  older blueprint before anything else reads it. Commands that write blueprints write the
+  current format (`toCurrentFormat`), and the corpus test replays every saved blueprint.
 - **Normalization** runs in two steps before validation: `normalizeBlueprint` rewrites the
   core's friendly forms (colour names, `{ "type": "walk" }`), then, after merging with the
   preset, `normalizeModules` runs each module's `normalize` hook on its own parameters.

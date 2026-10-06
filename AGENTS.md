@@ -71,7 +71,7 @@ pnpm generate                 # rewrite generated files after adding or changing
 pnpm dev                      # sandbox at http://localhost:5173 (add ?webgl to force the WebGL 2 backend)
 pnpm build                    # production build of the sandbox
 pnpm spawnforge <command>     # the CLI from source: list-modules, describe-module, validate, analyze, patch, diff,
-                              # render, generate, mutate, crossbreed, instantiate, export, schema
+                              # migrate, render, generate, mutate, crossbreed, instantiate, export, schema
 pnpm spawnforge generate --theme reptile --seed 4 --out creatures/lizard.json   # a new creature from a theme
 pnpm spawnforge export examples/bog-troll.json --stats rpg   # a .glb with baked clips, for any engine
 pnpm spawnforge render examples/ridgeback-stalker.json --labels   # PNG contact sheet next to the file
@@ -117,6 +117,10 @@ From the plan. Follow them unless the plan changes.
   one part never reshuffles another.
 - RNG golden values are pinned in `packages/core/src/rng.test.ts`. Changing them changes every
   saved creature, so it needs a format bump and a migration.
+- Migrations live one step per file in `packages/core/src/blueprint/migrations/`. The corpus test
+  (`packages/modules/src/corpus.test.ts`) checks that every blueprint under `examples/` and
+  `eval/runs/` still migrates and validates as recorded in `corpus.json`; re-record with
+  `UPDATE_CORPUS=1` only for an intended change, and say why in the commit.
 
 **Modules**
 
