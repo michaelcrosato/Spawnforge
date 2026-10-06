@@ -1,0 +1,37 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Jade Serpent",
+  "seed": 404,
+  "extends": "serpent",
+  "scale": 2,
+  "body": {
+    "torso": { "radius": [0.08, 0.1, 0.11, 0.1] },
+    "neck": { "length": 0.2, "radius": [0.07, 0.08], "pitch": 20 },
+    "head": { "shape": "wedge", "length": 0.22, "radius": 0.08 },
+    "tail": { "length": 2.4, "radius": [0.1, 0.01] }
+  },
+  "parts": [
+    {
+      "id": "fangs",
+      "type": "teeth.row",
+      "params": { "count": 5, "fangs": 2, "fangLength": 0.1, "length": 0.02 }
+    }
+  ],
+  "skin": {
+    "palette": { "base": "#2f7a2a", "belly": "#d9d58a", "accent": "#f0d020" },
+    "material": "scales",
+    "layers": [
+      { "type": "countershade" },
+      {
+        "type": "stripes",
+        "color": "accent",
+        "count": 22,
+        "width": 0.3,
+        "jitter": 0.2,
+        "region": "back"
+      },
+      { "type": "scales", "size": 0.03 }
+    ]
+  },
+  "motion": { "temperament": "stalking", "actions": ["bite", "look", "idle", "roar"] }
+}

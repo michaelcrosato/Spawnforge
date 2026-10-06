@@ -21,6 +21,11 @@ export default definePart({
   attach: { on: 'head' },
   params,
   example: { id: 'teeth', type: 'teeth.row', params: { count: 12, fangs: 1 } },
+  describe(p) {
+    const fangs = (p.fangs as number) > 0;
+    if (fangs && (p.fangLength as number) >= 0.08) return 'long fangs';
+    return fangs ? 'teeth and fangs' : 'teeth';
+  },
   hooks: {
     build(ctx, raw) {
       const p = raw as Params;

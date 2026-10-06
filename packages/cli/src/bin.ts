@@ -4,10 +4,12 @@ import { parseArgs } from 'node:util';
 import { MODULE_KINDS, type ModuleKind } from '@spawnforge/core';
 import type { View } from '@spawnforge/render';
 import {
+  analyze,
   blueprintJsonSchema,
   CommandError,
   describeModule,
   listModules,
+  patch,
   validate,
 } from './commands.ts';
 
@@ -20,11 +22,18 @@ Commands:
   render <file|-> [--out f.png] [--labels] [--size px] [--quality low|medium|high]
          [--views 3/4,side,head,front,top,rear]
                                         PNG contact sheet of the creature (headless Chromium)
-  render <file|-> --filmstrip [--gait id] [--speed m/s] [--frames n] [--view side|3/4|top]
+  render <file|-> --filmstrip [--gait id] [--speed m/s] [--frames n] [--view side|3/4|top|front]
                                         One gait cycle as frames with a footfall diagram;
                                         prints cycle, stride, duty and foot slide
-  render <file|-> --filmstrip --action <id> [--frames n] [--view side|3/4|top]
+  render <file|-> --filmstrip --action <id> [--frames n] [--view side|3/4|top|front]
                                         One action (bite, roar, look…) as frames with its events
+  analyze <file|->                      Measurements, mass, speeds, motion checks on flat and
+                                        rough ground, plausibility warnings and a description
+  patch <file> <ops|ops-file|-> [--dry-run]
+                                        Edits a blueprint file by id-based paths and writes it
+                                        back if the result is valid; prints the diff. ops is a
+                                        JSON list, e.g. '[{"op":"set","path":"body.tail.length","value":1.2}]'
+                                        (ops: set, add, remove, mirror, scale)
   schema                                The blueprint JSON Schema
 
 Options:
@@ -62,6 +71,7 @@ const { positionals, values } = parseArgs({
     views: { type: 'string' },
     quality: { type: 'string' },
     filmstrip: { type: 'boolean' },
+    'dry-run': { type: 'boolean' },
     gait: { type: 'string' },
     action: { type: 'string' },
     speed: { type: 'string' },
@@ -104,9 +114,13 @@ async function render(): Promise<{ output: unknown; exitCode?: number }> {
     values.view !== undefined &&
     filmView !== 'side' &&
     filmView !== 'three-quarter' &&
-    filmView !== 'top'
+    filmView !== 'top' &&
+    filmView !== 'front'
   )
-    throw new CommandError(`unknown filmstrip view "${values.view}"`, 'use side, 3/4 or top');
+    throw new CommandError(
+      `unknown filmstrip view "${values.view}"`,
+      'use side, 3/4, top or front',
+    );
   const speed = number('speed', values.speed);
   const frames = number('frames', values.frames);
   const filmstrip = values.filmstrip
@@ -115,7 +129,7 @@ async function render(): Promise<{ output: unknown; exitCode?: number }> {
         ...(values.gait ? { gait: values.gait } : {}),
         ...(speed !== undefined ? { speed } : {}),
         ...(frames !== undefined ? { frames } : {}),
-        ...(filmView ? { view: filmView as 'side' | 'three-quarter' | 'top' } : {}),
+        ...(filmView ? { view: filmView as 'side' | 'three-quarter' | 'top' | 'front' } : {}),
       }
     : undefined;
   const suffix = filmstrip ? (values.action ? `.${values.action}.png` : '.walk.png') : '.png';
@@ -143,11 +157,44 @@ async function render(): Promise<{ output: unknown; exitCode?: number }> {
   };
 }
 
+function patchCommand(): { output: unknown; exitCode?: number } {
+  const opsArg = positionals[2];
+  if (!arg || !opsArg)
+    throw new CommandError(
+      'patch needs a blueprint file and operations',
+      `e.g. spawnforge patch creature.json '[{"op":"set","path":"body.tail.length","value":1.2}]'`,
+    );
+  const blueprint = readInput(arg);
+  const trimmed = opsArg.trim();
+  let ops: unknown;
+  if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
+    try {
+      ops = JSON.parse(trimmed);
+    } catch (error) {
+      throw new CommandError(`operations are not valid JSON: ${(error as Error).message}`);
+    }
+  } else ops = readInput(opsArg);
+  const result = patch({ blueprint, ops: Array.isArray(ops) ? ops : [ops] });
+  const write = result.ok && !values['dry-run'] && arg !== '-';
+  if (write) writeFileSync(arg, `${JSON.stringify(result.blueprint, null, 2)}\n`);
+  const { blueprint: patched, ...rest } = result;
+  return {
+    output: { ...rest, written: write, ...(arg === '-' ? { blueprint: patched } : {}) },
+    exitCode: result.ok ? 0 : 1,
+  };
+}
+
 const commands: Record<
   string,
   () => { output: unknown; exitCode?: number } | Promise<{ output: unknown; exitCode?: number }>
 > = {
   render,
+  analyze: () => {
+    if (!arg) throw new CommandError('analyze needs a file path, or - for stdin');
+    const result = analyze({ blueprint: readInput(arg) });
+    return { output: result, exitCode: result.ok ? 0 : 1 };
+  },
+  patch: patchCommand,
   'list-modules': () => ({ output: listModules({ kind: kindOf(values.kind) }) }),
   'describe-module': () => {
     if (!arg)

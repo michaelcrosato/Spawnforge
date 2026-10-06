@@ -1,4 +1,4 @@
-import { cells, colorRef, definePattern, detail } from '@spawnforge/core';
+import { cells, colorName, colorRef, definePattern, detail } from '@spawnforge/core';
 import { z } from 'zod';
 
 export default definePattern({
@@ -13,6 +13,10 @@ export default definePattern({
     ring: z.number().min(0).max(1).default(0).describe('Hollow the spots into rings (rosettes)'),
   }),
   example: { type: 'spots', color: 'accent', size: 0.04, density: 0.6 },
+  describe: (p) =>
+    (p.ring as number) > 0.4
+      ? `${colorName(p.color as string)} rosettes`
+      : `${colorName(p.color as string)} spots`,
   hooks: {
     shade(k, s, p, seed) {
       const f = k.num(1 / ((p.size as number) * 2.2));

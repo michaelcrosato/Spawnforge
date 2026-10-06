@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { FORMAT } from '@spawnforge/core';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { Renderer } from './index.ts';
@@ -67,6 +68,33 @@ describe('headless renders', () => {
       'bite-contact',
       'action-end',
     ]);
+  }, 120_000);
+
+  it('compiles the examples in Chrome to the same meshes as in Node (golden test)', async () => {
+    const golden = JSON.parse(
+      readFileSync(new URL('../../modules/src/golden.json', import.meta.url), 'utf8'),
+    ) as Record<string, { low: string; medium: string }>;
+    for (const [name, expected] of Object.entries(golden)) {
+      const blueprint = JSON.parse(
+        readFileSync(new URL(`../../../examples/${name}.json`, import.meta.url), 'utf8'),
+      );
+      expect(await renderer.fingerprint(blueprint, 'low'), name).toBe(expected.low);
+      expect(await renderer.fingerprint(blueprint, 'medium'), name).toBe(expected.medium);
+    }
+  }, 120_000);
+
+  it('renders the examples like their approved images (visual regression)', async () => {
+    // Same settings as `pnpm render:examples`, which writes the approved images.
+    for (const name of ['ridgeback-stalker', 'reed-viper']) {
+      const blueprint = JSON.parse(
+        readFileSync(new URL(`../../../examples/${name}.json`, import.meta.url), 'utf8'),
+      );
+      const approved = readFileSync(new URL(`../../../examples/${name}.png`, import.meta.url));
+      const { png } = await renderer.render({ blueprint, labels: true, size: 360 });
+      const { differing } = await renderer.diff(png, approved);
+      // Rasterizers differ a little between Chromium builds; a real change moves far more.
+      expect(differing, name).toBeLessThan(0.03);
+    }
   }, 120_000);
 
   it('refuses invalid blueprints with the validation errors', async () => {

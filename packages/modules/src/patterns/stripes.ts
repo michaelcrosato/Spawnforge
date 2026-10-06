@@ -1,4 +1,4 @@
-import { colorRef, definePattern, fbm } from '@spawnforge/core';
+import { colorName, colorRef, definePattern, fbm } from '@spawnforge/core';
 import { z } from 'zod';
 
 export default definePattern({
@@ -22,6 +22,7 @@ export default definePattern({
     fade: z.number().min(0).max(1).default(0.6).describe('How much stripes fade toward the belly'),
   }),
   example: { type: 'stripes', color: 'accent', count: 12, region: 'back', jitter: 0.4 },
+  describe: (p) => `${colorName(p.color as string)} stripes`,
   hooks: {
     shade(k, s, p, seed) {
       const count = k.param(p.count as number);

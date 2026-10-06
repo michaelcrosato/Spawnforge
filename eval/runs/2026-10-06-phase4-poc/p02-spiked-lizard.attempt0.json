@@ -1,0 +1,75 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Ironback Lizard",
+  "seed": 202,
+  "extends": "quadruped",
+  "scale": 1.2,
+  "body": {
+    "torso": { "radius": [0.18, 0.25, 0.25, 0.2], "arch": 0.03, "crossSection": "wide" },
+    "neck": { "length": 0.18, "radius": [0.12, 0.17], "pitch": 12 },
+    "head": { "shape": "wedge", "length": 0.3, "radius": 0.13, "jaw": true, "pitch": -5 },
+    "tail": {
+      "length": 1.0,
+      "radius": [0.16, 0.08, 0.07, 0.14, 0.22, 0.18],
+      "pitch": -8,
+      "curl": 0,
+      "segments": 10
+    }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "length": 0.42,
+      "radius": [0.1, 0.06],
+      "splay": 35,
+      "attach": { "at": 0.14, "angle": 115 },
+      "foot": { "type": "foot.claw", "toes": 5, "clawLength": 0.05 }
+    },
+    {
+      "id": "hindleg",
+      "length": 0.45,
+      "radius": [0.11, 0.06],
+      "splay": 35,
+      "attach": { "at": 0.86, "angle": 115 },
+      "foot": { "type": "foot.claw", "toes": 5, "clawLength": 0.05 }
+    }
+  ],
+  "parts": [
+    {
+      "id": "dorsal",
+      "type": "spikes.row",
+      "attach": { "on": "spine", "from": 0.1, "to": 0.9, "angle": 0 },
+      "params": {
+        "count": 14,
+        "height": [0.08, 0.16, 0.14, 0.06],
+        "width": 0.035,
+        "curve": 25,
+        "jitter": 0.2
+      }
+    },
+    {
+      "id": "clubspikes",
+      "type": "spikes.row",
+      "attach": { "on": "tail", "from": 0.65, "to": 0.95, "angle": 90, "side": "both" },
+      "params": { "count": 4, "height": 0.09, "width": 0.04, "curve": 10 }
+    },
+    {
+      "id": "brow",
+      "type": "horn.curved",
+      "attach": { "on": "head", "at": 0.7, "angle": 40 },
+      "params": { "length": 0.1, "width": 0.035, "curve": 40 }
+    },
+    { "id": "teeth", "type": "teeth.row", "params": { "count": 8, "fangs": 0 } },
+    { "id": "eyes", "params": { "size": 0.02, "pupil": "slit" } }
+  ],
+  "skin": {
+    "palette": { "base": "#6b6a55", "belly": "#a89f80", "accent": "#3a392c" },
+    "material": "scales",
+    "layers": [
+      { "type": "countershade" },
+      { "type": "scales", "size": 0.05, "bump": 0.6, "gap": 0.5 },
+      { "type": "grime", "amount": 0.3 }
+    ]
+  },
+  "motion": { "temperament": "lumbering", "actions": ["bite", "roar", "look", "idle"] }
+}

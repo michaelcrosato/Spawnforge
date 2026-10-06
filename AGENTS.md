@@ -9,7 +9,7 @@ is the contract.
 
 ## Status
 
-Phases 0 to 3 are done.
+Phases 0 to 4 are done, and so is the proof of concept ([docs/poc.md](docs/poc.md)).
 
 - Phase 0: the blueprint format, the module registry and first pack, the CLI and MCP tools, the
   generated catalogue and the format eval.
@@ -21,10 +21,12 @@ Phases 0 to 3 are done.
 - Phase 3: actions as modules (bite, roar, look, idle with breathing and blinks), look-at,
   events, action filmstrips, and the sandbox editor (sliders, JSON panel, gallery, live
   `creatures/` folder).
+- Phase 4: `patch`, `analyze` (measurements, motion checks, plausibility warnings, a
+  description), the 1,000-blueprint fuzz, golden determinism in Node and Chrome, budgets, and the
+  PoC gate.
 
-Every gate so far scored 20/20 on the prompt suite and 20/20 in blind review (`eval/runs/`).
-Next is phase 4: `patch`, `analyze` (measurements, motion checks, plausibility warnings,
-`describe`), the 1,000-blueprint fuzz, golden determinism, budgets and the PoC checklist.
+Every gate scored 20/20 on the prompt suite and 20/20 in blind review (`eval/runs/`). Next is
+phase 5: species with ranges, `mutate`, `crossbreed`, themes and `generate`.
 
 ## Repo map
 
@@ -53,9 +55,11 @@ pnpm format                   # Biome: format, sort imports, apply safe lint fix
 pnpm generate                 # rewrite generated files after adding or changing a module
 pnpm dev                      # sandbox at http://localhost:5173 (add ?webgl to force the WebGL 2 backend)
 pnpm build                    # production build of the sandbox
-pnpm spawnforge <command>     # the CLI from source: list-modules, describe-module, validate, render, schema
+pnpm spawnforge <command>     # the CLI from source: list-modules, describe-module, validate, analyze, patch, render, schema
 pnpm spawnforge render examples/ridgeback-stalker.json --labels   # PNG contact sheet next to the file
 pnpm render:examples          # re-render examples/*.png after changing a blueprint or the pipeline
+pnpm fuzz [count] [quality]   # compile random blueprints from the schema (the PoC gate runs 1,000)
+pnpm budgets                  # compile time, triangles, draw calls and motion cost of the examples
 node packages/mcp/src/bin.ts  # the MCP server over stdio
 node eval/score.ts <run>      # score an eval run from its saved attempts
 ```
@@ -125,8 +129,12 @@ From the plan. Follow them unless the plan changes.
   `ctx.emit`; pattern modules write their shader once against `Kit<F>`, which runs as TSL on the
   GPU and as numbers on the CPU. Neither may import `three/webgpu` or `three/tsl`.
 - Look at what you change: `pnpm spawnforge render <file> --labels` (or the MCP `render` tool)
-  draws four views with every part labelled. Renders need Chromium: Playwright's own, or the one
-  in `$SPAWNFORGE_CHROMIUM`.
+  draws six views with every part labelled, `--filmstrip` a gait cycle and `--filmstrip --action
+  bite` an action. `pnpm spawnforge analyze <file>` checks measurements and motion without
+  rendering. Renders need Chromium: Playwright's own, or the one in `$SPAWNFORGE_CHROMIUM`.
+- Changes to the pipeline that move vertices change the golden fingerprints
+  (`packages/modules/src/golden.json`): re-record with `UPDATE_GOLDEN=1 pnpm test` only when the
+  change is intended, re-render the examples, and say why in the commit.
 
 **Dependencies**
 

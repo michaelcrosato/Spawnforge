@@ -251,7 +251,7 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
     // Upright two-legged walkers stand nearly straight-legged; four-legged ones a little more
     // flexed; sprawlers low.
     const biped = lastPair === 0;
-    const upright = biped ? 0.91 : limb.segments === 2 ? 0.9 : 0.84;
+    const upright = biped ? 0.91 : limb.segments === 2 ? 0.9 : 0.87;
     const frac = lerp(upright, 0.45, sw);
     let v = frac * R;
     let h = R * Math.sin(limb.splay * 0.9 * DEG) * 0.85;

@@ -1,4 +1,4 @@
-import { colorRef, definePattern } from '@spawnforge/core';
+import { colorName, colorRef, definePattern } from '@spawnforge/core';
 import { z } from 'zod';
 
 export default definePattern({
@@ -16,6 +16,7 @@ export default definePattern({
     softness: z.number().min(0.01).max(1).default(0.35).describe('Width of the blend'),
   }),
   example: { type: 'countershade', strength: 0.6 },
+  describe: (p) => `a ${colorName(p.color as string)} belly`,
   hooks: {
     shade(k, s, p) {
       const height = k.param(p.height as number);

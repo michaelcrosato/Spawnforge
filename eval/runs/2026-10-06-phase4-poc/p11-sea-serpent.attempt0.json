@@ -1,0 +1,41 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Abyssal Serpent",
+  "seed": 1101,
+  "extends": "serpent",
+  "scale": 1.4,
+  "body": {
+    "head": { "shape": "wedge", "length": 0.22, "radius": 0.085 },
+    "tail": { "length": 2.6, "crossSection": "tall" }
+  },
+  "parts": [
+    {
+      "id": "crest",
+      "type": "spikes.row",
+      "attach": { "on": "spine", "from": 0.08, "to": 0.97, "angle": 0 },
+      "params": {
+        "count": 36,
+        "height": [0.05, 0.12, 0.09, 0.05],
+        "width": 0.02,
+        "curve": 30,
+        "color": "#cfd8e0",
+        "tipColor": "#16253a"
+      }
+    },
+    {
+      "id": "fangs",
+      "type": "teeth.row",
+      "params": { "count": 6, "fangs": 2 }
+    },
+    { "id": "eyes", "params": { "irisColor": "#40e0d0" } }
+  ],
+  "skin": {
+    "palette": { "base": "#12284a", "belly": "#d6dde0", "accent": "#0a1630" },
+    "material": "scales",
+    "layers": [
+      { "type": "countershade", "height": -0.2, "softness": 0.3 },
+      { "type": "scales", "size": 0.03, "bump": 0.5 }
+    ]
+  },
+  "motion": { "temperament": "stalking", "actions": ["bite", "roar", "look", "idle"] }
+}

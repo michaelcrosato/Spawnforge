@@ -30,6 +30,7 @@ export default definePart({
   attach: { on: 'limb' },
   params,
   example: { type: 'foot.claw', toes: 3, clawLength: 0.05 },
+  describe: (p) => `${p.toes as number}-toed clawed feet`,
   hooks: {
     toes(ctx, raw) {
       const p = raw as Params;

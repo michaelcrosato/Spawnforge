@@ -5,6 +5,7 @@ import bodyPlansBiped from './body-plans/biped.ts';
 import bodyPlansHexapod from './body-plans/hexapod.ts';
 import bodyPlansQuadruped from './body-plans/quadruped.ts';
 import bodyPlansSerpent from './body-plans/serpent.ts';
+import partsEarPointed from './parts/ear.pointed.ts';
 import partsEyeBasic from './parts/eye.basic.ts';
 import partsFootClaw from './parts/foot.claw.ts';
 import partsHornCurved from './parts/horn.curved.ts';
@@ -33,6 +34,7 @@ export const basicPack = definePack({
     bodyPlansHexapod,
     bodyPlansQuadruped,
     bodyPlansSerpent,
+    partsEarPointed,
     partsEyeBasic,
     partsFootClaw,
     partsHornCurved,

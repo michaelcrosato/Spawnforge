@@ -1,0 +1,83 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Tusk Boar",
+  "seed": 808,
+  "extends": "quadruped",
+  "scale": 1,
+  "body": {
+    "torso": { "radius": [0.2, 0.27, 0.25, 0.2], "arch": 0.1 },
+    "neck": { "length": 0.12, "radius": [0.16, 0.22], "pitch": 10 },
+    "head": { "shape": "snout", "length": 0.42, "radius": 0.18, "jaw": true, "pitch": -15 },
+    "tail": { "length": 0.14, "radius": [0.04, 0.012], "pitch": 20, "curl": 40 }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "attach": { "on": "torso", "at": 0.14 },
+      "length": 0.38,
+      "radius": [0.09, 0.05],
+      "foot": {
+        "type": "foot.claw",
+        "toes": 2,
+        "toeLength": 0.05,
+        "clawLength": 0.02,
+        "spread": 30
+      }
+    },
+    {
+      "id": "hindleg",
+      "attach": { "on": "torso", "at": 0.86 },
+      "length": 0.4,
+      "radius": [0.1, 0.05],
+      "foot": {
+        "type": "foot.claw",
+        "toes": 2,
+        "toeLength": 0.05,
+        "clawLength": 0.02,
+        "spread": 30
+      }
+    }
+  ],
+  "parts": [
+    {
+      "id": "tusks",
+      "type": "horn.curved",
+      "attach": { "on": "jaw", "at": 0.25, "angle": 60 },
+      "params": {
+        "length": 0.16,
+        "width": 0.03,
+        "curve": -60,
+        "color": "#efe6cc",
+        "tipColor": "#d8ccaa"
+      }
+    },
+    {
+      "id": "ears",
+      "type": "ear.pointed",
+      "attach": { "on": "head", "at": 0.85, "angle": 45 },
+      "params": { "length": 0.12, "width": 0.06, "droop": 0.3 }
+    },
+    {
+      "id": "bristles",
+      "type": "spikes.row",
+      "attach": { "on": "spine", "from": 0.1, "to": 0.7, "angle": 0 },
+      "params": {
+        "count": 14,
+        "height": 0.05,
+        "width": 0.02,
+        "color": "#2a1e18",
+        "tipColor": "#2a1e18"
+      }
+    },
+    { "id": "eyes", "params": { "size": 0.025 } }
+  ],
+  "skin": {
+    "palette": { "base": "#5a4636", "belly": "#a08c74", "accent": "#2a1e18" },
+    "layers": [
+      { "type": "countershade", "strength": 0.6 },
+      { "type": "mottle", "scale": 0.12, "coverage": 0.5 },
+      { "type": "grime", "amount": 0.4 }
+    ]
+  },
+  "motion": { "temperament": "aggressive", "actions": ["bite", "roar", "look", "idle"] }
+}

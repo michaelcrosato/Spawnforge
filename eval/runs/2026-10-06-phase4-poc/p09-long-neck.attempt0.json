@@ -1,0 +1,47 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Stilt Strider",
+  "seed": 909,
+  "extends": "quadruped",
+  "scale": 1.2,
+  "body": {
+    "torso": { "radius": [0.12, 0.16, 0.15, 0.11], "pitch": 8, "arch": 0.05 },
+    "neck": { "length": 1.4, "radius": [0.04, 0.09], "pitch": 70, "segments": 8 },
+    "head": { "shape": "wedge", "length": 0.26, "radius": 0.06, "pitch": 0 },
+    "tail": { "length": 1.1, "radius": [0.07, 0.01], "pitch": -25, "curl": 15 }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "attach": { "on": "torso", "at": 0.12 },
+      "length": 1.25,
+      "radius": [0.06, 0.03],
+      "foot": { "type": "foot.claw", "toes": 3, "toeLength": 0.06, "clawLength": 0.02 }
+    },
+    {
+      "id": "hindleg",
+      "attach": { "on": "torso", "at": 0.88 },
+      "length": 1.25,
+      "radius": [0.07, 0.03],
+      "foot": { "type": "foot.claw", "toes": 3, "toeLength": 0.06, "clawLength": 0.02 }
+    }
+  ],
+  "parts": [
+    { "id": "eyes", "params": { "size": 0.022, "pupil": "slit" } },
+    {
+      "id": "ears",
+      "type": "ear.pointed",
+      "attach": { "on": "head", "at": 0.85, "angle": 50 },
+      "params": { "length": 0.08, "width": 0.03 }
+    }
+  ],
+  "skin": {
+    "palette": { "base": "#c89a50", "belly": "#efe0b0", "accent": "#5a3a1c" },
+    "material": "scales",
+    "layers": [
+      { "type": "countershade" },
+      { "type": "spots", "color": "accent", "size": 0.06, "density": 0.8, "jitter": 0.6 }
+    ]
+  },
+  "motion": { "temperament": "calm", "actions": ["look", "idle"] }
+}

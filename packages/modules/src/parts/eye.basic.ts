@@ -1,4 +1,4 @@
-import { colorRef, definePart } from '@spawnforge/core';
+import { colorName, colorRef, definePart } from '@spawnforge/core';
 import { z } from 'zod';
 
 const params = z.strictObject({
@@ -24,6 +24,13 @@ export default definePart({
     type: 'eye.basic',
     attach: { on: 'head', at: 0.4, angle: 60, side: 'both' },
     params: { size: 0.02, pupil: 'slit' },
+  },
+  describe(p) {
+    const size = p.size as number;
+    const big = size >= 0.05 ? 'big ' : size <= 0.015 ? 'small ' : '';
+    const pupil =
+      p.pupil === 'slit' ? 'slit-pupilled ' : p.pupil === 'goat' ? 'goat-pupilled ' : '';
+    return `${big}${colorName(p.irisColor as string)} ${pupil}eyes`;
   },
   hooks: {
     build(ctx, raw) {

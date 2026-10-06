@@ -16,13 +16,13 @@ Bestiary (working name) turns a short JSON *blueprint* into a finished 3D monste
 - **Modular.** Every part, pattern, gait and action is one self-registering module file. The core never names a specific part.
 - **LLM-first.** A described schema, semantic attachment ("torso at 30%, both sides") instead of coordinates, structured errors, a CLI, an MCP server, and renders an LLM can look at to check its own work.
 
-**The proof of concept is done when:**
+**The proof of concept is done when** (all five passed at the phase 4 gate; evidence in [poc.md](poc.md)):
 
-- [ ] A \~30-line blueprint becomes a textured monster walking over uneven ground in the browser, compiled in under half a second.
-- [ ] Four body plans run on the same code: biped, quadruped, six-legged and legless serpent.
-- [ ] A new part type is added by writing one file, with no core changes.
-- [ ] On a fixed 20-prompt suite, an LLM using only the docs and tools reaches a valid blueprint for at least 18 prompts within 3 fix rounds. A blind reviewer matches at least 16 renders to their prompts.
-- [ ] The same blueprint and seed produce an identical mesh, and 1,000 fuzzed blueprints compile without an error.
+- [x] A \~30-line blueprint becomes a textured monster walking over uneven ground in the browser, compiled in under half a second.
+- [x] Four body plans run on the same code: biped, quadruped, six-legged and legless serpent.
+- [x] A new part type is added by writing one file, with no core changes.
+- [x] On a fixed 20-prompt suite, an LLM using only the docs and tools reaches a valid blueprint for at least 18 prompts within 3 fix rounds. A blind reviewer matches at least 16 renders to their prompts.
+- [x] The same blueprint and seed produce an identical mesh, and 1,000 fuzzed blueprints compile without an error.
 
 ## Scope
 

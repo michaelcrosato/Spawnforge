@@ -32,6 +32,9 @@ importers:
       '@spawnforge/core':
         specifier: workspace:*
         version: link:packages/core
+      '@spawnforge/modules':
+        specifier: workspace:*
+        version: link:packages/modules
       '@spawnforge/render':
         specifier: workspace:*
         version: link:packages/render

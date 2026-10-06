@@ -205,10 +205,15 @@ export function compileCreature(
   let grid = fitGrid(sdf, cells);
   let surface = surfaceNets(sdf, grid);
   const budget = TRIANGLE_BUDGET[quality];
-  if (surface.indices.length / 3 > budget) {
-    const fewer = Math.floor(cells * Math.sqrt((budget * 0.85) / (surface.indices.length / 3)));
-    sdf = buildSdf(bones, skeleton.chains, (Math.max(extent.x, extent.y, extent.z) / fewer) * 0.9);
-    grid = fitGrid(sdf, fewer);
+  let gridCells = cells;
+  for (let pass = 0; pass < 3 && surface.indices.length / 3 > budget; pass++) {
+    gridCells = Math.floor(gridCells * Math.sqrt((budget * 0.85) / (surface.indices.length / 3)));
+    sdf = buildSdf(
+      bones,
+      skeleton.chains,
+      (Math.max(extent.x, extent.y, extent.z) / gridCells) * 0.9,
+    );
+    grid = fitGrid(sdf, gridCells);
     surface = surfaceNets(sdf, grid);
   }
   lap('mesh');
@@ -426,8 +431,9 @@ export function compileCreature(
     warnings.push({
       severity: 'warning',
       path: note.path,
-      code: 'part_failed',
+      code: note.code ?? 'part_failed',
       message: note.message,
+      ...(note.fix ? { fix: note.fix } : {}),
     });
   lap('parts');
 
@@ -495,7 +501,8 @@ export function compileCreature(
       max.max(new Vector3(list[i], list[i + 1], list[i + 2]));
     }
   }
-  if (min.y < -0.05 * L) warnings.push(belowGround(bones, min.y, L));
+  if (min.y < -0.05 * L)
+    warnings.push(belowGround(bones, min.y, L, skeleton.rig.posture === 'legless'));
   lap('finish');
 
   const triangles = {
@@ -802,7 +809,12 @@ export function compiledTransferables(c: CompiledCreature): ArrayBuffer[] {
 }
 
 /** Names the lowest section and how to lift it, for a creature that sinks into the ground. */
-function belowGround(bones: readonly BoneDef[], lowest: number, L: number): Issue {
+function belowGround(
+  bones: readonly BoneDef[],
+  lowest: number,
+  L: number,
+  legless: boolean,
+): Issue {
   let owner = 'torso';
   let low = Infinity;
   for (const b of bones) {
@@ -819,7 +831,9 @@ function belowGround(bones: readonly BoneDef[], lowest: number, L: number): Issu
     head: 'raise body.neck.pitch or body.head.pitch, or shorten the neck',
     jaw: 'raise body.neck.pitch or body.head.pitch, or shorten the neck',
     neck: 'raise body.neck.pitch or shorten the neck',
-    torso: 'lengthen the legs or make body.torso.radius smaller',
+    torso: legless
+      ? 'lower body.torso.pitch (a legless body lies on the ground)'
+      : 'lengthen the legs or make body.torso.radius smaller',
   };
   return {
     severity: 'warning',
@@ -828,4 +842,26 @@ function belowGround(bones: readonly BoneDef[], lowest: number, L: number): Issu
     message: `the ${section ? owner : `limb ${owner}`} reaches ${(-lowest / L).toFixed(2)} torso lengths below the ground`,
     fix: fixes[owner] ?? 'raise its attach point or shorten it',
   };
+}
+
+/**
+ * FNV-1a over a quantized copy of the meshes and skeleton (0.1 mm): the golden-test identity of
+ * a compiled creature, stable across runs, Node and browsers.
+ */
+export function fingerprint(c: CompiledCreature): string {
+  let h = 0x811c9dc5;
+  const feed = (values: ArrayLike<number>, quantum: number) => {
+    for (let i = 0; i < values.length; i++) {
+      h ^= Math.round((values[i] as number) / quantum) | 0;
+      h = Math.imul(h, 0x01000193) >>> 0;
+    }
+  };
+  feed(c.skin.positions, 1e-4);
+  feed(c.skin.indices, 1);
+  feed(c.skin.skinIndex, 1);
+  feed(c.parts.positions, 1e-4);
+  feed(c.eyes.positions, 1e-4);
+  feed(c.bones.positions, 1e-4);
+  feed(c.bones.rotations, 1e-4);
+  return h.toString(16).padStart(8, '0');
 }

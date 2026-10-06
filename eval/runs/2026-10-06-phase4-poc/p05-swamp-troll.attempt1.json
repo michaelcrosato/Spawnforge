@@ -1,0 +1,105 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Swamp Troll",
+  "seed": 505,
+  "extends": "biped",
+  "scale": 0.95,
+  "body": {
+    "torso": {
+      "radius": [0.17, 0.26, 0.23, 0.17],
+      "pitch": 66,
+      "crossSection": "round"
+    },
+    "neck": {
+      "length": 0.22,
+      "pitch": 50,
+      "radius": [0.11, 0.14]
+    },
+    "head": {
+      "shape": "flat",
+      "length": 0.36,
+      "radius": 0.19,
+      "pitch": -12,
+      "crossSection": "wide"
+    }
+  },
+  "limbs": [
+    {
+      "id": "leg",
+      "length": 1,
+      "radius": [0.12, 0.07],
+      "splay": 6
+    },
+    {
+      "id": "arm",
+      "length": 1.6,
+      "radius": [0.1, 0.07],
+      "foot": {
+        "type": "foot.claw",
+        "toes": 3,
+        "clawLength": 0.06
+      }
+    }
+  ],
+  "parts": [
+    {
+      "id": "tusks",
+      "type": "horn.curved",
+      "attach": {
+        "on": "jaw",
+        "at": 0.3,
+        "angle": 65
+      },
+      "params": {
+        "length": 0.2,
+        "width": 0.035,
+        "curve": -40,
+        "color": "#e8dcc0",
+        "tipColor": "#b8a888"
+      }
+    },
+    {
+      "id": "teeth",
+      "type": "teeth.row",
+      "params": {
+        "count": 6,
+        "fangs": 0
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#5f7a3c",
+      "belly": "#a9b070",
+      "accent": "#2f4a22",
+      "moss": "#8a9a3a"
+    },
+    "layers": [
+      {
+        "type": "countershade"
+      },
+      {
+        "type": "mottle",
+        "color": "accent",
+        "scale": 0.2,
+        "contrast": 0.6,
+        "coverage": 0.5
+      },
+      {
+        "type": "mottle",
+        "color": "moss",
+        "scale": 0.1,
+        "contrast": 0.5,
+        "coverage": 0.35
+      },
+      {
+        "type": "grime",
+        "amount": 0.4
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "lumbering",
+    "actions": ["bite", "roar", "look", "idle"]
+  }
+}

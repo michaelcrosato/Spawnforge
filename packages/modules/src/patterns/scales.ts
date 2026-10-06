@@ -14,6 +14,7 @@ export default definePattern({
     gap: z.number().min(0).max(1).default(0.3).describe('How dark and wide the gaps are'),
   }),
   example: { type: 'scales', size: 0.02, bump: 0.4 },
+  describe: () => 'scales',
   hooks: {
     shade(k, s, p, seed) {
       const size = p.size as number;

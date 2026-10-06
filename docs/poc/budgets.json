@@ -1,0 +1,50 @@
+{
+  "budgets": {
+    "compileMs": 500,
+    "skinTriangles": 30000,
+    "drawCalls": 3,
+    "motionMsPerCreature": 0.1,
+    "motionMsFor50": 5
+  },
+  "examples": [
+    {
+      "name": "bog-troll",
+      "lines": 87,
+      "compileMs": 282,
+      "chromeCompileMs": 367,
+      "skinTriangles": 20248,
+      "drawCalls": 3,
+      "motionMsPerFrame": 0.037
+    },
+    {
+      "name": "ember-beetle",
+      "lines": 29,
+      "compileMs": 287,
+      "chromeCompileMs": 372,
+      "skinTriangles": 26480,
+      "drawCalls": 3,
+      "motionMsPerFrame": 0.076
+    },
+    {
+      "name": "reed-viper",
+      "lines": 23,
+      "compileMs": 41,
+      "chromeCompileMs": 71,
+      "skinTriangles": 4008,
+      "drawCalls": 3,
+      "motionMsPerFrame": 0.063
+    },
+    {
+      "name": "ridgeback-stalker",
+      "lines": 63,
+      "compileMs": 111,
+      "chromeCompileMs": 149,
+      "skinTriangles": 11806,
+      "drawCalls": 3,
+      "motionMsPerFrame": 0.054
+    }
+  ],
+  "herd50": {
+    "medianMsPerFrame": 2.76
+  }
+}

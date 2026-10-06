@@ -106,6 +106,14 @@ const DEFAULT_COLOR: Record<PartMaterial, string> = {
   skin: '#7a6a50',
 };
 
+/** Something worth telling the blueprint's author about a part. */
+export interface PartNote {
+  readonly path: string;
+  readonly message: string;
+  readonly code?: string;
+  readonly fix?: string;
+}
+
 /** Accumulates part and eye geometry in model space. */
 export class PartSink {
   /** Where each part instance sits, for labels on debug renders. */
@@ -160,10 +168,12 @@ export function buildParts(
   }[],
   input: PartsInput,
   sink: PartSink,
-): { eyeBones: number[]; notes: { path: string; message: string }[] } {
+): { eyeBones: number[]; notes: PartNote[] } {
   const evaluator = new SdfEvaluator(input.sdf);
   const eyeBones: number[] = [];
-  const notes: { path: string; message: string }[] = [];
+  const notes: PartNote[] = [];
+  /** Per part instance: sampled vertices, and how many of them are outside the skin. */
+  const exposure = new Map<string, { total: number; outside: number }>();
   const rng = createRng(input.seed);
   const partPaths = new Map<
     string,
@@ -397,6 +407,17 @@ export function buildParts(
       sink.parts.weights.push(weights);
     }
     for (const i of local.indices) sink.parts.indices.push(base + i);
+    // How much of the piece shows: sample its vertices against the skin.
+    const seen = exposure.get(id) ?? { total: 0, outside: 0 };
+    exposure.set(id, seen);
+    const step = Math.max(3, Math.floor(local.positions.length / 3 / 64) * 3);
+    for (let v = base * 3; v < sink.parts.positions.length; v += step) {
+      seen.total++;
+      const x = sink.parts.positions[v] as number;
+      const y = sink.parts.positions[v + 1] as number;
+      const z = sink.parts.positions[v + 2] as number;
+      if (evaluator.eval(x, y, z) > 0.002 * input.scale) seen.outside++;
+    }
   };
 
   const contextFor = (
@@ -461,6 +482,21 @@ export function buildParts(
         message: `could not be built: ${(error as Error).message}`,
       });
     }
+  }
+
+  // Parts that barely show above the skin (teeth live inside the mouth, so they don't count).
+  for (const part of parts) {
+    const seen = exposure.get(part.id);
+    if (!seen || seen.total < 6 || part.mirror < 0) continue;
+    if (input.registry.get('part', part.type)?.slot === 'mouth') continue;
+    const shown = seen.outside / seen.total;
+    if (shown < 0.25)
+      notes.push({
+        path: `parts[id=${part.baseId}]`,
+        code: 'part_buried',
+        message: `only ${Math.round(shown * 100)}% of the part shows above the skin`,
+        fix: 'make it longer or larger, or attach it where the body is thinner',
+      });
   }
 
   for (const foot of feet) {

@@ -1,0 +1,134 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Rust Raptor",
+  "seed": 1201,
+  "extends": "biped",
+  "scale": 0.9,
+  "body": {
+    "torso": {
+      "radius": [0.11, 0.19, 0.18, 0.11],
+      "pitch": 10,
+      "arch": 0.03,
+      "crossSection": "round",
+      "segments": 6
+    },
+    "neck": {
+      "length": 0.3,
+      "radius": [0.06, 0.09],
+      "pitch": 45,
+      "segments": 3
+    },
+    "head": {
+      "shape": "snout",
+      "length": 0.32,
+      "radius": 0.095,
+      "pitch": -5,
+      "jaw": true
+    },
+    "tail": {
+      "length": 1.7,
+      "radius": [0.1, 0.012],
+      "pitch": 0,
+      "curl": 0,
+      "segments": 10
+    }
+  },
+  "limbs": [
+    {
+      "id": "leg",
+      "attach": {
+        "on": "torso",
+        "at": 0.6,
+        "angle": 110
+      },
+      "length": 1.15,
+      "segments": 3,
+      "radius": [0.13, 0.06, 0.03],
+      "foot": {
+        "type": "foot.claw",
+        "toes": 3,
+        "toeLength": 0.12,
+        "clawLength": 0.05,
+        "spread": 40
+      },
+      "splay": 6
+    },
+    {
+      "id": "arm",
+      "attach": {
+        "on": "torso",
+        "at": 0.1,
+        "angle": 100
+      },
+      "length": 0.38,
+      "segments": 2,
+      "radius": [0.04, 0.022],
+      "lift": 45,
+      "foot": {
+        "type": "foot.claw",
+        "toes": 3,
+        "toeLength": 0.05,
+        "clawLength": 0.04
+      }
+    }
+  ],
+  "parts": [
+    {
+      "id": "eyes",
+      "attach": {
+        "on": "head",
+        "at": 0.35,
+        "angle": 65
+      },
+      "params": {
+        "size": 0.022,
+        "pupil": "slit",
+        "irisColor": "#f0a020"
+      }
+    },
+    {
+      "id": "teeth",
+      "type": "teeth.row",
+      "params": {
+        "count": 9,
+        "length": 0.03,
+        "fangs": 0
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#8a5a32",
+      "belly": "#e0d2a8",
+      "accent": "#3a2414"
+    },
+    "material": "scales",
+    "layers": [
+      {
+        "type": "countershade"
+      },
+      {
+        "type": "stripes",
+        "count": 14,
+        "width": 0.3,
+        "jitter": 0.35,
+        "region": "back"
+      },
+      {
+        "type": "scales",
+        "size": 0.03
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "aggressive",
+    "gaits": [
+      {
+        "type": "walk",
+        "duty": 0.4,
+        "stride": 1.5
+      }
+    ],
+    "actions": ["bite", "roar", "look", "idle"]
+  }
+}

@@ -174,3 +174,53 @@ export function hexToRgb(hex: string): [number, number, number] {
   const n = Number.parseInt(hex.slice(1), 16);
   return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
 }
+
+/**
+ * The plain name of a colour for descriptions ("dark green", "greyish blue", "sand"), chosen by
+ * hue, saturation and lightness, so a dull olive is not called tan nor a slate grey teal.
+ */
+export function colorName(color: string): string {
+  const hex = toHex(color);
+  if (!hex) return color;
+  const [r, g, b] = [1, 3, 5].map((i) => Number.parseInt(hex.slice(i, i + 2), 16) / 255) as [
+    number,
+    number,
+    number,
+  ];
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  const d = max - min;
+  const s = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1));
+  if (d < 0.06 || s < 0.12)
+    return l < 0.1
+      ? 'black'
+      : l < 0.3
+        ? 'charcoal'
+        : l < 0.6
+          ? 'grey'
+          : l < 0.85
+            ? 'pale grey'
+            : 'white';
+  const h =
+    max === r
+      ? (60 * ((g - b) / d) + 360) % 360
+      : max === g
+        ? 60 * ((b - r) / d + 2)
+        : 60 * ((r - g) / d + 4);
+  const shade = (name: string) => (l < 0.22 ? `dark ${name}` : l > 0.75 ? `pale ${name}` : name);
+  const muted = (name: string) => (s < 0.3 ? `greyish ${name}` : shade(name));
+  // Orange and yellow hues turn brown when dark or dull, and beige when light and dull.
+  if (h >= 15 && h < 50) {
+    if (l < 0.45 && (s < 0.75 || l < 0.3)) return l < 0.2 ? 'dark brown' : 'brown';
+    if (l > 0.6 && s < 0.6) return l > 0.82 ? 'cream' : h < 35 ? 'tan' : 'sand';
+    return h < 38 ? shade('orange') : 'golden';
+  }
+  if (h < 15 || h >= 345) return l > 0.7 ? 'pink' : shade('red');
+  if (h < 75) return l < 0.45 ? 'olive' : shade('yellow');
+  if (h < 160) return muted('green');
+  if (h < 200) return muted('teal');
+  if (h < 255) return muted('blue');
+  if (h < 290) return muted('purple');
+  return l > 0.6 ? 'pink' : shade('magenta');
+}

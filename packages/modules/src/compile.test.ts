@@ -4,6 +4,7 @@ import {
   compileCreature,
   createRegistry,
   FORMAT,
+  fingerprint,
   type MeshData,
   resolveBlueprint,
   validateBlueprint,
@@ -21,24 +22,6 @@ const examples = readdirSync(examplesDir)
   );
 const compile = (blueprint: unknown, quality: 'low' | 'medium' = 'low') =>
   compileCreature(resolveBlueprint(blueprint, registry), registry, { quality });
-
-/** FNV-1a over a quantized copy of the mesh and skeleton, stable across tiny float noise. */
-function fingerprint(c: CompiledCreature): string {
-  let h = 0x811c9dc5;
-  const feed = (values: ArrayLike<number>, quantum: number) => {
-    for (let i = 0; i < values.length; i++) {
-      h ^= Math.round((values[i] as number) / quantum) | 0;
-      h = Math.imul(h, 0x01000193) >>> 0;
-    }
-  };
-  feed(c.skin.positions, 1e-4);
-  feed(c.skin.indices, 1);
-  feed(c.skin.skinIndex, 1);
-  feed(c.parts.positions, 1e-4);
-  feed(c.eyes.positions, 1e-4);
-  feed(c.bones.positions, 1e-4);
-  return h.toString(16);
-}
 
 function checkMesh(name: string, mesh: MeshData) {
   const vertices = mesh.positions.length / 3;

@@ -1,0 +1,139 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Nightmare Hound",
+  "seed": 2005,
+  "extends": "quadruped",
+  "scale": 1.2,
+  "body": {
+    "torso": {
+      "radius": [0.14, 0.2, 0.15, 0.1],
+      "arch": 0.12
+    },
+    "neck": {
+      "length": 0.34,
+      "pitch": 25,
+      "radius": [0.08, 0.12]
+    },
+    "head": {
+      "shape": "snout",
+      "length": 0.38,
+      "radius": 0.115,
+      "pitch": -15
+    },
+    "tail": {
+      "length": 0.6,
+      "radius": [0.07, 0.01],
+      "curl": 25
+    }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "length": 0.62,
+      "radius": [0.055, 0.03],
+      "foot": {
+        "type": "foot.claw",
+        "toes": 4,
+        "clawLength": 0.045,
+        "clawColor": "#b8b0a0"
+      }
+    },
+    {
+      "id": "hindleg",
+      "length": 0.66,
+      "radius": [0.07, 0.03],
+      "foot": {
+        "type": "foot.claw",
+        "toes": 4,
+        "clawLength": 0.045,
+        "clawColor": "#b8b0a0"
+      }
+    }
+  ],
+  "parts": [
+    {
+      "id": "spines",
+      "type": "spikes.row",
+      "attach": {
+        "on": "spine",
+        "from": 0.18,
+        "to": 0.82,
+        "angle": 0
+      },
+      "params": {
+        "count": 16,
+        "height": [0.08, 0.2, 0.17, 0.09, 0.04],
+        "width": 0.022,
+        "curve": 40,
+        "jitter": 1,
+        "color": "#7a6c68",
+        "tipColor": "#a82020"
+      }
+    },
+    {
+      "id": "teeth",
+      "type": "teeth.row",
+      "params": {
+        "count": 10,
+        "fangs": 2,
+        "fangLength": 0.07
+      }
+    },
+    {
+      "id": "ears",
+      "type": "ear.pointed",
+      "attach": {
+        "on": "head",
+        "at": 0.85,
+        "angle": 45
+      },
+      "params": {
+        "length": 0.14,
+        "width": 0.05
+      }
+    },
+    {
+      "id": "eyes",
+      "attach": {
+        "on": "head",
+        "at": 0.35,
+        "angle": 58
+      },
+      "params": {
+        "size": 0.03,
+        "pupil": "slit",
+        "irisColor": "#ff2a2a",
+        "scleraColor": "#a01010"
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#0e0c10",
+      "belly": "#1c181e",
+      "accent": "#2a2429"
+    },
+    "layers": [
+      {
+        "type": "countershade",
+        "strength": 0.5
+      },
+      {
+        "type": "mottle",
+        "color": "#3a3028",
+        "scale": 0.12,
+        "strength": 0.6
+      },
+      {
+        "type": "grime",
+        "amount": 1,
+        "creases": 1,
+        "feet": 1
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "aggressive",
+    "actions": ["bite", "roar", "look", "idle"]
+  }
+}
