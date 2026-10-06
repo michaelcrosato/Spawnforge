@@ -19,6 +19,7 @@ import type {
   PartSpec,
   SideName,
 } from './creature.ts';
+import { headSpacing, instanceNames } from './instances.ts';
 import { formatPath, fromZodIssues, type Issue, type PathKey } from './issues.ts';
 import { cloneJson, isRecord, mergeBlueprint } from './merge.ts';
 import { migrate } from './migrate.ts';
@@ -642,11 +643,19 @@ function semanticChecks(doc: ResolvedDoc, registry: Registry): Issue[] {
     }
   }
 
-  // Limbs grow from body sections; legs come in mirrored pairs.
-  const limbSections = ['torso', ...(hasNeck ? ['neck'] : []), ...(hasTail ? ['tail'] : [])];
+  // Limbs grow from body sections (any neck or tail; tentacles also from the head); legs come in
+  // mirrored pairs.
+  const necks = hasNeck ? instanceNames('neck', doc.body.neck.count) : [];
+  const tails = hasTail ? instanceNames('tail', doc.body.tail.count) : [];
   let legCount = 0;
   for (const limb of doc.limbs) {
     const p = itemPath('limbs', limb.id);
+    const limbSections = [
+      'torso',
+      ...necks,
+      ...tails,
+      ...(limb.role === 'tentacle' ? ['head'] : []),
+    ];
     if (!limbSections.includes(limb.attach.on)) {
       const guess = didYouMean(limb.attach.on, limbSections);
       error(
@@ -672,15 +681,19 @@ function semanticChecks(doc: ResolvedDoc, registry: Registry): Issue[] {
         );
       }
     }
-    if (limb.foot) {
-      const module = registry.get('part', limb.foot.type);
-      if (module && module.slot !== 'foot') {
-        error(`${p}.foot.type`, 'wrong_slot', `"${limb.foot.type}" is not a foot part`, {
+    for (const key of ['foot', 'membrane'] as const) {
+      const slot = limb[key];
+      const module = slot ? registry.get('part', slot.type) : undefined;
+      if (slot && module && module.slot !== key) {
+        error(`${p}.${key}.type`, 'wrong_slot', `"${slot.type}" is not a ${key} part`, {
           expected: registry
             .list('part')
-            .filter((m) => m.slot === 'foot')
+            .filter((m) => m.slot === key)
             .map((m) => `"${m.id}"`)
             .join(', '),
+          ...(module.slot === 'foot' || module.slot === 'membrane'
+            ? { fix: `set it in "${module.slot}" instead` }
+            : {}),
         });
       }
     }
@@ -689,7 +702,49 @@ function semanticChecks(doc: ResolvedDoc, registry: Registry): Issue[] {
     error('limbs', 'too_many_legs', `${legCount} leg pairs; at most 6 are supported`);
   }
 
-  // Parts attach to sections, limbs or other parts.
+  // Several heads need room to sit side by side.
+  const chest = (
+    typeof doc.body.torso.radius === 'number'
+      ? doc.body.torso.radius
+      : (doc.body.torso.radius[0] ?? 0.15)
+  ) as number;
+  const spread = doc.body.neck.spread ?? Math.min(170, NECK_SPREAD * (doc.body.neck.count - 1));
+  const spacing = headSpacing({
+    neck: { count: doc.body.neck.count, length: doc.body.neck.length, spread },
+    head: doc.body.head,
+    chest,
+  });
+  if (spacing.gap < spacing.needed) {
+    let wider = spread;
+    while (wider < 170) {
+      wider += 5;
+      const s = headSpacing({
+        neck: { count: doc.body.neck.count, length: doc.body.neck.length, spread: wider },
+        head: doc.body.head,
+        chest,
+      });
+      if (s.gap >= s.needed) break;
+    }
+    warn(
+      'body.neck',
+      'heads_overlap',
+      `${doc.body.neck.count} heads ${(spacing.gap * 100).toFixed(0)}% of a torso length apart would overlap`,
+      {
+        fix:
+          wider < 170
+            ? `set "spread": ${wider} or more, or lengthen the necks`
+            : 'lengthen the necks (body.neck.length) or make the heads smaller',
+      },
+    );
+  }
+
+  // Parts attach to sections (or one instance of several), limbs or other parts.
+  const instances = [
+    ...necks,
+    ...(hasNeck || doc.body.neck.count > 1 ? instanceNames('head', doc.body.neck.count) : []),
+    ...(doc.body.head.jaw ? instanceNames('jaw', doc.body.neck.count) : []),
+    ...tails,
+  ];
   const limbIds = new Set(doc.limbs.map((l) => l.id));
   const partIds = new Set(doc.parts.map((p) => p.id));
   for (const part of doc.parts) {
@@ -707,10 +762,26 @@ function semanticChecks(doc: ResolvedDoc, registry: Registry): Issue[] {
       );
       continue;
     }
+    if (module.slot === 'membrane') {
+      error(
+        `${p}.type`,
+        'wrong_slot',
+        `"${part.type}" is a membrane; set it in a wing or fin limb's "membrane" field instead`,
+        { fix: `use { "role": "wing", "membrane": "${part.type}" } in "limbs"` },
+      );
+      continue;
+    }
+    if (part.attach.area !== undefined && module.slot !== 'area')
+      error(`${p}.attach.area`, 'wrong_slot', `"${part.type}" sits at a point, not over an area`, {
+        fix: 'remove "area"; place it with "at" and "angle"',
+      });
     const on = part.attach.on ?? module.attach.on;
     const base = on.replace(/\.(L|R)$/, '');
     const known =
-      sections.includes(on) || limbIds.has(base) || (partIds.has(base) && base !== part.id);
+      sections.includes(on) ||
+      instances.includes(on) ||
+      limbIds.has(base) ||
+      (partIds.has(base) && base !== part.id);
     if (!known) {
       const candidates = [...sections, ...limbIds, ...[...partIds].filter((id) => id !== part.id)];
       // Names models reach for that are parts of a section rather than sections.

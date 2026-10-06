@@ -1,4 +1,10 @@
-import { blueprintSchemaFor, FORMAT, MODULE_KINDS, type ModuleKind } from '@spawnforge/core';
+import {
+  blueprintSchemaFor,
+  FORMAT,
+  MODULE_KINDS,
+  type ModuleKind,
+  ROLE_DEFAULTS,
+} from '@spawnforge/core';
 import { z } from 'zod';
 import { describeModule, getRegistry } from './commands.ts';
 import { compactJson } from './json.ts';
@@ -24,7 +30,8 @@ interface JsonProp {
   items?: JsonProp;
 }
 
-function typeOf(p: JsonProp): string {
+function typeOf(p: JsonProp & { const?: unknown }): string {
+  if (p.const !== undefined) return JSON.stringify(p.const);
   if (p.enum) return p.enum.map((v) => JSON.stringify(v)).join(' | ');
   if (p.anyOf) return p.anyOf.map(typeOf).join(' or ');
   if (p.type === 'array' && p.items) return `list of ${typeOf(p.items)}`;
@@ -120,6 +127,9 @@ interface JsonNode extends JsonProp {
   properties?: Record<string, JsonNode>;
   additionalProperties?: JsonNode | boolean;
   prefault?: unknown;
+  oneOf?: JsonNode[];
+  items?: JsonNode;
+  const?: unknown;
 }
 
 /** Follows anyOf/items to the object schema inside a property, if any. */
@@ -142,7 +152,17 @@ function renderFields(registry = getRegistry()): string[] {
   }) as JsonNode;
   const top = schema.properties ?? {};
   const body = objectIn(top.body)?.properties ?? {};
-  const limb = objectIn(top.limbs);
+  // Limbs are one schema per role; each role gets its own table.
+  const limbItems = (top.limbs?.items ?? objectIn(top.limbs)) as JsonNode | undefined;
+  const roles = [
+    ...((limbItems?.oneOf ?? []) as JsonNode[]),
+    ...((limbItems?.anyOf ?? []) as JsonNode[]),
+  ].filter((o) => o.properties?.role);
+  const roleName = (o: JsonNode) => {
+    const r = o.properties?.role as (JsonNode & { const?: unknown }) | undefined;
+    return String(r?.const ?? r?.default ?? '?');
+  };
+  const limb = roles[0] ?? objectIn(top.limbs);
   const part = objectIn(top.parts);
   const skin = objectIn(top.skin)?.properties ?? {};
   const sections: [string, JsonNode | undefined][] = [
@@ -151,8 +171,16 @@ function renderFields(registry = getRegistry()): string[] {
     ['body.neck', objectIn(body.neck)],
     ['body.head', objectIn(body.head)],
     ['body.tail', objectIn(body.tail)],
-    ['limbs[]', limb],
-    ['limbs[].attach', objectIn(limb?.properties?.attach)],
+    ...roles.map((o): [string, JsonNode | undefined] => [
+      `limbs[] with "role": "${roleName(o)}"`,
+      o,
+    ]),
+    [
+      `limbs[].attach (at and angle default by role: ${Object.entries(ROLE_DEFAULTS)
+        .map(([role, d]) => `${role} ${d.at} and ${d.angle}`)
+        .join(', ')})`,
+      objectIn(limb?.properties?.attach),
+    ],
     ['parts[]', part],
     ['parts[].attach', objectIn(part?.properties?.attach)],
     ['skin', objectIn(top.skin)],
@@ -177,7 +205,7 @@ function renderFields(registry = getRegistry()): string[] {
         !p.description
       )
         continue;
-      const nested = objectIn(p) && !['foot', 'palette'].includes(name);
+      const nested = objectIn(p) && !['foot', 'membrane', 'palette'].includes(name);
       const type = nested && p.type !== 'array' ? 'object (below)' : typeOf(p);
       const def = p.default === undefined ? '' : `\`${compactJson(p.default)}\``;
       out.push(

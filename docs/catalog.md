@@ -14,7 +14,7 @@ Every field outside the modules, generated from the schema. Fields with a defaul
 
 | Field | Type | Range | Default | Description |
 | --- | --- | --- | --- | --- |
-| `format` | string |  |  | Format id and version |
+| `format` | "spawnforge/0.2" |  |  | Format id and version |
 | `name` | string |  | `"Unnamed creature"` |  |
 | `seed` | integer | 0–4294967295 | `1` | Same blueprint and seed, same monster |
 | `extends` | "biped" \| "centaur" \| "fish" \| "hexapod" \| "octopod" \| "quadruped" \| "serpent" \| "wyvern" |  |  | Body-plan preset to start from |
@@ -82,6 +82,104 @@ Runs back from the torso. `at` runs from the root (0) to the tip (1).
 | `spread` | number | 0–170 |  | Degrees between the outermost tails as they fan out; default 20 per extra tail |
 | `forkAt` | number | 0–0.95 | `0` | Where along the tail several tails branch: 0 leaves the torso separately, 0.7 forks near the tip |
 
+### `limbs[] with "role": "leg"`
+
+A leg: carries the body; legs come in mirrored pairs
+
+| Field | Type | Range | Default | Description |
+| --- | --- | --- | --- | --- |
+| `role` | "leg" |  | `"leg"` | "leg" limbs carry the body |
+| `id` | string |  |  | Unique id; mirrored copies get .L and .R |
+| `attach` | object (below) |  | `{}` |  |
+| `length` | number | 0.05–3 | `0.5` | Total limb length in torso lengths |
+| `segments` | integer | 2–4 | `3` | Bones from hip or shoulder to ankle |
+| `radius` | number or list of number | 0.005–0.5 | `[0.06, 0.03]` | Radius from root to tip, in torso lengths |
+| `muscle` | number | 0–1 |  | How muscled this limb is, 0 to 1; left out, it follows body.muscle |
+| `remove` | true |  |  | Delete an inherited limb with this id |
+| `splay` | number | -30–90 | `0` | Degrees the limb swings out from under the body; about 50 for sprawlers |
+| `lift` | number | 0–150 | `0` | Arms only: degrees the arm is raised forward from hanging; 90 holds it straight out (pincers) |
+| `stance` | "plantigrade" \| "digitigrade" \| "unguligrade" |  |  | How the foot meets the ground: plantigrade (whole sole), digitigrade (toes), unguligrade (hoof tips); left out, the foot suggests one |
+| `foot` | object or "foot.claw" \| "foot.hoof" \| "foot.pad" \| "foot.paw" \| "foot.talon" \| "hand.grasp" \| "hand.pincer" or null |  | `{}` | Foot or hand part at the limb tip (default { "type": "foot.claw" }); the id alone also works; null for none |
+
+### `limbs[] with "role": "arm"`
+
+An arm: hangs free, for grabbing and striking
+
+| Field | Type | Range | Default | Description |
+| --- | --- | --- | --- | --- |
+| `role` | "arm" |  |  | "arm" limbs are free for actions |
+| `id` | string |  |  | Unique id; mirrored copies get .L and .R |
+| `attach` | object (below) |  | `{}` |  |
+| `length` | number | 0.05–3 | `0.5` | Total limb length in torso lengths |
+| `segments` | integer | 2–4 | `3` | Bones from hip or shoulder to ankle |
+| `radius` | number or list of number | 0.005–0.5 | `[0.06, 0.03]` | Radius from root to tip, in torso lengths |
+| `muscle` | number | 0–1 |  | How muscled this limb is, 0 to 1; left out, it follows body.muscle |
+| `remove` | true |  |  | Delete an inherited limb with this id |
+| `splay` | number | -30–90 | `0` | Degrees the limb swings out from under the body; about 50 for sprawlers |
+| `lift` | number | 0–150 | `0` | Arms only: degrees the arm is raised forward from hanging; 90 holds it straight out (pincers) |
+| `foot` | object or "foot.claw" \| "foot.hoof" \| "foot.pad" \| "foot.paw" \| "foot.talon" \| "hand.grasp" \| "hand.pincer" or null |  | `{}` | Foot or hand part at the limb tip (default { "type": "foot.claw" }); the id alone also works; null for none |
+
+### `limbs[] with "role": "wing"`
+
+A wing: an arm-like chain carrying a membrane, folded at rest
+
+| Field | Type | Range | Default | Description |
+| --- | --- | --- | --- | --- |
+| `role` | "wing" |  |  | "wing" limbs fold at rest and beat in the air |
+| `id` | string |  |  | Unique id; mirrored copies get .L and .R |
+| `attach` | object (below) |  | `{}` |  |
+| `length` | number | 0.05–3 | `1.2` | Total limb length in torso lengths |
+| `segments` | integer | 2–4 | `3` | Bones from hip or shoulder to ankle |
+| `radius` | number or list of number | 0.005–0.5 | `[0.05, 0.015]` | Radius from root to tip, in torso lengths |
+| `muscle` | number | 0–1 |  | How muscled this limb is, 0 to 1; left out, it follows body.muscle |
+| `remove` | true |  |  | Delete an inherited limb with this id |
+| `membrane` | object or "membrane.bat" \| "membrane.case" \| "membrane.feather" \| "membrane.fin" \| "membrane.insect" or null |  | `{}` | The surface the limb carries (skin, feathers, a fin) (default { "type": "membrane.bat" }); the id alone also works; null for none |
+| `foot` | object or "foot.claw" \| "foot.hoof" \| "foot.pad" \| "foot.paw" \| "foot.talon" \| "hand.grasp" \| "hand.pincer" or null |  | `null` | Claw at the wrist (a bat's thumb); the id alone also works; null for none |
+
+### `limbs[] with "role": "fin"`
+
+A fin or flipper: a short flat limb; null membrane makes a flipper
+
+| Field | Type | Range | Default | Description |
+| --- | --- | --- | --- | --- |
+| `role` | "fin" |  |  | "fin" limbs steer and beat in water |
+| `id` | string |  |  | Unique id; mirrored copies get .L and .R |
+| `attach` | object (below) |  | `{}` |  |
+| `length` | number | 0.05–3 | `0.35` | Total limb length in torso lengths |
+| `segments` | integer | 2–4 | `2` | Bones from hip or shoulder to ankle |
+| `radius` | number or list of number | 0.005–0.5 | `[0.05, 0.02]` | Radius from root to tip, in torso lengths |
+| `muscle` | number | 0–1 |  | How muscled this limb is, 0 to 1; left out, it follows body.muscle |
+| `remove` | true |  |  | Delete an inherited limb with this id |
+| `membrane` | object or "membrane.bat" \| "membrane.case" \| "membrane.feather" \| "membrane.fin" \| "membrane.insect" or null |  | `{}` | The surface the limb carries (skin, feathers, a fin) (default { "type": "membrane.fin" }); the id alone also works; null for none |
+| `foot` | object or "foot.claw" \| "foot.hoof" \| "foot.pad" \| "foot.paw" \| "foot.talon" \| "hand.grasp" \| "hand.pincer" or null |  | `null` | Foot or hand part at the limb tip; the id alone also works; null for none |
+
+### `limbs[] with "role": "tentacle"`
+
+A tentacle: a long tapering chain of up to 16 bones
+
+| Field | Type | Range | Default | Description |
+| --- | --- | --- | --- | --- |
+| `role` | "tentacle" |  |  | "tentacle" limbs curl and reach |
+| `id` | string |  |  | Unique id; mirrored copies get .L and .R |
+| `attach` | object (below) |  | `{}` |  |
+| `length` | number | 0.05–4 | `1.5` | Total limb length in torso lengths |
+| `segments` | integer | 2–16 | `10` | Bones along the tentacle |
+| `radius` | number or list of number | 0.005–0.5 | `[0.06, 0.008]` | Radius from root to tip, in torso lengths |
+| `muscle` | number | 0–1 |  | How muscled this limb is, 0 to 1; left out, it follows body.muscle |
+| `remove` | true |  |  | Delete an inherited limb with this id |
+| `curl` | number | -360–360 | `0` | Total degrees the tentacle curls at rest; negative curls the other way |
+| `curlStart` | number | 0–0.95 | `0` | Share of the tentacle that stays straight before the curl begins |
+| `foot` | object or "foot.claw" \| "foot.hoof" \| "foot.pad" \| "foot.paw" \| "foot.talon" \| "hand.grasp" \| "hand.pincer" or null |  | `null` | Foot or hand part at the limb tip; the id alone also works; null for none |
+
+### `limbs[].attach (at and angle default by role: leg 0.5 and 100, arm 0.5 and 100, wing 0.2 and 40, fin 0.25 and 115, tentacle 0.9 and 150)`
+
+| Field | Type | Range | Default | Description |
+| --- | --- | --- | --- | --- |
+| `on` | string |  | `"torso"` | Body section the limb grows from |
+| `at` | number | 0–1 | `0.5` | Where along the section: 0 is the snout end, 1 the tail end |
+| `side` | "both" \| "left" \| "right" \| "center" |  | `"both"` | "both" makes a mirrored pair with ids ending .L and .R |
+| `angle` | number | 0–180 | `100` | Degrees around the section from the top: 90 is the side, 180 the belly |
+
 ### `parts[]`
 
 | Field | Type | Range | Default | Description |
@@ -90,7 +188,7 @@ Runs back from the torso. `at` runs from the root (0) to the tip (1).
 | `type` | "antenna" \| "armor.bands" \| "beak" \| "ear.pointed" \| "eye.basic" \| "fin.dorsal" \| "fin.tail" \| "frill" \| "hood" \| "horn.curved" \| "mandible" \| "plates.row" \| "quills" \| "sail" \| "shell" \| "spikes.row" \| "teeth.row" |  |  | Part module id |
 | `attach` | object (below) |  | `{}` |  |
 | `params` | object |  | `{}` | The part module's parameters |
-| `remove` | boolean |  |  | Delete an inherited part with this id |
+| `remove` | true |  |  | Delete an inherited part with this id |
 
 ### `parts[].attach`
 

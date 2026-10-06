@@ -21,6 +21,8 @@ interface Schema {
   minimum?: number;
   maximum?: number;
   enum?: unknown[];
+  const?: unknown;
+  default?: unknown;
   properties?: Record<string, Schema>;
   items?: Schema;
   anyOf?: Schema[];
@@ -78,6 +80,19 @@ function child(node: Schema | undefined, key: string): Schema | undefined {
   );
 }
 
+/** The variant of a union whose `role` (its discriminator) matches the value's. */
+function variantOf(node: Schema | undefined, value: Json): Schema | undefined {
+  const variants = options(node).filter((s) => s.properties?.role);
+  if (variants.length === 0) return node;
+  const role = value.role ?? 'leg';
+  return (
+    variants.find((s) => {
+      const r = s.properties?.role;
+      return r?.const === role || r?.default === role;
+    }) ?? node
+  );
+}
+
 function itemsOf(node: Schema | undefined): Schema | undefined {
   if (!node) return undefined;
   return node.items ?? options(node).find((s) => s.items)?.items;
@@ -99,7 +114,7 @@ function enumOf(node: Schema | undefined): unknown[] | undefined {
 
 /** Which module kind a `{ type, params }` object at this path refers to. */
 function moduleKindAt(path: string): ModuleKind | undefined {
-  if (/^parts\[[^\]]+\]$/.test(path) || /\.foot$/.test(path)) return 'part';
+  if (/^parts\[[^\]]+\]$/.test(path) || /\.(foot|membrane)$/.test(path)) return 'part';
   if (/^skin\.layers\[[^\]]+\]$/.test(path)) return 'pattern';
   if (/^motion\.gaits\[[^\]]+\]$/.test(path)) return 'gait';
   if (/^motion\.actions\[[^\]]+\]$/.test(path)) return 'action';
@@ -180,6 +195,8 @@ export function genesOf(doc: Json, registry: Registry): Gene[] {
       return;
     }
     if (!isRecord(value)) return;
+    // A union keyed by a field (limbs by `role`): use the variant this value is.
+    node = variantOf(node, value);
     const kind = moduleKindAt(path);
     const module =
       kind && typeof value.type === 'string' ? registry.get(kind, value.type) : undefined;
