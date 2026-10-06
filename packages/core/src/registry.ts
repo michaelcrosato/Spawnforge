@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { StatsHooks } from './analysis/stats.ts';
 import type { PartHooks } from './compile/parts.ts';
 import type { ActionHooks } from './motion/actions.ts';
 import type { PatternHooks } from './shading/kit.ts';
@@ -105,7 +106,10 @@ export interface ThemeModule<P extends z.ZodType = z.ZodType> extends ModuleBase
 }
 
 export interface StatsModule<P extends z.ZodType = z.ZodType> extends ModuleBase<'stats', P> {
-  readonly hooks?: unknown;
+  /** Body to game numbers (see `StatsHooks`). */
+  readonly hooks: StatsHooks;
+  /** What each number means, by name, for the catalogue. */
+  readonly outputs: Readonly<Record<string, string>>;
 }
 
 export interface ModuleByKind {

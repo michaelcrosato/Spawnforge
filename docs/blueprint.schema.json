@@ -1520,6 +1520,20 @@
       "type": "object",
       "properties": {},
       "additionalProperties": false
+    },
+    "stats:rpg": {
+      "description": "Generic action-RPG numbers: health from mass, speed from legs and gaits, attack from teeth, horns and claws, defence from chitin, scales and spikes, perception from eyes and ears.",
+      "type": "object",
+      "properties": {
+        "level": {
+          "default": 1,
+          "description": "Multiplies health, attack and defence (unitless; 1 is a normal encounter)",
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 10
+        }
+      },
+      "additionalProperties": false
     }
   }
 }

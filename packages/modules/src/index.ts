@@ -28,6 +28,7 @@ import actionsRoar from './actions/roar.ts';
 import themesDemon from './themes/demon.ts';
 import themesInsect from './themes/insect.ts';
 import themesReptile from './themes/reptile.ts';
+import statsRpg from './stats/rpg.ts';
 
 /** The first pack: body plans, parts, patterns, gaits and actions for the proof of concept. */
 export const basicPack = definePack({
@@ -60,5 +61,6 @@ export const basicPack = definePack({
     themesDemon,
     themesInsect,
     themesReptile,
+    statsRpg,
   ],
 });

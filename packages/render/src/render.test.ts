@@ -97,6 +97,34 @@ describe('headless renders', () => {
     }
   }, 120_000);
 
+  it('exports a .glb with skinned meshes, vertex colours, clips, sockets and extras', async () => {
+    const blueprint = JSON.parse(
+      readFileSync(new URL('../../../examples/ridgeback-stalker.json', import.meta.url), 'utf8'),
+    );
+    const { glb, info } = await renderer.export({
+      blueprint,
+      quality: 'low',
+      clips: ['idle', 'walk', 'bite'],
+      extras: { blueprint },
+    });
+    expect(glb.subarray(0, 4).toString()).toBe('glTF');
+    expect(glb.readUInt32LE(8)).toBe(glb.length);
+    const json = JSON.parse(glb.subarray(20, 20 + glb.readUInt32LE(12)).toString('utf8'));
+    expect(json.meshes).toHaveLength(3);
+    expect(json.skins).toHaveLength(3);
+    for (const mesh of json.meshes)
+      expect(Object.keys(mesh.primitives[0].attributes)).toEqual(
+        expect.arrayContaining(['POSITION', 'NORMAL', 'JOINTS_0', 'WEIGHTS_0', 'COLOR_0']),
+      );
+    expect(json.animations.map((a: { name: string }) => a.name)).toEqual(['idle', 'walk', 'bite']);
+    const names = json.nodes.map((n: { name?: string }) => n.name);
+    expect(names).toEqual(expect.arrayContaining(['socket_mouth', 'socket_head']));
+    const extras = json.nodes.find((n: { extras?: unknown }) => n.extras).extras.spawnforge;
+    expect(extras.blueprint.name).toBe('Ridgeback Stalker');
+    expect(extras.clips.find((c: { name: string }) => c.name === 'walk').loop).toBe(true);
+    expect(info.clips).toHaveLength(3);
+  }, 120_000);
+
   it('refuses invalid blueprints with the validation errors', async () => {
     await expect(renderer.render({ blueprint: { format: FORMAT, scale: 99 } })).rejects.toThrow(
       /scale/,

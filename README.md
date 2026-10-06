@@ -41,8 +41,10 @@ drag sliders or edit its JSON, press its action buttons, and save blueprints in 
 see them appear live. Phase 4 added `patch` and `analyze` and passed the proof-of-concept gate
 ([evidence](docs/poc.md)). Phase 5 added variation: species with ranges, `mutate`,
 `crossbreed`, and `generate` from a theme (`spawnforge generate --theme demon --seed 3`), also in
-the sandbox's breed tab. Phase 6 (export and the game runtime) is next; see
-[docs/plan.md](docs/plan.md) for the milestones.
+the sandbox's breed tab. Phase 6 added the path into games: `spawnforge export` writes a `.glb`
+with baked clips, vertex colours, sockets and stats, and `createBestiary` runs creatures live in
+a Three.js game ([docs/runtime.md](docs/runtime.md)). All the plan's phases are done; see
+[docs/plan.md](docs/plan.md) for what comes later.
 
 ![Ridgeback stalker](examples/ridgeback-stalker.png)
 

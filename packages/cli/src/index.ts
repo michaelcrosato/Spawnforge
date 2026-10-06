@@ -8,6 +8,7 @@ export {
   DEFAULT_PACKS,
   type DescribeModuleResult,
   describeModule,
+  exportExtras,
   generate,
   getRegistry,
   instantiate,

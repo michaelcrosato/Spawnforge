@@ -2,9 +2,17 @@ import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { type Browser, chromium, type Page } from 'playwright-core';
 import { createServer, type ViteDevServer } from 'vite';
-import type { RenderInfo, RenderRequest, RenderResponse, View } from '../page/protocol.ts';
+import type {
+  ExportInfo,
+  ExportRequest,
+  ExportResponse,
+  RenderInfo,
+  RenderRequest,
+  RenderResponse,
+  View,
+} from '../page/protocol.ts';
 
-export type { RenderInfo, RenderRequest, View };
+export type { ExportInfo, ExportRequest, RenderInfo, RenderRequest, View };
 
 const pageRoot = fileURLToPath(new URL('../page/', import.meta.url));
 
@@ -104,6 +112,23 @@ export class Renderer {
     };
   }
 
+  /**
+   * Exports a blueprint as binary glTF (.glb): skinned mesh with baked vertex colours, skeleton,
+   * baked clips, sockets as nodes, and `extras` stored in the file.
+   */
+  async export(request: ExportRequest): Promise<{ glb: Buffer; info: ExportInfo }> {
+    const response = (await this.page.evaluate(
+      (req) =>
+        (
+          (globalThis as PageGlobals).spawnforgeExport as (
+            r: ExportRequest,
+          ) => Promise<ExportResponse>
+        )(req),
+      request,
+    )) as ExportResponse;
+    return { glb: Buffer.from(response.glb, 'base64'), info: response.info };
+  }
+
   /** Compiles a blueprint in Chromium and returns its fingerprint (see core's `fingerprint`). */
   async fingerprint(
     blueprint: unknown,
@@ -164,5 +189,18 @@ interface PageGlobals {
   spawnforgeReady?: boolean;
   spawnforgeRender?: (request: RenderRequest) => Promise<RenderResponse>;
   spawnforgeFingerprint?: (blueprint: unknown, quality: 'low' | 'medium' | 'high') => string;
+  spawnforgeExport?: (request: ExportRequest) => Promise<ExportResponse>;
   spawnforgeDiff?: (a: string, b: string, threshold: number) => Promise<unknown>;
+}
+
+/** One-shot export: launches, exports and closes. */
+export async function exportBlueprint(
+  request: ExportRequest,
+): Promise<{ glb: Buffer; info: ExportInfo }> {
+  const renderer = await Renderer.launch();
+  try {
+    return await renderer.export(request);
+  } finally {
+    await renderer.close();
+  }
 }

@@ -1,4 +1,5 @@
 import {
+  bakeClips,
   compileCreature,
   createRegistry,
   fingerprint,
@@ -7,10 +8,18 @@ import {
   validateBlueprint,
 } from '@spawnforge/core';
 import { basicPack } from '@spawnforge/modules';
-import { createCreatureObject, createRenderer } from '@spawnforge/three';
+import { buildExportScene, createCreatureObject, createRenderer } from '@spawnforge/three';
 import * as THREE from 'three';
+import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 import { diagramHeight, drawFilmstrip } from './filmstrip.ts';
-import type { MotionInfo, RenderRequest, RenderResponse, View } from './protocol.ts';
+import type {
+  ExportRequest,
+  ExportResponse,
+  MotionInfo,
+  RenderRequest,
+  RenderResponse,
+  View,
+} from './protocol.ts';
 
 const registry = createRegistry([basicPack]);
 const ALL_VIEWS: View[] = ['three-quarter', 'side', 'head', 'front', 'top', 'rear'];
@@ -28,6 +37,7 @@ declare global {
     spawnforgeReady?: boolean;
     spawnforgeRender?: (request: RenderRequest) => Promise<RenderResponse>;
     spawnforgeFingerprint?: (blueprint: unknown, quality: 'low' | 'medium' | 'high') => string;
+    spawnforgeExport?: (request: ExportRequest) => Promise<ExportResponse>;
     spawnforgeDiff?: (
       a: string,
       b: string,
@@ -69,6 +79,47 @@ window.spawnforgeDiff = async (a, b, threshold) => {
 /** Compiles in the browser and returns the golden-test fingerprint (Node must agree). */
 window.spawnforgeFingerprint = (blueprint, quality) =>
   fingerprint(compileCreature(resolveBlueprint(blueprint, registry), registry, { quality }));
+
+/**
+ * Builds a .glb: compiles, bakes clips and vertex colours, and writes binary glTF with Three.js's
+ * GLTFExporter (which needs browser APIs, hence the page).
+ */
+window.spawnforgeExport = async (request) => {
+  const started = performance.now();
+  const compiled = compileCreature(resolveBlueprint(request.blueprint, registry), registry, {
+    quality: request.quality ?? 'medium',
+  });
+  const clips = bakeClips(compiled, registry, {
+    ...(request.clips ? { clips: request.clips } : {}),
+    ...(request.fps ? { fps: request.fps } : {}),
+  });
+  const { scene, animations } = buildExportScene(compiled, registry, {
+    clips,
+    ...(request.extras ? { extras: request.extras } : {}),
+  });
+  const glb = (await new GLTFExporter().parseAsync(scene, {
+    binary: true,
+    animations,
+  })) as ArrayBuffer;
+  // Base64 in chunks: String.fromCharCode cannot take a whole buffer at once.
+  const bytes = new Uint8Array(glb);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += 0x8000)
+    binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  const t = compiled.stats.triangles;
+  return {
+    glb: btoa(binary),
+    info: {
+      name: compiled.name,
+      bytes: bytes.length,
+      triangles: t.skin + t.parts + t.eyes,
+      bones: compiled.bones.names.length,
+      sockets: compiled.sockets.map((s) => s.name),
+      clips: clips.map((c) => ({ name: c.name, duration: c.duration, loop: c.loop })),
+      exportMs: performance.now() - started,
+    },
+  };
+};
 
 const canvas = document.createElement('canvas');
 document.body.append(canvas);

@@ -797,3 +797,17 @@ Scaled lizards, raptors and snakes: low sprawling bodies, long tails, wedge or s
 Generate creatures with it: spawnforge generate --theme reptile --seed 1 (MCP: generate { "theme": "reptile", "seed": 1 }).
 
 bodyPlans: `{"quadruped":5,"biped":2,"serpent":3}` · parts: `[{"chance":1,"id":"eyes"},{"chance":0.8,"id":"teeth","type":"teeth.row","plans":["quadruped","biped"]},{"chance":0.7,"id":"fangs","type":"teeth.row","plans":["serpent"]},{"chance":0.45,"id":"dorsal","type":"spikes.row","plans":["quadruped","biped"]},{"chance":0.25,"id":"brow","type":"horn.curved","plans":["quadruped"]}]` · materials: `{"scales":1}` · temperaments: `{"stalking":3,"calm":1,"aggressive":2}`
+
+## Stats
+
+### `rpg`
+
+Generic action-RPG numbers: health from mass, speed from legs and gaits, attack from teeth, horns and claws, defence from chitin, scales and spikes, perception from eyes and ears.
+
+Game numbers from a creature's body: spawnforge analyze creature.json --stats rpg (MCP: analyze with "stats": "rpg").
+
+outputs: `{"health":"Hit points: grows with the cube root of mass, so a creature twice as long is about twice as tough","speed":"Top speed in m/s, from the fastest gait the legs allow","attack":"Damage per hit: teeth and fangs, horns and claws, scaled by size","defence":"Damage reduction: skin material, spikes and size","perception":"How far it notices things, in metres: eye size and ears","threat":"A one-number summary for encounter tables"}`
+
+| Parameter | Type | Range | Default | Description |
+| --- | --- | --- | --- | --- |
+| `level` | number | 0.1–10 | `1` | Multiplies health, attack and defence (unitless; 1 is a normal encounter) |
