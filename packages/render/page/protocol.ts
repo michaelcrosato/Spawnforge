@@ -8,10 +8,15 @@ export interface RenderRequest {
   readonly size?: number;
   /** Label every part and limb by id. */
   readonly labels?: boolean;
+  /** Leave the creature's name out of the header (for blind reviews). */
+  readonly anonymous?: boolean;
   /** Panels to draw, in order (default all four). */
   readonly views?: readonly View[];
   /** Debugging switches. */
-  readonly debug?: { readonly hide?: readonly ('skin' | 'parts' | 'eyes')[]; readonly shadows?: boolean };
+  readonly debug?: {
+    readonly hide?: readonly ('skin' | 'parts' | 'eyes')[];
+    readonly shadows?: boolean;
+  };
 }
 
 export interface RenderInfo {

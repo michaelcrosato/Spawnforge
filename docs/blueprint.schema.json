@@ -825,6 +825,12 @@
           "type": "number",
           "minimum": 0,
           "maximum": 180
+        },
+        "clawColor": {
+          "default": "#2a221c",
+          "description": "Claw colour: a palette name or a colour",
+          "type": "string",
+          "minLength": 1
         }
       },
       "additionalProperties": false
@@ -849,7 +855,7 @@
         },
         "curve": {
           "default": 45,
-          "description": "Total bend in degrees; positive sweeps back toward the tail",
+          "description": "Total bend in degrees; positive sweeps back toward the tail, negative forward",
           "type": "number",
           "minimum": -270,
           "maximum": 270
@@ -868,12 +874,31 @@
           "minimum": -90,
           "maximum": 90
         },
+        "turn": {
+          "default": 0,
+          "description": "Degrees the bend turns sideways: 90 curves toward the midline (mandibles), -90 away from it",
+          "type": "number",
+          "minimum": -180,
+          "maximum": 180
+        },
         "ridges": {
           "default": 0,
           "description": "Rings along the horn",
           "type": "integer",
           "minimum": 0,
           "maximum": 30
+        },
+        "color": {
+          "default": "#d4c6a2",
+          "description": "Colour at the root: a palette name or a colour",
+          "type": "string",
+          "minLength": 1
+        },
+        "tipColor": {
+          "default": "#3d3329",
+          "description": "Colour at the tip",
+          "type": "string",
+          "minLength": 1
         }
       },
       "additionalProperties": false
@@ -930,6 +955,18 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1
+        },
+        "color": {
+          "default": "#ddd1b4",
+          "description": "Colour at the root: a palette name or a colour",
+          "type": "string",
+          "minLength": 1
+        },
+        "tipColor": {
+          "default": "#5e5040",
+          "description": "Colour at the tip",
+          "type": "string",
+          "minLength": 1
         }
       },
       "additionalProperties": false

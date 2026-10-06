@@ -165,16 +165,40 @@ export function surfaceNets(sdf: Sdf, grid: Grid, options: { smooth?: number } =
           continue;
         }
         activeBlocks++;
-        for (let k = k0; k <= k1; k++) {
-          const z = grid.min.z + k * cell;
-          for (let j = j0; j <= j1; j++) {
-            const y = grid.min.y + j * cell;
-            for (let i = i0; i <= i1; i++) {
-              const v = idx(i, j, k);
-              if (done[v]) continue;
-              values[v] = evaluator.eval(grid.min.x + i * cell, y, z, prims);
-              done[v] = 1;
+        // Second level: 4-cell sub-blocks, again sampling only those near the surface.
+        const SUB = BLOCK / 2;
+        const rs = ((SUB * cell) / 2) * Math.sqrt(3);
+        for (let sk = k0; sk < k1; sk += SUB) {
+          for (let sj = j0; sj < j1; sj += SUB) {
+            for (let si = i0; si < i1; si += SUB) {
+              const ei = Math.min(si + SUB, nx);
+              const ej = Math.min(sj + SUB, ny);
+              const ek = Math.min(sk + SUB, nz);
+              const sc = evaluator.eval(
+                grid.min.x + (si + SUB / 2) * cell,
+                grid.min.y + (sj + SUB / 2) * cell,
+                grid.min.z + (sk + SUB / 2) * cell,
+                prims,
+              );
               samples++;
+              const far = Math.abs(sc) > rs + cell * 1.5;
+              for (let k = sk; k <= ek; k++) {
+                const z = grid.min.z + k * cell;
+                for (let j = sj; j <= ej; j++) {
+                  const y = grid.min.y + j * cell;
+                  for (let i = si; i <= ei; i++) {
+                    const v = idx(i, j, k);
+                    if (done[v]) continue;
+                    if (far) {
+                      values[v] = sc > 0 ? SDF_BIG : -SDF_BIG;
+                      continue;
+                    }
+                    values[v] = evaluator.eval(grid.min.x + i * cell, y, z, prims);
+                    done[v] = 1;
+                    samples++;
+                  }
+                }
+              }
             }
           }
         }
@@ -320,15 +344,13 @@ export function surfaceNets(sdf: Sdf, grid: Grid, options: { smooth?: number } =
     let y = pos[v + 1] as number;
     let z = pos[v + 2] as number;
     const prims = culling.primsOf(culling.blockAt(x, y, z));
-    // Two Newton steps back onto the surface.
-    for (let it = 0; it < 2; it++) {
-      const d = evaluator.eval(x, y, z, prims);
-      evaluator.gradient(x, y, z, cell * 0.25, prims, undefined, g);
-      x -= d * g.x;
-      y -= d * g.y;
-      z -= d * g.z;
-    }
+    // One Newton step back onto the surface, then the normal from the field there.
+    const d = evaluator.eval(x, y, z, prims);
     evaluator.gradient(x, y, z, cell * 0.25, prims, undefined, g);
+    x -= d * g.x;
+    y -= d * g.y;
+    z -= d * g.z;
+    evaluator.gradient(x, y, z, cell * 0.2, prims, undefined, g);
     pos[v] = x;
     pos[v + 1] = y;
     pos[v + 2] = z;

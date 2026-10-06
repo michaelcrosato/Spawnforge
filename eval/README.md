@@ -16,6 +16,10 @@ eval** and reruns at every phase gate.
    `score.json`. The score never relies on what the model says about its own work.
 5. From phase 1 on, a blind reviewer is shown the renders without their prompts and matches each
    to one of the 20 prompts; the gate is at least 16 correct matches.
+   `node eval/blind.ts prepare <run>` renders each prompt's final valid blueprint anonymously
+   (no name in the header) into `<run>/blind/rNN.png` in shuffled order and keeps the key in
+   `<run>/blind-key.json`. The reviewer writes `<run>/blind-answers.json`
+   (`{ "r01": "p07-sprawl-lizard", … }`), and `node eval/blind.ts score <run>` checks it.
 
 **Gate:** at least 18 of 20 prompts valid within three fix rounds, and (from phase 1) at least 16
 of 20 renders matched by the blind reviewer.

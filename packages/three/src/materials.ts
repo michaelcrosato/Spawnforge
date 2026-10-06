@@ -28,7 +28,6 @@ import {
 import { MeshStandardNodeMaterial } from 'three/webgpu';
 import { type N, tslKit } from './tsl-kit.ts';
 
-
 /** sRGB to linear, typed loosely like the other kit nodes. */
 const linear = (c: N): N => sRGBTransferEOTF(c);
 
@@ -45,7 +44,11 @@ function bumpNormal(height: N): N {
 }
 
 /** The skin: base material, pattern layers and relief, all from the material spec. */
-export function skinMaterial(spec: SkinMaterialSpec, scale: number, registry: Registry): MeshStandardNodeMaterial {
+export function skinMaterial(
+  spec: SkinMaterialSpec,
+  scale: number,
+  registry: Registry,
+): MeshStandardNodeMaterial {
   const material = new MeshStandardNodeMaterial();
   const s = uniform(scale);
   const body = attribute('body', 'vec4') as N;
@@ -102,7 +105,9 @@ export function eyeMaterial(): MeshStandardNodeMaterial {
   const front = step(float(0), e.z);
   const r = iris.w.mul(0.62);
   const dist = length(e.xy);
-  const irisMask = float(1).sub(smoothstep(r.sub(0.04), r, dist)).mul(front);
+  const irisMask = float(1)
+    .sub(smoothstep(r.sub(0.04), r, dist))
+    .mul(front);
   const kind = e.w;
   const round = float(1).sub(smoothstep(r.mul(0.42).sub(0.03), r.mul(0.42), dist));
   const slit = float(1)
@@ -130,7 +135,11 @@ export { color };
  * Stand-in skin: a pale belly blending into a darker back along local Y. Kept for quick scenes
  * without a compiled creature.
  */
-export function placeholderSkinMaterial(base: string, belly: string, halfHeight: number): MeshStandardNodeMaterial {
+export function placeholderSkinMaterial(
+  base: string,
+  belly: string,
+  halfHeight: number,
+): MeshStandardNodeMaterial {
   const material = new MeshStandardNodeMaterial({ roughness: 0.7 });
   const t = smoothstep(float(-halfHeight), float(halfHeight), (positionGeometry as N).y);
   material.colorNode = mix(color(belly), color(base), t);

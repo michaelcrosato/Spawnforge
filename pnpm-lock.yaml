@@ -29,6 +29,12 @@ importers:
       '@spawnforge/cli':
         specifier: workspace:*
         version: link:packages/cli
+      '@spawnforge/core':
+        specifier: workspace:*
+        version: link:packages/core
+      '@spawnforge/render':
+        specifier: workspace:*
+        version: link:packages/render
       '@types/node':
         specifier: ^22.19.0
         version: 22.20.5
@@ -75,6 +81,9 @@ importers:
       '@spawnforge/modules':
         specifier: workspace:*
         version: link:../modules
+      '@spawnforge/render':
+        specifier: workspace:*
+        version: link:../render
       zod:
         specifier: 'catalog:'
         version: 4.6.5
@@ -103,6 +112,9 @@ importers:
       '@spawnforge/core':
         specifier: workspace:*
         version: link:../core
+      '@spawnforge/render':
+        specifier: workspace:*
+        version: link:../render
       zod:
         specifier: 'catalog:'
         version: 4.6.5

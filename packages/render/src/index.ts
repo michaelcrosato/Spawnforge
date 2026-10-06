@@ -47,7 +47,11 @@ export class Renderer {
       try {
         browser = await chromium.launch({
           ...(executablePath ? { executablePath } : {}),
-          args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'],
+          args: [
+            '--use-angle=swiftshader',
+            '--enable-unsafe-swiftshader',
+            '--ignore-gpu-blocklist',
+          ],
         });
         break;
       } catch (error) {
@@ -65,23 +69,39 @@ export class Renderer {
     page.on('pageerror', (e) => errors.push(e.message));
     await page.goto(url);
     try {
-      await page.waitForFunction(() => (globalThis as PageGlobals).spawnforgeReady === true, null, { timeout: 60_000 });
+      await page.waitForFunction(() => (globalThis as PageGlobals).spawnforgeReady === true, null, {
+        timeout: 60_000,
+      });
     } catch (error) {
       await browser.close();
       await server.close();
-      throw new Error(`render page failed to load: ${errors.join('; ') || (error as Error).message}`);
+      throw new Error(
+        `render page failed to load: ${errors.join('; ') || (error as Error).message}`,
+      );
     }
     return new Renderer(server, browser, page);
   }
 
   /** Renders a blueprint to a PNG contact sheet. */
-  async render(request: RenderRequest): Promise<{ png: Buffer; width: number; height: number; info: RenderInfo }> {
+  async render(
+    request: RenderRequest,
+  ): Promise<{ png: Buffer; width: number; height: number; info: RenderInfo }> {
     const response = (await this.page.evaluate(
-      (req) => ((globalThis as PageGlobals).spawnforgeRender as (r: RenderRequest) => Promise<RenderResponse>)(req),
+      (req) =>
+        (
+          (globalThis as PageGlobals).spawnforgeRender as (
+            r: RenderRequest,
+          ) => Promise<RenderResponse>
+        )(req),
       request,
     )) as RenderResponse;
     const base64 = response.png.slice(response.png.indexOf(',') + 1);
-    return { png: Buffer.from(base64, 'base64'), width: response.width, height: response.height, info: response.info };
+    return {
+      png: Buffer.from(base64, 'base64'),
+      width: response.width,
+      height: response.height,
+      info: response.info,
+    };
   }
 
   async close(): Promise<void> {
@@ -91,7 +111,9 @@ export class Renderer {
 }
 
 /** One-shot render: launches, renders and closes. Prefer `Renderer` for several renders. */
-export async function renderBlueprint(request: RenderRequest): Promise<{ png: Buffer; width: number; height: number; info: RenderInfo }> {
+export async function renderBlueprint(
+  request: RenderRequest,
+): Promise<{ png: Buffer; width: number; height: number; info: RenderInfo }> {
   const renderer = await Renderer.launch();
   try {
     return await renderer.render(request);

@@ -9,11 +9,11 @@ is the contract.
 
 ## Status
 
-Phase 0 is done: the blueprint format (schema, presets, merging, mirroring, validation with
-model-friendly errors, minimal blueprints, migrations), the module registry and first pack, the
-`spawnforge` CLI and the MCP server (`list_modules`, `describe_module`, `validate`), the generated
-catalogue and JSON Schema, and the format eval (20/20, see `eval/`). Phase 1 (bodies, skin,
-parts, textures, renders) is in progress.
+Phase 0 is done: the blueprint format, the module registry and first pack, the CLI and MCP tools,
+the generated catalogue and the format eval (20/20). Phase 1 is nearly done: the compile pipeline
+(skeleton, SDF skin, surface nets, skin weights, mouth cut, parts, eyes, TSL materials), the
+Three.js adapter, compiling in a worker, and headless contact-sheet renders through the CLI and
+MCP `render` tool. Next is the phase 1 eval gate, then phase 2 (procedural locomotion).
 
 ## Repo map
 
@@ -23,7 +23,8 @@ parts, textures, renders) is in progress.
 | `packages/modules` | First pack: body plans, parts, patterns, gaits, actions                                          | core                             |
 | `packages/three`   | The only layer that renders: skinned mesh assembly, TSL materials, pose sync, export             | core, `three`                    |
 | `packages/cli`     | The `spawnforge` command. Every command prints JSON. Headless renderer later                     | core, modules                    |
-| `packages/mcp`     | MCP server: a thin wrapper over the CLI command functions                                        | cli                              |
+| `packages/mcp`     | MCP server: a thin wrapper over the CLI command functions                                        | cli, render                      |
+| `packages/render`  | Headless contact sheets through Chromium (Playwright) and a Vite-served page, WebGL 2 backend     | core, modules, three             |
 | `apps/sandbox`     | Vite app: live 3D view, sliders, JSON panel, terrain test course, gallery                         | core, modules, three             |
 | `examples/`        | Blueprints beside their renders; also the golden test set                                        |                                  |
 | `eval/`            | The 20-prompt agent eval: prompts, scorer and one folder per run                                  |                                  |
@@ -41,7 +42,8 @@ pnpm format                   # Biome: format, sort imports, apply safe lint fix
 pnpm generate                 # rewrite generated files after adding or changing a module
 pnpm dev                      # sandbox at http://localhost:5173 (add ?webgl to force the WebGL 2 backend)
 pnpm build                    # production build of the sandbox
-pnpm spawnforge <command>     # the CLI from source: list-modules, describe-module, validate, schema
+pnpm spawnforge <command>     # the CLI from source: list-modules, describe-module, validate, render, schema
+pnpm spawnforge render examples/ridgeback-stalker.json --labels   # PNG contact sheet next to the file
 node packages/mcp/src/bin.ts  # the MCP server over stdio
 node eval/score.ts <run>      # score an eval run from its saved attempts
 ```
@@ -101,6 +103,18 @@ From the plan. Follow them unless the plan changes.
   a suggested fix.
 - World conventions follow glTF: metres, Y up, creature facing +Z. Blueprint lengths are
   multiples of `scale`, the torso length in metres.
+
+**Compiling and rendering**
+
+- The compile pipeline (`packages/core/src/compile`) is pure: skeleton → SDF → surface nets →
+  skin weights → mouth cut → swept tubes for thin bones → body coordinates → helper bones →
+  parts and eyes. Its output is plain typed arrays (`CompiledCreature`).
+- Part modules build in socket space with `ctx.geo` (sweep, arc, lathe, …) and place pieces with
+  `ctx.emit`; pattern modules write their shader once against `Kit<F>`, which runs as TSL on the
+  GPU and as numbers on the CPU. Neither may import `three/webgpu` or `three/tsl`.
+- Look at what you change: `pnpm spawnforge render <file> --labels` (or the MCP `render` tool)
+  draws four views with every part labelled. Renders need Chromium: Playwright's own, or the one
+  in `$SPAWNFORGE_CHROMIUM`.
 
 **Dependencies**
 

@@ -1,7 +1,8 @@
 #!/usr/bin/env node
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 import { MODULE_KINDS, type ModuleKind } from '@spawnforge/core';
+import type { View } from '@spawnforge/render';
 import {
   blueprintJsonSchema,
   CommandError,
@@ -16,6 +17,8 @@ Commands:
   list-modules [--kind <kind>]          Catalogue of parts, patterns, gaits, actions and presets
   describe-module <id> [--kind <kind>]  One module's parameters, ranges, defaults and an example
   validate <file|->  [--expanded]       Errors and warnings with fixes, plus the minimal blueprint
+  render <file|-> [--out f.png] [--labels] [--size px] [--views 3/4,side,front,top]
+                                        PNG contact sheet of the creature (headless Chromium)
   schema                                The blueprint JSON Schema
 
 Options:
@@ -47,11 +50,53 @@ const { positionals, values } = parseArgs({
     help: { type: 'boolean', short: 'h' },
     kind: { type: 'string' },
     expanded: { type: 'boolean' },
+    out: { type: 'string' },
+    labels: { type: 'boolean' },
+    size: { type: 'string' },
+    views: { type: 'string' },
+    quality: { type: 'string' },
   },
 });
 const [command, arg] = positionals;
 
-const commands: Record<string, () => { output: unknown; exitCode?: number }> = {
+const VIEW_NAMES: Record<string, View> = {
+  '3/4': 'three-quarter',
+  'three-quarter': 'three-quarter',
+  side: 'side',
+  front: 'front',
+  top: 'top',
+};
+
+async function render(): Promise<{ output: unknown; exitCode?: number }> {
+  if (!arg) throw new CommandError('render needs a file path, or - for stdin');
+  const blueprint = readInput(arg);
+  const checked = validate({ blueprint });
+  if (!checked.ok) return { output: { ok: false, errors: checked.errors }, exitCode: 1 };
+  const views = values.views?.split(',').map((v) => {
+    const view = VIEW_NAMES[v.trim()];
+    if (!view) throw new CommandError(`unknown view "${v}"`, 'use 3/4, side, front or top');
+    return view;
+  });
+  const out = values.out ?? (arg === '-' ? 'creature.png' : arg.replace(/\.json$/i, '') + '.png');
+  const { renderBlueprint } = await import('@spawnforge/render');
+  const result = await renderBlueprint({
+    blueprint,
+    labels: values.labels ?? false,
+    ...(values.size ? { size: Number(values.size) } : {}),
+    ...(views ? { views } : {}),
+    ...(values.quality ? { quality: values.quality as 'low' | 'medium' | 'high' } : {}),
+  });
+  writeFileSync(out, result.png);
+  return {
+    output: { ok: true, out, width: result.width, height: result.height, info: result.info },
+  };
+}
+
+const commands: Record<
+  string,
+  () => { output: unknown; exitCode?: number } | Promise<{ output: unknown; exitCode?: number }>
+> = {
+  render,
   'list-modules': () => ({ output: listModules({ kind: kindOf(values.kind) }) }),
   'describe-module': () => {
     if (!arg)
@@ -77,7 +122,7 @@ if (values.help || command === undefined) {
   process.exitCode = 2;
 } else {
   try {
-    const { output, exitCode } = run();
+    const { output, exitCode } = await run();
     console.log(JSON.stringify(output, null, 2));
     process.exitCode = exitCode ?? 0;
   } catch (error) {

@@ -262,7 +262,9 @@ export function buildParts(
       dir,
       frame.radius * Math.max(frame.cross[0], frame.cross[1]),
     );
-    const weights = weightsAt(position, input.weightOptions);
+    // Parts follow what they attach to: weights come only from that section's bones (the head,
+    // not the jaw, which is a section of its own).
+    const weights = weightsAt(position, input.weightOptions, new Set(path.map((seg) => seg.bone)));
     return frameOf(position, normal, frame.forward, frame.radius, weights);
   };
 
@@ -274,7 +276,8 @@ export function buildParts(
     material: PartMaterial,
     id: string,
   ) => {
-    if (!sink.markers.has(id)) sink.markers.set(id, [socket.position.x, socket.position.y, socket.position.z]);
+    if (!sink.markers.has(id))
+      sink.markers.set(id, [socket.position.x, socket.position.y, socket.position.z]);
     const local = mirror < 0 ? mirrorX(clonePiece(piece)) : piece;
     const sinkBy = options.sink ?? 0;
     const origin = socket.position.clone().addScaledVector(socket.normal, -sinkBy);

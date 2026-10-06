@@ -1,19 +1,37 @@
-import { compileCreature, createRegistry, FORMAT, resolveBlueprint } from '@spawnforge/core';
+import { createRegistry, FORMAT } from '@spawnforge/core';
 import { basicPack } from '@spawnforge/modules';
-import { type CreatureObject, createCreatureObject, createRenderer } from '@spawnforge/three';
+import {
+  type CreatureObject,
+  createCreatureObject,
+  createRenderer,
+  createWorkerCompiler,
+} from '@spawnforge/three';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 const registry = createRegistry([basicPack]);
-const examples = import.meta.glob('../../../examples/*.json', { eager: true, import: 'default' }) as Record<string, unknown>;
-const byName = new Map(Object.entries(examples).map(([path, json]) => [path.split('/').at(-1)?.replace('.json', '') ?? path, json]));
+const examples = import.meta.glob('../../../examples/*.json', {
+  eager: true,
+  import: 'default',
+}) as Record<string, unknown>;
+const byName = new Map(
+  Object.entries(examples).map(([path, json]) => [
+    path.split('/').at(-1)?.replace('.json', '') ?? path,
+    json,
+  ]),
+);
 
 const canvas = document.querySelector<HTMLCanvasElement>('#view');
 const status = document.querySelector<HTMLDivElement>('#status');
 const picker = document.querySelector<HTMLSelectElement>('#picker');
-if (!canvas || !status || !picker) throw new Error('index.html is missing #view, #status or #picker');
+if (!canvas || !status || !picker)
+  throw new Error('index.html is missing #view, #status or #picker');
 
-async function main(canvas: HTMLCanvasElement, status: HTMLDivElement, picker: HTMLSelectElement): Promise<void> {
+async function main(
+  canvas: HTMLCanvasElement,
+  status: HTMLDivElement,
+  picker: HTMLSelectElement,
+): Promise<void> {
   const params = new URLSearchParams(location.search);
   const { renderer, backend } = await createRenderer(canvas, { forceWebGL: params.has('webgl') });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
@@ -29,7 +47,10 @@ async function main(canvas: HTMLCanvasElement, status: HTMLDivElement, picker: H
   sun.shadow.camera.left = sun.shadow.camera.bottom = -4;
   sun.shadow.camera.right = sun.shadow.camera.top = 4;
   scene.add(sun);
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(20, 20), new THREE.MeshStandardMaterial({ color: '#3b4048', roughness: 1 }));
+  const ground = new THREE.Mesh(
+    new THREE.PlaneGeometry(20, 20),
+    new THREE.MeshStandardMaterial({ color: '#3b4048', roughness: 1 }),
+  );
   ground.rotation.x = -Math.PI / 2;
   ground.receiveShadow = true;
   scene.add(ground, new THREE.GridHelper(20, 40, '#555b66', '#2c3038'));
@@ -38,14 +59,16 @@ async function main(canvas: HTMLCanvasElement, status: HTMLDivElement, picker: H
   const controls = new OrbitControls(camera, canvas);
   controls.enableDamping = true;
 
+  const compiler = createWorkerCompiler([
+    new Worker(new URL('./compile.worker.ts', import.meta.url), { type: 'module' }),
+  ]);
   let current: CreatureObject | undefined;
-  const show = (name: string) => {
+  const show = async (name: string) => {
     const blueprint = byName.get(name);
     if (!blueprint) return;
-    const spec = resolveBlueprint(blueprint, registry);
-    const t0 = performance.now();
-    const compiled = compileCreature(spec, registry, { quality: (params.get('quality') as 'low' | 'medium' | 'high') ?? 'medium' });
-    const ms = performance.now() - t0;
+    status.textContent = `Compiling ${name}…`;
+    const quality = (params.get('quality') as 'low' | 'medium' | 'high' | null) ?? 'medium';
+    const { compiled, ms } = await compiler.compile(blueprint, quality);
     current?.dispose();
     if (current) scene.remove(current.object);
     current = createCreatureObject(compiled, registry);
@@ -57,13 +80,13 @@ async function main(canvas: HTMLCanvasElement, status: HTMLDivElement, picker: H
     controls.target.copy(centre);
     camera.position.copy(centre).add(new THREE.Vector3(size * 1.1, size * 0.55, size * 1.25));
     const t = compiled.stats.triangles;
-    status.textContent = `${compiled.name} · ${t.skin + t.parts + t.eyes} tris · compiled in ${ms.toFixed(0)} ms · ${backend} · ${FORMAT}`;
+    status.textContent = `${compiled.name} · ${t.skin + t.parts + t.eyes} tris · compiled in ${ms.toFixed(0)} ms (worker) · ${backend} · ${FORMAT}`;
   };
 
   for (const name of byName.keys()) picker.add(new Option(name, name));
   picker.value = params.get('creature') ?? 'ridgeback-stalker';
-  picker.addEventListener('change', () => show(picker.value));
-  show(picker.value);
+  picker.addEventListener('change', () => void show(picker.value));
+  await show(picker.value);
 
   const resize = () => {
     renderer.setSize(innerWidth, innerHeight, false);

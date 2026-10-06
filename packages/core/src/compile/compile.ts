@@ -125,7 +125,11 @@ export interface CompiledCreature {
   readonly sockets: readonly GameSocket[];
   readonly bounds: { readonly min: Vec3; readonly max: Vec3 };
   /** Labelled points for debug renders: every part and limb by id, and the body sections. */
-  readonly markers: readonly { readonly id: string; readonly kind: 'part' | 'limb' | 'section'; readonly position: Vec3 }[];
+  readonly markers: readonly {
+    readonly id: string;
+    readonly kind: 'part' | 'limb' | 'section';
+    readonly position: Vec3;
+  }[];
   /** Body chains as capsules (bone, radius), free hit volumes for games. */
   readonly hitCapsules: readonly { readonly bone: number; readonly radius: number }[];
   readonly stats: {
@@ -197,11 +201,18 @@ export function compileCreature(
     if (b.parent >= 0) (children[b.parent] as number[]).push(i);
   });
   const culling = surface.culling;
+  // Bones near each grid block, worked out once per block.
+  const blockBones = new Map<number, number[]>();
   const nearbyBones = (p: Vector3) => {
-    const set = new Set<number>();
-    for (const prim of culling.primsOf(culling.blockAt(p.x, p.y, p.z)))
-      set.add(primBone(sdf, prim));
-    return set;
+    const block = culling.blockAt(p.x, p.y, p.z);
+    let list = blockBones.get(block);
+    if (!list) {
+      const set = new Set<number>();
+      for (const prim of culling.primsOf(block)) set.add(primBone(sdf, prim));
+      list = [...set];
+      blockBones.set(block, list);
+    }
+    return list;
   };
   const weightOptions: WeightOptions = { bones, children, nearbyBones };
   let positions = surface.positions;
@@ -323,7 +334,9 @@ export function compileCreature(
     idx.set(extraIdx, indices.length);
     const next = new WeightTable(pos.length / 3);
     for (let v = 0; v < n0; v++) next.set(v, table.entries(v));
-    extraWeights.forEach((w, i) => next.set(n0 + i, w));
+    extraWeights.forEach((w, i) => {
+      next.set(n0 + i, w);
+    });
     positions = pos;
     normals = nrm;
     indices = idx;
@@ -402,7 +415,9 @@ export function compileCreature(
 
   const packWeights = (list: [number, number][][]) => {
     const t = new WeightTable(list.length);
-    list.forEach((w, i) => t.set(i, w));
+    list.forEach((w, i) => {
+      t.set(i, w);
+    });
     return packTop4(t);
   };
   const partsPack = packWeights(sink.parts.weights);
@@ -427,14 +442,29 @@ export function compileCreature(
 
   const sockets = gameSockets(bones, rig, mouth);
   const markers: CompiledCreature['markers'][number][] = [];
-  const mid = (id: number) => v3((bones[id] as BoneDef).head.clone().lerp((bones[id] as BoneDef).tail, 0.5));
+  const mid = (id: number) =>
+    v3((bones[id] as BoneDef).head.clone().lerp((bones[id] as BoneDef).tail, 0.5));
   markers.push({ id: 'head', kind: 'section', position: v3((bones[head] as BoneDef).tail) });
-  markers.push({ id: 'torso', kind: 'section', position: mid(skeleton.rig.spine[Math.floor(skeleton.rig.spine.length / 2)] as number) });
-  if (skeleton.rig.tail.length > 0) markers.push({ id: 'tail', kind: 'section', position: v3((bones[skeleton.rig.tail.at(-1) as number] as BoneDef).tail) });
+  markers.push({
+    id: 'torso',
+    kind: 'section',
+    position: mid(skeleton.rig.spine[Math.floor(skeleton.rig.spine.length / 2)] as number),
+  });
+  if (skeleton.rig.tail.length > 0)
+    markers.push({
+      id: 'tail',
+      kind: 'section',
+      position: v3((bones[skeleton.rig.tail.at(-1) as number] as BoneDef).tail),
+    });
   for (const limb of [...skeleton.rig.legs, ...skeleton.rig.arms]) {
-    markers.push({ id: limb.id, kind: 'limb', position: mid(limb.bones[Math.floor(limb.bones.length / 2)] as number) });
+    markers.push({
+      id: limb.id,
+      kind: 'limb',
+      position: mid(limb.bones[Math.floor(limb.bones.length / 2)] as number),
+    });
   }
-  for (const [id, position] of sink.markers) if (!id.endsWith('.foot')) markers.push({ id, kind: 'part', position });
+  for (const [id, position] of sink.markers)
+    if (!id.endsWith('.foot')) markers.push({ id, kind: 'part', position });
   const min = new Vector3(Infinity, Infinity, Infinity);
   const max = new Vector3(-Infinity, -Infinity, -Infinity);
   for (const list of [
@@ -743,4 +773,17 @@ function bodyCoordinates(
   }
   void L;
   return { body, region };
+}
+
+/** The ArrayBuffers in a compiled creature, to transfer (not copy) it out of a worker. */
+export function compiledTransferables(c: CompiledCreature): ArrayBuffer[] {
+  const out = new Set<ArrayBuffer>();
+  const add = (v: ArrayBufferView) => {
+    if (v.buffer instanceof ArrayBuffer) out.add(v.buffer);
+  };
+  for (const mesh of [c.skin, c.parts, c.eyes] as const) {
+    for (const value of Object.values(mesh)) if (ArrayBuffer.isView(value)) add(value);
+  }
+  for (const value of Object.values(c.bones)) if (ArrayBuffer.isView(value)) add(value);
+  return [...out];
 }

@@ -23,6 +23,8 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Install Chromium for headless renders
+        run: pnpm --filter @spawnforge/render exec playwright-core install --with-deps chromium
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test

@@ -232,7 +232,7 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
     const sw = clamp01(limb.splay / 60);
     const tipR = (limb.radius.at(-1) ?? 0.03) * L;
     const footH = Math.max(tipR, 0.012 * L);
-    const frac = lerp(0.82, 0.45, sw);
+    const frac = lerp(limb.segments === 2 ? 0.9 : 0.84, 0.45, sw);
     let v = frac * R;
     let h = R * Math.sin(limb.splay * 0.9 * DEG) * 0.85;
     const len = Math.hypot(v, h);
@@ -653,9 +653,9 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
     } else {
       target = rootPos
         .clone()
-        .addScaledVector(Y, -R * 0.62)
-        .addScaledVector(forwardH, R * 0.35)
-        .addScaledVector(outward, R * 0.08);
+        .addScaledVector(Y, -R * 0.8)
+        .addScaledVector(forwardH, R * 0.18)
+        .addScaledVector(outward, R * 0.12);
       pole = forwardH.clone().negate().addScaledVector(outward, 0.3).normalize();
       bendsDeg = BENDS.arm[segKey];
     }

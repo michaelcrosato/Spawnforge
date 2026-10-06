@@ -157,6 +157,26 @@ part sits depends on its slot (shown in `describe_module`):
 Parameters go inside `params`: `{ "id": "horns", "type": "horn.curved", "params": { "length": 0.3 } }`.
 Each part has a default anchor, so `{ "id": "teeth", "type": "teeth.row" }` is complete.
 
+### Recipes
+
+These were checked against renders (`render` with `labels: true` shows where every part landed).
+All lengths are in torso lengths.
+
+| Look | Part |
+| --- | --- |
+| Ram horns, coiled | `horn.curved` on `head`, `at` 0.8, `angle` 45; `length` 0.45, `width` 0.05, `curve` 250, `twist` 120, `ridges` 12 |
+| Bull horns, out then forward | `horn.curved` on `head`, `at` 0.85, `angle` 75; `length` 0.3, `width` 0.04, `curve` -70 |
+| Rhino nose horn | `horn.curved` on `head`, `at` 0.12, `angle` 0; `length` 0.22, `width` 0.05, `curve` 25 (add a smaller one at `at` 0.4) |
+| Tusks from the lower jaw | `horn.curved` on `jaw`, `at` 0.25, `angle` 60; `length` 0.16, `width` 0.025, `curve` -60, pale `color` and `tipColor` |
+| Insect mandibles | `horn.curved` on `head`, `at` 0.08, `angle` 100; `length` 0.2, `width` 0.025, `lean` 60, `curve` 110, `turn` 90, dark colours |
+| Spikes down the whole back | `spikes.row` on `spine`, `from` 0.1, `to` 0.95, `angle` 0; a `height` profile such as `[0.06, 0.12, 0.05]` |
+| A stinger on the tail tip | `horn.curved` on `tail`, `at` 0.97, `angle` 0; `curve` 60 |
+
+For `horn.curved`: the horn grows straight out of the skin, then bends by `curve` degrees,
+backward (toward the tail) for positive values and forward for negative ones. `lean` tilts the
+root first, `twist` spirals it, and `turn` swings the bend sideways (90 toward the midline, -90
+away). Pairs (`side` "both") are mirror images.
+
 ## Skin
 
 - **`palette`** names colours. `base` (the main colour), `belly` and `accent` always exist; add

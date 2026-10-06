@@ -9,7 +9,10 @@ import type { BoneDef, ChainDef } from './types.ts';
 export interface Sdf {
   /** Number of primitives. */
   readonly count: number;
-  /** Per primitive (stride 24): a(3) b(3) ra rb side(3) up(3) dir(3) sx sy h chain bone kind pad. */
+  /**
+   * Per primitive (stride 29): a(3) b(3) ra rb side(3) up(3) dir(3) sx sy h chain bone kind
+   * 1/sx 1/sy min(sx,sy) cone-b cone-a degenerate.
+   */
   readonly data: Float64Array;
   readonly chainCount: number;
   /** Parent chain per chain (-1 for the root chain). Parents come before children. */
@@ -23,7 +26,7 @@ export interface Sdf {
   readonly thinBones: readonly number[];
 }
 
-const STRIDE = 24;
+const STRIDE = 29;
 const BIG = 1e9;
 
 /** Builds the field from the skeleton, leaving out bones thinner than `minRadius`. */
@@ -56,6 +59,9 @@ export function buildSdf(
     kind: number,
   ) => {
     const h = a.distanceTo(b);
+    const degenerate = h < 1e-9 || Math.abs(ra - rb) >= h ? 1 : 0;
+    const coneB = degenerate ? 0 : (ra - rb) / h;
+    const coneA = degenerate ? 1 : Math.sqrt(1 - coneB * coneB);
     prims.push(
       a.x,
       a.y,
@@ -80,7 +86,12 @@ export function buildSdf(
       chain,
       bone,
       kind,
-      0,
+      1 / sx,
+      1 / sy,
+      Math.min(sx, sy),
+      coneB,
+      coneA,
+      degenerate,
     );
     const scale = Math.max(sx, sy);
     bounds.push(
@@ -167,30 +178,31 @@ export function primDistance(sdf: Sdf, i: number, px: number, py: number, pz: nu
   const qx = px - (d[o] as number);
   const qy = py - (d[o + 1] as number);
   const qz = pz - (d[o + 2] as number);
-  const sx = d[o + 17] as number;
-  const sy = d[o + 18] as number;
   const lx =
-    (qx * (d[o + 8] as number) + qy * (d[o + 9] as number) + qz * (d[o + 10] as number)) / sx;
+    (qx * (d[o + 8] as number) + qy * (d[o + 9] as number) + qz * (d[o + 10] as number)) *
+    (d[o + 23] as number);
   const ly =
-    (qx * (d[o + 11] as number) + qy * (d[o + 12] as number) + qz * (d[o + 13] as number)) / sy;
+    (qx * (d[o + 11] as number) + qy * (d[o + 12] as number) + qz * (d[o + 13] as number)) *
+    (d[o + 24] as number);
   const lz = qx * (d[o + 14] as number) + qy * (d[o + 15] as number) + qz * (d[o + 16] as number);
   const r1 = d[o + 6] as number;
   const r2 = d[o + 7] as number;
   const h = d[o + 19] as number;
-  const qr = Math.sqrt(lx * lx + ly * ly);
-  const scale = sx < sy ? sx : sy;
-  if (h < 1e-9 || Math.abs(r1 - r2) >= h) {
+  const scale = d[o + 25] as number;
+  const qr2 = lx * lx + ly * ly;
+  if ((d[o + 28] as number) === 1) {
     // Degenerate cone: the larger end sphere contains the other.
-    const da = Math.sqrt(qr * qr + lz * lz) - r1;
-    const db = Math.sqrt(qr * qr + (lz - h) * (lz - h)) - r2;
+    const da = Math.sqrt(qr2 + lz * lz) - r1;
+    const db = Math.sqrt(qr2 + (lz - h) * (lz - h)) - r2;
     return (da < db ? da : db) * scale;
   }
-  const b = (r1 - r2) / h;
-  const a = Math.sqrt(1 - b * b);
+  const b = d[o + 26] as number;
+  const a = d[o + 27] as number;
+  const qr = Math.sqrt(qr2);
   const k = -b * qr + a * lz;
   let dist: number;
-  if (k < 0) dist = Math.sqrt(qr * qr + lz * lz) - r1;
-  else if (k > a * h) dist = Math.sqrt(qr * qr + (lz - h) * (lz - h)) - r2;
+  if (k < 0) dist = Math.sqrt(qr2 + lz * lz) - r1;
+  else if (k > a * h) dist = Math.sqrt(qr2 + (lz - h) * (lz - h)) - r2;
   else dist = qr * a + lz * b - r1;
   return dist * scale;
 }
@@ -206,52 +218,73 @@ export function smin(a: number, b: number, k: number): number {
 export class SdfEvaluator {
   readonly sdf: Sdf;
   private readonly chainD: Float64Array;
+  private readonly touched: Int32Array;
+  private stamp = 1;
   /** Plain union of the last evaluation (for crease depth). */
   union = BIG;
-  /** Primitive nearest the last evaluated point, and its distance. */
+  /** Primitive nearest the last evaluated point. */
   nearestPrim = -1;
 
   constructor(sdf: Sdf) {
     this.sdf = sdf;
     this.chainD = new Float64Array(sdf.chainCount);
+    this.touched = new Int32Array(sdf.chainCount);
   }
 
   /** Field value at a point, using only `prims` (or every primitive when omitted). */
   eval(px: number, py: number, pz: number, prims?: ArrayLike<number>, primCount?: number): number {
     const sdf = this.sdf;
     const chainD = this.chainD;
-    chainD.fill(BIG);
+    const touched = this.touched;
+    const stamp = this.stamp;
     const n = prims ? (primCount ?? prims.length) : sdf.count;
     let union = BIG;
     let nearest = -1;
+    let lowest = sdf.chainCount;
+    let highest = -1;
     for (let j = 0; j < n; j++) {
       const i = prims ? (prims[j] as number) : j;
       const dist = primDistance(sdf, i, px, py, pz);
       const c = sdf.data[i * STRIDE + 20] as number;
-      if (dist < (chainD[c] as number)) chainD[c] = dist;
+      if (touched[c] !== stamp) {
+        touched[c] = stamp;
+        chainD[c] = dist;
+        if (c < lowest) lowest = c;
+        if (c > highest) highest = c;
+      } else if (dist < (chainD[c] as number)) {
+        chainD[c] = dist;
+      }
       if (dist < union) {
         union = dist;
         nearest = i;
       }
     }
-    for (let c = sdf.chainCount - 1; c > 0; c--) {
-      const parent = sdf.chainParent[c] as number;
-      if (parent < 0) continue;
+    // Fold children into parents; parents always have lower indices than their children.
+    let d = BIG;
+    for (let c = highest; c >= 0 && c >= lowest; c--) {
+      if (touched[c] !== stamp) continue;
       const child = chainD[c] as number;
-      if (child >= BIG) continue;
+      const parent = sdf.chainParent[c] as number;
+      if (parent < 0) {
+        if (child < d) d = child;
+        continue;
+      }
+      if (touched[parent] !== stamp) {
+        // The parent is out of reach here, so the child passes through unblended.
+        touched[parent] = stamp;
+        chainD[parent] = child;
+        if (parent < lowest) lowest = parent;
+        continue;
+      }
       chainD[parent] = smin(chainD[parent] as number, child, sdf.chainBlend[c] as number);
     }
+    this.stamp = stamp >= 0x3fffffff ? 1 : stamp + 1;
     this.union = union;
     this.nearestPrim = nearest;
-    // Chains with no parent other than chain 0 fold into chain 0 above; any orphan roots join by min.
-    let d = chainD[0] as number;
-    for (let c = 1; c < sdf.chainCount; c++) {
-      if ((sdf.chainParent[c] as number) < 0 && (chainD[c] as number) < d) d = chainD[c] as number;
-    }
     return d;
   }
 
-  /** Normalized gradient by central differences. */
+  /** Normalized gradient from four samples on a tetrahedron. */
   gradient(
     px: number,
     py: number,
@@ -261,13 +294,11 @@ export class SdfEvaluator {
     primCount?: number,
     out = new Vector3(),
   ): Vector3 {
-    const dx =
-      this.eval(px + eps, py, pz, prims, primCount) - this.eval(px - eps, py, pz, prims, primCount);
-    const dy =
-      this.eval(px, py + eps, pz, prims, primCount) - this.eval(px, py - eps, pz, prims, primCount);
-    const dz =
-      this.eval(px, py, pz + eps, prims, primCount) - this.eval(px, py, pz - eps, prims, primCount);
-    out.set(dx, dy, dz);
+    const a = this.eval(px + eps, py - eps, pz - eps, prims, primCount);
+    const b = this.eval(px - eps, py - eps, pz + eps, prims, primCount);
+    const c = this.eval(px - eps, py + eps, pz - eps, prims, primCount);
+    const d = this.eval(px + eps, py + eps, pz + eps, prims, primCount);
+    out.set(a - b - c + d, -a - b + c + d, -a + b - c + d);
     const len = out.length();
     return len > 1e-12 ? out.divideScalar(len) : out.set(0, 1, 0);
   }

@@ -35,7 +35,12 @@ export default definePattern({
             )
           : k.num(0);
       const keep = k.step(c.id, k.param(p.density as number));
-      return { mask: k.mul(k.mul(k.max(k.sub(spot, hollow), k.num(0)), keep), detail(k, s, (p.size as number) * 0.6)) };
+      return {
+        mask: k.mul(
+          k.mul(k.max(k.sub(spot, hollow), k.num(0)), keep),
+          detail(k, s, (p.size as number) * 0.6),
+        ),
+      };
     },
   },
 });

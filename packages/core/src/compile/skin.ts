@@ -8,15 +8,35 @@ const SHARPNESS = 6;
 
 /** Distance from a point to a bone's rounded-cone shape (approximate, cheap). */
 export function boneDistance(bone: BoneDef, p: Vector3): { distance: number; t: number } {
-  const ab = new Vector3().subVectors(bone.tail, bone.head);
-  const len2 = ab.lengthSq();
-  const t =
-    len2 > 1e-12
-      ? Math.min(1, Math.max(0, new Vector3().subVectors(p, bone.head).dot(ab) / len2))
-      : 0;
-  const closest = bone.head.clone().addScaledVector(ab, t);
+  const distance = boneDistanceXYZ(bone, p.x, p.y, p.z);
+  return { distance, t: lastT };
+}
+
+let lastT = 0;
+
+/** Allocation-free bone distance; the bone parameter of the closest point is in `lastBoneT()`. */
+export function boneDistanceXYZ(bone: BoneDef, px: number, py: number, pz: number): number {
+  const hx = bone.head.x;
+  const hy = bone.head.y;
+  const hz = bone.head.z;
+  const ax = bone.tail.x - hx;
+  const ay = bone.tail.y - hy;
+  const az = bone.tail.z - hz;
+  const len2 = ax * ax + ay * ay + az * az;
+  let t = len2 > 1e-12 ? ((px - hx) * ax + (py - hy) * ay + (pz - hz) * az) / len2 : 0;
+  t = t < 0 ? 0 : t > 1 ? 1 : t;
+  lastT = t;
+  const dx = px - (hx + ax * t);
+  const dy = py - (hy + ay * t);
+  const dz = pz - (hz + az * t);
   const r = bone.r0 + (bone.r1 - bone.r0) * t;
-  return { distance: Math.max(0, p.distanceTo(closest) - r), t };
+  const d = Math.sqrt(dx * dx + dy * dy + dz * dz) - r;
+  return d > 0 ? d : 0;
+}
+
+/** Bone parameter (0 head, 1 tail) of the closest point from the last `boneDistanceXYZ` call. */
+export function lastBoneT(): number {
+  return lastT;
 }
 
 /** Sparse per-vertex weights in fixed slots. */
@@ -85,36 +105,44 @@ export interface WeightOptions {
   readonly nearbyBones: (p: Vector3) => Iterable<number>;
 }
 
-/** Candidate weights at one point: nearest bone, its parent and children, softmax of d/r. */
-export function weightsAt(p: Vector3, options: WeightOptions): [number, number][] {
+/**
+ * Candidate weights at one point: nearest bone, its parent and children, softmax of d/r.
+ * With `allowed`, only those bones are considered (a part follows what it is attached to).
+ */
+export function weightsAt(
+  p: Vector3,
+  options: WeightOptions,
+  allowed?: ReadonlySet<number>,
+): [number, number][] {
   const { bones, children } = options;
   let nearest = -1;
   let best = Number.POSITIVE_INFINITY;
-  for (const id of options.nearbyBones(p)) {
+  for (const id of allowed ?? options.nearbyBones(p)) {
     const bone = bones[id] as BoneDef;
     if (!bone.skin) continue;
-    const { distance } = boneDistance(bone, p);
-    const score = distance / Math.max(1e-6, (bone.r0 + bone.r1) / 2);
+    const score = boneDistanceXYZ(bone, p.x, p.y, p.z) / Math.max(1e-6, (bone.r0 + bone.r1) / 2);
     if (score < best) {
       best = score;
       nearest = id;
     }
   }
   if (nearest < 0) return [];
-  const candidates = new Set<number>([nearest]);
+  const candidates = [nearest];
+  const ok = (id: number) => (bones[id] as BoneDef).skin && (!allowed || allowed.has(id));
   const parent = (bones[nearest] as BoneDef).parent;
-  if (parent >= 0 && (bones[parent] as BoneDef).skin) candidates.add(parent);
-  for (const c of children[nearest] ?? []) if ((bones[c] as BoneDef).skin) candidates.add(c);
+  if (parent >= 0 && ok(parent)) candidates.push(parent);
+  for (const c of children[nearest] ?? []) if (ok(c)) candidates.push(c);
   const raw: [number, number][] = [];
   let sum = 0;
   for (const id of candidates) {
     const bone = bones[id] as BoneDef;
-    const { distance } = boneDistance(bone, p);
+    const distance = boneDistanceXYZ(bone, p.x, p.y, p.z);
     const w = Math.exp((-SHARPNESS * distance) / Math.max(1e-6, (bone.r0 + bone.r1) / 2));
     raw.push([id, w]);
     sum += w;
   }
-  return raw.map(([id, w]) => [id, w / sum]);
+  for (const e of raw) e[1] /= sum;
+  return raw;
 }
 
 /** Skin weights for a mesh: per-vertex candidates, smoothed over the mesh. */

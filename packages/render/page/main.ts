@@ -1,4 +1,10 @@
-import { compileCreature, createRegistry, formatIssue, resolveBlueprint, validateBlueprint } from '@spawnforge/core';
+import {
+  compileCreature,
+  createRegistry,
+  formatIssue,
+  resolveBlueprint,
+  validateBlueprint,
+} from '@spawnforge/core';
 import { basicPack } from '@spawnforge/modules';
 import { createCreatureObject, createRenderer } from '@spawnforge/three';
 import * as THREE from 'three';
@@ -6,7 +12,12 @@ import type { RenderRequest, RenderResponse, View } from './protocol.ts';
 
 const registry = createRegistry([basicPack]);
 const ALL_VIEWS: View[] = ['three-quarter', 'side', 'front', 'top'];
-const TITLES: Record<View, string> = { front: 'front', side: 'side', top: 'top', 'three-quarter': '3/4' };
+const TITLES: Record<View, string> = {
+  front: 'front',
+  side: 'side',
+  top: 'top',
+  'three-quarter': '3/4',
+};
 
 declare global {
   interface Window {
@@ -23,10 +34,14 @@ renderer.setPixelRatio(1);
 
 function niceBar(target: number): number {
   const steps = [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50];
-  return steps.reduce((best, s) => (Math.abs(Math.log(s / target)) < Math.abs(Math.log(best / target)) ? s : best), 1);
+  return steps.reduce(
+    (best, s) => (Math.abs(Math.log(s / target)) < Math.abs(Math.log(best / target)) ? s : best),
+    1,
+  );
 }
 
-const fmt = (m: number) => (m >= 1 ? `${m.toFixed(m >= 10 ? 0 : 1)} m` : `${Math.round(m * 100)} cm`);
+const fmt = (m: number) =>
+  m >= 1 ? `${m.toFixed(m >= 10 ? 0 : 1)} m` : `${Math.round(m * 100)} cm`;
 
 window.spawnforgeRender = async (request) => {
   const size = request.size ?? 512;
@@ -36,7 +51,9 @@ window.spawnforgeRender = async (request) => {
     throw new Error(`invalid blueprint: ${result.errors.map(formatIssue).join('; ')}`);
   }
   const t0 = performance.now();
-  const compiled = compileCreature(resolveBlueprint(request.blueprint, registry), registry, { quality: request.quality ?? 'medium' });
+  const compiled = compileCreature(resolveBlueprint(request.blueprint, registry), registry, {
+    quality: request.quality ?? 'medium',
+  });
   const compileMs = performance.now() - t0;
   const creature = createCreatureObject(compiled, registry);
   for (const name of request.debug?.hide ?? []) creature.meshes[name].visible = false;
@@ -75,7 +92,12 @@ window.spawnforgeRender = async (request) => {
   );
   ground.rotation.x = -Math.PI / 2;
   ground.receiveShadow = true;
-  const grid = new THREE.GridHelper(span * 5, Math.round((span * 5) / niceBar(span / 4)), '#5a616c', '#474d57');
+  const grid = new THREE.GridHelper(
+    span * 5,
+    Math.round((span * 5) / niceBar(span / 4)),
+    '#5a616c',
+    '#474d57',
+  );
   grid.position.y = 0.001;
   scene.add(ground, grid);
 
@@ -91,11 +113,16 @@ window.spawnforgeRender = async (request) => {
   ctx.fillRect(0, 0, sheet.width, sheet.height);
   ctx.fillStyle = '#e8e8e8';
   ctx.font = '600 18px system-ui, sans-serif';
-  ctx.fillText(compiled.name, 14, 28);
-  const nameWidth = ctx.measureText(compiled.name).width;
+  const title = request.anonymous ? '' : compiled.name;
+  ctx.fillText(title, 14, 28);
+  const nameWidth = title ? ctx.measureText(title).width : -18;
   ctx.font = '13px system-ui, sans-serif';
   ctx.fillStyle = '#aab';
-  ctx.fillText(`${fmt(extent.z)} long · ${fmt(max.y)} tall · ${fmt(extent.x)} wide`, 14 + nameWidth + 18, 28);
+  ctx.fillText(
+    `${fmt(extent.z)} long · ${fmt(max.y)} tall · ${fmt(extent.x)} wide`,
+    14 + nameWidth + 18,
+    28,
+  );
 
   const r0 = performance.now();
   for (const [index, view] of views.entries()) {
@@ -154,7 +181,8 @@ window.spawnforgeRender = async (request) => {
         while (placed.some((q) => Math.abs(q.ly - ly) < 12 && Math.abs(q.lx - sx) < 70)) ly -= 12;
         ly = Math.max(y + 40, ly);
         placed.push({ lx: sx, ly });
-        const colour = marker.kind === 'part' ? '#ffd166' : marker.kind === 'limb' ? '#7fdbff' : '#c3f584';
+        const colour =
+          marker.kind === 'part' ? '#ffd166' : marker.kind === 'limb' ? '#7fdbff' : '#c3f584';
         ctx.strokeStyle = colour;
         ctx.beginPath();
         ctx.moveTo(sx, sy);

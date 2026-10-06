@@ -30,7 +30,10 @@ export type N = any;
 /** PCG step on a uint node, identical to the CPU backend's. */
 function pcg(v: N): N {
   const state = v.mul(uint(747796405)).add(uint(2891336453));
-  const word = state.shiftRight(state.shiftRight(uint(28)).add(uint(4))).bitXor(state).mul(uint(277803737));
+  const word = state
+    .shiftRight(state.shiftRight(uint(28)).add(uint(4)))
+    .bitXor(state)
+    .mul(uint(277803737));
   return word.shiftRight(uint(22)).bitXor(word);
 }
 
@@ -58,7 +61,9 @@ export const tslKit: Kit<N> = {
   smoothstep: (e0, e1, x) => smoothstep(e0, e1, x),
   step: (edge, x) => step(edge, x),
   hash3: (x, y, z, salt) => {
-    const h = pcg(toLattice(x as N).add(pcg(toLattice(y as N).add(pcg(toLattice(z as N).add(uint(salt)))))));
+    const h = pcg(
+      toLattice(x as N).add(pcg(toLattice(y as N).add(pcg(toLattice(z as N).add(uint(salt)))))),
+    );
     return float(h).div(float(4294967296));
   },
 };

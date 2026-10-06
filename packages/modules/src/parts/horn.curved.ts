@@ -22,6 +22,14 @@ const params = z.strictObject({
     .max(90)
     .default(0)
     .describe('Degrees the root tilts forward (+) or back (-)'),
+  turn: z
+    .number()
+    .min(-180)
+    .max(180)
+    .default(0)
+    .describe(
+      'Degrees the bend turns sideways: 90 curves toward the midline (mandibles), -90 away from it',
+    ),
   ridges: z.number().int().min(0).max(30).default(0).describe('Rings along the horn'),
   color: colorRef('#d4c6a2').describe('Colour at the root: a palette name or a colour'),
   tipColor: colorRef('#3d3329').describe('Colour at the tip'),
@@ -52,7 +60,12 @@ export default definePart({
         8,
         Math.round(Math.abs(p.curve) / 15) + Math.round(Math.abs(p.twist) / 30) + 6,
       );
-      const path = ctx.geo.arc(length, p.curve, { twist: p.twist, lean: p.lean, segments });
+      const path = ctx.geo.arc(length, p.curve, {
+        twist: p.twist,
+        lean: p.lean,
+        heading: -p.turn,
+        segments,
+      });
       const radius = (t: number) => width * (1 - t) ** 0.85 + width * 0.04;
       const piece = ctx.geo.sweep(path, radius, {
         sides: 12,

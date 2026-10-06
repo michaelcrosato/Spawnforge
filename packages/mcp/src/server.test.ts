@@ -26,6 +26,7 @@ describe('MCP server', () => {
     expect(tools.map((t) => t.name).sort()).toEqual([
       'describe_module',
       'list_modules',
+      'render',
       'validate',
     ]);
   });

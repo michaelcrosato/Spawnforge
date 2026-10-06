@@ -108,7 +108,7 @@ export function sweep(
     const b0 = ringStart[i + 1] as number;
     for (let s = 0; s < sides; s++) {
       const s1 = (s + 1) % sides;
-      out.indices.push(a0 + s, b0 + s, b0 + s1, a0 + s, b0 + s1, a0 + s1);
+      out.indices.push(a0 + s, a0 + s1, b0 + s1, a0 + s, b0 + s1, b0 + s);
     }
   }
   const end = path[n - 1] as Vector3;
@@ -121,7 +121,7 @@ export function sweep(
     out.positions.push(p.x, p.y, p.z);
     out.normals.push(endT.x, endT.y, endT.z);
     out.t.push(1);
-    for (let s = 0; s < sides; s++) out.indices.push(last + s, c, last + ((s + 1) % sides));
+    for (let s = 0; s < sides; s++) out.indices.push(last + s, last + ((s + 1) % sides), c);
   } else {
     // A hemisphere of three rings.
     const r = radius(1);
@@ -146,7 +146,7 @@ export function sweep(
       }
       for (let s = 0; s < sides; s++) {
         const s1 = (s + 1) % sides;
-        out.indices.push(prev + s, start + s, start + s1, prev + s, start + s1, prev + s1);
+        out.indices.push(prev + s, prev + s1, start + s1, prev + s, start + s1, start + s);
       }
       prev = start;
     }
@@ -155,7 +155,7 @@ export function sweep(
     out.positions.push(p.x, p.y, p.z);
     out.normals.push(endT.x, endT.y, endT.z);
     out.t.push(1);
-    for (let s = 0; s < sides; s++) out.indices.push(prev + s, c, prev + ((s + 1) % sides));
+    for (let s = 0; s < sides; s++) out.indices.push(prev + s, prev + ((s + 1) % sides), c);
   }
   if (options.capRoot) {
     const start = path[0] as Vector3;
@@ -163,7 +163,7 @@ export function sweep(
     out.positions.push(start.x, start.y, start.z);
     out.normals.push(-t0.x, -t0.y, -t0.z);
     out.t.push(0);
-    for (let s = 0; s < sides; s++) out.indices.push(c, s, (s + 1) % sides);
+    for (let s = 0; s < sides; s++) out.indices.push(c, (s + 1) % sides, s);
   }
   return out;
 }
