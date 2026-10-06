@@ -171,7 +171,7 @@ All lengths are in torso lengths.
 | Look | Part |
 | --- | --- |
 | Ram horns, coiled beside the head | `horn.curved` on `head`, `at` 0.8, `angle` 40; `length` 0.65, `width` 0.05, `curve` 400, `turn` -35, `lean` -10, `ridges` 12 (on an upright biped's head: `at` 0.6, `angle` 85, `turn` -70, `lean` 10) |
-| A cobra rearing up | `serpent` with `neck` `pitch` 75 and `length` about 1, `torso` `pitch` near 6 and `tail` `pitch` near 4, so the body stays on the ground; `crossSection` "wide" on the neck for a hood |
+| A cobra rearing up | `serpent` with `neck` `pitch` 75 and `length` about 1, and `torso` and `tail` `pitch` 0–1 so the body lies flat (higher values lift the tail tip off the ground and sink the torso). For a hood give the neck `crossSection` "wide" and a radius profile that swells and narrows, such as `[0.09, 0.15, 0.07]`, starting no wider than the torso's first radius |
 | Bull horns, out then forward | `horn.curved` on `head`, `at` 0.85, `angle` 75; `length` 0.3, `width` 0.04, `curve` -70 |
 | Rhino nose horn | `horn.curved` on `head`, `at` 0.12, `angle` 0; `length` 0.22, `width` 0.05, `curve` 25 (add a smaller one at `at` 0.4) |
 | Tusks from the lower jaw | `horn.curved` on `jaw`, `at` 0.25, `angle` 60; `length` 0.16, `width` 0.025, `curve` -60, pale `color` and `tipColor` |
@@ -234,7 +234,11 @@ when the creature moves.
     instead). Long, nearly straight legs take the longest strides.
   - `duty` is the share of the cycle each foot is planted. Above 0.5 a biped walks; below 0.5
     it runs, with moments where no foot touches the ground: a raptor's sprint is
-    `{ "type": "walk", "duty": 0.4 }`.
+    `{ "type": "walk", "duty": 0.4 }` (0.4 is the lowest).
+  - Each gait covers a range of speeds for the leg length (Froude number v²/(g·hip) up to 0.5
+    for `walk`, 1.5 for `trot`), so `stride` does not raise the top speed. A biped's top speed is
+    about √(0.5·9.8·hip), 2.1 m/s for a 0.9 m hip; `analyze` reports it as `speed.max`. Running
+    and galloping gaits are not in this version.
   - `stepHeight` lifts the feet higher (a share of hip height); `slither` takes `amplitude` and
     `waves` for the shape of its S-curve.
 - **`actions`**: what the creature can do when asked. `bite` and `roar` need a jaw, `look`
@@ -254,12 +258,20 @@ when the creature moves.
   `--view side|3/4|top|front` (default side; serpents from above; actions at 3/4; `front` shows
   the legs' stance), `--frames n` (2–16, default 8) and `--size px` (per frame, default 320).
   Fine patterns fade out in small frames, so judge spots and scales on the contact sheet.
+- **Contact sheet options**: `--views 3/4,side,head,front,top,rear` picks the panels, `--size px`
+  sets the image width, `--quality low|medium|high` the mesh detail, and `--labels` tags every
+  part and limb by id. Spots and scales on a small creature (under about half a metre) are only a
+  few pixels across on the default sheet; check them with `--views top,3/4 --size 900 --quality
+  high`. Pattern sizes are in torso lengths, so on a creature with a very long tail a few large
+  spots can land mostly on the tail: use smaller spots, or a second layer with `region`.
 - **Check everything else with `analyze`**: it measures the creature (size, mass, centre of mass,
   hip height, speeds per gait, bite reach, balance over the feet), runs two gait cycles on flat
   and rough ground, and warns, with a path and a fix, about sliding feet, a body or tail in the
   ground, legs stretched past their reach, limbs passing through each other or the body, parts
-  buried in the skin and eyes facing backwards. It also writes a one-paragraph description: read
-  it to check the creature is what you meant.
+  buried in the skin, eyes facing backwards and a centre of mass outside the feet. Fixes give
+  amounts where they can (`about 10° more splay`); a leg that hits the body during the swing also
+  clears with a smaller gait `stride` or `stepHeight`. It also writes a one-paragraph description
+  (size, proportions, parts, colours, gaits): read it to check the creature is what you meant.
 
 What the body model does not do yet: a section bends only as a whole, so a neck raised steeply
 (a cobra) turns at its base rather than in an S; legs are tubes without hooves; and the head
@@ -273,11 +285,15 @@ Big eyes need a large `size` (0.06–0.1 for cartoon eyes).
 only written when the result is valid. Operations: `set` (a value), `add` (an item to a list
 such as `parts` or `skin.layers`), `remove` (a key, back to its default, or a limb or part;
 inherited ones get `"remove": true`), `mirror` (make a limb or part a pair, or set its `side`)
-and `scale` (multiply a number or a profile; path `""` scales the whole creature). Paths look
-like error paths, and inherited limbs and parts can be edited by id:
+and `scale` (multiply a number or a profile by `by`; path `""` scales the whole creature). Paths
+look like error paths. Limbs and parts are found by id (`limbs[id=hindleg]`), including inherited
+ones; layers, gaits and actions by type (`skin.layers[type=mottle]`, `motion.gaits[type=walk]`,
+the first of that type) or by position (`skin.layers[1]`):
 
 ```sh
 spawnforge patch wolf.json '[{"op":"set","path":"limbs[id=hindleg].length","value":0.7},
+  {"op":"set","path":"skin.layers[type=mottle].strength","value":0.6},
+  {"op":"scale","path":"parts[id=horns].params.length","by":1.5},
   {"op":"add","path":"parts","value":{"id":"ears","type":"ear.pointed","attach":{"side":"both"}}}]'
 ```
 

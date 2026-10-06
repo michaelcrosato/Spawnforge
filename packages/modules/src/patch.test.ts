@@ -56,6 +56,50 @@ describe('patch', () => {
     expect(formatDiff(result.diff)).toContain('- body.tail.length');
   });
 
+  it('removes an own part outright, leaving no "remove" marker', () => {
+    const own = { ...base, parts: [{ id: 'horn', type: 'horn.curved' }] };
+    const result = applyPatch(own, [{ op: 'remove', path: 'parts[id=horn]' }], registry);
+    expect(result.ok).toBe(true);
+    expect(result.blueprint.parts).toEqual([]);
+  });
+
+  it('finds layers and gaits by type, turning a bare gait name into an object', () => {
+    const own = {
+      ...base,
+      skin: { layers: [{ type: 'countershade' }, { type: 'mottle' }] },
+      motion: { gaits: ['walk', 'trot'] },
+    };
+    const result = applyPatch(
+      own,
+      [
+        { op: 'set', path: 'skin.layers[type=mottle].strength', value: 0.5 },
+        { op: 'set', path: 'motion.gaits[type=walk].stride', value: 0.8 },
+      ],
+      registry,
+    );
+    expect(result.ok).toBe(true);
+    expect(result.blueprint.skin).toEqual({
+      layers: [{ type: 'countershade' }, { type: 'mottle', strength: 0.5 }],
+    });
+    expect(result.blueprint.motion).toEqual({ gaits: [{ type: 'walk', stride: 0.8 }, 'trot'] });
+    const inherited = applyPatch(
+      { format: FORMAT, extends: 'serpent' },
+      [{ op: 'set', path: 'skin.layers[type=scales].size', value: 0.04 }],
+      registry,
+    );
+    expect(inherited.blueprint.skin).toEqual({
+      layers: [{ type: 'countershade' }, { type: 'scales', size: 0.04 }],
+    });
+  });
+
+  it('suggests ids, types and path forms when a path is wrong', () => {
+    const fixes = (path: string) =>
+      applyPatch(base, [{ op: 'set', path, value: 1 }], registry).errors.map((e) => e.fix);
+    expect(fixes('limbs[id=foreleggs].length')).toEqual(['did you mean "foreleg"?']);
+    expect(fixes('skin.layers[type=spots].size')).toEqual(['types there: countershade']);
+    expect(fixes('skin.layers{1}.size')[0]).toContain('[type=x]');
+  });
+
   it('edits a layer by index, copying the inherited layers first', () => {
     const result = applyPatch(
       base,

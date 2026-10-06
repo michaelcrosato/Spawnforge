@@ -149,7 +149,7 @@ export function createServer(): McpServer {
     {
       title: 'Edit a blueprint',
       description:
-        'Applies edit operations to a blueprint by id-based paths and validates the result: set (a value), add (an item to a list such as parts or skin.layers), remove (a key, back to the default, or a limb/part; inherited ones get "remove": true), mirror (make a limb or part a pair with side "both", or set a side) and scale (multiply a number or profile; path "" scales the whole creature). Paths look like error paths: "limbs[id=hindleg].length", "parts[id=horns].params.curve", "skin.layers[0].size". With "path", the file is rewritten only when the result is valid. Returns the diff, errors and warnings.',
+        'Applies edit operations to a blueprint by id-based paths and validates the result: set (a value), add (an item to a list such as parts or skin.layers), remove (a key, back to the default, or a limb/part; inherited ones get "remove": true), mirror (make a limb or part a pair with side "both", or set a side) and scale (multiply a number or profile by "by"; path "" scales the whole creature). Paths look like error paths: "limbs[id=hindleg].length", "parts[id=horns].params.curve", "skin.layers[type=mottle].strength" (layers, gaits and actions by type) or "skin.layers[0].size". With "path", the file is rewritten only when the result is valid. Returns the diff, errors and warnings.',
       inputSchema: z.object({
         blueprint: z
           .record(z.string(), z.unknown())

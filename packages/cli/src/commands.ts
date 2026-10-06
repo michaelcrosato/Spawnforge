@@ -195,7 +195,9 @@ export function validate(
 
 const PATH = z
   .string()
-  .describe('Id-based path, e.g. "limbs[id=hindleg].length" or "skin.layers[0].size"');
+  .describe(
+    'Id-based path, e.g. "limbs[id=hindleg].length", "skin.layers[type=mottle].strength" or "skin.layers[0].size"',
+  );
 /** Edit operations for `patch`, checked strictly like blueprints. */
 export const patchOpsSchema = z
   .array(
@@ -248,7 +250,7 @@ export function patch(
     const first = ops.error.issues[0];
     throw new CommandError(
       `bad operations at ${first?.path.join('.') || '(root)'}: ${first?.message ?? 'invalid'}`,
-      'pass a list like [{"op":"set","path":"body.tail.length","value":1.2}]; ops are set, add, remove, mirror and scale',
+      'pass a list like [{"op":"set","path":"body.tail.length","value":1.2}]; ops are set {path, value}, add {path, value}, remove {path}, mirror {path, side?} and scale {path, by}',
     );
   }
   const result = applyPatch(

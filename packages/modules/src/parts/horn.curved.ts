@@ -52,12 +52,12 @@ export default definePart({
     attach: { on: 'head', at: 0.75, angle: 40, side: 'both' },
     params: { length: 0.25, curve: 60 },
   },
-  describe(p) {
+  describe(p, { count }) {
     const curve = Math.abs(p.curve as number);
     const shape =
       curve > 300 ? 'coiled' : curve > 120 ? 'sweeping' : curve > 25 ? 'curved' : 'straight';
     const size = (p.length as number) > 0.4 ? 'long ' : (p.length as number) < 0.1 ? 'short ' : '';
-    return `${size}${shape} horns`;
+    return count === 1 ? `a ${size}${shape} horn` : `${size}${shape} horns`;
   },
   hooks: {
     build(ctx, raw) {

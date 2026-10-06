@@ -114,9 +114,13 @@ async function render(): Promise<{ output: unknown; exitCode?: number }> {
     values.view !== undefined &&
     filmView !== 'side' &&
     filmView !== 'three-quarter' &&
-    filmView !== 'top'
+    filmView !== 'top' &&
+    filmView !== 'front'
   )
-    throw new CommandError(`unknown filmstrip view "${values.view}"`, 'use side, 3/4 or top');
+    throw new CommandError(
+      `unknown filmstrip view "${values.view}"`,
+      'use side, 3/4, top or front',
+    );
   const speed = number('speed', values.speed);
   const frames = number('frames', values.frames);
   const filmstrip = values.filmstrip

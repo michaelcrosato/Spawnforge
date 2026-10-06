@@ -56,7 +56,10 @@ export default definePart({
     attach: { on: 'head', at: 0.85, angle: 45, side: 'both' },
     params: { length: 0.14, width: 0.05 },
   },
-  describe: (p) => `${(p.droop as number) > 0.5 ? 'drooping' : 'pointed'} ears`,
+  describe: (p, { count }) => {
+    const shape = (p.droop as number) > 0.5 ? 'drooping' : 'pointed';
+    return count === 1 ? `a ${shape} ear` : `${shape} ears`;
+  },
   hooks: {
     build(ctx, raw) {
       const p = raw as Params;

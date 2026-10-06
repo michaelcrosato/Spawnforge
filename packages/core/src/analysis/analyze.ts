@@ -138,20 +138,31 @@ export function analyzeCreature(
 
   // --- Stability: the centre of mass over the feet's support area -------------------------
   const feet = compiled.rig.legs.map((l) => [l.restFoot[0], l.restFoot[2]] as [number, number]);
+  // A foot covers its tip's width and, with toes, their length.
   const footRadius = Math.max(
     0.03 * L,
-    ...spec.limbs.filter((l) => l.role === 'leg').map((l) => (l.radius.at(-1) ?? 0.03) * L * 2),
+    ...spec.limbs
+      .filter((l) => l.role === 'leg')
+      .map(
+        (l) =>
+          Math.max(
+            (l.radius.at(-1) ?? 0.03) * 2,
+            typeof l.foot?.params.toeLength === 'number' ? l.foot.params.toeLength : 0,
+          ) * L,
+      ),
   );
   const stability =
     feet.length === 0
       ? { supported: true, margin: Math.max(0, measurements.width / 2), feet: 0 }
       : supportMargin(feet, footRadius, [centre.x, centre.z]);
-  if (feet.length > 2 && !stability.supported)
+  if (feet.length > 0 && !stability.supported)
     warn(
       'limbs',
       'unbalanced',
-      `the centre of mass is ${(-stability.margin).toFixed(2)} m outside the feet`,
-      'move the legs toward the heavy end (attach.at), shorten or lighten that end, or add legs',
+      `the centre of mass is ${(-stability.margin * 100).toFixed(1)} cm outside the feet`,
+      feet.length <= 2
+        ? 'move the legs under the body (attach.at), lean the torso less (pitch), or lighten the front or back (head, tail, arms)'
+        : 'move the legs toward the heavy end (attach.at), shorten or lighten that end, or add legs',
     );
 
   // --- Eyes facing backwards ---------------------------------------------------------------
@@ -196,7 +207,9 @@ export function analyzeCreature(
           path,
           'ground_penetration',
           `the ${check.penetration.part} goes ${(check.penetration.worst * 100).toFixed(1)} cm into the ground ${where}`,
-          'lengthen the legs, raise the section (pitch, curl) or make it slimmer',
+          spec.limbs.some((l) => l.role === 'leg')
+            ? 'lengthen the legs, raise the section (pitch, curl) or make it slimmer'
+            : 'raise the section (pitch, curl), lower the torso pitch or make it slimmer',
         );
       if (check.overstretch.worst > 0.15 && check.overstretch.leg)
         warn(
@@ -205,13 +218,24 @@ export function analyzeCreature(
           `the leg is stretched past its reach ${Math.round(check.overstretch.worst * 100)}% of the time ${where}`,
           'lengthen it, or give the gait a smaller stride',
         );
-      if (check.intersection.worst > 0.01 * L && check.intersection.between)
+      if (check.intersection.worst > 0.01 * L && check.intersection.between) {
+        const [a, b] = check.intersection.between;
+        const id = a.replace(/\.[LR]$/, '');
+        const limb = spec.limbs.find((l) => l.id === id);
+        const depth = check.intersection.worst;
+        // Splay that moves the foot sideways by the overlap, with some room to spare.
+        const splay =
+          Math.ceil((Math.atan2(depth * 1.5, (limb?.length ?? 0.5) * L) * 180) / Math.PI / 5) * 5;
+        const section = ['torso', 'neck', 'head', 'jaw', 'tail', 'spine'].includes(b);
         warn(
-          `limbs[id=${check.intersection.between[0].replace(/\.[LR]$/, '')}]`,
+          `limbs[id=${id}]`,
           'limb_intersection',
-          `${check.intersection.between[0]} passes ${(check.intersection.worst * 100).toFixed(1)} cm into ${check.intersection.between[1]} ${where}`,
-          'spread the legs apart (attach.at, attach.angle, splay) or make them thinner',
+          `${a} passes ${(depth * 100).toFixed(1)} cm into ${b} ${where}`,
+          section
+            ? `move it clear of the ${b} by about ${(depth * 100).toFixed(0)} cm: about ${splay}° more splay, a lower attach.angle (higher up the side), a smaller gait stride or stepHeight, or a thinner ${b === 'torso' ? 'body' : b}`
+            : `separate the two by about ${(depth * 100).toFixed(0)} cm: about ${splay}° more splay, attach.at further apart, a smaller gait stride, or thinner legs`,
         );
+      }
     }
   }
 
@@ -497,7 +521,25 @@ export function describeCreature(
     ? `a ${metres(m.height)} tall ${plan}`
     : `a ${metres(m.length)} long, ${metres(m.height)} tall ${plan}`;
   const body: string[] = [];
+  // Proportions, in the words prompts use.
+  const torsoRadius = Math.max(...spec.body.torso.radius);
+  if (spec.body.torso.crossSection === 'wide') body.push('a broad, flat body');
+  else if (spec.body.torso.crossSection === 'tall') body.push('a deep, narrow body');
+  if (legs === 2 && spec.body.torso.pitch < 35) body.push('a horizontal body');
+  const legList = spec.limbs.filter((l) => l.role === 'leg');
+  if (legList.length > 0) {
+    const legLength = legList.reduce((s, l) => s + l.length, 0) / legList.length;
+    const splay = legList.reduce((s, l) => s + l.splay, 0) / legList.length;
+    const [short, long] = legs === 2 ? [1, 1.5] : [0.45, 0.8];
+    const sprawl = splay > 25 ? 'sprawling ' : '';
+    if (legLength < short) body.push(`short ${sprawl}legs`);
+    else if (legLength > long) body.push(`long ${sprawl}legs`);
+    else if (sprawl) body.push('sprawling legs');
+  }
   if (arms > 0) body.push(`${arms === 2 ? 'two' : arms} arms`);
+  const head = spec.body.head;
+  if (head.length >= 0.4 || head.radius >= 0.9 * torsoRadius) body.push('a big head');
+  else if (head.length <= 0.18 && head.radius <= 0.5 * torsoRadius) body.push('a small head');
   const neck = spec.body.neck.length;
   if (neck >= 1) body.push('a very long neck');
   else if (neck >= 0.6) body.push('a long neck');
@@ -528,7 +570,8 @@ export function describeCreature(
     if (seen.has(part.baseId)) continue;
     seen.add(part.baseId);
     const module = registry.get('part', part.type) as PartModule | undefined;
-    const phrase = module?.describe?.(part.params) ?? part.baseId;
+    const count = spec.parts.filter((p) => p.baseId === part.baseId).length;
+    const phrase = module?.describe?.(part.params, { count }) ?? part.baseId;
     const place =
       module?.slot === 'mouth' || module?.material === 'eye'
         ? ''
@@ -540,7 +583,7 @@ export function describeCreature(
   const foot = spec.limbs.find((l) => l.role === 'leg' && l.foot)?.foot;
   if (foot) {
     const module = registry.get('part', foot.type) as PartModule | undefined;
-    if (module?.describe) body.push(module.describe(foot.params));
+    if (module?.describe) body.push(module.describe(foot.params, { count: legs }));
   }
   const skin = [
     `${colorName(spec.skin.palette.base ?? '#808080')} ${spec.skin.material}`,
@@ -555,11 +598,20 @@ export function describeCreature(
       ? `It slithers at about ${speed.walk.toFixed(1)} m/s`
       : `It walks at about ${speed.walk.toFixed(1)} m/s${gaits.length > 1 ? ` and ${gaits.at(-1)}s up to ${speed.max.toFixed(1)} m/s` : ''}`;
   const actions = spec.motion.actions.map((a) => a.type).filter((a) => a !== 'idle');
+  // Two layers that read the same are said once; two parts that do are counted.
+  const unique = (items: readonly string[]) => [...new Set(items)];
+  const counted = (items: readonly string[]) =>
+    unique(items).map((item) => {
+      const n = items.filter((x) => x === item).length;
+      return n > 1 ? `${item} (×${n})` : item;
+    });
   const list = (items: readonly string[]) =>
     items.length <= 1 ? (items[0] ?? '') : `${items.slice(0, -1).join(', ')} and ${items.at(-1)}`;
   return [
-    `${spec.name}: ${size} of about ${kg(m.mass)}${body.length ? `, with ${list(body)}` : ''}.`,
-    `Skin: ${list(skin)}.`,
+    `${spec.name}: ${size} of about ${kg(m.mass)}${body.length ? `, with ${list(counted(body))}` : ''}.`,
+    `Skin: ${list(unique(skin))}.`,
     `${moves}; ${spec.motion.temperament} temperament${actions.length ? `; it can ${list(actions)}` : ''}.`,
-  ].join(' ');
+  ]
+    .join(' ')
+    .replace(/\ba (?=[aeiou])/g, 'an ');
 }
