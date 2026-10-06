@@ -1,4 +1,5 @@
-import { readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { readFileSync, writeFileSync } from 'node:fs';
 import {
   createRegistry,
   FORMAT,
@@ -22,14 +23,12 @@ const registry = createRegistry([basicPack]);
 const root = new URL('../../../', import.meta.url);
 const recordFile = new URL('./corpus.json', import.meta.url);
 
+/** Committed files only: scratch folders in eval runs are ignored by git. */
 function files(dir: string): string[] {
-  return readdirSync(new URL(dir, root))
-    .sort()
-    .flatMap((name) => {
-      const path = `${dir}${name}`;
-      if (statSync(new URL(path, root)).isDirectory()) return files(`${path}/`);
-      return name.endsWith('.json') ? [path] : [];
-    });
+  return execFileSync('git', ['ls-files', dir], { cwd: root, encoding: 'utf8' })
+    .split('\n')
+    .filter((path) => path.endsWith('.json'))
+    .sort();
 }
 
 /** Blueprints and species: JSON objects with a `format`. */

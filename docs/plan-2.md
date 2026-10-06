@@ -390,9 +390,10 @@ cache key and `.glb` extras already carry the format). This milestone finishes i
 **Done when** the corpus test passes, the goldens are unchanged, and blueprint.md's "Format
 versions" explains `migrate`. 7.3 makes the first real bump.
 
-**Measured (2026-10-06).** The corpus is 293 blueprints and species (4 examples, 289 saved
-attempts); 291 are valid, and the other two fail at `body.head.shape` ("wide", a
-`crossSection`). The test also relabels every 0.1 file `bestiary/0.1` to run the whole chain.
+**Measured (2026-10-06).** The corpus is the 291 committed blueprints and species (4 examples,
+287 saved under `eval/runs`; scratch folders are ignored); 289 are valid, and the other two fail
+at `body.head.shape` ("wide", a `crossSection`). The test also relabels every 0.1 file
+`bestiary/0.1` to run the whole chain.
 
 ### 7.3 Format 0.2: the new vocabulary and a format eval
 

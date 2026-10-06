@@ -489,7 +489,9 @@
   },
   "eval/runs/2026-10-06-phase2-motion/p16-ant-soldier.attempt0.json": {
     "ok": false,
-    "errors": ["body.head.shape invalid_value"]
+    "errors": [
+      "body.head.shape invalid_value"
+    ]
   },
   "eval/runs/2026-10-06-phase2-motion/p16-ant-soldier.attempt1.json": {
     "ok": true,
@@ -540,14 +542,6 @@
     "errors": []
   },
   "eval/runs/2026-10-06-phase2-motion/p20-nightmare-hound.attempt1.json": {
-    "ok": true,
-    "errors": []
-  },
-  "eval/runs/2026-10-06-phase2-motion/work/d-probe-bad-quad.json": {
-    "ok": true,
-    "errors": []
-  },
-  "eval/runs/2026-10-06-phase2-motion/work/d-probe-long-quad.json": {
     "ok": true,
     "errors": []
   },
@@ -957,7 +951,9 @@
   },
   "eval/runs/2026-10-06-phase4-poc/p10-scorpion.attempt0.json": {
     "ok": false,
-    "errors": ["body.head.shape invalid_value"]
+    "errors": [
+      "body.head.shape invalid_value"
+    ]
   },
   "eval/runs/2026-10-06-phase4-poc/p10-scorpion.attempt1.json": {
     "ok": true,
