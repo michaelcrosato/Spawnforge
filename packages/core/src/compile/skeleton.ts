@@ -1,6 +1,17 @@
 import { Vector3 } from 'three';
 import type { CreatureSpec, CrossSection, LimbSpec } from '../blueprint/creature.ts';
 import type { PartModule, Registry } from '../registry.ts';
+import {
+  bellies,
+  bellyRules,
+  jointCap,
+  limbFactor,
+  shapedProfile,
+  strength,
+  tailFactor,
+  torsoFactor,
+  torsoPlan,
+} from './anatomy.ts';
 import { type LimbIkSetup, solveLimb } from './ik.ts';
 import { sampleProfile } from './profile.ts';
 import type {
@@ -9,6 +20,7 @@ import type {
   BoneSection,
   ChainDef,
   LegRig,
+  MassDef,
   Rig,
   Skeleton,
   ToeChain,
@@ -66,6 +78,8 @@ function boneProfile(
   );
 }
 const clamp01 = (t: number) => Math.min(1, Math.max(0, t));
+const sameProfile = (a: readonly number[], b: readonly number[] | undefined) =>
+  b !== undefined && a.length === b.length && a.every((v, i) => v === b[i]);
 
 /** Dorsal "up" for a bone on the main axis whose forward (snout-ward) direction is `forward`. */
 export function dorsalUp(forward: Vector3): Vector3 {
@@ -220,9 +234,16 @@ function torsoPoints(spec: CreatureSpec, pitchDeg: number, center: Vector3, coun
 export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonBuild {
   const L = spec.scale;
   const notes: { path: string; code: string; message: string }[] = [];
-  const torsoCross = CROSS_SCALE[spec.body.torso.crossSection];
-  const torsoRadius = (t: number) => sampleProfile(spec.body.torso.radius, t) * L;
   const legs = spec.limbs.filter((l) => l.role === 'leg');
+  // Anatomy (docs/design/8.1-anatomy.md): s = 2 × muscle; everything below is unchanged at 0.
+  const sBody = strength(spec.body.muscle);
+  const chitin = spec.skin.material === 'chitin';
+  // Legless bodies rest on a slightly flattened belly.
+  const flatten = (c: readonly [number, number]): readonly [number, number] =>
+    legs.length === 0 && sBody > 0 ? [c[0] * (1 + 0.04 * sBody), c[1] * (1 - 0.06 * sBody)] : c;
+  const torsoCross = flatten(CROSS_SCALE[spec.body.torso.crossSection]);
+  const torsoRadius = (t: number) => sampleProfile(spec.body.torso.radius, t) * L;
+  const plan = torsoPlan(spec.limbs.filter((l) => l.on === 'torso'));
   const torsoSegments = spec.body.torso.segments;
 
   // --- Posture: torso height and pitch from where the legs need their hips ------------------
@@ -338,6 +359,49 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
     const profile = boneProfile(values, ta, tb, L);
     return profile ? { profile } : {};
   };
+  /** A bone's profile with an anatomy multiplier (u: 0 at the bone's head, 1 at its tail). */
+  const shaped = (
+    radiusAt: (u: number) => number,
+    base: readonly number[] | undefined,
+    factorAt: (u: number) => number,
+  ) => {
+    const profile = shapedProfile(radiusAt, base, factorAt);
+    // `shaped` marks a profile anatomy changed, which thin bones' tubes then follow too.
+    return profile
+      ? { profile, ...(profile !== base && !sameProfile(profile, base) ? { shaped: true } : {}) }
+      : {};
+  };
+  /** The ribcage's depth: a keel below the chest, when the torso has a chest. */
+  const chestKeel = (): MassDef[] => {
+    if (plan.chest === undefined || sBody <= 0 || chitin) return [];
+    const at = (t: number) => sampleTorso(clamp01(t));
+    const [sx, sy] = torsoCross;
+    const ends = [at(plan.chest - 0.1), at(plan.chest + 0.14)].map((f) => {
+      const r = f.radius * sy;
+      const o = 0.3 * sBody * r;
+      return { point: f.point.clone().addScaledVector(f.up, -o), up: f.up, r, o };
+    });
+    const [a, c] = ends as [(typeof ends)[number], (typeof ends)[number]];
+    const extent = (e: (typeof ends)[number]) =>
+      Math.max(0.4 * e.r, e.r * (1 + 0.18 * sBody) - e.o);
+    const owner = spine.find((id) => {
+      const bone = b.bones[id] as BoneDef;
+      const t = plan.chest as number;
+      return t <= Math.max(bone.t0, bone.t1) && t >= Math.min(bone.t0, bone.t1);
+    });
+    return [
+      {
+        bone: owner ?? (spine.at(-1) as number),
+        a: a.point,
+        b: c.point,
+        ra: extent(a),
+        rb: extent(c),
+        up: a.up.clone(),
+        cross: [(0.75 * sx) / sy, 1],
+        blend: 0.4 * a.r * Math.min(1, sBody),
+      },
+    ];
+  };
 
   // --- Bones ---------------------------------------------------------------------------------
   const b = new Builder();
@@ -380,12 +444,23 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
         t0: ta,
         t1: tb,
         skin: true,
-        ...profileOf(spec.body.torso.radius, ta, tb),
+        ...shaped(
+          (u) => torsoRadius(lerp(ta, tb, u)),
+          boneProfile(spec.body.torso.radius, ta, tb, L),
+          (u) => torsoFactor(lerp(ta, tb, u), plan, sBody),
+        ),
       }),
     );
   }
   b.chain(
-    { id: 'torso', section: 'torso', owner: 'torso', parentBone: -1, blend: 0, masses: [] },
+    {
+      id: 'torso',
+      section: 'torso',
+      owner: 'torso',
+      parentBone: -1,
+      blend: 0,
+      masses: chestKeel(),
+    },
     spine,
   );
   b.path(
@@ -405,17 +480,63 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
   const front = sampleTorso(0);
   const neck: number[] = [];
   let headBase = front.point.clone();
+  /** The muscle running from the neck into the shoulders, on bodies with limbs on the torso. */
+  const neckMuscle = (): MassDef[] => {
+    const first = neck[0];
+    if (first === undefined || sBody <= 0 || chitin || plan.pelvis === undefined) return [];
+    const bone = b.bones[first] as BoneDef;
+    const r = (bone.r0 + bone.r1) / 2;
+    const o = 0.15 * sBody * r;
+    const rho = r * (1 + 0.15 * sBody) - o;
+    const offset = bone.up.clone().multiplyScalar(o);
+    return [
+      {
+        bone: first,
+        a: new Vector3().lerpVectors(bone.head, bone.tail, 0.05).add(offset),
+        b: new Vector3().lerpVectors(bone.head, bone.tail, 0.6).add(offset),
+        ra: rho,
+        rb: rho * 0.85,
+        up: bone.up.clone(),
+        cross: bone.cross,
+        blend: 0.4 * r * Math.min(1, sBody),
+      },
+    ];
+  };
   if (neckLen > 1e-6) {
     const np = neckSpec.pitch * DEG;
     const ndir = new Vector3(0, Math.sin(np), Math.cos(np));
     const p0 = front.point.clone().addScaledVector(front.forward, -0.02 * L);
     const p1 = p0.clone().addScaledVector(front.forward, neckLen * 0.4);
     const p2 = p0.clone().addScaledVector(ndir, neckLen);
-    const bez = (s: number) =>
-      new Vector3()
-        .addScaledVector(p0, (1 - s) ** 2)
-        .addScaledVector(p1, 2 * s * (1 - s))
-        .addScaledVector(p2, s * s);
+    // `curve` makes an S: today's curve raised to a cubic, its base pushed forward and down and
+    // its head end back and up (a swan's neck).
+    const curve = neckSpec.curve * DEG;
+    const chord = new Vector3().subVectors(p2, p0).normalize();
+    const dorsal = new Vector3(0, chord.z, -chord.y);
+    const push = Math.sin(curve / 2) * 0.35 * neckLen;
+    const c1 = p0
+      .clone()
+      .lerp(p1, 2 / 3)
+      .addScaledVector(dorsal, -push);
+    // The base may not dip into the chest.
+    c1.y = Math.max(c1.y, p0.y - 0.15 * neckLen);
+    const c2 = p2
+      .clone()
+      .lerp(p1, 2 / 3)
+      .addScaledVector(dorsal, push);
+    const bez =
+      curve === 0
+        ? (s: number) =>
+            new Vector3()
+              .addScaledVector(p0, (1 - s) ** 2)
+              .addScaledVector(p1, 2 * s * (1 - s))
+              .addScaledVector(p2, s * s)
+        : (s: number) =>
+            new Vector3()
+              .addScaledVector(p0, (1 - s) ** 3)
+              .addScaledVector(c1, 3 * s * (1 - s) ** 2)
+              .addScaledVector(c2, 3 * s * s * (1 - s))
+              .addScaledVector(p2, s ** 3);
     const neckCross = CROSS_SCALE[neckSpec.crossSection];
     for (let k = 0; k < neckSpec.segments; k++) {
       const sa = k / neckSpec.segments;
@@ -450,7 +571,7 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
         owner: 'neck',
         parentBone: chest,
         blend: 0.5 * Math.min(sampleProfile(neckSpec.radius, 1) * L, front.radius),
-        masses: [],
+        masses: neckMuscle(),
       },
       neck,
     );
@@ -573,7 +694,13 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
     const seg = tailLen / n;
     const curling = Array.from({ length: n }, (_, k) => (k + 0.5) / n > tailSpec.curlStart);
     const curlCount = Math.max(1, curling.filter(Boolean).length);
-    const tailCross = CROSS_SCALE[tailSpec.crossSection];
+    const tailCross = flatten(CROSS_SCALE[tailSpec.crossSection]);
+    // Legged bodies' tails start muscular, never wider than the torso's end.
+    const tailRadius = (t: number) => sampleProfile(tailSpec.radius, t) * L;
+    const tailShape = (t: number) =>
+      legs.length === 0
+        ? 1
+        : Math.min(tailFactor(t, sBody), Math.max(1, back.radius / tailRadius(t)));
     let pos = back.point.clone().addScaledVector(back.forward, 0.02 * L);
     let bend = 0;
     for (let k = 0; k < n; k++) {
@@ -597,7 +724,11 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
           up: dorsalUp(dir.clone().negate()),
           r0: sampleProfile(tailSpec.radius, k / n) * L,
           r1: sampleProfile(tailSpec.radius, (k + 1) / n) * L,
-          ...profileOf(tailSpec.radius, k / n, (k + 1) / n),
+          ...shaped(
+            (u) => tailRadius((k + u) / n),
+            boneProfile(tailSpec.radius, k / n, (k + 1) / n, L),
+            (u) => tailShape((k + u) / n),
+          ),
           cross: tailCross,
           t0: k / n,
           t1: (k + 1) / n,
@@ -670,6 +801,9 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
     if (outward.lengthSq() < 1e-8) outward.set(limb.mirror || 1, 0, 0);
     outward.normalize();
     const segKey = String(limb.segments) as '2' | '3' | '4';
+    const isFront =
+      limb.role === 'leg' && legs.length > 2 && limb.pair === frontPair && Math.abs(pitch) < 45;
+    const sLimb = strength(limb.muscle);
 
     let target: Vector3;
     let pole: Vector3;
@@ -680,7 +814,6 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
       target = new Vector3(rootPos.x, plan.footH, rootPos.z)
         .addScaledVector(outward, plan.h)
         .addScaledVector(forwardH, plan.fore);
-      const isFront = legs.length > 2 && limb.pair === frontPair && Math.abs(pitch) < 45;
       const knee = isFront ? forwardH.clone().negate() : forwardH.clone();
       pole = knee
         .multiplyScalar(1 - plan.sw)
@@ -738,13 +871,54 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
           up: face,
           r0: sampleProfile(limb.radius, k / n) * L,
           r1: sampleProfile(limb.radius, (k + 1) / n) * L,
-          ...profileOf(limb.radius, k / n, (k + 1) / n),
+          ...shaped(
+            (u) => sampleProfile(limb.radius, (k + u) / n) * L,
+            boneProfile(limb.radius, k / n, (k + 1) / n, L),
+            (u) => limbFactor((k + u) / n, n, sLimb, chitin),
+          ),
           cross: [1, 1],
           t0: k / n,
           t1: (k + 1) / n,
           skin: true,
         }),
       );
+    }
+    // Muscle bellies and joint caps (not on chitin, whose segments swell instead).
+    const limbMasses: MassDef[] = [];
+    if (!chitin && sLimb > 0 && (limb.role === 'leg' || limb.role === 'arm')) {
+      for (let k = 0; k < n; k++) {
+        const bone = b.bones[limbBones[k] as number] as BoneDef;
+        const rules = bellyRules(limb.role, k, isFront);
+        // Thighs and upper arms are as thick as a share of the body they join; haunches and
+        // shoulders taper hard toward the knee or elbow.
+        const bulk =
+          (k === 0 ? (limb.role === 'arm' ? 0.32 : 0.42) : k === 1 ? 0.2 : 0) * frame.radius;
+        limbMasses.push(
+          ...bellies(
+            limbBones[k] as number,
+            bone.head,
+            bone.tail,
+            bone.up,
+            (u) => sampleProfile(limb.radius, (k + u) / n) * L,
+            rules,
+            sLimb,
+            bulk,
+            k === 0 ? 0.55 : 0.6,
+          ),
+        );
+      }
+      // Caps at every joint but the last (the ankle or wrist).
+      for (let j = 1; j < n - 1; j++) {
+        const cap = jointCap(
+          limbBones[j] as number,
+          solved.points[j] as Vector3,
+          solved.points[j - 1] as Vector3,
+          solved.points[j + 1] as Vector3,
+          sampleProfile(limb.radius, j / n) * L * limbFactor(j / n, n, sLimb, chitin),
+          sLimb,
+        );
+        if (cap) limbMasses.push(cap);
+      }
     }
     // Knee, hock and elbow helpers.
     for (let k = 1; k < n; k++) {
@@ -781,7 +955,21 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
         owner: limb.id,
         parentBone: frame.bone,
         blend: 0.5 * Math.min(rootRadius, frame.radius),
-        masses: [{ center: rootPos.clone(), radius: rootRadius * 1.12 }],
+        masses: [
+          {
+            bone: limbBones[0] as number,
+            a: rootPos.clone(),
+            b: rootPos.clone(),
+            // Shoulders and haunches grow with muscle.
+            ra: rootRadius * (1.12 + 0.22 * sLimb),
+            rb: rootRadius * (1.12 + 0.22 * sLimb),
+            up: Y.clone(),
+            cross: [1, 1],
+            // The shoulder or hip swells into the body with muscle (a plain union at 0).
+            blend: 0.45 * rootRadius * Math.min(1, sLimb),
+          },
+          ...limbMasses,
+        ],
       },
       limbBones,
     );

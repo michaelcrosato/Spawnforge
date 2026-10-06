@@ -298,8 +298,22 @@ export function compileCreature(
     const flush = () => {
       if (run.length === 0) return;
       const first = bones[run[0] as number] as BoneDef;
-      const points = [first.head.clone(), ...run.map((id) => (bones[id] as BoneDef).tail.clone())];
-      const radii = [first.r0, ...run.map((id) => (bones[id] as BoneDef).r1)];
+      const points = [first.head.clone()];
+      const radii = [first.profile && first.shaped ? (first.profile[0] as number) : first.r0];
+      for (const id of run) {
+        const bone = bones[id] as BoneDef;
+        // A profile anatomy shaped (chitin segments, narrow joints) shows on thin tubes too.
+        const profile = bone.shaped ? bone.profile : undefined;
+        const spans = profile ? profile.length - 1 : 1;
+        for (let k = 1; k <= spans; k++) {
+          points.push(
+            k === spans
+              ? bone.tail.clone()
+              : new Vector3().lerpVectors(bone.head, bone.tail, k / spans),
+          );
+          radii.push(profile ? (profile[k] as number) : bone.r1);
+        }
+      }
       const lens = [0];
       for (let i = 1; i < points.length; i++)
         lens.push(

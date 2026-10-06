@@ -108,11 +108,7 @@ describe('format 0.2', () => {
     });
     expect(hydra.ok).toBe(true);
     expect(hydra.warnings).toEqual([]);
-    expect(hydra.notBuilt?.map((i) => i.path).sort()).toEqual([
-      'body.muscle',
-      'body.neck.count',
-      'skin.fur',
-    ]);
+    expect(hydra.notBuilt?.map((i) => i.path).sort()).toEqual(['body.neck.count', 'skin.fur']);
     expect(hydra.notBuilt?.[0]?.fix).toMatch(/^keep it/);
   });
 

@@ -103,8 +103,13 @@ every head a copy. `"tail": { "count": 2 }` gives two tails (`spread`, 20° per 
 separately. _(Built in milestone 9.1.)_
 
 **Neck shape, muscle and head details.** `neck.curve` (degrees) bends the neck into an S: forward
-at the base and back up below the head, like a swan. `body.muscle` (0 to 1, default 0.5) sets how
-muscled the body is, and `limbs[].muscle` overrides it per limb (_8.1_). `head.lips` (0–1),
+at the base and back up below the head, like a swan or a rearing cobra (a C on necks of fewer than
+3 segments). `body.muscle` (0 to 1, default 0.5) sets how muscled the body is, and
+`limbs[].muscle` overrides it per limb: thighs, upper arms and calves get muscle bellies, knees
+and elbows caps, joints and ankles narrow, the torso gets a chest, hips and a waist from the limbs
+on it, the neck a muscle into the shoulders and a tail a thick base. Chitin limbs swell between
+their joints instead, and legless bodies only flatten their belly a little. `0` gives smooth
+tubes, `1` a heavily built body. `head.lips` (0–1),
 `head.tongue` (`none`, `flat` or `forked`) and `head.brow` (0–1) shape the mouth and the brow
 (_8.3_).
 
@@ -392,8 +397,8 @@ when the creature moves.
   (size, proportions, parts, colours, gaits): read it to check the creature is what you meant.
 
 What the body model does not do yet: a section bends only as a whole, so a neck raised steeply
-(a cobra) turns at its base rather than in an S (until `neck.curve`, _8.1_); feet are clawed toes
-or stumps (hooves, paws and pads arrive in _8.2_); and the head
+(a cobra) turns at its base unless `neck.curve` gives it an S; feet are clawed toes or stumps
+(hooves, paws and pads arrive in _8.2_); and the head
 stays level while walking, by design. For sprawled legs, an attach `angle` around 110–120 keeps
 the legs clear of the body as they swing; angles past about 150 bring both legs under the belly.
 Big eyes need a large `size` (0.06–0.1 for cartoon eyes).
@@ -528,7 +533,6 @@ neck for a cobra's hood (see the recipes).
 
 | Not drawn yet | Milestone that draws it |
 | --- | --- |
-| Muscle (`body.muscle`, `limbs[].muscle`), `neck.curve` | 8.1 |
 | `foot.hoof`, `foot.paw`, `foot.talon`, `foot.pad`, `hand.grasp`, `stance` | 8.2 |
 | `head.lips`, `head.tongue`, `head.brow`, `beak` | 8.3 |
 | `hide`, `fur`, the new pattern layers | 8.4 |

@@ -65,7 +65,7 @@ export class PrimCulling {
             const dx = cx - (sdf.bounds[o] as number);
             const dy = cy - (sdf.bounds[o + 1] as number);
             const dz = cz - (sdf.bounds[o + 2] as number);
-            const reach = rb + (sdf.bounds[o + 3] as number) + margin;
+            const reach = rb + (sdf.bounds[o + 3] as number) + (sdf.reach[p] as number) + margin;
             if (dx * dx + dy * dy + dz * dz < reach * reach) lists.push(p);
           }
           this.count[b] = lists.length - (this.start[b] as number);
