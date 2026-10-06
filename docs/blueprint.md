@@ -110,9 +110,14 @@ less, and each tapers into a narrower knee, elbow, ankle or wrist (stocky legs s
 torso gets a chest, hips and (unless it stands upright) a waist from the limbs on it, the neck a
 muscle into the shoulders and a tail a thick base. Chitin limbs swell between their joints instead, and
 legless bodies get a flatter belly and a throat behind the head. `0` gives smooth tubes, `1` a
-heavily built body. `head.lips` (0–1),
-`head.tongue` (`none`, `flat` or `forked`) and `head.brow` (0–1) shape the mouth and the brow
-(_8.3_).
+heavily built body.
+
+**Heads.** Every head with a jaw has a mouth that opens: lips along the cut, gums, a palate,
+a floor, a tongue and a throat that darkens toward the back. `head.lips` (0–1, default 0.3) sets
+how full the lips are (0 for a snake's or a bird's), `head.tongue` is `flat` (the default),
+`forked` (snakes and lizards) or `none`, and `head.brow` (0–1, default 0.2) raises a ridge over
+each eye (heavy for a troll, 0.5–0.8; none for a snake). Nostrils and cheekbones come with every
+head. Heads are meshed finer than the body, so these show at any size.
 
 **Upright and horizontal bodies.** Legs attach along the torso with `at`, so when you change the
 torso's `pitch`, move the legs with it. On an upright biped (pitch 70–85) legs sit at the back end
@@ -228,7 +233,7 @@ part sits depends on its slot (shown in `describe_module`):
 | --- | --- | --- |
 | surface | `at` and `angle` on `on` | `horn.curved`, `ear.pointed`, `eye.basic`, `antenna`, `fin.dorsal`, `fin.tail`, `frill`, `hood` |
 | row | copies from `from` to `to` | `spikes.row`, `plates.row`, `sail` |
-| mouth | along the mouth line; needs `head.jaw` | `teeth.row`, `beak`, `mandible` |
+| mouth | along the mouth (teeth stand in the gums); needs `head.jaw` | `teeth.row`, `beak`, `mandible` |
 | area | over an `area` of `on` (`back`, `belly`, `sides` or `all`), optionally `from` and `to` | `shell`, `armor.bands`, `quills` |
 | foot | a limb's `foot` field, not `parts` | `foot.claw`, `foot.hoof`, `foot.paw`, `foot.talon`, `foot.pad`, `hand.grasp`, `hand.pincer` |
 | membrane | a wing's or fin's `membrane` field, not `parts` | `membrane.bat`, `membrane.insect`, `membrane.feather`, `membrane.case`, `membrane.fin` |
@@ -240,6 +245,16 @@ covers the back of the torso; `area` is only for them (skin layers use `region`)
 
 Parameters go inside `params`: `{ "id": "horns", "type": "horn.curved", "params": { "length": 0.3 } }`.
 Each part has a default anchor, so `{ "id": "teeth", "type": "teeth.row" }` is complete.
+
+**Sizes that follow the head.** Teeth and eyes size themselves to the head: `teeth.row` has
+`scale` and `fangScale` (1 is typical, 2 big), `spacing` (gaps as a share of a tooth's width)
+and `incisors`, and packs the row densely unless you write `count`; `eye.basic` has `scale` (an
+eye's radius is a share of the head's there), `lids` (eyelids that blink; `false` for snakes,
+fish and insects) and `squint` (0 wide open, 1 menacing). The older `length`, `fangLength` and
+`size` still work in torso lengths and win when written, so prefer the relative ones: a long
+serpent with `fangLength` gets planks for fangs. A `beak` covers the snout in two halves, upper
+on the head and lower on the jaw: `shape` (`hooked`, `straight`, `broad`), `length` (how far it
+runs on past the snout) and `depth`; use `"lips": 0` and leave out teeth for a bird.
 
 A row's `count` is per row: a `spikes.row` with `side` "both" makes two rows of `count` spikes,
 while `plates.row` is one centred part whose `count` plates alternate left and right
@@ -263,6 +278,10 @@ All lengths are in torso lengths.
 | Spikes down the whole back | `spikes.row` on `spine`, `from` 0.1, `to` 0.95, `angle` 0; a `height` profile such as `[0.06, 0.12, 0.05]` |
 | A stinger on the tail tip | `horn.curved` on `tail`, `at` 0.97, `angle` 0; `length` 0.14, `width` 0.025, `curve` 60, a dark `color` |
 | Pointed ears | `ear.pointed` on `head`, `at` 0.85, `angle` 45; `length` 0.14, `width` 0.05 (`droop` 0.8 and `angle` 70 for hanging ears) |
+| A wolf's or croc's grin | `teeth.row` with `fangs` 1 and nothing else: the row fills the mouth and the fangs show over the lips when it is shut; `fangs` 0 and `scale` 1.2 for a crocodile's even teeth, `fangScale` 1.8 for sabres |
+| A snake's mouth | the `serpent` preset (forked tongue, no lips, no eyelids); `teeth.row` with `incisors` 0, `fangs` 1, `lower` false |
+| A bird's head | `"head": { "shape": "snout", "lips": 0 }` and a `beak` with `"shape": "hooked"` (eagle, terror bird), `"straight"` (heron) or `"broad"` (duck); no teeth (examples/terror-bird.json) |
+| Heavy-browed, menacing eyes | `"head": { "brow": 0.7 }` and `eye.basic` with `squint` 0.5 |
 
 For `horn.curved`, `aim` is the easy way to point a horn: `forward` (mandibles, a charging
 bull), `up`, `out` (away from the body), `back` (swept back) or `down` (tusks). It works out the
@@ -530,7 +549,7 @@ name the section to change.
 ## Not drawn yet
 
 Everything format 0.1 had is drawn today: legs and arms, `foot.claw`, horns, ears, eyes, teeth,
-spike rows, the skin, scales and chitin materials, the first six pattern layers, walking,
+mouths with lips, gums and tongues, eyelids, brows, beaks, spike rows, the skin, scales and chitin materials, the first six pattern layers, walking,
 trotting, the tripod gait, slithering, and the bite, roar, look and idle actions. Everything in
 this table validates but is **not drawn yet**: compile skips it, and `validate` lists it under
 `notBuilt`. Each row goes when its milestone lands. Until then, approximate with what exists if
@@ -539,7 +558,6 @@ neck for a cobra's hood (see the recipes).
 
 | Not drawn yet | Milestone that draws it |
 | --- | --- |
-| `head.lips`, `head.tongue`, `head.brow`, `beak` | 8.3 |
 | `hide`, `fur`, the new pattern layers | 8.4 |
 | Several heads and tails (`count`, `spread`, `forkAt`) | 9.1 |
 | Wings, fins, membranes, `fin.dorsal`, `fin.tail` | 9.3 |

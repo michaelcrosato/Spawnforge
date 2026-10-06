@@ -80,12 +80,16 @@ export default defineTheme({
         chance: 1,
         part: {
           id: 'eyes',
-          params: { size: { min: 0.024, max: 0.032 }, pupil: 'goat', irisColor: '#ffcc00' },
+          params: { scale: { min: 1.1, max: 1.5 }, pupil: 'goat', irisColor: '#ffcc00' },
         },
       },
       {
         chance: 1,
-        part: { id: 'teeth', type: 'teeth.row', params: { count: { min: 8, max: 12 }, fangs: 2 } },
+        part: {
+          id: 'teeth',
+          type: 'teeth.row',
+          params: { fangs: 2, fangScale: { min: 1, max: 1.5 }, spacing: { min: 0, max: 0.3 } },
+        },
       },
       {
         chance: 0.8,

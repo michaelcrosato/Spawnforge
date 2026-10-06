@@ -32,7 +32,7 @@ export default defineTheme({
       ],
     },
     parts: [
-      { chance: 1, part: { id: 'eyes', params: { size: { min: 0.025, max: 0.04 } } } },
+      { chance: 1, part: { id: 'eyes', params: { scale: { min: 1.4, max: 2 }, lids: false } } },
       {
         chance: 0.4,
         part: {

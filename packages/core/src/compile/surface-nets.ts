@@ -149,6 +149,8 @@ export function surfaceNets(sdf: Sdf, grid: Grid, options: { smooth?: number } =
   const done = new Uint8Array(vx * vy * vz);
   const culling = new PrimCulling(sdf, grid, sdf.maxBlend + cell * 2);
   const evaluator = new SdfEvaluator(sdf);
+  // Head details are left to the head's refinement: under a cell, they would only alias here.
+  evaluator.details = false;
   const idx = (i: number, j: number, k: number) => i + vx * (j + vy * k);
   const rb = ((BLOCK * cell) / 2) * Math.sqrt(3);
   const subPrims = new Int32Array(sdf.count);

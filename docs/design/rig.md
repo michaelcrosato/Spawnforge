@@ -166,3 +166,12 @@ head whose bones it hangs from; an action aimed at a target uses the nearest hea
 head lunges, while every head turns to look; `analyze` adds `reach.heads` (main first) when
 there are several, and stats modules get `heads`. Glances still come from one stream for all
 heads; 9.1 keys them per head when heads differ.
+
+**Built in 8.3:** eyelids are the first driven chains with poses. Each eye that asks for lids
+gets two bones (`eye.<id>.upper`, `.lower`, section `lid`), parented to what the eye hangs from,
+and one chain `{ drive: 'blink', bones, poses: { closed } }`. A pose holds each bone's turn, in
+radians, about its own local X, applied on top of its rest rotation; the drives of 9.4 and 9.5
+(jaw-driven mandibles, flares) use the same convention. The core's eye pipeline builds the lids
+(`EmitOptions.eye.lids`), since it already builds the eye's bone and mesh; the general `bones`
+hook waits for 9.4's antennae and mandibles. `applyFace` (core) runs jaws and blinks for the
+controller and the render page.

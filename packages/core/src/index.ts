@@ -64,7 +64,7 @@ export {
 } from './blueprint/validate.ts';
 export * from './compile/compile.ts';
 export { type LimbIkSetup, solveLimb } from './compile/ik.ts';
-export { type MouthLine, mouthLine, mouthPoint } from './compile/mouth.ts';
+export { type MouthLine, mouthLine } from './compile/mouth.ts';
 export type {
   EmitOptions,
   EyeOptions,
@@ -82,6 +82,7 @@ export {
   bakePartColors,
   bakeSkinColors,
   bakeVertexColors,
+  EYE_ROUGHNESS,
   srgbToLinear,
 } from './export/bake.ts';
 export { FORMAT } from './format.ts';
@@ -103,6 +104,7 @@ export {
   type MotionEvent,
   type MotionOptions,
 } from './motion/controller.ts';
+export { applyFace, JAW_OPEN } from './motion/face.ts';
 export { motionData } from './motion/gaits.ts';
 export { Pose } from './motion/pose.ts';
 export {

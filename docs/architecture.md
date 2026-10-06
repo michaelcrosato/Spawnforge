@@ -71,20 +71,34 @@ each a pure function of the creature spec, seed and quality:
    get helper bones.
 2. **SDF** (`sdf.ts`). A rounded cone per bone (elliptical cross-sections allowed), plain union
    inside a chain, a smooth minimum once where a chain meets its parent. Bones thinner than about
-   a grid cell are left out and become swept tubes later.
+   a grid cell are left out and become swept tubes later (a jaw stays in with its head). The head
+   chain also carries its details (`head.ts`): lips, a brow over each eye and cheekbones as small
+   masses, and nostrils as carves, the field's one subtraction. The grid leaves details out; the
+   head's refinement shows them.
 3. **Surface nets** (`surface-nets.ts`). A grid fitted to the creature (48, 96 or 128 cells along
    the longest axis), sampled only in blocks and sub-blocks near the surface, then light
    smoothing, a Newton step back onto the surface and normals from the field gradient.
 4. **Skin weights** (`skin.ts`). Per vertex: the nearest bone, its parent and children only,
    softmax of radius-scaled distance, smoothed over the mesh, cut to the top four.
-5. **Mouth** (`mouth.ts`). The closed head is cut along the mouth line; vertices on the cut are
-   duplicated so the lower copies follow the jaw. An inner mouth sits inside.
-6. **Thin sections** become swept tubes skinned to their bones (toes, tail tips).
-7. **Body coordinates**: along the spine, around the body, along the limb, crease depth and region
-   weights per vertex. Textures read these instead of UVs.
-8. **Parts** (`parts.ts`). Sockets march from a section's centreline to the skin; part modules
-   build pieces in socket space and emit them with the socket's weights (teeth follow the head
-   or jaw, claws their toe, eyes get bones of their own).
+5. **Heads** (`head.ts`, `refine.ts`). Each head is refined toward its own edge length (a
+   twelfth of the skull's radius at medium, within an allowance that keeps the skin under 30k
+   triangles): long edges split, new vertices step onto the field with its details, and the
+   triangles are evened out. Edges near a brow, cheekbone or nostril split once more.
+6. **Mouth** (`mouth.ts`). The head is cut exactly along the mouth line (and around any chin
+   the jaw makes): edges that cross it get a vertex on it, and those vertices are duplicated so
+   the lower side follows the jaw; behind the corner the cheek blends from jaw to head. The
+   inside is lofted from the cut's edge: each side's lip and gum strip runs on into a palate or
+   a floor that closes at the throat, walls join them at the corners, and a tongue lies on the
+   floor. Inside vertices carry their depth and kind for `shadeMouth`.
+7. **Thin sections** become swept tubes skinned to their bones (toes, tail tips).
+8. **Body coordinates**: along the spine, around the body, along the limb, crease depth and region
+   weights per vertex. Textures read these instead of UVs. The lips' line reads as a crease.
+9. **Parts** (`parts.ts`). Sockets march from a section's centreline to the skin; part modules
+   build pieces in socket space and emit them with the socket's weights (teeth stand in the gums
+   and follow the head or jaw, claws their toe, eyes get bones of their own). An eye that asks
+   for lids gets two eyelid shells on bones of their own (`lids.ts`), joined to the skin with the
+   nearest skin's coordinates, and a blink-driven chain. Parts report what they built
+   (`measure`), which stats read.
 
 The output is plain data (`CompiledCreature`): three meshes (skin, hard parts, eyes) sharing one
 skeleton, the material spec, a rig description for motion, gameplay sockets, labelled markers
@@ -129,8 +143,10 @@ same code runs live in the browser, checks motion in Node and renders filmstrips
 - **Events**, returned by `update`: `footstep` (leg id and position), `gait` changes,
   `action-start` and `action-end`, and the moments actions declare (`bite-contact`,
   `roar-peak`) with the head's position.
-- **Breathing and blinks** travel with the pose as two numbers: `applyPose` feeds breath to the
-  skin shader (the torso swells along its normals) and squashes the eye bones to blink.
+- **Jaws and blinks** are bone turns (`applyFace`, shared with the render page's `--jaw` and
+  `--blink`): every jaw about its hinge, every blink-driven chain toward its `closed` pose (turns
+  about each bone's local X). **Breathing** travels with the pose as a number that `applyPose`
+  feeds to the skin shader (the torso swells along its normals).
 
 `applyPose` in `@spawnforge/three` copies the pose into the Three.js bones each frame. The
 sandbox runs creatures on `testCourse` terrain; the render page's filmstrip mode walks one on

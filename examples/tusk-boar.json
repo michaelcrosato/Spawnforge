@@ -59,7 +59,7 @@
         "tipColor": "#2a1e18"
       }
     },
-    { "id": "eyes", "params": { "size": 0.03 } }
+    { "id": "eyes", "params": { "scale": 1.1 } }
   ],
   "skin": {
     "palette": { "base": "#7a5c40", "belly": "#b8a088", "accent": "#3a2a1e" },

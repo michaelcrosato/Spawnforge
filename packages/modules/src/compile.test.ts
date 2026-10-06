@@ -145,9 +145,18 @@ describe('compiling', () => {
     const [tail] = c.rig.tails;
     expect(tail?.id).toBe('tail');
     expect(tail?.branch).toBe(0);
-    expect(c.rig.chains).toEqual([
-      { owner: 'tail', bones: tail?.bones, drive: 'spring', stiffness: 0.35, swish: true },
-    ]);
+    // Each eye's lids are a blink-driven chain of their two bones (8.3).
+    const [spring, ...blinks] = c.rig.chains;
+    expect(spring).toEqual({
+      owner: 'tail',
+      bones: tail?.bones,
+      drive: 'spring',
+      stiffness: 0.35,
+      swish: true,
+    });
+    expect(blinks.map((b) => [b.owner, b.drive, b.bones.map((i) => c.bones.names[i])])).toEqual(
+      ['eyes.L', 'eyes.R'].map((id) => [id, 'blink', [`eye.${id}.upper`, `eye.${id}.lower`]]),
+    );
     expect([c.rig.wings, c.rig.fins, c.rig.tentacles]).toEqual([[], [], []]);
     // One head reports one reach; stats count heads and only arm limbs as arms.
     const spec = resolveBlueprint(blueprint, registry);

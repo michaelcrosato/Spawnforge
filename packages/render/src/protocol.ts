@@ -19,6 +19,8 @@ export interface RenderRequest {
    * walking, with a footfall diagram below.
    */
   readonly filmstrip?: FilmstripRequest;
+  /** Contact sheets: the jaw open (0 shut to 1 wide) and the eyelids shut (0 to 1). */
+  readonly pose?: { readonly jaw?: number; readonly blink?: number };
   /** Debugging switches. */
   readonly debug?: {
     readonly hide?: readonly ('skin' | 'parts' | 'eyes')[];

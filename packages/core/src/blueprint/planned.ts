@@ -7,8 +7,8 @@ import type { Issue } from './issues.ts';
  * it validates, and compile skips what it cannot draw yet. This lists what is skipped, naming the
  * plan milestone that builds each thing. Pass `written` (the blueprint merged with its preset,
  * before defaults) to include fields that something else implies, such as a medium (from the
- * limbs), or whose defaults already have a value, such as `head.lips`,
- * only when the blueprint sets them; the thing that implies them is listed anyway. Each milestone
+ * limbs), or whose defaults already have a value, such as `motion.media.water`, only when the
+ * blueprint sets them; the thing that implies them is listed anyway. Each milestone
  * deletes its rows here.
  */
 export function notBuilt(
@@ -106,8 +106,6 @@ export function notBuilt(
       );
     if (get('motion', 'media', 'water') === true) add('motion.media.water', 'swimming', '10.3');
     if (get('motion', 'media', 'air') === true) add('motion.media.air', 'flying', '10.4');
-    for (const key of ['lips', 'tongue', 'brow'])
-      if (get('body', 'head', key) !== undefined) add(`body.head.${key}`, `the ${key}`, '8.3');
   }
   return issues;
 }

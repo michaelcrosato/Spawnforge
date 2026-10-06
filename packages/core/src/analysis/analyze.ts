@@ -39,6 +39,8 @@ export interface MotionCheck {
 
 export interface Analysis {
   readonly name: string;
+  /** What each part built, by id: size (metres) and count, as compile recorded them. */
+  readonly parts: Readonly<Record<string, { readonly size: number; readonly count: number }>>;
   /** Metres and kilograms, from the rest pose. */
   readonly measurements: {
     readonly length: number;
@@ -294,6 +296,7 @@ export function analyzeCreature(
 
   return {
     name: compiled.name,
+    parts: compiled.partSizes,
     measurements,
     speed,
     cadence,
@@ -332,7 +335,10 @@ function volumeOf(c: CompiledCreature): { volume: number; centre: Vector3 } {
   const idx = c.skin.indices;
   let volume = 0;
   const centre = new Vector3();
+  // Eyelids are open shells over the eyes, not part of the body's closed surface.
+  const lid = (v: number) => c.bones.sections[c.skin.skinIndex[v * 4] as number] === 'lid';
   for (let i = 0; i < idx.length; i += 3) {
+    if (lid(idx[i] as number)) continue;
     const a = (idx[i] as number) * 3;
     const b = (idx[i + 1] as number) * 3;
     const d = (idx[i + 2] as number) * 3;

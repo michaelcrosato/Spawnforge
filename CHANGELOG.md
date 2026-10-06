@@ -24,6 +24,19 @@ Work in progress toward 0.2, phase by phase (see the plan's status table).
   and `claws` hooks, and foot parts a `frame()` socket helper and each toe's joints.
 - **Examples:** a grey wolf with paws, a tusk boar with cloven hooves and a rust raptor with
   talons; the bog troll has hands.
+- **Heads (8.3):** heads are refined to their own resolution after meshing, so their details
+  show on any creature. Mouths are cut exactly along the mouth line and open onto lips, gums, a
+  palate and floor that darken toward the throat, and a `flat` or `forked` tongue
+  (`head.lips`, `head.tongue` and `head.brow` are drawn); the corners stretch instead of tearing.
+  Brows over the eyes, cheekbones and nostrils. Eyelids (`eye.basic` `lids`, `squint`) close to
+  blink on bones of their own, which exported clips animate; nothing squashes the eyes any more.
+  `teeth.row` stands in the gums, packed densely and sized to the head (`scale`, `fangScale`,
+  `spacing`, `incisors`), and `eye.basic` sizes to the head (`scale`); written `length`,
+  `fangLength`, `count` and `size` keep their old meaning. `beak` is drawn (`hooked`, `straight`,
+  `broad`). Part modules get `measure` (stats read built sizes) and mouth parts `around`;
+  `applyFace` and `render --jaw --blink` pose a face. Every head's mesh and the goldens change.
+- **Examples:** a terror bird with a hooked beak; the examples and presets use the head-relative
+  sizes.
 
 ## 0.1.0
 

@@ -40,9 +40,9 @@
     {
       "id": "eyes",
       "attach": { "on": "head", "at": 0.35, "angle": 65 },
-      "params": { "size": 0.022, "pupil": "slit", "irisColor": "#f0a020" }
+      "params": { "pupil": "slit", "irisColor": "#f0a020", "squint": 0.3 }
     },
-    { "id": "teeth", "type": "teeth.row", "params": { "count": 9, "length": 0.03, "fangs": 0 } }
+    { "id": "teeth", "type": "teeth.row", "params": { "fangs": 0, "scale": 1.2 } }
   ],
   "skin": {
     "palette": { "base": "#8a5a32", "belly": "#e0d2a8", "accent": "#3a2414" },

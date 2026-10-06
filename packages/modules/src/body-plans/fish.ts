@@ -33,7 +33,7 @@ export default defineBodyPlan({
         id: 'eyes',
         type: 'eye.basic',
         attach: { on: 'head', at: 0.3, angle: 70 },
-        params: { size: 0.025 },
+        params: { scale: 1.3, lids: false },
       },
       { id: 'dorsal', type: 'fin.dorsal', attach: { on: 'torso', at: 0.4, angle: 0 } },
       { id: 'tailfin', type: 'fin.tail' },

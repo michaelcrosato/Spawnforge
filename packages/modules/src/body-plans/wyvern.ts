@@ -40,7 +40,7 @@ export default defineBodyPlan({
         attach: { on: 'head', at: 0.35, angle: 55 },
         params: { pupil: 'slit' },
       },
-      { id: 'teeth', type: 'teeth.row', params: { count: 12, fangs: 2 } },
+      { id: 'teeth', type: 'teeth.row', params: { fangs: 2 } },
     ],
     skin: {
       palette: { base: '#5a3a3a', belly: '#c0a080', accent: '#2a1a1a' },

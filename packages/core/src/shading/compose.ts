@@ -151,3 +151,41 @@ export function shadeSkin<F>(
   const shade = k.sub(k.num(1), k.mul(s.crease, k.num(0.25)));
   return { r: k.mul(r, shade), g: k.mul(g, shade), b: k.mul(b, shade), roughness, height };
 }
+
+/** Inside the mouth: wet colours in linear light, and where they apply. */
+export interface MouthShade<F> {
+  /** 1 inside the mouth (cavity, lips' inner side, gums, tongue), else 0. */
+  readonly inside: F;
+  /** Linear-light colour. */
+  readonly r: F;
+  readonly g: F;
+  readonly b: F;
+  readonly roughness: F;
+}
+
+/**
+ * The mouth's colours from the skin's body coordinates (docs/design/8.3-heads.md): inside
+ * vertices carry `limb = -1 - depth` (0 at the lips, 1 at the throat) and their kind in
+ * `crease` (0 cavity, 1 lips and gums, 2 tongue). The cavity goes from wet red to near black
+ * toward the throat; gums are pink, and the tongue a lighter pink that darkens with depth.
+ */
+export function shadeMouth<F>(k: Kit<F>, limb: F, crease: F): MouthShade<F> {
+  const inside = k.sub(k.num(1), k.step(k.num(-0.5), limb));
+  const depth = k.clamp(k.sub(k.num(-1), limb), k.num(0), k.num(1));
+  const gum = k.mul(k.step(k.num(0.5), crease), k.sub(k.num(1), k.step(k.num(1.5), crease)));
+  const tongue = k.step(k.num(1.5), crease);
+  const dim = (c: number, keep: number) =>
+    k.mul(k.num(c), k.sub(k.num(1), k.mul(depth, k.num(1 - keep))));
+  const channel = (cavity: number, throat: number, gums: number, tip: number) => {
+    const wall = k.mix(k.num(cavity), k.num(throat), k.smoothstep(k.num(0), k.num(1), depth));
+    const withGum = k.mix(wall, dim(gums, 0.55), gum);
+    return k.mix(withGum, dim(tip, 0.45), tongue);
+  };
+  return {
+    inside,
+    r: channel(0.3, 0.025, 0.42, 0.52),
+    g: channel(0.055, 0.004, 0.12, 0.17),
+    b: channel(0.06, 0.005, 0.13, 0.18),
+    roughness: k.num(0.3),
+  };
+}

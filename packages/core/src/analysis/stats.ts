@@ -65,12 +65,18 @@ export function statsInput(spec: CreatureSpec, analysis: Analysis, registry: Reg
     material: spec.skin.material,
     temperament: spec.motion.temperament,
     actions: spec.motion.actions.map((a) => a.type),
-    parts: spec.parts.map((part) => ({
-      type: part.type,
-      tags: registry.get('part', part.type)?.tags ?? [],
-      size: largest(part.params.length ?? part.params.height ?? part.params.size) * L,
-      count: num(part.params.count, 1),
-    })),
+    // What the part built, when it says (sizes may follow the head); else its parameters.
+    parts: spec.parts.map((part) => {
+      const built = analysis.parts[part.baseId];
+      return {
+        type: part.type,
+        tags: registry.get('part', part.type)?.tags ?? [],
+        size: built
+          ? built.size
+          : largest(part.params.length ?? part.params.height ?? part.params.size) * L,
+        count: built ? built.count : num(part.params.count, 1),
+      };
+    }),
     claws: { count: clawCount, length: clawLength },
   };
 }
