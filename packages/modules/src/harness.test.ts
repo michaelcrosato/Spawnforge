@@ -130,6 +130,12 @@ function runFor(controller: MotionController, seconds: number) {
   return { events, pose, msPerFrame: total / frames, worst };
 }
 
+/**
+ * A motion's cost per frame: the faster of two identical runs, since the first also pays for
+ * compiling the controller's code, and either can catch a pause from tests running beside it.
+ */
+const warm = (...runs: { msPerFrame: number }[]) => Math.min(...runs.map((r) => r.msPerFrame));
+
 describe('module harness: gaits', () => {
   it.each(built('gait').map((m) => [m.id] as const))(
     '%s moves its body within budget, the same twice',
@@ -143,11 +149,12 @@ describe('module harness: gaits', () => {
         return { ...run, z: controller.position.z, gait: controller.gait?.id };
       };
       const a = go();
+      const b = go();
       expect(a.gait).toBe(id);
       expect(finite(a.pose)).toBe(true);
       expect(a.z, 'metres moved in 3 s').toBeGreaterThan(0.2 * compiled.scale);
-      expect(a.msPerFrame, 'motion ms per frame').toBeLessThan(MOTION_MS);
-      expect(go().pose).toEqual(a.pose);
+      expect(warm(a, b), 'motion ms per frame').toBeLessThan(MOTION_MS);
+      expect(b.pose).toEqual(a.pose);
     },
   );
 });
@@ -168,13 +175,14 @@ describe('module harness: actions', () => {
         return runFor(controller, ambient ? 4 : 3);
       };
       const a = go();
+      const b = go();
       expect(finite(a.pose)).toBe(true);
       if (!ambient) {
         expect(a.events[0]).toBe('action-start');
         expect(a.events.at(-1)).toBe('action-end');
       }
-      expect(a.msPerFrame, 'motion ms per frame').toBeLessThan(MOTION_MS);
-      expect(go()).toMatchObject({ events: a.events, pose: a.pose });
+      expect(warm(a, b), 'motion ms per frame').toBeLessThan(MOTION_MS);
+      expect(b).toMatchObject({ events: a.events, pose: a.pose });
     },
   );
 });
