@@ -38,10 +38,6 @@ export function buildSdf(
   const prims: number[] = [];
   const bounds: number[] = [];
   const thinBones: number[] = [];
-  const chainIndex = new Map<number, number>();
-  chains.forEach((c, i) => {
-    chainIndex.set(i, i);
-  });
   const boneChain = (bone: number) => (bones[bone] as BoneDef).chain;
 
   const push = (
@@ -106,7 +102,9 @@ export function buildSdf(
     for (const id of chain.bones) {
       const bone = bones[id] as BoneDef;
       if (!bone.skin) continue;
-      const thinness = Math.max(bone.r0, bone.r1) * Math.min(bone.cross[0], bone.cross[1]);
+      const thinness =
+        Math.max(bone.r0, bone.r1, ...(bone.profile ?? [])) *
+        Math.min(bone.cross[0], bone.cross[1]);
       if (thinness < minRadius) {
         thinBones.push(id);
         continue;
@@ -116,20 +114,33 @@ export function buildSdf(
       dir.normalize();
       const up = bone.up.clone().addScaledVector(dir, -bone.up.dot(dir)).normalize();
       const side = new Vector3().crossVectors(up, dir).normalize();
-      push(
-        bone.head,
-        bone.tail,
-        bone.r0,
-        bone.r1,
-        side,
-        up,
-        dir,
-        bone.cross[0],
-        bone.cross[1],
-        ci,
-        id,
-        0,
-      );
+      const profile = bone.profile;
+      if (profile && profile.length > 2) {
+        // One cone per span of the profile, so radius profiles show between joints too.
+        const spans = profile.length - 1;
+        for (let k = 0; k < spans; k++) {
+          const a = new Vector3().lerpVectors(bone.head, bone.tail, k / spans);
+          const b = new Vector3().lerpVectors(bone.head, bone.tail, (k + 1) / spans);
+          const [sx, sy] = bone.cross;
+          push(
+            a,
+            b,
+            profile[k] as number,
+            profile[k + 1] as number,
+            side,
+            up,
+            dir,
+            sx,
+            sy,
+            ci,
+            id,
+            0,
+          );
+        }
+      } else {
+        const [sx, sy] = bone.cross;
+        push(bone.head, bone.tail, bone.r0, bone.r1, side, up, dir, sx, sy, ci, id, 0);
+      }
     }
     for (const mass of chain.masses) {
       const first = chain.bones[0] ?? -1;
@@ -158,7 +169,6 @@ export function buildSdf(
     chainBlend[i] = c.blend;
     maxBlend = Math.max(maxBlend, c.blend);
   });
-  void chainIndex;
   return {
     count: prims.length / STRIDE,
     data: new Float64Array(prims),

@@ -50,6 +50,21 @@ const BENDS = {
 } as const;
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+
+/** Radii at a few points along a bone from a section profile, when it varies within the bone. */
+function boneProfile(
+  values: readonly number[],
+  ta: number,
+  tb: number,
+  scale: number,
+): number[] | undefined {
+  if (values.length <= 2) return undefined;
+  const spans = 4;
+  return Array.from(
+    { length: spans + 1 },
+    (_, k) => sampleProfile(values, ta + ((tb - ta) * k) / spans) * scale,
+  );
+}
 const clamp01 = (t: number) => Math.min(1, Math.max(0, t));
 
 /** Dorsal "up" for a bone on the main axis whose forward (snout-ward) direction is `forward`. */
@@ -304,6 +319,11 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
   const layout = layoutFor(pitch, center);
   const sampleTorso = torsoSampler(layout);
 
+  const profileOf = (values: readonly number[], ta: number, tb: number) => {
+    const profile = boneProfile(values, ta, tb, L);
+    return profile ? { profile } : {};
+  };
+
   // --- Bones ---------------------------------------------------------------------------------
   const b = new Builder();
   const root = b.bone({
@@ -345,6 +365,7 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
         t0: ta,
         t1: tb,
         skin: true,
+        ...profileOf(spec.body.torso.radius, ta, tb),
       }),
     );
   }
@@ -398,6 +419,7 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
           up: dorsalUp(forward),
           r0: sampleProfile(neckSpec.radius, 1 - sa) * L,
           r1: sampleProfile(neckSpec.radius, 1 - sb) * L,
+          ...profileOf(neckSpec.radius, 1 - sa, 1 - sb),
           cross: neckCross,
           t0: 1 - sa,
           t1: 1 - sb,
@@ -560,6 +582,7 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
           up: dorsalUp(dir.clone().negate()),
           r0: sampleProfile(tailSpec.radius, k / n) * L,
           r1: sampleProfile(tailSpec.radius, (k + 1) / n) * L,
+          ...profileOf(tailSpec.radius, k / n, (k + 1) / n),
           cross: tailCross,
           t0: k / n,
           t1: (k + 1) / n,
@@ -651,12 +674,22 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
       const sprawl = BENDS.sprawl[segKey];
       bendsDeg = base.map((v, i) => lerp(v, sprawl[i] as number, plan?.sw ?? 0));
     } else {
+      // Hanging by default; `lift` swings the arm forward and up.
+      const lift = (limb.lift * Math.PI) / 180;
+      const down = Y.clone()
+        .multiplyScalar(-Math.cos(lift))
+        .addScaledVector(forwardH, Math.sin(lift));
       target = rootPos
         .clone()
-        .addScaledVector(Y, -R * 0.8)
-        .addScaledVector(forwardH, R * 0.18)
+        .addScaledVector(down, R * 0.8)
+        .addScaledVector(forwardH, R * 0.18 * Math.cos(lift))
         .addScaledVector(outward, R * 0.12);
-      pole = forwardH.clone().negate().addScaledVector(outward, 0.3).normalize();
+      pole = forwardH
+        .clone()
+        .multiplyScalar(-Math.cos(lift))
+        .addScaledVector(Y, -Math.sin(lift))
+        .addScaledVector(outward, 0.3)
+        .normalize();
       bendsDeg = BENDS.arm[segKey];
     }
     const setup: LimbIkSetup = { lengths, bends: bendsDeg.map((v) => v * DEG) };
@@ -688,6 +721,7 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
           up: face,
           r0: sampleProfile(limb.radius, k / n) * L,
           r1: sampleProfile(limb.radius, (k + 1) / n) * L,
+          ...profileOf(limb.radius, k / n, (k + 1) / n),
           cross: [1, 1],
           t0: k / n,
           t1: (k + 1) / n,

@@ -40,14 +40,25 @@ export function detail<F>(k: Kit<F>, s: Surface<F>, size: number): F {
   return k.sub(k.num(1), k.smoothstep(k.num(size * 0.12), k.num(size * 0.45), s.pixel));
 }
 
+/**
+ * Like `detail`, for relief. Bump mapping takes slopes per 2×2 pixel block, so relief needs
+ * features about 25 pixels across to look smooth and is gone below about 7.
+ */
+export function relief<F>(k: Kit<F>, s: Surface<F>, size: number): F {
+  return k.sub(k.num(1), k.smoothstep(k.num(size * 0.04), k.num(size * 0.15), s.pixel));
+}
+
 function regionMask<F>(k: Kit<F>, s: Surface<F>, region: Region): F {
   switch (region) {
     case 'all':
       return k.num(1);
     case 'back':
-      return k.smoothstep(k.num(-0.15), k.num(0.35), s.height);
+      return k.mul(k.smoothstep(k.num(-0.15), k.num(0.35), s.height), k.sub(k.num(1), s.limbs));
     case 'belly':
-      return k.sub(k.num(1), k.smoothstep(k.num(-0.35), k.num(0.15), s.height));
+      return k.mul(
+        k.sub(k.num(1), k.smoothstep(k.num(-0.35), k.num(0.15), s.height)),
+        k.sub(k.num(1), s.limbs),
+      );
     case 'head':
       return s.head;
     case 'torso':
@@ -83,9 +94,12 @@ export function shadeSkin<F>(
 
   if (spec.material === 'scales') {
     const f = k.num(1 / 0.012);
-    const c = cells(k, k.mul(s.x, f), k.mul(s.y, f), k.mul(s.z, f), 0.6, 503);
-    const edge = k.smoothstep(k.num(0), k.num(0.12), k.sub(c.second, c.distance));
-    height = k.add(height, k.mul(k.mul(edge, k.num(0.0015)), detail(k, s, 0.012)));
+    const c = cells(k, k.mul(s.x, f), k.mul(s.y, f), k.mul(s.z, f), 0.6, 503, {
+      stagger: true,
+      reach: 3,
+    });
+    const edge = k.smoothstep(k.num(0), k.num(0.4), k.sub(c.second, c.distance));
+    height = k.add(height, k.mul(k.mul(edge, k.num(0.0012)), relief(k, s, 0.012)));
   } else if (spec.material === 'chitin') {
     const sheen = fbm(
       k,

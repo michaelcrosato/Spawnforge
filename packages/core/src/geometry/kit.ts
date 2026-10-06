@@ -62,7 +62,7 @@ export function sweep(
       (lengths[i - 1] as number) + (path[i] as Vector3).distanceTo(path[i - 1] as Vector3),
     );
   const total = lengths[n - 1] || 1;
-  const tangents = path.map((p, i) => {
+  const tangents = path.map((_, i) => {
     const a = path[Math.max(0, i - 1)] as Vector3;
     const b = path[Math.min(n - 1, i + 1)] as Vector3;
     return new Vector3().subVectors(b, a).normalize();

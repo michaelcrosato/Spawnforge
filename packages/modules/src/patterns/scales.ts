@@ -1,4 +1,4 @@
-import { cells, colorRef, definePattern, detail } from '@spawnforge/core';
+import { cells, colorRef, definePattern, detail, relief } from '@spawnforge/core';
 import { z } from 'zod';
 
 export default definePattern({
@@ -25,17 +25,18 @@ export default definePattern({
         k.add(k.mul(s.z, f), k.num(seed)),
         0.7,
         seed,
+        { stagger: true, reach: 3 },
       );
       const edge = k.sub(c.second, c.distance);
       const gapWidth = 0.04 + (p.gap as number) * 0.1;
       const gap = k.sub(k.num(1), k.smoothstep(k.num(0), k.num(gapWidth), edge));
-      // Each scale domes up from its edges; both fade out where scales shrink below a few pixels.
-      const dome = k.smoothstep(k.num(0), k.num(0.45), edge);
-      const visible = detail(k, s, size);
+      // Each scale domes up from its edges. Gaps fade out where scales shrink below a few
+      // pixels, and the relief sooner, since bump mapping needs more pixels to look smooth.
+      const dome = k.smoothstep(k.num(0), k.num(0.6), edge);
       return {
-        mask: k.mul(k.mul(gap, k.num(0.2 + (p.gap as number) * 0.5)), visible),
+        mask: k.mul(k.mul(gap, k.num(0.2 + (p.gap as number) * 0.5)), detail(k, s, size)),
         color: p.gapColor as string,
-        height: k.mul(k.mul(dome, k.num((p.bump as number) * size * 0.35)), visible),
+        height: k.mul(k.mul(dome, k.num((p.bump as number) * size * 0.3)), relief(k, s, size)),
       };
     },
   },

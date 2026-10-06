@@ -1,0 +1,39 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Dune Scorpion",
+  "seed": 1010,
+  "extends": "hexapod",
+  "scale": 0.8,
+  "body": {
+    "tail": { "length": 1.2, "radius": [0.08, 0.02], "pitch": 20, "curl": 200, "segments": 12 }
+  },
+  "limbs": [
+    {
+      "id": "pincer",
+      "role": "arm",
+      "attach": { "on": "torso", "at": 0.02, "angle": 80 },
+      "length": 0.5,
+      "segments": 2,
+      "radius": [0.04, 0.025],
+      "splay": 40,
+      "foot": { "type": "foot.claw", "toes": 2, "toeLength": 0.12, "clawLength": 0.06 }
+    }
+  ],
+  "parts": [
+    {
+      "id": "stinger",
+      "type": "horn.curved",
+      "attach": { "on": "tail", "at": 0.97, "angle": 0 },
+      "params": { "length": 0.1, "width": 0.02, "curve": 60 }
+    }
+  ],
+  "skin": {
+    "palette": { "base": "#d8c28a", "belly": "#e8dab0", "accent": "#a8884a" },
+    "material": "chitin",
+    "layers": [
+      { "type": "countershade", "softness": 0.2 },
+      { "type": "mottle", "scale": 0.1, "coverage": 0.3 }
+    ]
+  },
+  "motion": { "temperament": "skittish", "gaits": ["tripod", "walk"] }
+}

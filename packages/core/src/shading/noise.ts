@@ -52,34 +52,54 @@ export interface Cell<F> {
 }
 
 /**
- * Cellular (Worley) noise from the 2×2×2 cells nearest the point, with one feature point per
- * cell jittered by up to `jitter` (0 to 1) of half a cell around its centre.
+ * Cellular (Worley) noise with one feature point per cell, jittered by up to `jitter` (0 to 1)
+ * of half a cell around its centre. `reach` 2 checks the 2×2×2 cells nearest the point, which
+ * finds the nearest feature but not always the second nearest; use 3 (27 cells) where edges
+ * between cells matter, as in scales. With `stagger`, every other row along z is shifted half a
+ * cell, so the cells pack like scales instead of a square grid.
  */
-export function cells<F>(k: Kit<F>, x: F, y: F, z: F, jitter: number, salt = 0): Cell<F> {
+export function cells<F>(
+  k: Kit<F>,
+  x: F,
+  y: F,
+  z: F,
+  jitter: number,
+  salt = 0,
+  options: { stagger?: boolean; reach?: 2 | 3 } = {},
+): Cell<F> {
   const half = k.num(0.5);
-  const bx = k.floor(k.sub(x, half));
-  const by = k.floor(k.sub(y, half));
-  const bz = k.floor(k.sub(z, half));
-  const one = k.num(1);
+  const reach = options.reach ?? 2;
+  const lo = reach === 3 ? -1 : 0;
+  const hi = reach === 3 ? 1 : 1;
+  // With reach 3, centre on the cell containing the point; with reach 2, on the nearest corner.
+  const centre = (v: F) => (reach === 3 ? k.floor(v) : k.floor(k.sub(v, half)));
+  const by = centre(y);
+  const bz = centre(z);
   let best = k.num(9);
   let second = k.num(9);
   let id = k.num(0);
   const j = k.num(jitter * 0.5);
-  for (let c = 0; c < 8; c++) {
-    const cx = c & 1 ? k.add(bx, one) : bx;
-    const cy = c & 2 ? k.add(by, one) : by;
-    const cz = c & 4 ? k.add(bz, one) : bz;
-    const ox = k.mul(k.sub(k.hash3(cx, cy, cz, salt + 11), half), j);
-    const oy = k.mul(k.sub(k.hash3(cx, cy, cz, salt + 23), half), j);
-    const oz = k.mul(k.sub(k.hash3(cx, cy, cz, salt + 37), half), j);
-    const dx = k.sub(k.add(k.add(cx, half), ox), x);
-    const dy = k.sub(k.add(k.add(cy, half), oy), y);
-    const dz = k.sub(k.add(k.add(cz, half), oz), z);
-    const d = k.sqrt(k.add(k.add(k.mul(dx, dx), k.mul(dy, dy)), k.mul(dz, dz)));
-    const closer = k.step(d, best);
-    second = k.min(second, k.max(d, best));
-    best = k.min(best, d);
-    id = k.mix(id, k.hash3(cx, cy, cz, salt + 53), closer);
+  for (let dz = lo; dz <= hi; dz++) {
+    const cz = dz === 0 ? bz : k.add(bz, k.num(dz));
+    const shift = options.stagger ? k.fract(k.mul(cz, half)) : k.num(0);
+    const bx = centre(k.sub(x, shift));
+    for (let dy = lo; dy <= hi; dy++) {
+      const cy = dy === 0 ? by : k.add(by, k.num(dy));
+      for (let dx = lo; dx <= hi; dx++) {
+        const cx = dx === 0 ? bx : k.add(bx, k.num(dx));
+        const ox = k.mul(k.sub(k.hash3(cx, cy, cz, salt + 11), half), j);
+        const oy = k.mul(k.sub(k.hash3(cx, cy, cz, salt + 23), half), j);
+        const oz = k.mul(k.sub(k.hash3(cx, cy, cz, salt + 37), half), j);
+        const ddx = k.sub(k.add(k.add(k.add(cx, half), shift), ox), x);
+        const ddy = k.sub(k.add(k.add(cy, half), oy), y);
+        const ddz = k.sub(k.add(k.add(cz, half), oz), z);
+        const d = k.sqrt(k.add(k.add(k.mul(ddx, ddx), k.mul(ddy, ddy)), k.mul(ddz, ddz)));
+        const closer = k.step(d, best);
+        second = k.min(second, k.max(d, best));
+        best = k.min(best, d);
+        id = k.mix(id, k.hash3(cx, cy, cz, salt + 53), closer);
+      }
+    }
   }
   return { distance: best, second, id };
 }

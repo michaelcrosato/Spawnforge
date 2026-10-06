@@ -82,9 +82,11 @@ describe('compiling', () => {
   it('keeps part streams independent: changing the horns leaves the spikes alone', () => {
     const base = examples.find(([n]) => n === 'ridgeback-stalker')?.[1] as Record<string, unknown>;
     const edited = JSON.parse(JSON.stringify(base));
-    (edited.parts as { id: string; params: Record<string, unknown> }[]).find(
+    const horns = (edited.parts as { id: string; params: Record<string, unknown> }[]).find(
       (p) => p.id === 'horns',
-    )!.params.length = 0.4;
+    );
+    if (!horns) throw new Error('ridgeback-stalker has no horns');
+    horns.params.length = 0.4;
     const a = compile({
       ...base,
       parts: [

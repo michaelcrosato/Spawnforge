@@ -34,6 +34,11 @@ export interface BoneDef {
   readonly t1: number;
   /** Part of the skin surface (not root, eye or helper bones). */
   readonly skin: boolean;
+  /**
+   * Radii at evenly spaced points from head to tail, when the section's profile changes within
+   * the bone; the skin follows it with one cone per span instead of a straight taper.
+   */
+  readonly profile?: readonly number[];
   /** Index of the chain this bone belongs to (-1 for none). */
   readonly chain: number;
 }

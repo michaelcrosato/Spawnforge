@@ -44,7 +44,7 @@ if (mode === 'prepare') {
   // Shuffle deterministically by the run folder name.
   const rng = createRng(dir.length * 7919 + finals.length);
   const order = finals
-    .map((f, i) => ({ f, k: rng.next() + i * 0 }))
+    .map((f) => ({ f, k: rng.next() }))
     .sort((a, b) => a.k - b.k)
     .map((x) => x.f);
   mkdirSync(join(dir, 'blind'), { recursive: true });

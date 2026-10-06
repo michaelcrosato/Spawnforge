@@ -11,12 +11,14 @@ import * as THREE from 'three';
 import type { RenderRequest, RenderResponse, View } from './protocol.ts';
 
 const registry = createRegistry([basicPack]);
-const ALL_VIEWS: View[] = ['three-quarter', 'side', 'front', 'top'];
+const ALL_VIEWS: View[] = ['three-quarter', 'side', 'head', 'front', 'top', 'rear'];
 const TITLES: Record<View, string> = {
   front: 'front',
   side: 'side',
   top: 'top',
   'three-quarter': '3/4',
+  head: 'head',
+  rear: 'rear 3/4',
 };
 
 declare global {
@@ -104,7 +106,7 @@ window.spawnforgeRender = async (request) => {
   renderer.setSize(size, size, false);
   const sheet = document.createElement('canvas');
   const header = 44;
-  const cols = views.length >= 2 ? 2 : 1;
+  const cols = views.length >= 5 ? 3 : views.length >= 2 ? 2 : 1;
   const rows = Math.ceil(views.length / cols);
   sheet.width = cols * size;
   sheet.height = rows * size + header;
@@ -125,15 +127,48 @@ window.spawnforgeRender = async (request) => {
   );
 
   const r0 = performance.now();
+  const corners = [0, 1, 2, 3, 4, 5, 6, 7].map(
+    (c) => new THREE.Vector3(c & 1 ? max.x : min.x, c & 2 ? max.y : min.y, c & 4 ? max.z : min.z),
+  );
+  const headMarker = compiled.markers.find((m) => m.id === 'head');
+  const headBone = compiled.rig.head;
+  const headSize =
+    Math.max(compiled.bones.lengths[headBone] ?? 0, compiled.bones.radii[headBone] ?? 0) +
+    (compiled.bones.radii[headBone] ?? 0);
+  const headCentre = new THREE.Vector3().fromArray(compiled.bones.positions, headBone * 3);
+  if (headMarker) headCentre.lerp(new THREE.Vector3(...headMarker.position), 0.5);
+
   for (const [index, view] of views.entries()) {
-    const half = span * 0.6;
     let camera: THREE.Camera;
-    if (view === 'three-quarter') {
-      const persp = new THREE.PerspectiveCamera(32, 1, span * 0.01, span * 20);
-      persp.position.copy(centre).add(new THREE.Vector3(span * 1.25, span * 0.7, span * 1.55));
-      persp.lookAt(centre);
+    let half = span * 0.6;
+    if (view === 'three-quarter' || view === 'rear' || view === 'head') {
+      const persp = new THREE.PerspectiveCamera(30, 1, span * 0.002, span * 20);
+      if (view === 'head') {
+        const reach = Math.max(headSize * 2.6, span * 0.08);
+        persp.position
+          .copy(headCentre)
+          .add(new THREE.Vector3(reach * 0.75, reach * 0.35, reach * 0.95));
+        persp.lookAt(headCentre);
+        half = reach * Math.tan((15 * Math.PI) / 180);
+      } else {
+        const dir =
+          view === 'rear'
+            ? new THREE.Vector3(-1.25, 0.75, -1.55)
+            : new THREE.Vector3(1.25, 0.7, 1.55);
+        persp.position.copy(centre).addScaledVector(dir, span);
+        persp.lookAt(centre);
+      }
       camera = persp;
     } else {
+      // Fit each orthographic view to the creature's extent in that view.
+      const axis =
+        view === 'front'
+          ? ([0, 1] as const)
+          : view === 'side'
+            ? ([2, 1] as const)
+            : ([0, 2] as const);
+      const ext = [extent.x, extent.y, extent.z];
+      half = (Math.max(ext[axis[0]] as number, ext[axis[1]] as number) / 2) * 1.18 + span * 0.02;
       const ortho = new THREE.OrthographicCamera(-half, half, half, -half, span * 0.01, span * 20);
       if (view === 'front') ortho.position.set(centre.x, centre.y, max.z + span * 2);
       if (view === 'side') ortho.position.set(max.x + span * 2, centre.y, centre.z);
@@ -144,8 +179,9 @@ window.spawnforgeRender = async (request) => {
       ortho.lookAt(centre);
       camera = ortho;
     }
-    ground.visible = view !== 'top' && view !== 'front';
-    grid.visible = view !== 'front';
+    void corners;
+    ground.visible = view !== 'top' && view !== 'front' && view !== 'head';
+    grid.visible = view !== 'front' && view !== 'head';
     scene.background = new THREE.Color(view === 'top' ? '#2b2f36' : '#262a30');
     camera.updateMatrixWorld();
     await renderer.renderAsync(scene, camera);
@@ -155,13 +191,13 @@ window.spawnforgeRender = async (request) => {
     ctx.strokeStyle = '#111';
     ctx.strokeRect(x + 0.5, y + 0.5, size - 1, size - 1);
     ctx.fillStyle = 'rgba(0,0,0,0.45)';
-    ctx.fillRect(x + 8, y + 8, 46, 20);
+    ctx.fillRect(x + 8, y + 8, 58, 20);
     ctx.fillStyle = '#ddd';
     ctx.font = '12px system-ui, sans-serif';
     ctx.fillText(TITLES[view], x + 14, y + 22);
 
-    if (view === 'side' || view === 'front' || view === 'top') {
-      const bar = niceBar(span / 3);
+    if (view === 'side' || view === 'front' || view === 'top' || view === 'head') {
+      const bar = niceBar((half * 2) / 3.5);
       const px = (bar / (2 * half)) * size;
       ctx.fillStyle = '#eee';
       ctx.fillRect(x + 14, y + size - 22, px, 4);
@@ -169,34 +205,48 @@ window.spawnforgeRender = async (request) => {
       ctx.fillRect(x + 14 + px - 2, y + size - 28, 2, 10);
       ctx.fillText(fmt(bar), x + 20 + px, y + size - 16);
     }
-    if (request.labels && (view === 'side' || view === 'three-quarter')) {
-      const placed: { lx: number; ly: number }[] = [];
+    if (request.labels && (view === 'side' || view === 'three-quarter' || view === 'head')) {
+      // Labels stack in columns at the panel's edges, joined to their points by leader lines.
+      const visible = compiled.markers
+        .filter((m) => !(view === 'side' && m.position[0] < -extent.x * 0.15))
+        .filter(
+          (m) =>
+            view !== 'head' ||
+            new THREE.Vector3(...m.position).distanceTo(headCentre) < headSize * 2.2,
+        )
+        .map((m) => {
+          const p = new THREE.Vector3(...m.position).project(camera);
+          return { m, sx: x + (p.x * 0.5 + 0.5) * size, sy: y + (-p.y * 0.5 + 0.5) * size };
+        })
+        .filter((v) => v.sx > x + 4 && v.sx < x + size - 4 && v.sy > y + 4 && v.sy < y + size - 4)
+        .sort((a, b) => a.sy - b.sy);
       ctx.font = '11px ui-monospace, monospace';
-      for (const marker of compiled.markers) {
-        if (view === 'side' && marker.position[0] < -extent.x * 0.15) continue;
-        const p = new THREE.Vector3(...marker.position).project(camera);
-        const sx = x + (p.x * 0.5 + 0.5) * size;
-        const sy = y + (-p.y * 0.5 + 0.5) * size;
-        let ly = sy - 14;
-        while (placed.some((q) => Math.abs(q.ly - ly) < 12 && Math.abs(q.lx - sx) < 70)) ly -= 12;
-        ly = Math.max(y + 40, ly);
-        placed.push({ lx: sx, ly });
-        const colour =
-          marker.kind === 'part' ? '#ffd166' : marker.kind === 'limb' ? '#7fdbff' : '#c3f584';
-        ctx.strokeStyle = colour;
-        ctx.beginPath();
-        ctx.moveTo(sx, sy);
-        ctx.lineTo(sx + 6, ly + 3);
-        ctx.stroke();
-        ctx.fillStyle = colour;
-        ctx.beginPath();
-        ctx.arc(sx, sy, 2.5, 0, Math.PI * 2);
-        ctx.fill();
-        const w = ctx.measureText(marker.id).width;
-        ctx.fillStyle = 'rgba(0,0,0,0.6)';
-        ctx.fillRect(sx + 6, ly - 8, w + 6, 13);
-        ctx.fillStyle = colour;
-        ctx.fillText(marker.id, sx + 9, ly + 2);
+      for (const side of ['left', 'right'] as const) {
+        const group = visible.filter((v) => v.sx < x + size / 2 === (side === 'left'));
+        let next = y + 34;
+        for (const v of group) {
+          const ly = Math.max(next, Math.min(y + size - 34, v.sy));
+          next = ly + 13;
+          const w = ctx.measureText(v.m.id).width;
+          const lx = side === 'left' ? x + 6 : x + size - w - 12;
+          const colour =
+            v.m.kind === 'part' ? '#ffd166' : v.m.kind === 'limb' ? '#7fdbff' : '#c3f584';
+          ctx.strokeStyle = colour;
+          ctx.globalAlpha = 0.8;
+          ctx.beginPath();
+          ctx.moveTo(v.sx, v.sy);
+          ctx.lineTo(side === 'left' ? lx + w + 6 : lx - 2, ly - 3);
+          ctx.stroke();
+          ctx.globalAlpha = 1;
+          ctx.fillStyle = colour;
+          ctx.beginPath();
+          ctx.arc(v.sx, v.sy, 2.5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = 'rgba(0,0,0,0.65)';
+          ctx.fillRect(lx - 2, ly - 11, w + 7, 13);
+          ctx.fillStyle = colour;
+          ctx.fillText(v.m.id, lx + 1, ly - 1);
+        }
       }
     }
   }

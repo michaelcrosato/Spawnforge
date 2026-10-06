@@ -13,6 +13,7 @@ const params = z.strictObject({
     .default(0.035)
     .describe('Claw length in torso lengths; 0 for none'),
   clawCurve: z.number().min(0).max(180).default(70).describe('Degrees each claw bends down'),
+  clawWidth: z.number().min(0.2).max(3).default(1).describe('Claw thickness relative to the toe'),
   clawColor: colorRef('#2a221c').describe('Claw colour: a palette name or a colour'),
 });
 type Params = z.output<typeof params>;
@@ -78,8 +79,9 @@ export default definePart({
       const length = p.clawLength * ctx.scale;
       const color = ctx.color(p.clawColor, '#2a221c');
       for (const toe of ctx.toes) {
-        const base = Math.max(toe.toeRadius * 0.8, length * 0.12);
-        const path = ctx.geo.arc(length, p.clawCurve, { segments: 6 });
+        const base = Math.max(toe.toeRadius * 0.8, length * 0.12) * p.clawWidth;
+        // Start raised by half the curve, so the tip ends level with the toe, not in the ground.
+        const path = ctx.geo.arc(length, p.clawCurve, { segments: 6, lean: p.clawCurve * 0.5 });
         const piece = ctx.geo.sweep(path, (t) => base * (1 - t * 0.92), { sides: 7, tip: 'point' });
         ctx.emit(piece, toe, { color, tipColor: '#120e0b', sink: base * 0.6, bone: toe.bone });
       }

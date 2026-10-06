@@ -15,14 +15,14 @@ afterAll(async () => {
 const pngSize = (png: Buffer) => ({ width: png.readUInt32BE(16), height: png.readUInt32BE(20) });
 
 describe('headless renders', () => {
-  it('renders a contact sheet of four views with measurements', async () => {
+  it('renders a contact sheet of six views with measurements', async () => {
     const result = await renderer.render({
       blueprint: { format: FORMAT, extends: 'quadruped' },
       size: 200,
       labels: true,
     });
     expect(result.png.subarray(1, 4).toString()).toBe('PNG');
-    expect(pngSize(result.png)).toEqual({ width: 400, height: 444 });
+    expect(pngSize(result.png)).toEqual({ width: 600, height: 444 });
     expect(result.info.length).toBeGreaterThan(1);
     expect(result.info.triangles).toBeGreaterThan(1000);
     expect(result.info.backend).toMatch(/WebGPU|WebGL/);

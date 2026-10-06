@@ -77,7 +77,7 @@ async function render(): Promise<{ output: unknown; exitCode?: number }> {
     if (!view) throw new CommandError(`unknown view "${v}"`, 'use 3/4, side, front or top');
     return view;
   });
-  const out = values.out ?? (arg === '-' ? 'creature.png' : arg.replace(/\.json$/i, '') + '.png');
+  const out = values.out ?? (arg === '-' ? 'creature.png' : `${arg.replace(/\.json$/i, '')}.png`);
   const { renderBlueprint } = await import('@spawnforge/render');
   const result = await renderBlueprint({
     blueprint,

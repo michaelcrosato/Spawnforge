@@ -179,6 +179,11 @@ export function buildBlueprintSchema(ids: ModuleIds = NO_IDS) {
     splay: range(-30, 90)
       .default(0)
       .describe('Degrees the limb swings out from under the body; about 50 for sprawlers'),
+    lift: range(0, 150)
+      .default(0)
+      .describe(
+        'Arms only: degrees the arm is raised forward from hanging; 90 holds it straight out (pincers)',
+      ),
     foot: z
       .union([foot, z.null()])
       .prefault({})

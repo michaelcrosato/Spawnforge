@@ -1,0 +1,52 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Dune Scorpion",
+  "seed": 1010,
+  "extends": "hexapod",
+  "scale": 0.8,
+  "body": {
+    "tail": { "length": 1.2, "radius": [0.09, 0.03], "pitch": 20, "curl": 200, "segments": 12 }
+  },
+  "limbs": [
+    { "id": "frontleg", "length": 0.55 },
+    { "id": "midleg", "length": 0.55 },
+    { "id": "hindleg", "length": 0.6 }
+  ],
+  "parts": [
+    {
+      "id": "pincers",
+      "type": "horn.curved",
+      "attach": { "on": "head", "at": 0.08, "angle": 100 },
+      "params": {
+        "length": 0.35,
+        "width": 0.04,
+        "lean": 60,
+        "curve": 110,
+        "turn": 90,
+        "color": "#cdb47a",
+        "tipColor": "#5a4528"
+      }
+    },
+    {
+      "id": "stinger",
+      "type": "horn.curved",
+      "attach": { "on": "tail", "at": 0.97, "angle": 0 },
+      "params": {
+        "length": 0.1,
+        "width": 0.02,
+        "curve": 60,
+        "color": "#cdb47a",
+        "tipColor": "#3d2c14"
+      }
+    }
+  ],
+  "skin": {
+    "palette": { "base": "#d8c28a", "belly": "#e8dab0", "accent": "#a8884a" },
+    "material": "chitin",
+    "layers": [
+      { "type": "countershade", "softness": 0.2 },
+      { "type": "mottle", "scale": 0.1, "coverage": 0.3 }
+    ]
+  },
+  "motion": { "temperament": "skittish", "gaits": ["tripod", "walk"] }
+}

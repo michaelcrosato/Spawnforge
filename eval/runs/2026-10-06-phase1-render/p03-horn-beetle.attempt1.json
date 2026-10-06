@@ -1,0 +1,48 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Horn Beetle",
+  "seed": 33,
+  "extends": "hexapod",
+  "scale": 0.25,
+  "body": {
+    "torso": { "radius": [0.1, 0.16, 0.2, 0.24, 0.22, 0.12] },
+    "head": { "length": 0.2, "radius": 0.09 }
+  },
+  "limbs": [
+    { "id": "frontleg", "length": 0.5 },
+    { "id": "midleg", "length": 0.52 },
+    { "id": "hindleg", "length": 0.58 }
+  ],
+  "parts": [
+    {
+      "id": "horn",
+      "type": "horn.curved",
+      "attach": { "on": "head", "at": 0.35, "angle": 0 },
+      "params": {
+        "length": 0.45,
+        "width": 0.055,
+        "curve": -75,
+        "lean": -15,
+        "color": "#1a1210",
+        "tipColor": "#3a2a20"
+      }
+    },
+    { "id": "eyes", "params": { "irisColor": "#201008" } }
+  ],
+  "skin": {
+    "palette": { "base": "#0b0b0e", "belly": "#1a1a20", "accent": "#ff7a12" },
+    "material": "chitin",
+    "layers": [
+      { "type": "countershade", "softness": 0.2 },
+      {
+        "type": "spots",
+        "color": "accent",
+        "size": 0.06,
+        "density": 0.6,
+        "jitter": 0.3,
+        "region": "back"
+      }
+    ]
+  },
+  "motion": { "temperament": "skittish", "actions": ["look", "idle"] }
+}

@@ -46,6 +46,17 @@ export { buildSkeleton, type SkeletonBuild } from './compile/skeleton.ts';
 export type * from './compile/types.ts';
 export { FORMAT } from './format.ts';
 export * from './geometry/kit.ts';
+export {
+  type GaitInfo,
+  type Ground,
+  type GroundSample,
+  MotionController,
+  type MotionData,
+  type MotionEvent,
+} from './motion/controller.ts';
+export { motionData } from './motion/gaits.ts';
+export { Pose } from './motion/pose.ts';
+export { testCourse } from './motion/terrain.ts';
 export * from './registry.ts';
 export { createRng, deriveSeed, type Rng } from './rng.ts';
 export * from './shading/compose.ts';

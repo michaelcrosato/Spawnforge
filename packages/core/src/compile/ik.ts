@@ -114,3 +114,87 @@ export function solveLimb(
   const reach = reachAt(setup, c);
   return { points, miss: Math.abs(distance - reach) < 1e-6 ? 0 : Math.abs(distance - reach) };
 }
+
+/** A limb set up once for repeated solves (the bend limit is worked out ahead of time). */
+export interface PreparedLimb {
+  readonly setup: LimbIkSetup;
+  readonly maxBend: number;
+  readonly straightReach: number;
+  readonly foldedReach: number;
+}
+
+export function prepareLimb(setup: LimbIkSetup): PreparedLimb {
+  const c = maxBend(setup);
+  return { setup, maxBend: c, straightReach: reachAt(setup, 0), foldedReach: reachAt(setup, c) };
+}
+
+const scratchA = new Vector3();
+const scratchP = new Vector3();
+
+/**
+ * Like `solveLimb`, for a prepared limb, writing joint positions into `out` (lengths + 1
+ * vectors) without allocating.
+ */
+export function solvePrepared(
+  limb: PreparedLimb,
+  root: Vector3,
+  target: Vector3,
+  pole: Vector3,
+  out: Vector3[],
+): number {
+  const setup = limb.setup;
+  const a = scratchA.subVectors(target, root);
+  const distance = a.length();
+  if (distance > 1e-9) a.divideScalar(distance);
+  else a.set(0, -1, 0);
+  const p = scratchP.copy(pole).addScaledVector(a, -pole.dot(a));
+  if (p.lengthSq() < 1e-12) {
+    p.set(1, 0, 0).addScaledVector(a, -a.x);
+    if (p.lengthSq() < 1e-12) p.set(0, 0, 1).addScaledVector(a, -a.z);
+  }
+  p.normalize();
+  let c: number;
+  if (distance >= limb.straightReach) c = 0;
+  else if (distance <= limb.foldedReach) c = limb.maxBend;
+  else {
+    let lo = 0;
+    let hi = limb.maxBend;
+    for (let i = 0; i < 24; i++) {
+      const mid = (lo + hi) / 2;
+      if (reachAt(setup, mid) > distance) lo = mid;
+      else hi = mid;
+    }
+    c = (lo + hi) / 2;
+  }
+  // Build the 2D chain, then rotate it so its end lies along `a`.
+  let x = 0;
+  let y = 0;
+  let angle = 0;
+  const n = setup.lengths.length;
+  const xs = tmpX;
+  const ys = tmpY;
+  xs[0] = 0;
+  ys[0] = 0;
+  for (let i = 0; i < n; i++) {
+    if (i > 0) angle += c * (setup.bends[i - 1] ?? 0);
+    x += Math.cos(angle) * (setup.lengths[i] as number);
+    y += Math.sin(angle) * (setup.lengths[i] as number);
+    xs[i + 1] = x;
+    ys[i + 1] = y;
+  }
+  const endAngle = Math.atan2(y, x);
+  const cos = Math.cos(-endAngle);
+  const sin = Math.sin(-endAngle);
+  for (let i = 0; i <= n; i++) {
+    const px = xs[i] as number;
+    const py = ys[i] as number;
+    (out[i] as Vector3)
+      .copy(root)
+      .addScaledVector(a, px * cos - py * sin)
+      .addScaledVector(p, px * sin + py * cos);
+  }
+  return Math.abs(distance - Math.hypot(x, y));
+}
+
+const tmpX = new Float64Array(8);
+const tmpY = new Float64Array(8);

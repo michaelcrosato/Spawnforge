@@ -408,6 +408,13 @@
             "minimum": -30,
             "maximum": 90
           },
+          "lift": {
+            "default": 0,
+            "description": "Arms only: degrees the arm is raised forward from hanging; 90 holds it straight out (pincers)",
+            "type": "number",
+            "minimum": 0,
+            "maximum": 150
+          },
           "foot": {
             "description": "Foot part at the limb tip (default { \"type\": \"foot.claw\" }), or null for none",
             "default": {},
@@ -826,6 +833,13 @@
           "minimum": 0,
           "maximum": 180
         },
+        "clawWidth": {
+          "default": 1,
+          "description": "Claw thickness relative to the toe",
+          "type": "number",
+          "minimum": 0.2,
+          "maximum": 3
+        },
         "clawColor": {
           "default": "#2a221c",
           "description": "Claw colour: a palette name or a colour",
@@ -1054,7 +1068,7 @@
       "type": "object",
       "properties": {
         "color": {
-          "default": "#2a2218",
+          "default": "#5c4c3a",
           "description": "A palette name such as \"accent\", or a colour such as \"#2a1e14\"",
           "type": "string",
           "minLength": 1

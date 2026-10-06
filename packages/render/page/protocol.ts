@@ -1,5 +1,5 @@
 /** Shared between the Node launcher and the page. */
-export type View = 'front' | 'side' | 'top' | 'three-quarter';
+export type View = 'front' | 'side' | 'top' | 'three-quarter' | 'head' | 'rear';
 
 export interface RenderRequest {
   readonly blueprint: unknown;
@@ -10,7 +10,7 @@ export interface RenderRequest {
   readonly labels?: boolean;
   /** Leave the creature's name out of the header (for blind reviews). */
   readonly anonymous?: boolean;
-  /** Panels to draw, in order (default all four). */
+  /** Panels to draw, in order (default all six). */
   readonly views?: readonly View[];
   /** Debugging switches. */
   readonly debug?: {

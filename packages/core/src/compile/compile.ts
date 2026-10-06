@@ -25,6 +25,12 @@ declare const performance: { now(): number };
 export type Quality = 'low' | 'medium' | 'high';
 /** Grid cells along the creature's longest axis per quality. */
 export const QUALITY_CELLS: Record<Quality, number> = { low: 48, medium: 96, high: 128 };
+/** Most skin triangles per quality (medium is the plan's 30k budget, less the mouth and tubes). */
+export const TRIANGLE_BUDGET: Record<Quality, number> = {
+  low: 9_000,
+  medium: 27_000,
+  high: 60_000,
+};
 
 export type Vec3 = [number, number, number];
 
@@ -187,12 +193,20 @@ export function compileCreature(
     extent.subVectors(max, min);
   }
   const roughCell = Math.max(extent.x, extent.y, extent.z) / cells;
-  const sdf = buildSdf(bones, skeleton.chains, roughCell * 0.9);
+  let sdf = buildSdf(bones, skeleton.chains, roughCell * 0.9);
   lap('sdf');
 
-  // 3. Mesh.
-  const grid = fitGrid(sdf, cells);
-  const surface = surfaceNets(sdf, grid);
+  // 3. Mesh. Bulky creatures have more surface per cell; if the skin comes out over the
+  // triangle budget, mesh once more on a grid coarse enough to fit.
+  let grid = fitGrid(sdf, cells);
+  let surface = surfaceNets(sdf, grid);
+  const budget = TRIANGLE_BUDGET[quality];
+  if (surface.indices.length / 3 > budget) {
+    const fewer = Math.floor(cells * Math.sqrt((budget * 0.85) / (surface.indices.length / 3)));
+    sdf = buildSdf(bones, skeleton.chains, (Math.max(extent.x, extent.y, extent.z) / fewer) * 0.9);
+    grid = fitGrid(sdf, fewer);
+    surface = surfaceNets(sdf, grid);
+  }
   lap('mesh');
 
   // 4. Skin weights from the same geometry.
@@ -741,7 +755,8 @@ function bodyCoordinates(
       const section = sectionOf(b);
       if (section === 'limb' || section === 'toe') {
         const outward = new Vector3(Math.sign(p.x) || 1, 0, 0);
-        height += w * (nrm.dot(outward) * 0.4 + nrm.y * 0.4 - 0.1);
+        // Limbs read like the flank outside and the belly inside.
+        height += w * (nrm.dot(outward) * 0.45 + nrm.y * 0.35 + 0.1);
         limb += w * (section === 'toe' ? 1 : b.t0 + (b.t1 - b.t0) * t);
         reg[2] = (reg[2] as number) + w;
       } else {

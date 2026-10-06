@@ -1,0 +1,36 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Tusk Boar",
+  "seed": 808,
+  "extends": "quadruped",
+  "scale": 1,
+  "body": {
+    "torso": { "radius": [0.2, 0.26, 0.24, 0.2], "arch": 0.06 },
+    "neck": { "length": 0.12, "radius": [0.14, 0.2], "pitch": 10 },
+    "head": { "shape": "snout", "length": 0.4, "radius": 0.17, "pitch": -15 },
+    "tail": { "length": 0.15, "radius": [0.03, 0.01], "pitch": 20, "curl": 60 }
+  },
+  "limbs": [
+    { "id": "foreleg", "length": 0.35, "radius": [0.08, 0.045] },
+    { "id": "hindleg", "length": 0.35, "radius": [0.09, 0.045] }
+  ],
+  "parts": [
+    {
+      "id": "tusks",
+      "type": "horn.curved",
+      "attach": { "on": "jaw", "at": 0.25, "angle": 60 },
+      "params": {
+        "length": 0.16,
+        "width": 0.025,
+        "curve": -60,
+        "color": "#efe6cc",
+        "tipColor": "#d8ccaa"
+      }
+    }
+  ],
+  "skin": {
+    "palette": { "base": "#4a3a2e", "belly": "#7a6650", "accent": "#1e1812" },
+    "layers": [{ "type": "countershade", "strength": 0.5 }, { "type": "mottle", "scale": 0.1 }]
+  },
+  "motion": { "temperament": "aggressive", "actions": ["bite", "roar"] }
+}

@@ -84,6 +84,7 @@ Runs back from the torso. `at` runs from the root (0) to the tip (1).
 | `segments` | integer | 2–4 | `3` | Bones from hip or shoulder to ankle |
 | `radius` | number or list of number | 0.005–0.5 | `[0.06, 0.03]` | Radius from root to tip, in torso lengths |
 | `splay` | number | -30–90 | `0` | Degrees the limb swings out from under the body; about 50 for sprawlers |
+| `lift` | number | 0–150 | `0` | Arms only: degrees the arm is raised forward from hanging; 90 holds it straight out (pincers) |
 | `foot` | object or null |  | `{}` | Foot part at the limb tip (default { "type": "foot.claw" }), or null for none |
 | `remove` | boolean |  |  | Delete an inherited limb with this id |
 
@@ -409,6 +410,7 @@ slot: `"foot"` · material: `"horn"` · defaultAttach: `{"on":"limb"}`
 | `spread` | number | 0–150 | `50` | Degrees between the outermost toes |
 | `clawLength` | number | 0–0.3 | `0.035` | Claw length in torso lengths; 0 for none |
 | `clawCurve` | number | 0–180 | `70` | Degrees each claw bends down |
+| `clawWidth` | number | 0.2–3 | `1` | Claw thickness relative to the toe |
 | `clawColor` | string |  | `"#2a221c"` | Claw colour: a palette name or a colour |
 
 ```json
@@ -519,7 +521,7 @@ Add to skin.layers as { "type": "grime", ...params }; every layer also takes "re
 
 | Parameter | Type | Range | Default | Description |
 | --- | --- | --- | --- | --- |
-| `color` | string |  | `"#2a2218"` | A palette name such as "accent", or a colour such as "#2a1e14" |
+| `color` | string |  | `"#5c4c3a"` | A palette name such as "accent", or a colour such as "#2a1e14" |
 | `amount` | number | 0–1 | `0.5` | Overall strength |
 | `creases` | number | 0–1 | `0.7` | Dirt in creases and joints |
 | `feet` | number | 0–1 | `0.6` | Dirt rising from the ground up the legs |
