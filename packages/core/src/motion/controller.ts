@@ -315,10 +315,10 @@ export class MotionController {
       Math.max(0.35 * h, 2.3 * h * Math.max(froude, 0.01) ** 0.3) * (gait?.stride ?? 1);
     const stride = Math.min(natural, (2 * this.halfStride) / Math.max(duty, 0.3));
     let frequency = this.speed / stride;
-    // Keep stepping while turning on the spot or settling feet after stopping.
-    const restless =
-      Math.abs(this.yawRate) > 0.15 ||
-      this.legs.some((l) => l.swinging || this.footError(l) > 0.12 * h);
+    // Keep stepping while turning on the spot or settling feet after stopping, and finish any
+    // swing in progress; once every foot is close to its rest spot the legs stand still.
+    const turning = Math.abs(this.yawRate) > 0.15;
+    const restless = turning || this.legs.some((l) => l.swinging || this.footError(l) > 0.12 * h);
     const minimum = (0.25 * Math.sqrt(G / h)) / Math.PI;
     if (restless) frequency = Math.max(frequency, minimum);
     const previous = this.phase;
@@ -332,7 +332,8 @@ export class MotionController {
       const crossedLand = now < before;
       // A leg lifts once per cycle, when its phase is in the swing window after a stance.
       if (now < duty) leg.armed = true;
-      if (leg.armed && now >= duty && !leg.swinging && (this.speed > 0.02 * h || restless)) {
+      const needed = this.speed > 0.02 * h || turning || this.footError(leg) > 0.04 * h;
+      if (leg.armed && now >= duty && !leg.swinging && needed) {
         leg.armed = false;
         leg.swinging = true;
         leg.liftoff.copy(leg.planted);
@@ -375,8 +376,10 @@ export class MotionController {
     let nl = 0;
     let nr = 0;
     const maxPair = Math.max(0, ...this.legs.map((l) => l.rig.pair));
+    // Swinging feet count at their landing height, not mid-arc.
+    const footY = (leg: LegState) => (leg.swinging ? leg.target.y : leg.planted.y);
     for (const leg of this.legs) {
-      const lift = leg.planted.y - leg.footLift - this.position.y;
+      const lift = footY(leg) - leg.footLift - this.position.y;
       if (leg.rig.pair === maxPair && maxPair > 0) {
         front += lift;
         nf++;
@@ -408,9 +411,28 @@ export class MotionController {
     this.pitch = damp(this.pitch, Math.max(-0.5, Math.min(0.5, wantPitch)), 10, dt);
     this.roll = damp(this.roll, Math.max(-0.35, Math.min(0.35, wantRoll)), 10, dt);
     const mean =
-      this.legs.reduce((a, l) => a + (l.planted.y - l.footLift), 0) / Math.max(1, this.legs.length);
+      this.legs.reduce((a, l) => a + (footY(l) - l.footLift), 0) / Math.max(1, this.legs.length);
     const crouch = TEMPERAMENTS[this.motion.temperament].crouch * this.restBodyY;
-    this.bodyY = damp(this.bodyY, this.restBodyY - crouch + (mean - this.position.y) * 0.8, 12, dt);
+    let wantY = this.restBodyY - crouch + (mean - this.position.y) * 0.8;
+    // Sink the body where a planted foot (in a dip) would be out of the leg's reach.
+    let drop = 0;
+    for (const leg of this.legs) {
+      if (leg.swinging) continue;
+      const hip = this.pose.restWorldPos[leg.rig.bones[0] as number] as Vector3;
+      const c = Math.cos(this.heading);
+      const s = Math.sin(this.heading);
+      const hx = this.position.x + hip.x * c + hip.z * s;
+      const hz = this.position.z - hip.x * s + hip.z * c;
+      const hy = this.position.y + hip.y + (wantY - this.restBodyY);
+      const across = Math.hypot(leg.planted.x - hx, leg.planted.z - hz);
+      const reach = 0.97 * leg.rig.reach;
+      if (across >= reach) continue;
+      const down = hy - leg.planted.y;
+      const fits = Math.sqrt(reach * reach - across * across);
+      if (down > fits) drop = Math.max(drop, down - fits);
+    }
+    wantY -= Math.min(drop, 0.5 * this.restBodyY);
+    this.bodyY = damp(this.bodyY, wantY, 12, dt);
     this.bend = damp(this.bend, Math.max(-0.5, Math.min(0.5, this.yawRate * 0.25)), 6, dt);
   }
 

@@ -4,7 +4,7 @@ Every blueprint here sits beside its render (`<name>.json` and `<name>.png`), so
 can see what a blueprint produces. They double as the golden test set: each must stay valid, and
 once the pipeline lands each must compile to the same quantized mesh and skeleton on every run.
 
-Renders are added when the headless renderer lands (phase 1).
+Regenerate the renders with `pnpm render:examples` after changing a blueprint or the pipeline.
 
 | Blueprint                                      | Body plan | Shows                                              |
 | ---------------------------------------------- | --------- | -------------------------------------------------- |

@@ -9,11 +9,13 @@ is the contract.
 
 ## Status
 
-Phase 0 is done: the blueprint format, the module registry and first pack, the CLI and MCP tools,
-the generated catalogue and the format eval (20/20). Phase 1 is nearly done: the compile pipeline
-(skeleton, SDF skin, surface nets, skin weights, mouth cut, parts, eyes, TSL materials), the
-Three.js adapter, compiling in a worker, and headless contact-sheet renders through the CLI and
-MCP `render` tool. Next is the phase 1 eval gate, then phase 2 (procedural locomotion).
+Phases 0 and 1 are done. Phase 0: the blueprint format, the module registry and first pack, the
+CLI and MCP tools, the generated catalogue and the format eval (20/20). Phase 1: the compile
+pipeline (skeleton, SDF skin, surface nets, skin weights, mouth cut, parts, eyes, TSL materials),
+the Three.js adapter, compiling in a worker, and headless six-view contact sheets through the CLI
+and MCP `render` tool; its eval scored 20/20 valid and 20/20 in blind review. Phase 2
+(procedural locomotion) is in progress: the motion controller and pose sync exist in `core` and
+`three`; the sandbox terrain course and filmstrip renders are next.
 
 ## Repo map
 
@@ -44,6 +46,7 @@ pnpm dev                      # sandbox at http://localhost:5173 (add ?webgl to 
 pnpm build                    # production build of the sandbox
 pnpm spawnforge <command>     # the CLI from source: list-modules, describe-module, validate, render, schema
 pnpm spawnforge render examples/ridgeback-stalker.json --labels   # PNG contact sheet next to the file
+pnpm render:examples          # re-render examples/*.png after changing a blueprint or the pipeline
 node packages/mcp/src/bin.ts  # the MCP server over stdio
 node eval/score.ts <run>      # score an eval run from its saved attempts
 ```

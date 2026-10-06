@@ -121,22 +121,32 @@ window.spawnforgeRender = async (request) => {
   ctx.font = '13px system-ui, sans-serif';
   ctx.fillStyle = '#aab';
   ctx.fillText(
-    `${fmt(extent.z)} long · ${fmt(max.y)} tall · ${fmt(extent.x)} wide`,
+    // Upright creatures read better height first, with their depth as "deep".
+    max.y > extent.z
+      ? `${fmt(max.y)} tall · ${fmt(extent.x)} wide · ${fmt(extent.z)} deep`
+      : `${fmt(extent.z)} long · ${fmt(max.y)} tall · ${fmt(extent.x)} wide`,
     14 + nameWidth + 18,
     28,
   );
 
   const r0 = performance.now();
-  const corners = [0, 1, 2, 3, 4, 5, 6, 7].map(
-    (c) => new THREE.Vector3(c & 1 ? max.x : min.x, c & 2 ? max.y : min.y, c & 4 ? max.z : min.z),
-  );
-  const headMarker = compiled.markers.find((m) => m.id === 'head');
-  const headBone = compiled.rig.head;
-  const headSize =
-    Math.max(compiled.bones.lengths[headBone] ?? 0, compiled.bones.radii[headBone] ?? 0) +
-    (compiled.bones.radii[headBone] ?? 0);
-  const headCentre = new THREE.Vector3().fromArray(compiled.bones.positions, headBone * 3);
-  if (headMarker) headCentre.lerp(new THREE.Vector3(...headMarker.position), 0.5);
+  // The head close-up frames everything skinned mostly to the head or jaw: skin, teeth, eyes,
+  // horns.
+  const headBones = new Set([compiled.rig.head, compiled.rig.jaw, ...compiled.rig.eyes]);
+  const headBox = new THREE.Box3();
+  for (const mesh of [compiled.skin, compiled.parts, compiled.eyes]) {
+    for (let v = 0; v < mesh.positions.length / 3; v++) {
+      let w = 0;
+      for (let k = v * 4; k < v * 4 + 4; k++)
+        if (headBones.has(mesh.skinIndex[k] as number)) w += mesh.skinWeight[k] as number;
+      if (w < 0.5) continue;
+      headBox.expandByPoint(new THREE.Vector3().fromArray(mesh.positions, v * 3));
+    }
+  }
+  if (headBox.isEmpty()) headBox.setFromCenterAndSize(centre, extent);
+  const headSphere = headBox.getBoundingSphere(new THREE.Sphere());
+  const headCentre = headSphere.center;
+  const headSize = headSphere.radius;
 
   for (const [index, view] of views.entries()) {
     let camera: THREE.Camera;
@@ -144,10 +154,10 @@ window.spawnforgeRender = async (request) => {
     if (view === 'three-quarter' || view === 'rear' || view === 'head') {
       const persp = new THREE.PerspectiveCamera(30, 1, span * 0.002, span * 20);
       if (view === 'head') {
-        const reach = Math.max(headSize * 2.6, span * 0.08);
+        const reach = Math.max((headSize * 1.02) / Math.sin((15 * Math.PI) / 180), span * 0.08);
         persp.position
           .copy(headCentre)
-          .add(new THREE.Vector3(reach * 0.75, reach * 0.35, reach * 0.95));
+          .addScaledVector(new THREE.Vector3(0.75, 0.35, 0.95).normalize(), reach);
         persp.lookAt(headCentre);
         half = reach * Math.tan((15 * Math.PI) / 180);
       } else {
@@ -179,7 +189,6 @@ window.spawnforgeRender = async (request) => {
       ortho.lookAt(centre);
       camera = ortho;
     }
-    void corners;
     ground.visible = view !== 'top' && view !== 'front' && view !== 'head';
     grid.visible = view !== 'front' && view !== 'head';
     scene.background = new THREE.Color(view === 'top' ? '#2b2f36' : '#262a30');
@@ -212,7 +221,7 @@ window.spawnforgeRender = async (request) => {
         .filter(
           (m) =>
             view !== 'head' ||
-            new THREE.Vector3(...m.position).distanceTo(headCentre) < headSize * 2.2,
+            new THREE.Vector3(...m.position).distanceTo(headCentre) < headSize * 1.1,
         )
         .map((m) => {
           const p = new THREE.Vector3(...m.position).project(camera);

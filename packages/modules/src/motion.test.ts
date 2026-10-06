@@ -114,6 +114,16 @@ describe('locomotion', () => {
     }
   });
 
+  it('stands still once it arrives', () => {
+    for (const plan of ['quadruped', 'biped', 'hexapod']) {
+      const { controller } = creature(plan);
+      controller.moveTo({ x: 0.4, z: 1.5 });
+      const { steps } = run(controller, 12, (x, z) => ({ height: 0.05 * Math.sin(x * 3 + z) }));
+      expect(controller.speed).toBe(0);
+      expect(steps.filter((s) => s.time > 10)).toEqual([]);
+    }
+  });
+
   it('is deterministic', () => {
     const a = creature('quadruped').controller;
     const b = creature('quadruped').controller;

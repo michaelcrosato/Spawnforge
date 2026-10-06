@@ -242,6 +242,7 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
 
   const posture =
     legs.length === 0 ? 'legless' : legs.some((l) => l.splay >= 35) ? 'sprawl' : 'upright';
+  const lastPair = Math.max(0, ...legs.map((l) => l.pair ?? 0));
   const legPlan = (limb: LimbSpec) => {
     const R = limb.length * L;
     const sw = clamp01(limb.splay / 60);
@@ -250,12 +251,17 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
     const frac = lerp(limb.segments === 2 ? 0.9 : 0.84, 0.45, sw);
     let v = frac * R;
     let h = R * Math.sin(limb.splay * 0.9 * DEG) * 0.85;
-    const len = Math.hypot(v, h);
+    // Sprawled legs fan out along the body, front feet forward and hind feet back (further, to
+    // carry the abdomen), as insects and lizards stand.
+    const u = lastPair > 0 ? ((limb.pair ?? 0) / lastPair) * 2 - 1 : 0;
+    let fore = sw * R * (u > 0 ? 0.3 : 0.5) * u;
+    const len = Math.hypot(v, h, fore);
     if (len > 0.96 * R) {
       v *= (0.96 * R) / len;
       h *= (0.96 * R) / len;
+      fore *= (0.96 * R) / len;
     }
-    return { R, sw, footH, v, h, tipR };
+    return { R, sw, footH, v, h, fore, tipR };
   };
 
   const limbRoot = (
@@ -299,7 +305,10 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
         num += (r.z - mz) * (r.want - r.y - mr);
         den += (r.z - mz) ** 2;
       }
-      delta = Math.max(-0.4, Math.min(0.4, den > 0 ? num / den : 0));
+      // Damped toward the blueprint's pitch, strongly for sprawlers whose legs cluster near the
+      // front: they keep the body level and let the legs adapt.
+      const damping = n * (0.35 * L) ** 2 * (posture === 'sprawl' ? 1 : 0.15);
+      delta = Math.max(-0.4, Math.min(0.4, num / (den + damping)));
       cy = mr - mz * delta;
     } else {
       cy = rows.reduce((a, r) => a + (r.want - r.y), 0) / rows.length;
@@ -662,7 +671,9 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
     let plan: ReturnType<typeof legPlan> | undefined;
     if (limb.role === 'leg') {
       plan = legPlan(limb);
-      target = new Vector3(rootPos.x, plan.footH, rootPos.z).addScaledVector(outward, plan.h);
+      target = new Vector3(rootPos.x, plan.footH, rootPos.z)
+        .addScaledVector(outward, plan.h)
+        .addScaledVector(forwardH, plan.fore);
       const isFront = legs.length > 2 && limb.pair === frontPair && Math.abs(pitch) < 45;
       const knee = isFront ? forwardH.clone().negate() : forwardH.clone();
       pole = knee
