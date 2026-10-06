@@ -1,0 +1,49 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Ember-spot Horn Beetle",
+  "seed": 303,
+  "extends": "hexapod",
+  "scale": 0.12,
+  "body": {
+    "torso": { "radius": [0.16, 0.28, 0.34, 0.32, 0.22, 0.1], "crossSection": "wide" },
+    "neck": { "length": 0.04 },
+    "head": { "shape": "round", "length": 0.22, "radius": 0.13, "pitch": -10 }
+  },
+  "limbs": [
+    { "id": "frontleg", "attach": { "at": 0.16 }, "length": 0.7 },
+    { "id": "midleg", "attach": { "at": 0.36 }, "length": 0.72 },
+    { "id": "hindleg", "attach": { "at": 0.56 }, "length": 0.78 }
+  ],
+  "parts": [
+    {
+      "id": "horn",
+      "type": "horn.curved",
+      "attach": { "on": "head", "at": 0.15, "angle": 0 },
+      "params": {
+        "length": 0.4,
+        "width": 0.06,
+        "curve": -40,
+        "lean": 50,
+        "color": "#1a1412",
+        "tipColor": "#0c0908"
+      }
+    },
+    { "id": "eyes", "params": { "size": 0.035, "irisColor": "#ff7a1a" } }
+  ],
+  "skin": {
+    "material": "chitin",
+    "palette": { "base": "#0b0a0c", "belly": "#2a2024", "accent": "#ff7a1a" },
+    "layers": [
+      { "type": "countershade", "softness": 0.2 },
+      {
+        "type": "spots",
+        "color": "accent",
+        "size": 0.07,
+        "density": 0.55,
+        "jitter": 0.3,
+        "region": "back"
+      }
+    ]
+  },
+  "motion": { "temperament": "skittish", "actions": ["look", "idle"] }
+}

@@ -1,0 +1,77 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Wall Gecko",
+  "seed": 15,
+  "extends": "quadruped",
+  "scale": 0.5,
+  "body": {
+    "torso": { "radius": [0.14, 0.18, 0.17, 0.12], "arch": 0, "crossSection": "wide" },
+    "neck": {
+      "length": 0.1,
+      "radius": [0.09, 0.13],
+      "pitch": 5,
+      "crossSection": "wide",
+      "segments": 2
+    },
+    "head": { "shape": "flat", "length": 0.3, "radius": 0.12, "pitch": -5, "crossSection": "wide" },
+    "tail": {
+      "length": 1.0,
+      "radius": [0.1, 0.015],
+      "pitch": -5,
+      "curl": 0,
+      "crossSection": "wide",
+      "segments": 10
+    }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "attach": { "on": "torso", "at": 0.12, "angle": 100 },
+      "length": 0.5,
+      "radius": [0.05, 0.03],
+      "splay": 55,
+      "foot": {
+        "type": "foot.claw",
+        "toes": 5,
+        "toeLength": 0.14,
+        "spread": 130,
+        "clawLength": 0.02,
+        "clawCurve": 40,
+        "clawWidth": 0.8
+      }
+    },
+    {
+      "id": "hindleg",
+      "attach": { "on": "torso", "at": 0.85, "angle": 100 },
+      "length": 0.55,
+      "radius": [0.055, 0.03],
+      "splay": 55,
+      "foot": {
+        "type": "foot.claw",
+        "toes": 5,
+        "toeLength": 0.14,
+        "spread": 130,
+        "clawLength": 0.02,
+        "clawCurve": 40,
+        "clawWidth": 0.8
+      }
+    }
+  ],
+  "parts": [
+    {
+      "id": "eyes",
+      "attach": { "on": "head", "at": 0.45, "angle": 45 },
+      "params": { "size": 0.035, "pupil": "slit", "irisColor": "#d8b830", "bulge": 0.8 }
+    }
+  ],
+  "skin": {
+    "palette": { "base": "#8a8466", "belly": "#d8d2b4", "accent": "#4a4634" },
+    "material": "scales",
+    "layers": [
+      { "type": "countershade" },
+      { "type": "mottle", "color": "accent", "scale": 0.12, "contrast": 0.4, "coverage": 0.5 },
+      { "type": "stripes", "count": 9, "region": "tail", "width": 0.4 }
+    ]
+  },
+  "motion": { "temperament": "skittish", "actions": ["bite", "look", "idle"] }
+}

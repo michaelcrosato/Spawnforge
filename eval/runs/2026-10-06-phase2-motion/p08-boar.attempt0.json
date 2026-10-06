@@ -1,0 +1,64 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Tusked Boar",
+  "seed": 808,
+  "extends": "quadruped",
+  "scale": 1.0,
+  "body": {
+    "torso": { "radius": [0.2, 0.26, 0.24, 0.19], "arch": 0.06 },
+    "neck": { "length": 0.12, "radius": [0.14, 0.18], "pitch": 15 },
+    "head": { "shape": "snout", "length": 0.42, "radius": 0.17, "jaw": true, "pitch": -15 },
+    "tail": { "length": 0.12, "radius": [0.03, 0.01], "pitch": 10, "curl": 60 }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "length": 0.38,
+      "radius": [0.09, 0.045],
+      "foot": { "type": "foot.claw", "toes": 2, "toeLength": 0.07, "clawLength": 0.02 }
+    },
+    {
+      "id": "hindleg",
+      "length": 0.4,
+      "radius": [0.1, 0.045],
+      "foot": { "type": "foot.claw", "toes": 2, "toeLength": 0.07, "clawLength": 0.02 }
+    }
+  ],
+  "parts": [
+    {
+      "id": "tusks",
+      "type": "horn.curved",
+      "attach": { "on": "jaw", "at": 0.25, "angle": 60 },
+      "params": {
+        "length": 0.2,
+        "width": 0.03,
+        "curve": -60,
+        "color": "#efe6cc",
+        "tipColor": "#d8caa4"
+      }
+    },
+    {
+      "id": "bristles",
+      "type": "spikes.row",
+      "attach": { "on": "spine", "from": 0.05, "to": 0.7, "angle": 0 },
+      "params": {
+        "count": 18,
+        "height": [0.04, 0.07, 0.05],
+        "width": 0.012,
+        "jitter": 0.4,
+        "color": "#2a211b",
+        "tipColor": "#6b5a48"
+      }
+    },
+    { "id": "eyes", "params": { "size": 0.02, "irisColor": "#7a3a10" } }
+  ],
+  "skin": {
+    "palette": { "base": "#4b3a2e", "belly": "#8a7560", "accent": "#1e1712" },
+    "layers": [
+      { "type": "countershade", "strength": 0.5 },
+      { "type": "mottle", "color": "accent", "scale": 0.12, "coverage": 0.5 },
+      { "type": "grime", "amount": 0.5 }
+    ]
+  },
+  "motion": { "temperament": "aggressive", "actions": ["bite", "roar", "look", "idle"] }
+}

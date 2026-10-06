@@ -1,0 +1,104 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Dune Scorpion",
+  "seed": 1010,
+  "extends": "hexapod",
+  "scale": 0.3,
+  "body": {
+    "torso": {
+      "radius": [0.15, 0.21, 0.2, 0.17, 0.13, 0.09],
+      "pitch": 0,
+      "crossSection": "wide"
+    },
+    "head": {
+      "shape": "round",
+      "length": 0.18,
+      "radius": 0.08,
+      "jaw": true,
+      "pitch": -5
+    },
+    "tail": {
+      "length": 2.3,
+      "radius": [0.085, 0.07, 0.06, 0.055, 0.05, 0.05, 0.055, 0.04],
+      "pitch": 40,
+      "curl": 250,
+      "segments": 16,
+      "curlStart": 0.12
+    }
+  },
+  "limbs": [
+    {
+      "id": "pincer",
+      "role": "arm",
+      "attach": {
+        "on": "torso",
+        "at": 0.04,
+        "angle": 85
+      },
+      "length": 0.6,
+      "segments": 3,
+      "lift": 70,
+      "radius": [0.07, 0.05],
+      "foot": {
+        "type": "foot.claw",
+        "toes": 2,
+        "toeLength": 0.2,
+        "spread": 30,
+        "clawLength": 0.12,
+        "clawCurve": 50,
+        "clawWidth": 1.6
+      }
+    }
+  ],
+  "parts": [
+    {
+      "id": "stinger",
+      "type": "horn.curved",
+      "attach": {
+        "on": "tail",
+        "at": 0.97,
+        "angle": 0
+      },
+      "params": {
+        "length": 0.14,
+        "width": 0.03,
+        "curve": 70,
+        "color": "#6b4a22",
+        "tipColor": "#2a1a0c"
+      }
+    },
+    {
+      "id": "eyes",
+      "params": {
+        "size": 0.025,
+        "irisColor": "#2a1a0c"
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#d9c08a",
+      "belly": "#efe0b8",
+      "accent": "#a8864a"
+    },
+    "material": "chitin",
+    "layers": [
+      {
+        "type": "countershade",
+        "softness": 0.2
+      },
+      {
+        "type": "mottle",
+        "color": "accent",
+        "scale": 0.1,
+        "coverage": 0.3,
+        "contrast": 0.3
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "stalking",
+    "actions": ["idle"],
+    "gaits": ["walk"]
+  }
+}

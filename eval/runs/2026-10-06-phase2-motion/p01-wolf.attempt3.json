@@ -1,0 +1,118 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Grey Wolf",
+  "seed": 101,
+  "extends": "quadruped",
+  "scale": 0.8,
+  "body": {
+    "torso": {
+      "radius": [0.18, 0.22, 0.18, 0.13],
+      "arch": 0.03,
+      "crossSection": "tall"
+    },
+    "neck": {
+      "length": 0.3,
+      "radius": [0.1, 0.15],
+      "pitch": 22
+    },
+    "head": {
+      "shape": "snout",
+      "length": 0.44,
+      "radius": 0.125,
+      "jaw": true,
+      "pitch": -8,
+      "crossSection": "round"
+    },
+    "tail": {
+      "length": 0.66,
+      "radius": [0.08, 0.16, 0.145, 0.04],
+      "pitch": -30,
+      "curl": 5
+    }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "length": 0.78,
+      "radius": [0.08, 0.04],
+      "foot": {
+        "type": "foot.claw",
+        "toes": 4,
+        "toeLength": 0.05,
+        "clawLength": 0.02
+      }
+    },
+    {
+      "id": "hindleg",
+      "length": 0.82,
+      "radius": [0.1, 0.04],
+      "foot": {
+        "type": "foot.claw",
+        "toes": 4,
+        "toeLength": 0.05,
+        "clawLength": 0.02
+      }
+    }
+  ],
+  "parts": [
+    {
+      "id": "eyes",
+      "params": {
+        "size": 0.02,
+        "irisColor": "#d8a020"
+      }
+    },
+    {
+      "id": "teeth",
+      "type": "teeth.row",
+      "params": {
+        "count": 8,
+        "fangs": 1,
+        "fangLength": 0.045
+      }
+    },
+    {
+      "id": "ears",
+      "type": "horn.curved",
+      "attach": {
+        "on": "head",
+        "at": 0.85,
+        "angle": 38
+      },
+      "params": {
+        "length": 0.14,
+        "width": 0.05,
+        "curve": -10,
+        "color": "base",
+        "tipColor": "accent"
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#7d7f82",
+      "belly": "#d6d3cb",
+      "accent": "#3e4044"
+    },
+    "layers": [
+      {
+        "type": "countershade",
+        "height": 0.0,
+        "softness": 0.3
+      },
+      {
+        "type": "mottle",
+        "color": "accent",
+        "scale": 0.04,
+        "contrast": 0.25,
+        "coverage": 0.45,
+        "region": "back",
+        "strength": 0.7
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "stalking",
+    "actions": ["bite", "roar", "look", "idle"]
+  }
+}

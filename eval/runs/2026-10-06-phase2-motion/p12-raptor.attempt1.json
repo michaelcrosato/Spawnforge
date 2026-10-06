@@ -1,0 +1,125 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Rust Raptor",
+  "seed": 12,
+  "extends": "biped",
+  "scale": 0.8,
+  "body": {
+    "torso": {
+      "radius": [0.1, 0.16, 0.15, 0.1],
+      "pitch": 10,
+      "arch": 0.03,
+      "crossSection": "round"
+    },
+    "neck": {
+      "length": 0.35,
+      "radius": [0.055, 0.09],
+      "pitch": 50,
+      "segments": 3
+    },
+    "head": {
+      "shape": "snout",
+      "length": 0.32,
+      "radius": 0.075,
+      "pitch": -10
+    },
+    "tail": {
+      "length": 1.7,
+      "radius": [0.1, 0.01],
+      "pitch": 0,
+      "curl": 0,
+      "segments": 10
+    }
+  },
+  "limbs": [
+    {
+      "id": "leg",
+      "attach": {
+        "on": "torso",
+        "at": 0.6,
+        "angle": 125
+      },
+      "length": 0.95,
+      "segments": 3,
+      "radius": [0.14, 0.035],
+      "foot": {
+        "type": "foot.claw",
+        "toes": 3,
+        "toeLength": 0.12,
+        "clawLength": 0.06,
+        "spread": 45
+      }
+    },
+    {
+      "id": "arm",
+      "attach": {
+        "on": "torso",
+        "at": 0.1,
+        "angle": 95
+      },
+      "length": 0.38,
+      "segments": 2,
+      "radius": [0.04, 0.02],
+      "foot": {
+        "type": "foot.claw",
+        "toes": 3,
+        "toeLength": 0.06,
+        "clawLength": 0.05
+      }
+    }
+  ],
+  "parts": [
+    {
+      "id": "eyes",
+      "attach": {
+        "on": "head",
+        "at": 0.35,
+        "angle": 60
+      },
+      "params": {
+        "size": 0.02,
+        "pupil": "slit",
+        "irisColor": "#e07a10"
+      }
+    },
+    {
+      "id": "teeth",
+      "type": "teeth.row",
+      "params": {
+        "count": 9,
+        "length": 0.025,
+        "fangs": 0
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#8a4f2a",
+      "belly": "#e6d3a8",
+      "accent": "#2c1a10"
+    },
+    "layers": [
+      {
+        "type": "countershade"
+      },
+      {
+        "type": "stripes",
+        "count": 14,
+        "region": "back",
+        "width": 0.3,
+        "jitter": 0.3
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "skittish",
+    "actions": ["bite", "look", "roar"],
+    "gaits": [
+      {
+        "type": "walk",
+        "duty": 0.4,
+        "stepHeight": 0.3
+      }
+    ]
+  }
+}

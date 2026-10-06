@@ -1,0 +1,46 @@
+{
+  "format": "spawnforge/0.1",
+  "name": "Deepwater Serpent",
+  "seed": 11,
+  "extends": "serpent",
+  "scale": 1,
+  "body": {
+    "torso": { "radius": [0.14, 0.18, 0.2, 0.18], "crossSection": "tall" },
+    "neck": { "length": 0.2, "radius": [0.12, 0.14], "pitch": 15 },
+    "head": { "shape": "wedge", "length": 0.26, "radius": 0.11 },
+    "tail": { "length": 3.2, "radius": [0.18, 0.02], "crossSection": "tall" }
+  },
+  "parts": [
+    {
+      "id": "eyes",
+      "params": { "size": 0.024, "irisColor": "#e8d040" }
+    },
+    {
+      "id": "dorsal",
+      "type": "spikes.row",
+      "attach": { "on": "spine", "from": 0.08, "to": 0.95, "angle": 0 },
+      "params": {
+        "count": 36,
+        "height": [0.09, 0.18, 0.14, 0.05],
+        "width": 0.03,
+        "curve": 35,
+        "color": "#1c3a6a",
+        "tipColor": "#a8dcef"
+      }
+    },
+    {
+      "id": "teeth",
+      "type": "teeth.row",
+      "params": { "count": 8, "fangs": 2, "fangLength": 0.07 }
+    }
+  ],
+  "skin": {
+    "palette": { "base": "#0d2a55", "belly": "#d8e6e8", "accent": "#06142e" },
+    "material": "scales",
+    "layers": [
+      { "type": "countershade", "height": 0.1, "softness": 0.25 },
+      { "type": "scales", "size": 0.04 }
+    ]
+  },
+  "motion": { "temperament": "stalking", "actions": ["bite", "look", "roar"] }
+}
