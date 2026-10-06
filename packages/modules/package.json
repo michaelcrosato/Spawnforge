@@ -12,6 +12,10 @@
   },
   "dependencies": {
     "@spawnforge/core": "workspace:*",
+    "three": "catalog:",
     "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/three": "catalog:"
   }
 }

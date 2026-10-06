@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@spawnforge/core": "workspace:*",
+    "@spawnforge/modules": "workspace:*",
     "three": "catalog:"
   },
   "devDependencies": {

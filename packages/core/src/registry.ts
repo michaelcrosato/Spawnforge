@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import type { PartHooks } from './compile/parts.ts';
+import type { PatternHooks } from './shading/kit.ts';
 
 /** The kinds of module the core can run. See docs/plan.md, "Modularity and variation". */
 export const MODULE_KINDS = [
@@ -48,14 +50,15 @@ export interface PartModule<P extends z.ZodType = z.ZodType> extends ModuleBase<
   readonly attach: { readonly on: string; readonly at?: number; readonly angle?: number };
   /** A complete `parts[]` entry (or `foot` object for foot parts) showing typical use. */
   readonly example: Record<string, unknown>;
-  /** Phase hooks (geometry, bones) are attached by the compile pipeline types. */
-  readonly hooks?: unknown;
+  /** Geometry (and, for feet, toe bones). */
+  readonly hooks?: PartHooks;
 }
 
 export interface PatternModule<P extends z.ZodType = z.ZodType> extends ModuleBase<'pattern', P> {
   /** A complete `skin.layers[]` entry showing typical use. */
   readonly example: Record<string, unknown>;
-  readonly hooks?: unknown;
+  /** The shader function, written once for CPU and GPU. */
+  readonly hooks?: PatternHooks;
 }
 
 export interface GaitModule<P extends z.ZodType = z.ZodType> extends ModuleBase<'gait', P> {

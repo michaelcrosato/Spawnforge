@@ -1,0 +1,24 @@
+{
+  "name": "@spawnforge/render",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Headless renders of creatures: contact sheets and filmstrips as PNG, through Chromium.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json && tsc -p page/tsconfig.json"
+  },
+  "dependencies": {
+    "@spawnforge/core": "workspace:*",
+    "@spawnforge/modules": "workspace:*",
+    "@spawnforge/three": "workspace:*",
+    "playwright-core": "1.63.0",
+    "three": "catalog:",
+    "vite": "catalog:"
+  },
+  "devDependencies": {
+    "@types/three": "catalog:"
+  }
+}

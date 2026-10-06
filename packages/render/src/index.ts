@@ -1,0 +1,107 @@
+import { existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { type Browser, chromium, type Page } from 'playwright-core';
+import { createServer, type ViteDevServer } from 'vite';
+import type { RenderInfo, RenderRequest, RenderResponse, View } from '../page/protocol.ts';
+
+export type { RenderInfo, RenderRequest, View };
+
+const pageRoot = fileURLToPath(new URL('../page/', import.meta.url));
+
+/** Chromium to use: $SPAWNFORGE_CHROMIUM, Playwright's own, or the sandbox's pre-installed one. */
+function executableCandidates(): (string | undefined)[] {
+  return [process.env.SPAWNFORGE_CHROMIUM, undefined, '/opt/pw-browsers/chromium'].filter(
+    (p, i, all) => all.indexOf(p) === i && (p === undefined || existsSync(p)),
+  );
+}
+
+/**
+ * A headless renderer: one Vite server and one Chromium page, reused across renders.
+ * Renders run on the WebGL 2 backend through SwiftShader, so no GPU is needed.
+ */
+export class Renderer {
+  private readonly server: ViteDevServer;
+  private readonly browser: Browser;
+  private readonly page: Page;
+
+  private constructor(server: ViteDevServer, browser: Browser, page: Page) {
+    this.server = server;
+    this.browser = browser;
+    this.page = page;
+  }
+
+  static async launch(): Promise<Renderer> {
+    const server = await createServer({
+      root: pageRoot,
+      configFile: false,
+      logLevel: 'silent',
+      server: { port: 0, strictPort: false, hmr: false },
+      optimizeDeps: { noDiscovery: true, include: [] },
+    });
+    await server.listen();
+    const url = server.resolvedUrls?.local[0];
+    if (!url) throw new Error('render server did not start');
+    let browser: Browser | undefined;
+    let lastError: unknown;
+    for (const executablePath of executableCandidates()) {
+      try {
+        browser = await chromium.launch({
+          ...(executablePath ? { executablePath } : {}),
+          args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'],
+        });
+        break;
+      } catch (error) {
+        lastError = error;
+      }
+    }
+    if (!browser) {
+      await server.close();
+      throw new Error(
+        `could not start Chromium; set SPAWNFORGE_CHROMIUM or run \`pnpm exec playwright-core install chromium\` (${(lastError as Error)?.message ?? ''})`,
+      );
+    }
+    const page = await browser.newPage();
+    const errors: string[] = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    await page.goto(url);
+    try {
+      await page.waitForFunction(() => (globalThis as PageGlobals).spawnforgeReady === true, null, { timeout: 60_000 });
+    } catch (error) {
+      await browser.close();
+      await server.close();
+      throw new Error(`render page failed to load: ${errors.join('; ') || (error as Error).message}`);
+    }
+    return new Renderer(server, browser, page);
+  }
+
+  /** Renders a blueprint to a PNG contact sheet. */
+  async render(request: RenderRequest): Promise<{ png: Buffer; width: number; height: number; info: RenderInfo }> {
+    const response = (await this.page.evaluate(
+      (req) => ((globalThis as PageGlobals).spawnforgeRender as (r: RenderRequest) => Promise<RenderResponse>)(req),
+      request,
+    )) as RenderResponse;
+    const base64 = response.png.slice(response.png.indexOf(',') + 1);
+    return { png: Buffer.from(base64, 'base64'), width: response.width, height: response.height, info: response.info };
+  }
+
+  async close(): Promise<void> {
+    await this.browser.close();
+    await this.server.close();
+  }
+}
+
+/** One-shot render: launches, renders and closes. Prefer `Renderer` for several renders. */
+export async function renderBlueprint(request: RenderRequest): Promise<{ png: Buffer; width: number; height: number; info: RenderInfo }> {
+  const renderer = await Renderer.launch();
+  try {
+    return await renderer.render(request);
+  } finally {
+    await renderer.close();
+  }
+}
+
+/** What the render page puts on its global object. */
+interface PageGlobals {
+  spawnforgeReady?: boolean;
+  spawnforgeRender?: (request: RenderRequest) => Promise<RenderResponse>;
+}
