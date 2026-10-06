@@ -17,7 +17,8 @@ import { basicPack } from './index.ts';
  * Corpus test: every blueprint saved under eval/runs/ and examples/ still reads after every
  * format change. Each one migrates to the current format; those that were valid stay valid, and
  * the invalid ones fail at the same paths, as recorded in corpus.json beside this file. Record a
- * new file, or an intended change, with UPDATE_CORPUS=1 and say why in the commit.
+ * new file, or an intended change, with UPDATE_CORPUS=1 (then `pnpm format`) and say why in the
+ * commit.
  */
 const registry = createRegistry([basicPack]);
 const root = new URL('../../../', import.meta.url);
