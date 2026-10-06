@@ -1,8 +1,13 @@
-import { compileCreature, createRegistry, FORMAT, resolveBlueprint } from '@spawnforge/core';
+import {
+  compileCreature,
+  createRegistry,
+  FORMAT,
+  MotionController,
+  motionData,
+  resolveBlueprint,
+} from '@spawnforge/core';
 import type { Vector3 } from 'three';
 import { describe, expect, it } from 'vitest';
-import { MotionController } from '../../core/src/motion/controller.ts';
-import { motionData } from '../../core/src/motion/gaits.ts';
 import { basicPack } from './index.ts';
 
 const registry = createRegistry([basicPack]);

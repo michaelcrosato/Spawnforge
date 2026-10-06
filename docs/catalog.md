@@ -111,7 +111,7 @@ Runs back from the torso. `at` runs from the root (0) to the tip (1).
 
 | Field | Type | Range | Default | Description |
 | --- | --- | --- | --- | --- |
-| `on` | string |  |  | Body section, limb id or part id to attach to |
+| `on` | string |  |  | Body section (head, jaw, neck, torso, tail; spine runs neck to tail tip), limb id or part id |
 | `at` | number | 0–1 |  | Where along it: snout-to-tail on sections, root-to-tip on limbs and parts |
 | `from` | number | 0–1 |  | Start of a row |
 | `to` | number | 0–1 |  | End of a row |

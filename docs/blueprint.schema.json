@@ -479,7 +479,7 @@
             "type": "object",
             "properties": {
               "on": {
-                "description": "Body section, limb id or part id to attach to",
+                "description": "Body section (head, jaw, neck, torso, tail; spine runs neck to tail tip), limb id or part id",
                 "type": "string"
               },
               "at": {

@@ -192,7 +192,12 @@ export function buildBlueprintSchema(ids: ModuleIds = NO_IDS) {
   });
 
   const partAttach = z.strictObject({
-    on: z.string().optional().describe('Body section, limb id or part id to attach to'),
+    on: z
+      .string()
+      .optional()
+      .describe(
+        'Body section (head, jaw, neck, torso, tail; spine runs neck to tail tip), limb id or part id',
+      ),
     at: range(0, 1)
       .optional()
       .describe('Where along it: snout-to-tail on sections, root-to-tip on limbs and parts'),

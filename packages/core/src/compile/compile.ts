@@ -491,14 +491,7 @@ export function compileCreature(
       max.max(new Vector3(list[i], list[i + 1], list[i + 2]));
     }
   }
-  if (min.y < -0.05 * L) {
-    warnings.push({
-      severity: 'warning',
-      path: 'body',
-      code: 'below_ground',
-      message: `the body reaches ${(-min.y / L).toFixed(2)} torso lengths below the ground`,
-    });
-  }
+  if (min.y < -0.05 * L) warnings.push(belowGround(bones, min.y, L));
   lap('finish');
 
   const triangles = {
@@ -801,4 +794,33 @@ export function compiledTransferables(c: CompiledCreature): ArrayBuffer[] {
   }
   for (const value of Object.values(c.bones)) if (ArrayBuffer.isView(value)) add(value);
   return [...out];
+}
+
+/** Names the lowest section and how to lift it, for a creature that sinks into the ground. */
+function belowGround(bones: readonly BoneDef[], lowest: number, L: number): Issue {
+  let owner = 'torso';
+  let low = Infinity;
+  for (const b of bones) {
+    if (!b.skin) continue;
+    const y = Math.min(b.head.y - b.r0, b.tail.y - b.r1);
+    if (y < low) {
+      low = y;
+      owner = b.owner;
+    }
+  }
+  const section = ['head', 'jaw', 'neck', 'torso', 'tail'].includes(owner);
+  const fixes: Record<string, string> = {
+    tail: 'raise body.tail.pitch or give it a positive curl',
+    head: 'raise body.neck.pitch or body.head.pitch, or shorten the neck',
+    jaw: 'raise body.neck.pitch or body.head.pitch, or shorten the neck',
+    neck: 'raise body.neck.pitch or shorten the neck',
+    torso: 'lengthen the legs or make body.torso.radius smaller',
+  };
+  return {
+    severity: 'warning',
+    path: section ? `body.${owner}` : `limbs[id=${owner.replace(/\.[LR]$/, '')}]`,
+    code: 'below_ground',
+    message: `the ${section ? owner : `limb ${owner}`} reaches ${(-lowest / L).toFixed(2)} torso lengths below the ground`,
+    fix: fixes[owner] ?? 'raise its attach point or shorten it',
+  };
 }
