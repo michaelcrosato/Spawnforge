@@ -64,6 +64,10 @@ pnpm check      # lint, typecheck and tests
 pnpm spawnforge validate examples/ridgeback-stalker.json
 ```
 
+`pnpm build` builds the sandbox as a static site in `apps/sandbox/dist`; `vercel.json` points
+Vercel at it, so every push gets a preview. Outside the dev server the sandbox shows the examples
+only (the live `creatures/` folder needs `pnpm dev`).
+
 ### Using it from an LLM
 
 The MCP server exposes `list_modules`, `describe_module` and `validate`, plus the docs as
