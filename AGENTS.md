@@ -4,8 +4,9 @@ Spawnforge turns a short JSON _blueprint_ into a finished 3D monster: mesh, skel
 animation, all made by code. It is a standalone library with its own sandbox; games plug it in
 once the proof of concept passes.
 
-Read [docs/plan.md](docs/plan.md) before starting a feature. It is the design, and its scope table
-is the contract.
+Read [docs/plan.md](docs/plan.md) before starting a feature: it is the design, and its rules
+hold. Current work follows [docs/plan-2.md](docs/plan-2.md) (phases 7 to 12), whose scope table is
+the contract and whose milestones name the effort level each needs.
 
 ## Status
 
@@ -35,7 +36,12 @@ All seven phases (0 to 6) are done, and so is the proof of concept ([docs/poc.md
   [docs/runtime.md](docs/runtime.md).
 
 Every format gate scored 20/20 on the prompt suite and 20/20 in blind review, and the variation
-and export evals passed (`eval/runs/`). New work goes in the plan's "Later" column first.
+and export evals passed (`eval/runs/`).
+
+Next is [plan 2](docs/plan-2.md): anatomy and surfaces, the bodies plan 1 deferred (wings, fins,
+tentacles, shells, extra heads), motion for games (run, jump, swim, fly, hits, death), texture
+maps and levels of detail in exports, installable packages, and editing tools. Its status table
+tracks each milestone.
 
 ## Repo map
 
@@ -51,7 +57,7 @@ and export evals passed (`eval/runs/`). New work goes in the plan's "Later" colu
 | `examples/`        | Blueprints beside their renders; also the golden test set                                        |                                  |
 | `eval/`            | The 20-prompt agent eval: prompts, scorer and one folder per run                                  |                                  |
 | `scripts/`         | `generate.ts`: writes every generated file (pack index, catalogue, JSON Schema)                  |                                  |
-| `docs/`            | `plan.md` (design), `architecture.md`, `blueprint.md` (format), `catalog.md` (generated, later) |                                  |
+| `docs/`            | `plan.md` (design), `plan-2.md` (current plan), `architecture.md`, `blueprint.md` (format), `catalog.md` (generated) |                                  |
 
 ## Commands
 
@@ -164,5 +170,5 @@ From the plan. Follow them unless the plan changes.
 
 **Scope**
 
-- The scope table in `docs/plan.md` is the contract. New ideas go to its "Later" column, not into
-  the code.
+- The scope table in `docs/plan-2.md` is the contract for current work. New ideas go to its
+  "Later" column, not into the code.
