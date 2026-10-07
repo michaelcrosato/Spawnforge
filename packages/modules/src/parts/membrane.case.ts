@@ -47,7 +47,16 @@ export default definePart({
       const down = new Vector3(0, -1, 0);
       const tipRound = (s: number) =>
         Math.sqrt(Math.max(0, 1 - Math.max(0, (s - 0.78) / 0.22) ** 2));
-      const place = (s: number, f: number, inside: boolean) => {
+      // Each grid point once: where it rests (from the skin found below it) and how it is
+      // carried back; the inner shell lies a plate's thickness under the outer one.
+      const memo = new Map<
+        string,
+        { outer: Vector3; inner: Vector3; weights: [number, number][] }
+      >();
+      const place = (s: number, f: number) => {
+        const key = `${s.toFixed(5)},${f.toFixed(5)}`;
+        const known = memo.get(key);
+        if (known) return known;
         const { point, weights } = alongSpar(wing.arm, s);
         const bone = (weights[0] as [number, number])[0];
         const hinge = ctx.toRest(point, bone);
@@ -67,15 +76,21 @@ export default definePart({
               .lerp(skin.clone().addScaledVector(up, gap), settle * settle * (3 - 2 * settle))
           : flat.addScaledVector(up, -p.dome * width * 0.5 * f * f);
         const ridge = p.ridges > 0 ? 0.004 * length * Math.cos(f * p.ridges * Math.PI) ** 8 : 0;
-        target.addScaledVector(up, ridge - (inside ? thick : 0));
-        return { position: ctx.fromRest(target, bone), weights };
+        target.addScaledVector(up, ridge);
+        const placed = {
+          outer: ctx.fromRest(target, bone),
+          inner: ctx.fromRest(target.clone().addScaledVector(up, -thick), bone),
+          weights,
+        };
+        memo.set(key, placed);
+        return placed;
       };
       const shell = (inside: boolean) =>
         gridSheet(
           rows,
           cols,
-          (s, f) => place(s, f, inside).position,
-          (s, f) => place(s, f, inside).weights,
+          (s, f) => (inside ? place(s, f).inner : place(s, f).outer).clone(),
+          (s, f) => place(s, f).weights,
         );
       const outer = shell(false);
       const inner = shell(true);

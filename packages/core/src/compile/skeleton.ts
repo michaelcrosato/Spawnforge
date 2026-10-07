@@ -1145,13 +1145,14 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
     const rootRadius = sampleProfile(limb.radius, 0) * L;
     const parentChain = (b.bones[frame.bone] as BoneDef).chain;
     const host = b.chains[parentChain];
-    if (host) {
+    // Fins grow flush from the skin, with no shoulder.
+    if (host && !fin) {
       const sLimb = strength(limb.muscle);
       const masses: MassDef[] = [
         // From inside the skin out to the joint, tapering, blended wide: a shoulder, not a ball.
         {
           bone: frame.bone,
-          a: rootPos.clone().addScaledVector(normalOut, -(fin ? 0.3 : 1.6) * rootRadius),
+          a: rootPos.clone().addScaledVector(normalOut, -1.6 * rootRadius),
           b: rootPos.clone(),
           ra: rootRadius * 1.2,
           rb: rootRadius * 0.95,
@@ -1160,7 +1161,7 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
           blend: rootRadius,
         },
       ];
-      if (!fin && sLimb > 0) {
+      if (sLimb > 0) {
         const below = frame.point
           .clone()
           .addScaledVector(normalOut, -0.2 * frame.radius)

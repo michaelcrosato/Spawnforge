@@ -21,7 +21,7 @@ const params = z.strictObject({
 type Params = z.output<typeof params>;
 
 /** Cards per feather group: each group is one bone that folds back with the wing. */
-const GROUP = 3;
+const GROUP = 1;
 
 interface Feather {
   /** Where it roots on the arm, and the arm bone there. */

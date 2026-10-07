@@ -140,8 +140,9 @@ export interface WingFrame {
   readonly digits: readonly { readonly bones: readonly number[]; readonly root: 'wrist' | 'tip' }[];
   /**
    * Covered by a wing case in front of it on its side (a module that provides `cover`): it
-   * folds on edge along the back, hanging into the body under the case without lifting clear,
-   * hidden there as a beetle's hind wing is, and comes out as it spreads.
+   * folds on edge along the back, doubled back at its last joint, hanging into the body under
+   * the case without lifting clear, hidden there as a beetle's hind wing is, and comes out as
+   * it spreads.
    */
   readonly covered: boolean;
 }
@@ -234,9 +235,22 @@ export function foldWings(
     // Folded in-plane angles: the arm turns at each joint, digits fan from the hand and flex.
     const folded = new Map<number, number>();
     let previous = angleOf(dirOf(f.bones[0] as number));
+    // A covered wing goes straight, then doubles back at its last joint like a page turned
+    // over (a half turn about the crease across the arm), so it fits under the case and its
+    // membrane still hangs on the same side.
+    const page = new Map<number, Quaternion>();
     f.bones.forEach((b, k) => {
-      if (k > 0) previous += (style.fold.joints[k - 1] ?? 0) * DEG;
+      const last = f.covered && k > 0 && k === f.bones.length - 1;
+      if (k > 0 && !last) previous += (style.fold.joints[k - 1] ?? 0) * DEG;
       folded.set(b, previous);
+      if (last) {
+        const along = f.out
+          .clone()
+          .multiplyScalar(Math.cos(previous))
+          .addScaledVector(f.lead, Math.sin(previous));
+        const crease = new Vector3().crossVectors(axis, along).normalize();
+        page.set(b, new Quaternion().setFromAxisAngle(crease, 0.97 * Math.PI));
+      }
     });
     const hand = folded.get(f.bones.at(-1) as number) as number;
     let fan = 0;
@@ -254,8 +268,14 @@ export function foldWings(
       });
       if (digit.root === 'wrist') fan++;
     }
-    const swingOf = (b: number) =>
-      new Quaternion().setFromAxisAngle(axis, (folded.get(b) as number) - angleOf(dirOf(b)));
+    const swingOf = (b: number) => {
+      const swing = new Quaternion().setFromAxisAngle(
+        axis,
+        (folded.get(b) as number) - angleOf(dirOf(b)),
+      );
+      const turned = page.get(b);
+      return turned ? turned.clone().multiply(swing) : swing;
+    };
 
     // The shoulder: the bind frame of the humerus onto the folded one.
     const h0 = dirOf(f.bones[0] as number);

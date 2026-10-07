@@ -1,5 +1,6 @@
 import { readdirSync, readFileSync } from 'node:fs';
-import { FORMAT } from '@spawnforge/core';
+import { compileCreature, createRegistry, FORMAT, resolveBlueprint } from '@spawnforge/core';
+import { basicPack } from '@spawnforge/modules';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { Renderer } from './index.ts';
 
@@ -137,6 +138,45 @@ describe('headless renders', () => {
     expect(extras.blueprint.name).toBe('Ridgeback Stalker');
     expect(extras.clips.find((c: { name: string }) => c.name === 'walk').loop).toBe(true);
     expect(info.clips).toHaveLength(3);
+  }, 120_000);
+
+  it('frames the wingspan when the wings are spread (--pose spread)', async () => {
+    const blueprint = JSON.parse(
+      readFileSync(new URL('../../../examples/storm-wyvern.json', import.meta.url), 'utf8'),
+    );
+    const rest = await renderer.render({ blueprint, size: 120, views: ['top'] });
+    const spread = await renderer.render({
+      blueprint,
+      size: 120,
+      views: ['top'],
+      pose: { spread: 1 },
+    });
+    expect(spread.info.width).toBeGreaterThan(3 * rest.info.width);
+  }, 120_000);
+
+  it('exports a winged creature that rests folded, with its membranes', async () => {
+    const blueprint = JSON.parse(
+      readFileSync(new URL('../../../examples/storm-wyvern.json', import.meta.url), 'utf8'),
+    );
+    const { glb, info } = await renderer.export({ blueprint, quality: 'low', clips: ['walk'] });
+    const json = JSON.parse(glb.subarray(20, 20 + glb.readUInt32LE(12)).toString('utf8'));
+    expect(json.meshes).toHaveLength(4);
+    const holder = json.nodes.find((n: { name?: string }) => n.name === 'membranes');
+    const membranes = json.meshes[holder.mesh];
+    expect(json.materials[membranes.primitives[0].material].doubleSided).toBe(true);
+    expect(info.notes.join(' ')).toMatch(/membranes/);
+    // Nodes default to the folded rest pose.
+    const registry = createRegistry([basicPack]);
+    const compiled = compileCreature(resolveBlueprint(blueprint, registry), registry, {
+      quality: 'low',
+    });
+    const humerus = compiled.bones.names.indexOf('wing.L.0');
+    const rest = Array.from(compiled.bones.rest?.subarray(humerus * 4, humerus * 4 + 4) ?? []);
+    const node = json.nodes.find((n: { name?: string }) => n.name === 'wing_L_0');
+    const dot = (a: number[], b: number[]) =>
+      Math.abs(a.reduce((s, v, i) => s + v * (b[i] ?? 0), 0));
+    // A wing that holds still folded needs no track: its node already rests there.
+    expect(dot(node.rotation, rest)).toBeGreaterThan(0.9999);
   }, 120_000);
 
   it('refuses invalid blueprints with the validation errors', async () => {

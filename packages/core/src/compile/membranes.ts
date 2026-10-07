@@ -101,6 +101,31 @@ export interface PanelOptions {
  * vertex is weighted to the two stations around it, both ends: exact on the ruled surface at
  * the stations, whatever the spars do. Rows run from the spars' starts (s = 0) to their ends.
  */
+/**
+ * A station's roll, shared by its pair (docs/design/9.3-wings-fins.md): the first takes the
+ * spars' direction, and each after it the roll before, turned only as far as its aim demands, so
+ * neighbouring stations agree and the sheet between them stays on the ruled surface even where
+ * the spars fold back on themselves. `z` carries the previous roll in and the new one out.
+ */
+export function stationRoll(
+  z: Vector3,
+  y: Vector3,
+  k: number,
+  a0: Vector3,
+  a1: Vector3,
+  b0: Vector3,
+  b1: Vector3,
+): Vector3 {
+  if (k === 0) z.subVectors(a1, a0).add(b1).sub(b0);
+  z.addScaledVector(y, -z.dot(y));
+  if (z.lengthSq() < 1e-14) {
+    z.subVectors(a1, a0).add(b1).sub(b0).addScaledVector(y, -z.dot(y));
+    if (z.lengthSq() < 1e-14) z.set(0, 1, 0).addScaledVector(y, -y.y);
+    if (z.lengthSq() < 1e-14) z.set(1, 0, 0).addScaledVector(y, -y.x);
+  }
+  return z.normalize();
+}
+
 export function stationPanel(
   a: Spar,
   b: Spar,
@@ -121,7 +146,7 @@ export function stationPanel(
   for (let k = 1; k < fill; k++) marks.add(s0 + ((1 - s0) * k) / fill);
   let stations = [...marks].sort((x, y) => x - y);
   stations = stations.filter((s, i) => i === 0 || s - (stations[i - 1] as number) > 0.025);
-  while (stations.length > 12) {
+  while (stations.length > 10) {
     // Drop the station with the closest neighbours (never the ends).
     let worst = 1;
     let gap = Infinity;
@@ -137,19 +162,21 @@ export function stationPanel(
   const K = stations.length;
   const at = stations.map((s) => ({ a: A.at(s), b: B.at(s) }));
   const panel: { a: number[]; b: number[] } = { a: [], b: [] };
+  const z = new Vector3();
   for (let k = 0; k < K; k++) {
     const here = at[k] as (typeof at)[number];
-    const prev = at[Math.max(0, k - 1)] as (typeof at)[number];
-    const next = at[Math.min(K - 1, k + 1)] as (typeof at)[number];
     const y = new Vector3().subVectors(here.b.p, here.a.p);
     if (y.lengthSq() < 1e-14) y.set(0, 0, 1);
     y.normalize();
-    const along = new Vector3()
-      .subVectors(next.a.p, prev.a.p)
-      .add(new Vector3().subVectors(next.b.p, prev.b.p));
-    const z = along.addScaledVector(y, -along.dot(y));
-    if (z.lengthSq() < 1e-14) z.set(0, 1, 0).addScaledVector(y, -y.y);
-    z.normalize();
+    stationRoll(
+      z,
+      y,
+      k,
+      (at[0] as (typeof at)[number]).a.p,
+      (at[Math.min(1, K - 1)] as (typeof at)[number]).a.p,
+      (at[0] as (typeof at)[number]).b.p,
+      (at[Math.min(1, K - 1)] as (typeof at)[number]).b.p,
+    );
     const stub = 0.01 * options.scale;
     for (const [end, other, dir, list] of [
       [here.a, here.b, y, panel.a],

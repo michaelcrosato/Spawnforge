@@ -121,7 +121,9 @@ export function weightsAt(
     const bone = bones[id] as BoneDef;
     if (!bone.skin) continue;
     const score = boneDistanceXYZ(bone, p.x, p.y, p.z) / Math.max(1e-6, (bone.r0 + bone.r1) / 2);
-    if (score < best) {
+    // Near-ties (two bones meeting at a joint) keep the first, so a last-bit difference in the
+    // trigonometry between engines never picks another bone.
+    if (score < best - 1e-9) {
       best = score;
       nearest = id;
     }

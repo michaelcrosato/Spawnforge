@@ -1,0 +1,60 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Luna Moth",
+  "seed": 9305,
+  "extends": "hexapod",
+  "scale": 0.4,
+  "body": { "torso": { "radius": [0.14, 0.17, 0.15, 0.13, 0.11, 0.08] } },
+  "limbs": [
+    {
+      "id": "forewing",
+      "role": "wing",
+      "attach": { "on": "torso", "at": 0.18, "side": "both", "angle": 20 },
+      "length": 1.25,
+      "segments": 2,
+      "radius": [0.014, 0.006],
+      "membrane": {
+        "type": "membrane.insect",
+        "shape": "broad",
+        "width": 0.75,
+        "veins": 0.5,
+        "color": "#bfe0a0",
+        "translucency": 0.35
+      }
+    },
+    {
+      "id": "hindwing",
+      "role": "wing",
+      "attach": { "on": "torso", "at": 0.3, "side": "both", "angle": 25 },
+      "length": 1.1,
+      "segments": 2,
+      "radius": [0.012, 0.005],
+      "membrane": {
+        "type": "membrane.insect",
+        "shape": "round",
+        "width": 0.8,
+        "veins": 0.5,
+        "color": "#bfe0a0",
+        "translucency": 0.35
+      }
+    }
+  ],
+  "parts": [{ "id": "eyes", "params": { "irisColor": "#20301a", "scale": 1.1 } }],
+  "skin": {
+    "palette": { "base": "#e8eedc", "belly": "#f4f4ea", "accent": "#7a3a3a" },
+    "material": "skin",
+    "fur": { "length": 0.04, "region": ["torso"] },
+    "layers": [
+      {
+        "type": "spots",
+        "color": "#7a5a30",
+        "region": "wings",
+        "size": 0.13,
+        "density": 0.3,
+        "ring": 0.6,
+        "jitter": 0.3
+      }
+    ]
+  },
+  "motion": { "temperament": "skittish" }
+}

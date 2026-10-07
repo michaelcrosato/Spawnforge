@@ -847,8 +847,11 @@ export function compileCreature(
     const bone = limb.bones[Math.floor(limb.bones.length / 2)] as number;
     markers.push({ id: limb.id, kind: 'limb', position: mid(bone), bone });
   }
-  for (const [id, position] of sink.markers)
-    if (!id.endsWith('.foot')) markers.push({ id, kind: 'part', position });
+  for (const [id, position] of sink.markers) {
+    const bone = sink.markerBones.get(id);
+    if (!id.endsWith('.foot'))
+      markers.push({ id, kind: 'part', position, ...(bone !== undefined ? { bone } : {}) });
+  }
   const min = new Vector3(Infinity, Infinity, Infinity);
   const max = new Vector3(-Infinity, -Infinity, -Infinity);
   const meshes: [ArrayLike<number>, ArrayLike<number>, ArrayLike<number>][] = [

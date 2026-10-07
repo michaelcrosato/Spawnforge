@@ -1,4 +1,5 @@
 import { Matrix4, Quaternion, Vector3 } from 'three';
+import { stationRoll } from '../compile/membranes.ts';
 import type { StationPanel, WingRig } from '../compile/types.ts';
 import type { Pose } from './pose.ts';
 
@@ -20,11 +21,11 @@ export function applyWings(pose: Pose, wings: readonly WingRig[], spread: number
 }
 
 const a = new Vector3();
-const b = new Vector3();
-const along = new Vector3();
 const x = new Vector3();
 const y = new Vector3();
 const z = new Vector3();
+const sx = new Vector3();
+const sy = new Vector3();
 const m = new Matrix4();
 const world = new Quaternion();
 const inverse = new Quaternion();
@@ -36,53 +37,43 @@ const inverse = new Quaternion();
  * posed last, from their parents' current world transforms, and solved here.
  */
 export function applyStations(pose: Pose, stations: readonly StationPanel[]): void {
+  const worldPos = pose.worldPos;
   for (const panel of stations) {
     const n = panel.a.length;
+    // Their heads follow their parents.
     for (let k = 0; k < n; k++) {
-      const ia = panel.a[k] as number;
-      const ib = panel.b[k] as number;
-      // Their heads follow their parents.
-      pose.solveBone(ia);
-      pose.solveBone(ib);
+      pose.solveBone(panel.a[k] as number);
+      pose.solveBone(panel.b[k] as number);
     }
+    const second = n > 1 ? 1 : 0;
     for (let k = 0; k < n; k++) {
       const ia = panel.a[k] as number;
       const ib = panel.b[k] as number;
-      a.copy(pose.worldPos[ia] as Vector3);
-      b.copy(pose.worldPos[ib] as Vector3);
-      y.subVectors(b, a);
+      a.copy(worldPos[ia] as Vector3);
+      y.subVectors(worldPos[ib] as Vector3, a);
       if (y.lengthSq() < 1e-14) y.set(0, 0, 1);
       y.normalize();
-      // Along the spars: central differences on both sides, summed.
-      const k0 = Math.max(0, k - 1);
-      const k1 = Math.min(n - 1, k + 1);
-      along
-        .subVectors(
-          pose.worldPos[panel.a[k1] as number] as Vector3,
-          pose.worldPos[panel.a[k0] as number] as Vector3,
-        )
-        .add(
-          b.subVectors(
-            pose.worldPos[panel.b[k1] as number] as Vector3,
-            pose.worldPos[panel.b[k0] as number] as Vector3,
-          ),
-        );
-      z.copy(along).addScaledVector(y, -along.dot(y));
-      if (z.lengthSq() < 1e-14) z.set(0, 1, 0).addScaledVector(y, -y.y);
-      if (z.lengthSq() < 1e-14) z.set(1, 0, 0).addScaledVector(y, -y.x);
-      z.normalize();
+      // The roll carried on from the station before, as compile set them up.
+      stationRoll(
+        z,
+        y,
+        k,
+        worldPos[panel.a[0] as number] as Vector3,
+        worldPos[panel.a[second] as number] as Vector3,
+        worldPos[panel.b[0] as number] as Vector3,
+        worldPos[panel.b[second] as number] as Vector3,
+      );
       x.crossVectors(y, z).normalize();
-      for (const [bone, sign] of [
-        [ia, 1],
-        [ib, -1],
-      ] as const) {
-        world.setFromRotationMatrix(
-          m.makeBasis(x.clone().multiplyScalar(sign), y.clone().multiplyScalar(sign), z),
-        );
+      for (let side = 0; side < 2; side++) {
+        const bone = side === 0 ? ia : ib;
+        const sign = side === 0 ? 1 : -1;
+        sx.copy(x).multiplyScalar(sign);
+        sy.copy(y).multiplyScalar(sign);
+        world.setFromRotationMatrix(m.makeBasis(sx, sy, z));
         const parent = pose.parents[bone] as number;
         inverse.copy(pose.worldRot[parent] as Quaternion).invert();
         (pose.rot[bone] as Quaternion).multiplyQuaternions(inverse, world);
-        pose.solveBone(bone);
+        (pose.worldRot[bone] as Quaternion).copy(world);
       }
     }
   }

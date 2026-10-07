@@ -265,6 +265,8 @@ export interface PartNote {
 export class PartSink {
   /** Where each part instance sits, for labels on debug renders. */
   readonly markers = new Map<string, [number, number, number]>();
+  /** The bone a part's marker rides, when it should follow a pose (a wing's membrane). */
+  readonly markerBones = new Map<string, number>();
   readonly parts = {
     positions: [] as number[],
     normals: [] as number[],
@@ -463,9 +465,23 @@ export function buildParts(
     id: string,
     inMouth = false,
   ) => {
-    if (!sink.markers.has(id))
-      sink.markers.set(id, [socket.position.x, socket.position.y, socket.position.z]);
     const local = mirror < 0 ? mirrorX(clonePiece(piece)) : piece;
+    if (!sink.markers.has(id)) {
+      // A piece built in model space (a socket at the origin, like a beak's) marks its middle.
+      const atOrigin = socket.position.lengthSq() === 0 && local.positions.length >= 3;
+      const n = local.positions.length / 3;
+      const middle = (axis: number) => {
+        let sum = 0;
+        for (let v = 0; v < n; v++) sum += local.positions[v * 3 + axis] as number;
+        return sum / n;
+      };
+      sink.markers.set(
+        id,
+        atOrigin
+          ? [middle(0), middle(1), middle(2)]
+          : [socket.position.x, socket.position.y, socket.position.z],
+      );
+    }
     const sinkBy = options.sink ?? 0;
     const origin = socket.position.clone().addScaledVector(socket.normal, -sinkBy);
     const toWorld = (x: number, y: number, z: number, out: Vector3) =>
@@ -797,8 +813,11 @@ export function buildParts(
     },
     sheet: (positions, normals, indices, weights, along, across, look) => {
       if (!sink.markers.has(id) && positions.length > 0) {
-        const mid = positions[Math.floor(positions.length / 2)] as Vector3;
+        const at = Math.floor(positions.length / 2);
+        const mid = positions[at] as Vector3;
         sink.markers.set(id, [mid.x, mid.y, mid.z]);
+        const bone = (weights[at] ?? [])[0]?.[0];
+        if (bone !== undefined) sink.markerBones.set(id, bone);
       }
       rigidSheet(
         positions,
@@ -842,7 +861,7 @@ export function buildParts(
         .add(b.head);
     },
     skinAlong: (from, dir, reach) => {
-      const steps = 48;
+      const steps = 32;
       let prev = evaluator.eval(from.x, from.y, from.z);
       if (prev < 0) return from.clone();
       for (let i = 1; i <= steps; i++) {
@@ -851,7 +870,7 @@ export function buildParts(
         if (v < 0) {
           let lo = (reach * (i - 1)) / steps;
           let hi = t;
-          for (let k = 0; k < 20; k++) {
+          for (let k = 0; k < 14; k++) {
             const mid = (lo + hi) / 2;
             if (
               evaluator.eval(from.x + dir.x * mid, from.y + dir.y * mid, from.z + dir.z * mid) < 0
@@ -869,6 +888,8 @@ export function buildParts(
       if (!sink.markers.has(id)) {
         const p0 = positions[0];
         if (p0) sink.markers.set(id, [p0.x, p0.y, p0.z]);
+        const bone = (weights[0] ?? [])[0]?.[0];
+        if (bone !== undefined) sink.markerBones.set(id, bone);
       }
       const base = sink.parts.positions.length / 3;
       const c = hexToRgb(look.color);
