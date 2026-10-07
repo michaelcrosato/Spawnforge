@@ -45,6 +45,25 @@ export interface WingStyle {
    * lifting clear or stacking, and a pair meets at the midline instead of overlapping.
    */
   readonly shell?: boolean;
+  /** How it strokes in flight (docs/design/10.4-flight.md); left out, the bat's. */
+  readonly stroke?: WingStroke;
+}
+
+/** A wing's stroke in flight, in degrees and shares. */
+export interface WingStroke {
+  /** Half the stroke's swing about the wing's leading-edge axis. */
+  readonly amplitude: number;
+  /**
+   * How far the outer wing folds in its own plane on the upstroke, as a share of the fold's
+   * elbow and wrist turns (birds and bats half-fold; insects 0).
+   */
+  readonly flex: number;
+  /** How far the wing pitches about its own length, leading edge down on the downstroke. */
+  readonly twist: number;
+  /** Stroke plane, from vertical (0) toward the wing's plane (90, a hover's sweep). */
+  readonly plane: number;
+  /** A wing that does not beat but is held in flight (a case): lifted and swung forward. */
+  readonly hold?: { readonly lift: number; readonly forward: number };
 }
 
 /** A bat's wing: a shallow M spread, a Z fold against the flank. */
@@ -53,6 +72,7 @@ export const BAT_STYLE: WingStyle = {
   fold: { sweep: 90, droop: 0, lie: 0, joints: [165, -160, 0], digits: 3, flex: 10 },
   stack: 0,
   thickness: 0.005,
+  stroke: { amplitude: 50, flex: 0.4, twist: 10, plane: 0 },
 };
 
 /** A fin: swept back, flat, never folded. */

@@ -14,6 +14,7 @@ import {
 } from './actions.ts';
 import { fabrik } from './fabrik.ts';
 import { applyFace } from './face.ts';
+import { applyStrokes, type FlightNumbers, flightNumbers, turnRadius } from './flight.ts';
 import { Pose } from './pose.ts';
 import { type FootRoll, footRoll, heelAt, plantToes, poseToes } from './roll.ts';
 import { applyStations, applyWings } from './wings.ts';
@@ -60,6 +61,13 @@ export interface GaitInfo {
   readonly medium?: 'water' | 'air';
   /** What drives a water gait: a body wave, paddling legs or beating fins. */
   readonly swim?: 'body' | 'legs' | 'fins';
+  /** How an air gait flies, and its settings (10.4). */
+  readonly air?: 'flapping' | 'gliding' | 'hovering';
+  /** Air gaits: stroke amplitude multiplier, most bank (degrees), glide sink (0–1), beat rate. */
+  readonly stroke?: number;
+  readonly bank?: number;
+  readonly sink?: number;
+  readonly rate?: number;
   /** Slither gaits move the spine instead of legs. */
   readonly spine: boolean;
   readonly amplitude: number;
@@ -71,6 +79,11 @@ export interface MotionData {
   readonly gaits: readonly GaitInfo[];
   /** Actions the creature can perform, with resolved parameters. */
   readonly actions: readonly { readonly id: string; readonly params: Record<string, unknown> }[];
+  /**
+   * What flight scales with, for winged creatures (docs/design/10.4-flight.md): mass (kg), the
+   * span tip to tip spread (m) and the planform area of the wings that lift (m²).
+   */
+  readonly flight?: { readonly mass: number; readonly span: number; readonly area: number };
 }
 
 export interface GroundSample {
@@ -118,6 +131,34 @@ const TEMPERAMENTS: Record<
   aggressive: { walk: 0.3, turn: 150, crouch: 0.05, headDrop: 0.1 },
   lumbering: { walk: 0.08, turn: 55, crouch: 0, headDrop: 0.05 },
 };
+
+/** Flight in progress (docs/design/10.4-flight.md). */
+interface AirState {
+  /** The takeoff's crouch and leap, flight, and the landing's flare (or a hoverer's descent). */
+  stage: 'crouch' | 'launch' | 'flight' | 'flare' | 'descend';
+  /** Seconds in the stage. */
+  t: number;
+  /** Vertical speed (m/s). */
+  vy: number;
+  /** Bank (radians, positive into a left turn). */
+  bank: number;
+  /** The air gait's role now. */
+  role: 'flapping' | 'gliding' | 'hovering';
+  /** A landing asked for: where, its plan once made, and how often it went round. */
+  landing: { to: Vector3 | null; plan: LandingPlan | null; goRounds: number } | null;
+  /** The flare's start: height and speed. */
+  flare?: { y0: number; v0: number };
+}
+
+/** Where a landing touches down and how it comes in. */
+interface LandingPlan {
+  readonly point: Vector3;
+  /** The line it comes in on (unit, horizontal). */
+  readonly dir: Vector3;
+  readonly flareStart: Vector3;
+  /** Height the flare starts at. */
+  readonly flareY: number;
+}
 
 interface LegState {
   readonly rig: LegRigData;
@@ -261,7 +302,45 @@ export class MotionController {
   /** Forward lean of a running body (radians), eased. */
   private lean = 0;
   /** Where it is moving: on land (or wading) or swimming (10.3). */
-  medium: 'land' | 'water' = 'land';
+  medium: 'land' | 'water' | 'air' = 'land';
+  /** What it flies at, for a winged creature (docs/design/10.4-flight.md). */
+  readonly flightNumbers: FlightNumbers | undefined;
+  /** Flight in progress, from the takeoff crouch to touchdown. */
+  private air: AirState | null = null;
+  /** Asked for while an action ran: takes off or lands when it ends. */
+  private pendingAir:
+    | { readonly kind: 'takeoff'; readonly height?: number; readonly speed?: number }
+    | { readonly kind: 'land'; readonly to: Vector3 | null }
+    | null = null;
+  /** Asked height above the floor, and speed, while flying (undefined: the defaults). */
+  private flyHeight: number | undefined;
+  private flySpeed: number | undefined;
+  /** Where it circles when flying with nowhere to go. */
+  private readonly loiter = new Vector3();
+  /** How the wings beat now, blended as the air gait changes. */
+  private readonly strokes = {
+    phase: 0,
+    amplitude: 0,
+    glide: 0,
+    hover: 0,
+    up: Math.PI / 2,
+    down: Math.PI / 3,
+    hold: 0,
+    /** Beats per second now. */
+    beat: 0,
+    /** Wings raised above the stroke (radians): held up as it lands. */
+    raise: 0,
+  };
+  /** False while a distant flyer steps without posing (level of detail); see `update`. */
+  private posing = true;
+  /** The pose is behind the flight state: pose twice and settle the springs before showing it. */
+  private stalePose = false;
+  /** Extra lowering of the body (m): a takeoff's crouch, a landing's absorb. */
+  private airCrouch = 0;
+  /** When it last touched down (s): the landing's absorb dips the body for a moment after. */
+  private landedAt: number | undefined;
+  /** 1 pitching about the wing roots in flight, 0 about the body's middle as on the ground. */
+  private airPivot = 1;
   /** Height asked for by `moveTo` (a diver's depth), if any. */
   private targetY: number | undefined;
   /** The spine's height while swimming (m), the tail's swing and the fins' beat now. */
@@ -385,6 +464,7 @@ export class MotionController {
     });
     this.floorStep = 0.05 * compiled.scale;
     this.timeScale = Math.sqrt(this.hipHeight / 1);
+    this.flightNumbers = flightNumbers(compiled);
     const rng = createRng(compiled.seed);
     for (const action of motion.actions) {
       const module = options.registry?.get('action', action.id) as ActionModule | undefined;
@@ -456,13 +536,14 @@ export class MotionController {
       stiffness,
       swish,
       kind,
-      clearance:
-        kind === 'tail'
-          ? undefined
-          : points.map(
-              (_, i) => 0.8 * (radii[bones[Math.min(i, bones.length - 1)] as number] ?? 0),
-            ),
-      floors: kind === 'tail' ? undefined : new Float64Array(points.length * 3).fill(Number.NaN),
+      // Tails keep clear of the floor only in the air (10.4), by the thicker bone at each
+      // joint; on land they are as before. Tentacles lie on it.
+      clearance: points.map((_, i) => {
+        const at = radii[bones[Math.min(i, bones.length - 1)] as number] ?? 0;
+        const before = radii[bones[Math.max(0, i - 1)] as number] ?? 0;
+        return kind === 'tail' ? Math.max(at, before) : 0.8 * at;
+      }),
+      floors: new Float64Array(points.length * 5).fill(Number.NaN),
     };
   }
 
@@ -479,9 +560,20 @@ export class MotionController {
    * tail at rest. Use it to spawn or teleport a creature, or to take one back from a baked
    * animation.
    */
-  place(x: number, z: number, heading = this.heading, ground: Ground = FLAT, water?: Water): void {
+  place(
+    x: number,
+    z: number,
+    heading = this.heading,
+    ground: Ground = FLAT,
+    water?: Water,
+    options: { flying?: boolean; y?: number } = {},
+  ): void {
     this.position.set(x, ground(x, z).height, z);
     this.medium = 'land';
+    this.air = null;
+    Object.assign(this.strokes, { amplitude: 0, glide: 0, hover: 0, hold: 0, raise: 0 });
+    this.airCrouch = 0;
+    this.landedAt = undefined;
     this.targetY = undefined;
     this.heading = heading;
     this.speed = 0;
@@ -514,6 +606,24 @@ export class MotionController {
       this.swimY = this.walks ? bed + depth : bed + depth / 2;
       this.stepSwim(0, bed, bed + depth);
     }
+    // Already flying (docs/design/10.4-flight.md): at cruise, at the height asked for or its own.
+    if (options.flying && this.canFly) {
+      const fl = this.flightNumbers as FlightNumbers;
+      const floor = airFloor(ground, water)(x, z).height;
+      this.position.y = options.y ?? floor + fl.height;
+      this.air = { stage: 'flight', t: 0, vy: 0, bank: 0, role: 'flapping', landing: null };
+      this.airPivot = 1;
+      this.medium = 'air';
+      this.speed = fl.cruise;
+      this.spread = 1;
+      this.loiter.set(x, 0, z);
+      this.setAirGait('flapping');
+      this.strokes.amplitude = 1;
+      this.strokes.hold = 1;
+      this.events.length = 0;
+      this.applyPose(ground);
+      this.tuckLegs();
+    }
     this.applyPose(ground);
     for (const [i, spring] of this.springs.entries())
       this.springs[i] = this.makeSpring(spring.bones, spring.stiffness, spring.swish);
@@ -531,6 +641,9 @@ export class MotionController {
     if (!target) {
       this.target = null;
       this.desiredSpeed = 0;
+      // In the air, stopping hovers or circles where it is.
+      this.loiter.copy(this.position);
+      this.driveHeading = undefined;
       return;
     }
     this.target = new Vector3(target.x, 0, target.z);
@@ -569,6 +682,8 @@ export class MotionController {
             : `no code for action "${id}": pass the module registry to the MotionController`,
       );
     }
+    if (this.air && def.hooks.leap)
+      throw new Error(`"${id}" leaps from the ground; it cannot start while flying`);
     if (this.current)
       this.events.push({ type: 'action-end', time: this.time, action: this.current.id });
     const target = options.target
@@ -589,6 +704,85 @@ export class MotionController {
       progress: -1,
     };
     this.events.push({ type: 'action-start', time: this.time, action: id });
+  }
+
+  /** How tall it stands at rest (m): a `moveTo` higher than 1.5 times that above the ground flies. */
+  get standingHeight(): number {
+    return Math.max(0.05, this.compiled.bounds.max[1] ?? 0);
+  }
+
+  /** Whether it can fly: it has a wing and an air gait. */
+  get canFly(): boolean {
+    return this.flightNumbers !== undefined && this.gaitsIn('air').length > 0;
+  }
+
+  /** In the air: from the takeoff crouch until it touches down (docs/design/10.4-flight.md). */
+  get flying(): boolean {
+    return this.air !== null;
+  }
+
+  /**
+   * Where a flight is: `crouch` and `launch` (taking off), `flight`, then `flare` (landing);
+   * null on the ground or in the water.
+   */
+  get flightStage(): 'crouch' | 'launch' | 'flight' | 'flare' | 'descend' | null {
+    return this.air?.stage ?? null;
+  }
+
+  /** Wingbeats per second now (0 when not flying or gliding with the wings still). */
+  get wingbeat(): number {
+    return this.air && this.strokes.amplitude > 0.05 ? this.strokes.beat : 0;
+  }
+
+  /** The body's pitch (radians, nose up positive) and roll (positive rolls to the right). */
+  get attitude(): { readonly pitch: number; readonly roll: number } {
+    return { pitch: this.pitch, roll: this.roll };
+  }
+
+  /**
+   * Poses the wings at a point of their beat (0 to 1) without advancing time, the rest of the
+   * body as it is: how air cycles are baked at exact phases. Only while flying.
+   */
+  poseBeat(phase: number, ground: Ground = FLAT): void {
+    if (!this.air) return;
+    this.strokes.phase = ((phase % 1) + 1) % 1;
+    this.phase = this.strokes.phase;
+    this.applyPose(ground);
+  }
+
+  /**
+   * Takes off (or keeps flying) and holds `height` metres above the ground (default: its span
+   * clear of it), at `speed` (default its cruise). With nowhere to go it circles, or hovers if it
+   * can. Waits for a running action to end. Throws for a creature that cannot fly.
+   */
+  fly(options: { height?: number; speed?: number } = {}): void {
+    if (!this.canFly)
+      throw new Error(
+        this.flightNumbers
+          ? 'it has no air gait: list one in motion.gaits (or leave them out), with the air on, to fly'
+          : 'it cannot fly: it has no wings',
+      );
+    this.flyHeight = options.height;
+    this.flySpeed = options.speed;
+    if (this.air) return;
+    if (this.current) {
+      this.pendingAir = { kind: 'takeoff', ...options };
+      return;
+    }
+    this.startTakeoff();
+  }
+
+  /**
+   * Lands at `target` on the ground (or water, for a swimmer), or with none at the first clear
+   * ground ahead. Waits for a running action to end.
+   */
+  land(target: { x: number; z: number } | null = null): void {
+    const to = target ? new Vector3(target.x, 0, target.z) : null;
+    if (this.current) {
+      this.pendingAir = { kind: 'land', to };
+      return;
+    }
+    if (this.air) this.air.landing = { to, plan: null, goRounds: 0 };
   }
 
   /** True for bodies without legs (they slither). */
@@ -633,6 +827,9 @@ export class MotionController {
       throw new Error(
         `no gait "${id}" for this creature; it has ${this.motion.gaits.map((g) => g.id).join(', ') || 'none'}`,
       );
+    // Air gaits fly at cruise; a hover holds still (docs/design/10.4-flight.md).
+    if (gait.medium === 'air' && this.flightNumbers)
+      return gait.air === 'hovering' ? 0 : this.flightNumbers.cruise;
     const [lo, hi] = gait.froude;
     const fr = gait.natural ?? Math.max(lo + 0.05, Math.min((lo + hi) / 2, 1, hi));
     return Math.sqrt(fr * G * this.hipHeight);
@@ -660,6 +857,7 @@ export class MotionController {
    * only swims) the natural speed of its slowest swimming gait.
    */
   paceSpeed(): number {
+    if (this.medium === 'air' && this.flightNumbers) return this.flightNumbers.cruise;
     const swim = this.gaitsIn('water')[0];
     if (swim && (this.medium === 'water' || !this.walks)) return this.gaitSpeed(swim.id);
     const fr = TEMPERAMENTS[this.motion.temperament].walk;
@@ -682,9 +880,17 @@ export class MotionController {
     return Math.sqrt(fr * G * this.hipHeight);
   }
 
-  /** Advances by `dt` seconds and poses the skeleton. Returns events since the last update. */
-  update(dt: number, input: { ground?: Ground; water?: Water } = {}): MotionEvent[] {
+  /**
+   * Advances by `dt` seconds and poses the skeleton. Returns events since the last update. With
+   * `pose: false` a flyer keeps flying without posing (springs and legs wait), for level of
+   * detail: the next posed update catches up in place.
+   */
+  update(
+    dt: number,
+    input: { ground?: Ground; water?: Water; pose?: boolean } = {},
+  ): MotionEvent[] {
     const ground = input.ground ?? FLAT;
+    this.posing = input.pose !== false || !this.air;
     this.accumulator += Math.min(dt, 0.25);
     let steps = 0;
     while (this.accumulator >= STEP && steps < 30) {
@@ -692,10 +898,25 @@ export class MotionController {
       this.accumulator -= STEP;
       steps++;
     }
-    this.applyPose(ground);
+    if (!this.posing) this.stalePose = true;
+    else {
+      if (this.stalePose) this.catchUp(ground);
+      this.applyPose(ground);
+    }
+    this.posing = true;
     const events = this.events;
     this.events = [];
     return events;
+  }
+
+  /** After steps without posing: legs tucked and springs at rest where the body is now. */
+  private catchUp(ground: Ground): void {
+    this.stalePose = false;
+    this.applyPose(ground);
+    if (this.air) this.tuckLegs();
+    this.applyPose(ground);
+    for (const [i, spring] of this.springs.entries())
+      this.springs[i] = this.makeSpring(spring.bones, spring.stiffness, spring.swish);
   }
 
   private step(dt: number, ground: Ground, water?: Water): void {
@@ -707,6 +928,29 @@ export class MotionController {
     if (leaping?.leap && !leaping.leap.landed) {
       this.stepLeap(leaping.leap, dt, ground);
       this.stepParts(dt, ground);
+      return;
+    }
+
+    // Flight (docs/design/10.4-flight.md): asked for while an action ran, or a height out of
+    // reach on foot; in the air it has a step of its own.
+    if (this.pendingAir && !this.current) {
+      const pending = this.pendingAir;
+      this.pendingAir = null;
+      if (pending.kind === 'takeoff') this.fly(pending);
+      else this.land(pending.to);
+    }
+    if (
+      !this.air &&
+      this.target &&
+      this.targetY !== undefined &&
+      this.medium !== 'water' &&
+      this.canFly &&
+      this.targetY - ground(this.target.x, this.target.z).height > 1.5 * this.standingHeight
+    )
+      this.startTakeoff();
+    if (this.air) {
+      this.stepAir(dt, ground, water);
+      if (this.posing) this.stepParts(dt, this.air ? airFloor(ground, water) : ground);
       return;
     }
 
@@ -777,6 +1021,22 @@ export class MotionController {
   /** Springs, grips, flares and wings, which run whatever the body is doing. */
   private stepParts(dt: number, ground: Ground): void {
     this.stepSprings(dt, ground);
+    // Landed: the body dips to absorb it and rises again, and what is left of the wingbeat
+    // dies away over about 0.3 s.
+    if (!this.air && this.landedAt !== undefined) {
+      const t = (this.time - this.landedAt) / (0.4 * this.timeScale);
+      this.airCrouch = t < 1 ? 0.15 * this.hipHeight * Math.sin(Math.PI * t) : 0;
+      if (t >= 1) this.landedAt = undefined;
+    }
+    if (!this.air) {
+      const st = this.strokes;
+      const k = Math.min(1, dt / 0.15);
+      st.amplitude -= st.amplitude * k;
+      st.raise -= st.raise * k;
+      st.hold -= st.hold * k;
+      st.down = 0;
+      if (st.amplitude + st.raise + st.hold < 1e-3) st.amplitude = st.raise = st.hold = 0;
+    }
     // Pincers snap shut fast (about 0.08 s); with `nearest`, only on the target's side.
     const grip = Math.max(-1, Math.min(1, this.goals.grip ?? 0));
     const gripSide = this.goals.nearest ? this.sideOf(this.goals.look) : 0;
@@ -786,7 +1046,8 @@ export class MotionController {
     this.flare = damp(this.flare, Math.max(0, Math.min(1, this.goals.flare ?? 0)), 7, dt);
     // Wings spread and fold over about 0.4 s (longer on big creatures).
     if (this.compiled.rig.wings.length > 0) {
-      const want = Math.max(0, Math.min(1, this.goals.wings ?? this.wingGoal));
+      // In flight the wings stay spread, whatever an action asks (decision 12).
+      const want = this.air ? 1 : Math.max(0, Math.min(1, this.goals.wings ?? this.wingGoal));
       this.spread = damp(this.spread, want, 7.5 / this.timeScale, dt);
     }
   }
@@ -844,7 +1105,7 @@ export class MotionController {
   }
 
   /** Into the water or out of it: the gait for that medium, feet down again on land. */
-  private enterMedium(medium: 'land' | 'water', ground: Ground): void {
+  private enterMedium(medium: 'land' | 'water', ground: Ground, fromAir = false): void {
     this.medium = medium;
     this.events.push({ type: 'medium', time: this.time, medium });
     // Heading somewhere at its own pace: the pace of the new medium.
@@ -862,9 +1123,10 @@ export class MotionController {
       this.airY = 0;
       return;
     }
-    // Out onto land: every foot finds the ground under its hip.
+    // Out onto land: every foot finds the ground under its hip. Coming down from the air, the
+    // body eases level instead of snapping.
     this.position.y = ground(this.position.x, this.position.z).height;
-    this.pitch = 0;
+    if (!fromAir) this.pitch = 0;
     for (const leg of this.legs) {
       const foot = this.neutralAt(leg, this.heading, leg.planted);
       foot.y = ground(foot.x, foot.z).height + leg.footLift;
@@ -953,6 +1215,526 @@ export class MotionController {
       leg.target.copy(foot);
       leg.swinging = true;
       leg.armed = false;
+    }
+  }
+
+  // --- Flight (docs/design/10.4-flight.md) ------------------------------------------------
+
+  /** Starts a takeoff: a crouch with the wings spreading (none for a legless body), then a leap. */
+  private startTakeoff(): void {
+    this.air = { stage: 'crouch', t: 0, vy: 0, bank: 0, role: 'flapping', landing: null };
+    this.airPivot = 1;
+    this.loiter.copy(this.position);
+    if (this.legless) this.launch();
+  }
+
+  /** Every foot leaves the ground: straight up, as fast as reaches 1.5 hip heights. */
+  private launch(): void {
+    const a = this.air as AirState;
+    a.stage = 'launch';
+    a.t = 0;
+    a.vy = Math.sqrt(2 * G * 1.5 * this.hipHeight);
+    this.medium = 'air';
+    this.events.push(
+      { type: 'takeoff', time: this.time },
+      { type: 'medium', time: this.time, medium: 'air' },
+    );
+    this.setAirGait('flapping');
+    for (const leg of this.legs) {
+      leg.swinging = true;
+      leg.armed = false;
+    }
+    this.trail.length = 0;
+  }
+
+  /** The air gait for a role (`flap`, `glide`, `hover`), falling back to flapping. */
+  private setAirGait(role: 'flapping' | 'gliding' | 'hovering'): void {
+    const air = this.gaitsIn('air');
+    const gait =
+      (this.lockedGait?.medium === 'air' ? this.lockedGait : undefined) ??
+      air.find((g) => g.air === role) ??
+      air.find((g) => g.air === 'flapping') ??
+      air[0];
+    if (this.air) this.air.role = gait?.air ?? 'flapping';
+    if (!gait || gait === this.gait) return;
+    this.gait = gait;
+    this.events.push({ type: 'gait', time: this.time, gait: gait.id });
+  }
+
+  private canRole(role: 'gliding' | 'hovering'): boolean {
+    return this.gaitsIn('air').some((g) => g.air === role);
+  }
+
+  /** One step in the air: takeoff, flight, or the landing's flare and touchdown. */
+  private stepAir(dt: number, ground: Ground, water: Water | undefined): void {
+    const a = this.air as AirState;
+    const fl = this.flightNumbers as FlightNumbers;
+    const h = this.hipHeight;
+    a.t += dt;
+    const floor = (x: number, z: number) => {
+      const g = ground(x, z).height;
+      const w = water?.(x, z);
+      return w ? Math.max(g, w.surface) : g;
+    };
+
+    if (a.stage === 'crouch') {
+      if (this.target) {
+        const want = Math.atan2(this.target.x - this.position.x, this.target.z - this.position.z);
+        const turn = wrapAngle(want - this.heading) * Math.min(1, 10 * dt);
+        this.heading = wrapAngle(this.heading + turn);
+        this.yawRate = damp(this.yawRate, turn / dt, 8, dt);
+      }
+      this.speed = damp(this.speed, 0, 12, dt);
+      this.position.y = ground(this.position.x, this.position.z).height;
+      this.airCrouch = 0.15 * h * Math.min(1, a.t / (0.2 * this.timeScale));
+      this.stepLegs(dt, ground, 0);
+      this.strokes.amplitude = 0;
+      if (a.t >= 0.25 * this.timeScale && this.spread >= 0.95) this.launch();
+      return;
+    }
+    this.airCrouch = damp(this.airCrouch, 0, 10, dt);
+
+    // Landing: plan it once asked, then fly its approach and flare.
+    if (a.landing && !a.landing.plan && a.stage === 'flight') this.planLanding(a, floor);
+    if (a.stage === 'flare' || a.stage === 'descend') {
+      this.stepTouchdown(a, dt, ground, water, floor);
+      return;
+    }
+
+    const canHover = this.canRole('hovering');
+    const canGlide = this.canRole('gliding');
+    const r = turnRadius(fl);
+    const forward = scratch3.set(Math.sin(this.heading), 0, Math.cos(this.heading));
+
+    // Where to: the landing's approach line, a target, a heading, or round the loiter point.
+    const plan = a.landing?.plan ?? null;
+    let goal: Vector3 | null = this.target;
+    let wantHeading = this.heading;
+    let distance = Number.POSITIVE_INFINITY;
+    /** On approach: how far along the line it is from the flare's start (negative before it). */
+    let along = 0;
+    let across = 0;
+    if (plan) {
+      // Pure pursuit along the approach line, aiming a turn's length ahead of where it is on it.
+      along =
+        (this.position.x - plan.flareStart.x) * plan.dir.x +
+        (this.position.z - plan.flareStart.z) * plan.dir.z;
+      across = Math.abs(
+        (this.position.x - plan.flareStart.x) * plan.dir.z -
+          (this.position.z - plan.flareStart.z) * plan.dir.x,
+      );
+      const lookahead = Math.max(2 * r, this.speed * 1.5);
+      const at = Math.min(0, along + lookahead);
+      goal = scratch4.copy(plan.flareStart).addScaledVector(plan.dir, at);
+      wantHeading = Math.atan2(goal.x - this.position.x, goal.z - this.position.z);
+      distance = -along;
+    } else if (goal) {
+      const dx = goal.x - this.position.x;
+      const dz = goal.z - this.position.z;
+      distance = Math.hypot(dx, dz);
+      wantHeading = Math.atan2(dx, dz);
+    } else if (this.driveHeading !== undefined && this.desiredSpeed > 0) {
+      wantHeading = this.driveHeading;
+    } else if (!(canHover && this.flySpeed === undefined)) {
+      // Circle the loiter point: aim at a point a little ahead on the circle.
+      const rx = this.position.x - this.loiter.x;
+      const rz = this.position.z - this.loiter.z;
+      // A circle it can follow at the speed it flies and the bank it may use.
+      const bankAt = (Math.min(70, this.gait?.bank ?? 40) * Math.PI) / 180;
+      const round = Math.max(1.5 * r, (1.2 * this.speed * this.speed) / (G * Math.tan(bankAt)));
+      const at = Math.atan2(rx, rz) + 0.6;
+      goal = scratch4.set(
+        this.loiter.x + Math.sin(at) * round,
+        0,
+        this.loiter.z + Math.cos(at) * round,
+      );
+      wantHeading = Math.atan2(goal.x - this.position.x, goal.z - this.position.z);
+    }
+
+    // Speed. Landing: slow flight. A target: cruise or as asked, a hoverer slowing to stop at
+    // it. A heading: as asked (0 hovers). Nowhere to go: a hoverer hovers, others circle at
+    // cruise (or `fly`'s speed). Never under slow flight unless it hovers.
+    let want = plan
+      ? fl.slow
+      : this.target
+        ? this.atPace
+          ? fl.cruise
+          : this.desiredSpeed
+        : this.driveHeading !== undefined
+          ? this.desiredSpeed
+          : canHover && this.flySpeed === undefined
+            ? 0
+            : (this.flySpeed ?? fl.cruise);
+    if (this.target && !plan && Number.isFinite(distance) && canHover)
+      want = Math.min(want, Math.sqrt(2 * 0.3 * G * distance));
+    // A hoverer slows to a hover over where it lands.
+    if (plan && canHover) want = Math.min(want, Math.sqrt(2 * 0.3 * G * Math.max(0, distance)));
+    if (!canHover) want = Math.max(want, fl.slow);
+    const accel = (want > this.speed ? 0.35 : 0.6) * G;
+    this.speed += Math.max(-accel * dt, Math.min(accel * dt, want - this.speed));
+    this.speed = Math.max(0, this.speed);
+
+    // Heading: a coordinated turn, at most 1.5 rad/s; the bank follows.
+    const bankMax = (Math.min(70, this.gait?.bank ?? 40) * Math.PI) / 180;
+    let turn = wrapAngle(wantHeading - this.heading);
+    const limit = Math.abs(turn) > 2.4 ? Math.max(bankMax, Math.PI / 3) : bankMax;
+    const rate = Math.min(1.5, (G * Math.tan(limit)) / Math.max(this.speed, fl.slow));
+    turn = Math.max(-rate * dt, Math.min(rate * dt, turn));
+    this.heading = wrapAngle(this.heading + turn);
+    this.yawRate = damp(this.yawRate, turn / dt, 6, dt);
+    forward.set(Math.sin(this.heading), 0, Math.cos(this.heading));
+
+    // The floor under it, under its wingtips and along where it is turning, 0.5 s and 1.5 s on.
+    const side = scratch1.set(forward.z, 0, -forward.x);
+    let floorMax = floor(this.position.x, this.position.z);
+    for (const sign of [-1, 1])
+      floorMax = Math.max(
+        floorMax,
+        floor(
+          this.position.x + side.x * sign * fl.halfSpan,
+          this.position.z + side.z * sign * fl.halfSpan,
+        ),
+      );
+    for (const ahead of [0.5, 1.5]) {
+      const turnAhead = this.heading + this.yawRate * ahead;
+      const run = this.speed * ahead;
+      floorMax = Math.max(
+        floorMax,
+        floor(
+          this.position.x + Math.sin((this.heading + turnAhead) / 2) * run,
+          this.position.z + Math.cos((this.heading + turnAhead) / 2) * run,
+        ),
+      );
+    }
+    const altitude = this.position.y - floorMax;
+
+    // Bank into the turn, as far as the lower wingtip stays clear of the floor.
+    const clearance = 0.05 * fl.span;
+    const tipRoom = (altitude + fl.shoulder - clearance) / Math.max(1e-3, fl.halfSpan);
+    const bankRoom = Math.asin(Math.max(0, Math.min(1, tipRoom)));
+    const bank = Math.atan2(this.speed * this.yawRate, G);
+    a.bank = damp(a.bank, Math.max(-bankRoom, Math.min(bankRoom, bank)), 6, dt);
+
+    // Height: as asked (a target's, or above the floor ahead), never closer than its span allows.
+    const height = this.flyHeight ?? fl.height;
+    // Above the floor under and ahead of it; coming in to land, down the glide path from there.
+    const cruiseY = floorMax + height;
+    let wantY =
+      plan !== null
+        ? Math.min(cruiseY, plan.flareY + Math.max(0, distance) * Math.tan((12 * Math.PI) / 180))
+        : this.targetY !== undefined && this.target
+          ? this.targetY
+          : cruiseY;
+    const needed = Math.max(
+      0.6 * h,
+      fl.halfSpan * Math.sin(Math.abs(a.bank)) - fl.shoulder + clearance,
+    );
+    wantY = Math.max(wantY, floorMax + needed);
+    const hovering = canHover && this.speed < 0.3 * fl.cruise;
+    const climbMax = hovering
+      ? 0.5 * Math.sqrt(G * h)
+      : Math.max(0.3, this.speed) * Math.sin((15 * Math.PI) / 180);
+    const descentMax = hovering
+      ? 0.5 * Math.sqrt(G * h)
+      : Math.max(0.3, this.speed) * Math.sin((25 * Math.PI) / 180);
+
+    // The air gait: hover when slow, glide when it may lose height, else flap.
+    let role = a.role;
+    const band = 0.03 * height;
+    if (canHover && this.speed < (role === 'hovering' ? 0.45 : 0.3) * fl.cruise) role = 'hovering';
+    else if (canGlide && this.speed >= fl.stall * 0.95) {
+      if (role === 'gliding') {
+        if (this.position.y < wantY - band) role = 'flapping';
+      } else if (
+        this.position.y >= wantY + 0.3 * band &&
+        this.strokes.phase > 0.2 &&
+        this.strokes.phase < 0.3
+      )
+        role = 'gliding';
+    } else role = 'flapping';
+    if (this.lockedGait?.medium === 'air') role = this.lockedGait.air ?? 'flapping';
+    if (role !== a.role) {
+      this.setAirGait(role);
+      // A locked air gait keeps its role.
+      role = a.role;
+    }
+
+    // Vertical speed toward the height, within the climb and descent limits.
+    let wantVy = Math.max(-descentMax, Math.min(climbMax, (wantY - this.position.y) * 1.2));
+    if (a.stage === 'launch') {
+      a.vy -= G * dt;
+      if (a.vy <= climbMax) a.stage = 'flight';
+      wantVy = a.vy;
+    } else if (role === 'gliding') {
+      // A glider sinks along its glide ratio, at least.
+      const ratio = 18 - 14 * (this.gait?.sink ?? 0.3);
+      wantVy = Math.min(wantVy, -this.speed / ratio);
+    }
+    if (a.stage !== 'launch')
+      a.vy += Math.max(-0.5 * G * dt, Math.min(0.5 * G * dt, wantVy - a.vy));
+    this.position.addScaledVector(forward, this.speed * dt);
+    this.position.y += a.vy * dt;
+    // Never into the floor, whatever the limits said.
+    const under = floor(this.position.x, this.position.z) + 0.3 * h;
+    if (this.position.y < under) {
+      this.position.y = under;
+      a.vy = Math.max(a.vy, 0);
+    }
+
+    // Arrival: within reach of a target it stops and hovers, or circles round it.
+    if (this.target && !plan && distance < Math.max(fl.span, 0.3 * r)) {
+      this.events.push({ type: 'arrive', time: this.time });
+      this.loiter.copy(this.target);
+      this.target = null;
+      this.desiredSpeed = 0;
+    }
+    if (plan && canHover && distance < Math.max(0.5 * this.hipHeight, 0.1)) {
+      // Over the point: straight down onto it.
+      a.stage = 'descend';
+      a.t = 0;
+      a.flare = { y0: this.position.y, v0: this.speed };
+    } else if (plan && along >= 0) {
+      const lined = Math.cos(wrapAngle(Math.atan2(plan.dir.x, plan.dir.z) - this.heading));
+      if (lined > 0.9 && across < Math.max(0.1 * fl.span, 2 * this.hipHeight)) {
+        a.stage = 'flare';
+        a.t = 0;
+        a.flare = { y0: this.position.y, v0: this.speed };
+      } else {
+        // Not lined up: go round and come in again.
+        (a.landing as NonNullable<AirState['landing']>).plan = null;
+        (a.landing as NonNullable<AirState['landing']>).goRounds++;
+      }
+    }
+
+    // The body follows the flight path; hovering, it pitches nose up.
+    this.pitch = damp(
+      this.pitch,
+      Math.atan2(a.vy, Math.max(this.speed, 0.5)) + (role === 'hovering' ? 0.6 : 0),
+      6,
+      dt,
+    );
+    this.roll = damp(this.roll, -a.bank, 8, dt);
+    this.lean = damp(this.lean, 0, 4, dt);
+    this.bodyY = damp(this.bodyY, this.restBodyY, 8, dt);
+    this.stepStrokes(dt, role, a.vy, climbMax, altitude);
+    if (this.posing) this.tuckLegs();
+  }
+
+  /**
+   * Plans a landing (decision 9): where it touches down (the point asked for, or the first clear
+   * ground ahead at its approach distance), the line it comes in on, and where the flare starts.
+   */
+  private planLanding(a: AirState, floor: (x: number, z: number) => number): void {
+    const landing = a.landing as NonNullable<AirState['landing']>;
+    const fl = this.flightNumbers as FlightNumbers;
+    const canHover = this.canRole('hovering');
+    const flareTime = 0.8 * this.timeScale;
+    const flareDistance = canHover ? 0 : 0.5 * fl.slow * flareTime;
+    const glide =
+      Math.max(0, this.position.y - floor(this.position.x, this.position.z)) /
+      Math.tan((12 * Math.PI) / 180);
+    let point = landing.to?.clone();
+    if (!point || landing.goRounds >= 2) {
+      // Ahead, past the descent, on ground (or water it could land on).
+      const run = flareDistance + glide + turnRadius(fl);
+      point = this.position
+        .clone()
+        .add(new Vector3(Math.sin(this.heading), 0, Math.cos(this.heading)).multiplyScalar(run));
+      landing.goRounds = 0;
+    }
+    point.y = floor(point.x, point.z);
+    const dir = new Vector3(point.x - this.position.x, 0, point.z - this.position.z);
+    if (dir.lengthSq() < 1e-8) dir.set(Math.sin(this.heading), 0, Math.cos(this.heading));
+    dir.normalize();
+    const flareStart = point.clone().addScaledVector(dir, -flareDistance);
+    flareStart.y = floor(flareStart.x, flareStart.z);
+    landing.plan = {
+      point,
+      dir,
+      flareStart,
+      // The flare begins a leg's reach and a bit above the higher of the two ends.
+      flareY: Math.max(point.y, flareStart.y) + 1.2 * this.hipHeight,
+    };
+  }
+
+  /**
+   * The flare and touchdown (decision 9): the speed falls to walking pace over 0.8 s × the time
+   * scale while the body comes down onto the ground under it, never into it; a hoverer comes
+   * straight down. The feet reach forward and down; at the ground every foot plants.
+   */
+  private stepTouchdown(
+    a: AirState,
+    dt: number,
+    ground: Ground,
+    water: Water | undefined,
+    floor: (x: number, z: number) => number,
+  ): void {
+    const plan = (a.landing as NonNullable<AirState['landing']>).plan as LandingPlan;
+    const h = this.hipHeight;
+    if (a.stage === 'descend') {
+      // A hoverer comes straight down onto the point, slowing as its feet near the ground,
+      // levelling out from its hover as they reach for it.
+      this.speed = damp(this.speed, 0, 4, dt);
+      const k = Math.min(1, 3 * dt);
+      this.position.x += (plan.point.x - this.position.x) * k;
+      this.position.z += (plan.point.z - this.position.z) * k;
+      const under = floor(this.position.x, this.position.z);
+      const rate = 0.3 * Math.sqrt(G * h);
+      const left = Math.max(0, this.position.y - under);
+      const vy = Math.min(rate, Math.max(0.15 * rate, 2 * left));
+      this.position.y = Math.max(under, this.position.y - vy * dt);
+      a.vy = -vy;
+      const reach = 1 - Math.min(1, left / (1.5 * h));
+      this.airPivot = 1 - reach;
+      this.pitch = damp(this.pitch, 0.6 * (1 - reach) + this.slopePitch(floor) * reach, 6, dt);
+      this.roll = damp(this.roll, 0, 8, dt);
+      this.yawRate = damp(this.yawRate, 0, 8, dt);
+      this.bodyY = damp(this.bodyY, this.restBodyY, 8, dt);
+      this.stepStrokes(dt, 'hovering', -vy, rate, left);
+      this.tuckLegs(reach, floor);
+      if (this.position.y - under > 0.02 * h) return;
+      this.touchdown(ground, water);
+      return;
+    }
+    const flare = a.flare ?? { y0: this.position.y, v0: this.speed };
+    const time = this.canRole('hovering')
+      ? Math.max(0.8 * this.timeScale, (flare.y0 - plan.point.y) / (0.3 * Math.sqrt(G * h)))
+      : 0.8 * this.timeScale;
+    const u = Math.min(1, a.t / time);
+    const ease = u * u * (3 - 2 * u);
+    const walk = TEMPERAMENTS[this.motion.temperament].walk;
+    const pace = Math.sqrt(walk * G * h);
+    this.speed = flare.v0 + (Math.min(pace, flare.v0) - flare.v0) * ease;
+    const forward = scratch3.set(plan.dir.x, 0, plan.dir.z);
+    this.heading = Math.atan2(plan.dir.x, plan.dir.z);
+    this.yawRate = damp(this.yawRate, 0, 8, dt);
+    this.position.addScaledVector(forward, this.speed * dt);
+    const under = floor(this.position.x, this.position.z);
+    this.position.y = Math.max(under, flare.y0 + (under - flare.y0) * ease);
+    a.vy = 0;
+    this.airPivot = 1 - ease;
+    // Nose up through the flare (at most 20°), then with the slope as the feet touch.
+    this.pitch = damp(
+      this.pitch,
+      0.35 * Math.sin(Math.PI * Math.min(1, u * 1.2)) + this.slopePitch(floor) * ease,
+      8,
+      dt,
+    );
+    this.roll = damp(this.roll, 0, 8, dt);
+    this.bodyY = damp(this.bodyY, this.restBodyY, 8, dt);
+    // Braking strokes, the stroke plane turned forward like a hover's; over the last half the
+    // beat dies and the wings rise clear of the ground, as a bird's do as its feet reach down.
+    this.strokes.hover = damp(this.strokes.hover, 0.5, 6, dt);
+    const settle = Math.max(0, Math.min(1, (u - 0.35) / 0.4));
+    const held = settle * settle * (3 - 2 * settle);
+    this.stepStrokes(dt, 'flapping', -1, 1, this.position.y - under, 1 - held, 0.5 * held);
+    this.tuckLegs(1 - ease, floor);
+    if (u < 1 && this.position.y - under > 0.02 * h) return;
+    this.touchdown(ground, water);
+  }
+
+  /** The ground's pitch along the heading, between the front and hind feet (radians, uphill +). */
+  private slopePitch(floor: (x: number, z: number) => number): number {
+    const zs = this.legs.map((l) => l.neutral.z);
+    const half = zs.length > 1 ? Math.max(0.05, (Math.max(...zs) - Math.min(...zs)) / 2) : 0.4;
+    const fx = Math.sin(this.heading) * half;
+    const fz = Math.cos(this.heading) * half;
+    const { x, z } = this.position;
+    return Math.atan2(floor(x + fx, z + fz) - floor(x - fx, z - fz), 2 * half);
+  }
+
+  /** On the ground (or water) again: feet planted, the body absorbing it, the wings folding. */
+  private touchdown(ground: Ground, water: Water | undefined): void {
+    const swims =
+      this.swims && this.depthAt(ground, water, this.position.x, this.position.z) > this.swimDepth;
+    this.air = null;
+    this.events.push({ type: 'land', time: this.time });
+    this.position.y = ground(this.position.x, this.position.z).height;
+    this.target = null;
+    this.desiredSpeed = 0;
+    this.landedAt = this.time;
+    // The strokes die away as the wings fold (`stepParts`), so nothing jumps.
+    this.enterMedium(swims ? 'water' : 'land', ground, true);
+  }
+
+  /**
+   * The wings' beat for the air gait (decision 6): the phase advances at the creature's wingbeat
+   * (faster climbing, slower coming down), and amplitude, glide and hover blend over 0.3 s. One
+   * `flap` event per beat, as the downstroke starts. The stroke stays within the elevation
+   * limits and, near the floor, clear of it.
+   */
+  private stepStrokes(
+    dt: number,
+    role: 'flapping' | 'gliding' | 'hovering',
+    vy: number,
+    climbMax: number,
+    altitude: number,
+    braking = 1,
+    raise = 0,
+  ): void {
+    const fl = this.flightNumbers as FlightNumbers;
+    const st = this.strokes;
+    const climbing = vy > 0.3 * climbMax;
+    const effort =
+      (this.air?.stage === 'launch' ? 1.3 : climbing ? 1.3 : vy < -0.3 ? 0.8 : 1) * braking;
+    const blend = Math.min(1, dt / 0.3);
+    st.amplitude +=
+      ((role === 'gliding' ? 0 : effort * (this.gait?.stroke ?? 1)) - st.amplitude) * blend;
+    st.glide += ((role === 'gliding' ? 1 : 0) - st.glide) * blend;
+    st.hover += ((role === 'hovering' ? 1 : 0) - st.hover) * blend;
+    st.hold += (1 - st.hold) * blend;
+    st.raise += (raise - st.raise) * blend;
+    const beat = fl.beat * (this.gait?.rate ?? 1) * Math.min(1.3, effort);
+    const before = st.phase;
+    st.beat = beat;
+    st.phase = (st.phase + beat * dt) % 1;
+    // In the air the cycle is the wingbeat (walking motion keyed to it only runs on land).
+    this.phase = st.phase;
+    if (st.glide < 0.5 && before < 0.25 && st.phase >= 0.25)
+      this.events.push({ type: 'flap', time: this.time });
+    // Peak elevation (dihedral and stroke) at most 80°; the downstroke clears the floor.
+    st.up = (80 * Math.PI) / 180 - this.dihedral;
+    const room = (altitude + fl.shoulder - 0.05 * fl.span) / Math.max(1e-3, fl.halfSpan);
+    const drop = Math.asin(Math.max(-1, Math.min(1, room))) - Math.abs(this.roll) + this.dihedral;
+    st.down = Math.max(0, Math.min(Math.PI / 3, drop));
+  }
+
+  /** The highest a wing points above horizontal in its spread pose (radians). */
+  private get dihedral(): number {
+    let most = 0;
+    for (const w of this.compiled.rig.wings)
+      most = Math.max(most, Math.asin(Math.max(-1, Math.min(1, w.stroke.out[1]))));
+    return most;
+  }
+
+  /**
+   * Legs in the air, in the body's own frame (decision 17 of the review): forelegs folded back
+   * under the chest, hind legs trailing; `reach` 0 to 1 swings them down to land.
+   */
+  private tuckLegs(reach = 0, floor?: (x: number, z: number) => number): void {
+    const pose = this.pose;
+    const spine0 = this.compiled.rig.spine[0] as number;
+    const body = scratchQ4
+      .copy(pose.worldRot[spine0] as Quaternion)
+      .multiply(scratchQ5.copy(pose.restWorldRot[spine0] as Quaternion).invert());
+    const h = this.hipHeight;
+    const middle =
+      this.legs.reduce((sum, l) => sum + l.neutral.z, 0) / Math.max(1, this.legs.length);
+    for (const leg of this.legs) {
+      const hip = pose.worldPos[leg.rig.bones[0] as number] as Vector3;
+      const fore = leg.neutral.z > middle + 1e-6 || this.legs.length <= 2;
+      const tucked = scratch2.set(0, -0.45 * h, (fore ? -0.35 : -0.6) * h);
+      // Reaching to land: below the hip, a little ahead, the leg nearly straight.
+      const down = scratch5.set(0, -0.95 * h, 0.1 * h);
+      tucked.lerp(down, reach).applyQuaternion(body);
+      leg.planted.copy(hip).add(tucked);
+      // Reaching for the ground, a foot stops on it (uphill it comes sooner).
+      if (floor)
+        leg.planted.y = Math.max(leg.planted.y, floor(leg.planted.x, leg.planted.z) + leg.footLift);
+      leg.target.copy(leg.planted);
+      leg.swinging = true;
+      leg.armed = false;
+      leg.swingU = 0.5;
     }
   }
 
@@ -1609,19 +2391,30 @@ export class MotionController {
       // a joint that would go under swings up onto the ground, keeping its segment's length.
       const clearance = spring.clearance;
       const floors = spring.floors;
-      if (clearance && floors)
+      // Tails only in the air and through a landing's absorb (10.4), following the slope of the
+      // ground between samples.
+      const tail = spring.kind === 'tail';
+      if (clearance && floors && (!tail || this.air !== null || this.landedAt !== undefined))
         for (let i = 1; i < pts.length; i++) {
           const a = pts[i - 1] as Vector3;
           const p = pts[i] as Vector3;
-          const k = i * 3;
+          const k = i * 5;
           const moved =
             Math.abs(p.x - (floors[k] as number)) + Math.abs(p.z - (floors[k + 1] as number));
           if (!(moved < this.floorStep)) {
+            const sample = ground(p.x, p.z);
+            const n = sample.normal;
             floors[k] = p.x;
             floors[k + 1] = p.z;
-            floors[k + 2] = ground(p.x, p.z).height;
+            floors[k + 2] = sample.height;
+            floors[k + 3] = n && tail ? -n[0] / Math.max(0.2, n[1]) : 0;
+            floors[k + 4] = n && tail ? -n[2] / Math.max(0.2, n[1]) : 0;
           }
-          const floor = (floors[k + 2] as number) + (clearance[i] as number);
+          const floor =
+            (floors[k + 2] as number) +
+            (floors[k + 3] as number) * (p.x - (floors[k] as number)) +
+            (floors[k + 4] as number) * (p.z - (floors[k + 1] as number)) +
+            (clearance[i] as number);
           if (p.y >= floor) continue;
           const len = spring.lengths[i - 1] as number;
           const rise = Math.min(len, floor - a.y);
@@ -1697,11 +2490,12 @@ export class MotionController {
     const g = this.goals;
     const spine0 = rig.spine[0] as number;
     const h = this.hipHeight;
-    const moving = Math.min(1, this.speed / Math.max(1e-3, this.paceSpeed()));
+    // In the air nothing walks: no bob, sway or arm swing (the phase is the wingbeat there).
+    const moving = this.air ? 0 : Math.min(1, this.speed / Math.max(1e-3, this.paceSpeed()));
     // Gaits with flight rise and fall on their own arc (`airY`) instead of the walking bob;
     // swimmers float.
     const bob =
-      this.gait?.flight || this.medium === 'water'
+      this.gait?.flight || this.medium !== 'land'
         ? 0
         : -Math.cos(this.phase * Math.PI * 4) * 0.025 * h * moving;
     const sway =
@@ -1711,14 +2505,21 @@ export class MotionController {
     const lunge = (g.reach ?? 0) * 0.12 * this.compiled.scale;
     (pose.pos[spine0] as Vector3).set(
       sway,
-      this.bodyY + bob + this.airY - (g.crouch ?? 0) * h,
+      this.bodyY + bob + this.airY - (g.crouch ?? 0) * h - this.airCrouch,
       (pose.restPos[spine0] as Vector3).z + lunge,
     );
     const tilt = scratchQ3.setFromEuler(
       scratchEuler.set(-this.pitch - (g.rear ?? 0) + this.lean, 0, this.roll, 'YXZ'),
     );
     (pose.rot[spine0] as Quaternion).premultiply(tilt);
-    const sprawl = rig.posture === 'sprawl' && this.medium !== 'water';
+    // Flying, it pitches and rolls about its wing roots, so the wings stay where they push;
+    // reaching for the ground, about its middle again, as it stands.
+    if (this.air && rig.wings.length > 0 && this.airPivot > 0) {
+      const d = this.wingPivot;
+      const turned = scratch1.copy(d).applyQuaternion(tilt).sub(d);
+      (pose.pos[spine0] as Vector3).addScaledVector(turned, -this.airPivot);
+    }
+    const sprawl = rig.posture === 'sprawl' && this.medium === 'land';
     const mainNeck = mainHead(rig).neck;
     // An upright front leans back against most of the body's pitch and rearing, so it stays
     // upright on slopes as a rider would (docs/design/9.2-legs-centaurs.md).
@@ -1774,7 +2575,18 @@ export class MotionController {
       const first = leg.rig.bones[0] as number;
       pose.solveBone(first);
       const hip = pose.worldPos[first] as Vector3;
-      const pole = scratch1.copy(leg.pole).applyQuaternion(pose.worldRot[rig.root] as Quaternion);
+      // In the air the knees bend in the body's frame, banked and pitched with it.
+      const pole = scratch1
+        .copy(leg.pole)
+        .applyQuaternion(
+          this.air
+            ? scratchQ4
+                .copy(pose.worldRot[rig.spine[0] as number] as Quaternion)
+                .multiply(
+                  scratchQ5.copy(pose.restWorldRot[rig.spine[0] as number] as Quaternion).invert(),
+                )
+            : (pose.worldRot[rig.root] as Quaternion),
+        );
       this.legMiss[k] = solvePrepared(leg.limb, hip, leg.planted, pole, leg.points);
       leg.rig.bones.forEach((b, k) => {
         pose.aim(b, scratch2.subVectors(leg.points[k + 1] as Vector3, leg.points[k] as Vector3));
@@ -1870,6 +2682,13 @@ export class MotionController {
       return;
     }
     applyWings(pose, rig.wings, this.spread);
+    // In flight the spread wings beat (docs/design/10.4-flight.md); their elbow and wrist
+    // helpers follow the stroke.
+    const st = this.strokes;
+    if (this.air || st.amplitude + st.raise + st.hold > 1e-3) {
+      applyStrokes(pose, rig.wings, rig.spine[0] as number, st);
+      this.applyHelpers(this.wingHelpers);
+    }
     const lift = (this.goals.breath ?? 0) * 2 * (Math.PI / 180) * (1 - this.spread);
     if (lift > 0)
       for (const wing of rig.wings) {
@@ -1922,6 +2741,34 @@ export class MotionController {
   }
 
   /** Every bone hanging from a wing's shoulder except the stations, in solving order. */
+  /** Helper bones at the wings' joints, posed again after the strokes. */
+  private get wingHelpers(): readonly (readonly [number, number, number])[] {
+    if (this.wingHelperList) return this.wingHelperList;
+    const wing = new Set(this.wingBones);
+    this.wingHelperList = this.compiled.rig.helpers.filter(([, , lower]) => wing.has(lower));
+    return this.wingHelperList;
+  }
+  private wingHelperList: readonly (readonly [number, number, number])[] | undefined;
+
+  /**
+   * From the body's first bone to the middle of its wing roots, at rest, in the root's frame:
+   * what flight pitches and rolls about.
+   */
+  private get wingPivot(): Vector3 {
+    if (this.pivot) return this.pivot;
+    const pose = this.pose;
+    const spine0 = this.compiled.rig.spine[0] as number;
+    const roots = this.compiled.rig.wings.map(
+      (w) => pose.restWorldPos[w.bones[0] as number] as Vector3,
+    );
+    const mid = roots
+      .reduce((sum, p) => sum.add(p), new Vector3())
+      .divideScalar(Math.max(1, roots.length));
+    this.pivot = mid.sub(pose.restWorldPos[spine0] as Vector3);
+    return this.pivot;
+  }
+  private pivot: Vector3 | undefined;
+
   private get wingBones(): readonly number[] {
     if (this.wingTree) return this.wingTree;
     const bones = this.compiled.bones;
@@ -2089,8 +2936,12 @@ export class MotionController {
 
   /** Aims each spring chain's bones along its points, except chains starting in `skip`. */
   private applySprings(skip: readonly number[] = []): void {
+    // A tail kept off the floor (in the air and through a landing's absorb) is kept off it as
+    // posed too: the body may have moved since its spring stepped.
+    const floored = this.air !== null || this.landedAt !== undefined;
     for (const spring of this.springs) {
       if (skip.includes(spring.bones[0] as number)) continue;
+      const floors = floored && spring.kind === 'tail' ? spring.floors : undefined;
       spring.bones.forEach((b, i) => {
         const dir = scratch1.subVectors(
           spring.points[i + 1] as Vector3,
@@ -2099,13 +2950,32 @@ export class MotionController {
         // `aim` solves the bone itself.
         if (dir.lengthSq() > 1e-12) this.pose.aim(b, dir);
         else this.pose.solveBone(b);
+        if (!floors || !spring.clearance) return;
+        const k = (i + 1) * 5;
+        const x0 = floors[k] as number;
+        if (Number.isNaN(x0)) return;
+        const end = this.pose.tail(b, scratch2);
+        const floor =
+          (floors[k + 2] as number) +
+          (floors[k + 3] as number) * (end.x - x0) +
+          (floors[k + 4] as number) * (end.z - (floors[k + 1] as number)) +
+          (spring.clearance[i + 1] as number);
+        if (end.y >= floor) return;
+        // Swing the bone up about its head until its end is on the floor, keeping its length.
+        const head = this.pose.worldPos[b] as Vector3;
+        const len = spring.lengths[i] as number;
+        const rise = Math.min(len, floor - head.y);
+        const flat = scratch1.set(end.x - head.x, 0, end.z - head.z);
+        if (flat.lengthSq() < 1e-12) flat.set(Math.sin(this.heading), 0, Math.cos(this.heading));
+        flat.setLength(Math.sqrt(Math.max(0, len * len - rise * rise)));
+        this.pose.aim(b, flat.setY(rise));
       });
     }
   }
 
-  private applyHelpers(): void {
+  private applyHelpers(helpers = this.compiled.rig.helpers): void {
     const pose = this.pose;
-    for (const [helper, , lower] of this.compiled.rig.helpers) {
+    for (const [helper, , lower] of helpers) {
       const delta = scratchQ
         .copy(pose.rot[lower] as Quaternion)
         .multiply(scratchQ2.copy(pose.restRot[lower] as Quaternion).invert());
@@ -2229,11 +3099,23 @@ function wrapAngle(a: number): number {
   return Math.atan2(Math.sin(a), Math.cos(a));
 }
 
+/** In the air the floor is the higher of the ground and any water over it. */
+function airFloor(ground: Ground, water: Water | undefined): Ground {
+  if (!water) return ground;
+  return (x, z) => {
+    const g = ground(x, z);
+    const w = water(x, z);
+    return w && w.surface > g.height ? { height: w.surface } : g;
+  };
+}
+
 const scratch1 = new Vector3();
 const scratch2 = new Vector3();
 const scratchQ = new Quaternion();
 const scratchQ2 = new Quaternion();
 const scratchQ3 = new Quaternion();
+const scratchQ4 = new Quaternion();
+const scratchQ5 = new Quaternion();
 const scratch3 = new Vector3();
 const scratch4 = new Vector3();
 const IDENTITY = new Quaternion();

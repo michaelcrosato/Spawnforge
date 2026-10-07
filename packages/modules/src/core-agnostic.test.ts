@@ -22,6 +22,8 @@ describe('the core', () => {
     const allowed = new Set([
       // The baked "idle" clip names the ambient motion it holds, not the action module.
       'motion/clips.ts:idle',
+      // A scenario's "fly" call takes off, whichever air gait the creature has.
+      'motion/scenario.ts:fly',
       // Words in the description and a skin material that share a name with modules.
       'analysis/analyze.ts:biped',
       'analysis/analyze.ts:quadruped',

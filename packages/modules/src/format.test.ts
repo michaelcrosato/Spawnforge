@@ -90,7 +90,8 @@ describe('format 0.2', () => {
   it('replaces default gaits only for the media a gait list covers', () => {
     const wyvern = check({ extends: 'wyvern', motion: { gaits: ['walk'] } });
     expect(wyvern.errors).toEqual([]);
-    expect(wyvern.creature?.motion.gaits.map((g) => g.type)).toEqual(['walk']);
+    // The list covers land; flying keeps its defaults (10.4).
+    expect(wyvern.creature?.motion.gaits.map((g) => g.type)).toEqual(['walk', 'fly', 'glide']);
     // Presets no longer list gaits, so a quadruped gets every gait that suits it.
     expect(check({ extends: 'quadruped' }).creature?.motion.gaits.map((g) => g.type)).toEqual([
       'walk',
@@ -116,18 +117,13 @@ describe('format 0.2', () => {
     });
     expect(dragon.ok).toBe(true);
     expect(dragon.warnings).toEqual([]);
-    // Fur (8.4), several heads (9.1), wings (9.3), tentacles (9.4), frills (9.5) and jumping
-    // (10.2) are built; flying is not yet (10.4).
-    expect(dragon.notBuilt?.map((i) => i.path).sort()).toEqual(['motion.gaits[type=fly]']);
-    expect(dragon.notBuilt?.[0]?.fix).toMatch(/^keep it/);
+    // Fur (8.4), several heads (9.1), wings (9.3), tentacles (9.4), frills (9.5), jumping
+    // (10.2) and flying (10.4) are built.
+    expect(dragon.notBuilt).toBeUndefined();
   });
 
   it('leaves out what something else implies', () => {
-    // Wings imply flying, which is not built yet (10.4): it is listed only when the blueprint
-    // writes it.
-    const implied = check({ extends: 'quadruped', limbs: [{ id: 'wing', role: 'wing' }] });
-    expect(implied.notBuilt).toBeUndefined();
-    // Stances (8.2) and swimming (10.3) are built; flying is not yet.
+    // Stances (8.2), swimming (10.3) and flying (10.4) are built.
     const written = check({
       extends: 'quadruped',
       limbs: [
@@ -136,9 +132,7 @@ describe('format 0.2', () => {
       ],
       motion: { media: { water: true, air: true } },
     });
-    expect(written.notBuilt?.map((i) => i.message)).toEqual([
-      'flying is in the format but not built yet (plan milestone 10.4), so it is left out for now',
-    ]);
+    expect(written.notBuilt).toBeUndefined();
     const stalks = check({
       extends: 'serpent',
       limbs: [{ id: 'stalk', role: 'tentacle', attach: { on: 'head' } }],

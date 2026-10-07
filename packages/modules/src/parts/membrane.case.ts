@@ -31,6 +31,8 @@ export default definePart({
       stack: 2,
       thickness: 0.03,
       shell: true,
+      // In flight a case lifts and swings forward, clear of the wings beating under it.
+      stroke: { amplitude: 0, flex: 0, twist: 0, plane: 0, hold: { lift: 35, forward: 20 } },
     }),
     build(ctx, raw) {
       const p = raw as Params;

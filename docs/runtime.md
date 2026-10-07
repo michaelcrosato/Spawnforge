@@ -74,8 +74,9 @@ and the way to use the runtime in Node or tests.
 - **`bestiary.spawn(blueprint, options)`** returns a `Promise<Creature>`. Options: `seed` (an
   integer that overrides the blueprint's, for a different individual's details), `quality`
   (`low`, `medium` or `high`, default medium), `position` (`{ x, z }`), `heading` (radians, 0
-  faces +Z), `ground` (to stand it on terrain from the start) and `water` (to start a swimmer
-  afloat).
+  faces +Z), `ground` (to stand it on terrain from the start), `water` (to start a swimmer
+  afloat), and `flying` with an optional `height` in metres above the ground (to start a flyer in
+  the air at cruise).
 - **Invalid blueprints** reject the promise with an `Error` whose message lists each problem with
   its path, the same errors `validate` gives. A species (with `{ "min", "max" }` ranges) is not a
   creature: `instantiate` it first (`instantiate(species, seed, registry)` from
@@ -89,8 +90,11 @@ and the way to use the runtime in Node or tests.
 
 | Call | Takes | Notes |
 | --- | --- | --- |
-| `moveTo(target, { speed })` | `{ x, z }` or `{ x, y, z }` (a `Vector3` works), speed in m/s | Steers, picks the gait from the speed, fires `arrive` when there; `null` stops. Without a speed it keeps its pace on land and its swimming pace in water; a `y` is the height a swimmer dives or rises to |
-| `stop()` | | Slows to a stand |
+| `moveTo(target, { speed })` | `{ x, z }` or `{ x, y, z }` (a `Vector3` works), speed in m/s | Steers, picks the gait from the speed, fires `arrive` when there; `null` stops. Without a speed it keeps its pace on land, its swimming pace in water and its cruise in the air; a `y` is the height a swimmer dives or rises to, or a flyer flies at (a flyer asked higher than 1.5 times its standing height takes off) |
+| `stop()` | | Slows to a stand; in the air it hovers (insect wings) or circles where it is |
+| `fly({ height, speed })` | metres above the ground, m/s | Takes off (or, flying, changes height or speed) and circles, or hovers, until told where to go; throws for a creature that cannot fly. Waits for a running action to end |
+| `land(target)` | `{ x, z }` or `null` | Comes in to land there (or on the first clear ground ahead), flares and touches down, then walks; over water a swimmer lands on it |
+| `flying` | | True from the takeoff's crouch until the feet touch down |
 | `lookAt(point)` | `{ x, y, z }` or `null` | The head tracks the point; `null` looks ahead again |
 | `act(id, { target })` | an action id, a point or an `Object3D` | Starts it now, replacing a running action; throws, naming the creature's actions, if it has no such action |
 | `actions()` | | The action ids it can start (`bite`, `roar`, `look`…) |
@@ -100,6 +104,14 @@ and the way to use the runtime in Node or tests.
 Read `creature.position` (a `Vector3` on the ground, or where it swims), `heading` (radians) and
 `speed` (m/s). Without `ground`, the ground is flat at y = 0; `ground(x, z)` returns
 `{ height, normal? }`, so creatures walk on any terrain or physics engine.
+
+**Flight.** A winged creature walks until asked to fly. Its cruising speed comes from its wing
+loading and its wingbeat from its size (a dragon about 25 m/s at under 2 beats a second, a moth
+13 m/s at 7); it holds its height above the ground ahead and under its wingtips, banks into turns
+no tighter than its wings allow, glides between flaps where it can, and never flies into the
+ground. `controller.flightStage` says where a flight is (`crouch`, `launch`, `flight`, `flare`,
+`descend`), `controller.wingbeat` the beats a second, and `controller.attitude` its pitch and
+bank. Actions run in the air (a bite, a roar), except leaps.
 
 **Water.** `water(x, z)` returns `{ surface }` (the water's height there) or `null` where there
 is none; the ground under it is the bed. A creature that swims takes to water deeper than about
@@ -117,10 +129,11 @@ events it fired. Every event has `type` and `time` (seconds of the creature's mo
 | --- | --- | --- |
 | `footstep` | `leg` (a leg id such as `foreleg.L`), `position` `[x, y, z]` | A foot plants |
 | `gait` | `gait` | It changes gait (walk to trot, trot to gallop, walk to swim…); the legs ease into the new footfalls over a stride or two |
-| `medium` | `medium` (`water` or `land`) | It takes to the water, or climbs out onto land |
+| `medium` | `medium` (`water`, `land` or `air`) | It takes to the water, climbs out onto land, leaves the ground or touches down |
 | `arrive` | | It reaches its `moveTo` target |
 | `action-start`, `action-end` | `action` | An action begins or ends |
-| `takeoff`, `land` | `action`, `position` (the head) | A `jump` or `pounce` leaves the ground and comes down; in between every foot is off the ground and the creature flies a ballistic arc over the game's ground to the target |
+| `takeoff`, `land` | `action`, `position` (the head) | A `jump` or `pounce` leaves the ground and comes down; in between every foot is off the ground and the creature flies a ballistic arc over the game's ground to the target. Flying, the same events (without `action`) mark leaving the ground and touching down |
+| `flap` | | A wingbeat's downstroke begins (one a beat; none while gliding) |
 | `bite-contact`, `roar-peak`, `pinch-contact`, `lash-contact`, `display-peak` | `action`, `position` (the head), `head` (with several heads: which one, such as `head.L1`) | Moments actions mark: the jaw snaps shut, the roar is loudest, a pincer snaps shut, a lash strikes, a display is fully open |
 | `*` | | Every event |
 
@@ -146,7 +159,10 @@ whatever the target is doing, so test hits yourself, with sockets or hit capsule
 - Pass `camera` to `bestiary.update`: beyond `lodDistance` (default 30) times the creature's
   torso length it drops foot IK and tail springs and plays baked gait cycles at the speed it is
   moving, and it switches back when the camera comes near. A creature busy with an action
-  finishes it first. Baked creatures hide their fur.
+  finishes it first. Baked creatures hide their fur. A distant flyer keeps flying (its flight
+  steps without posing, so it goes where it would have) and plays its air gait's cycle tilted to
+  its pitch and bank; takeoffs and landings happen at full detail, and coming near it carries on
+  flying where it is.
 - Mesh detail is per creature (`quality`). Each creature is three draw calls: the skin (with the
   mouth's inside and the eyelids), the hard parts and the eyes. Wings and fins add one for their
   membranes (double-sided). Fur adds another at medium and high quality: the skin's geometry drawn as 12 or 16 instanced shells in one call, which costs
@@ -186,7 +202,12 @@ A `.glb` holds:
   and `_lower`; breathing is a shader
   effect and stays out of the file), one cycle of each gait (`walk`, `trot`, `run`, `gallop`,
   `bound`, `tripod`, `slither`, and the swimming gaits, baked in open water with the surface at
-  y = 0, so the root's height is its depth) and each action (`bite`, `roar`, `look`). Frames are at `--fps` (default 30).
+  y = 0, so the root's height is its depth, and the air gaits `fly`, `glide` and `hover`, baked
+  over whole wingbeats at exact phases in level flight with the root at the origin, their
+  extras giving `air.pitch`, the pitch they were baked at) and each action (`bite`, `roar`,
+  `look`). A flyer also gets `takeoff` (from standing to half a second into powered flight) and
+  `land` (from the flare's start to its feet planted), both with root motion as leaps have:
+  `takeoff` starts on the ground, `land` ends on it. Frames are at `--fps` (default 30).
   - Gait clips are exactly one cycle, in place: the root stays at the origin facing +Z, the clip
     loops seamlessly, and the game moves the creature.
   - Action clips run the action and then 0.25 s of settling back, so they are a little longer

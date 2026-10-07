@@ -38,6 +38,23 @@ export function testCourse(
 }
 
 /**
+ * Ground rising at `degrees` toward `toward` (degrees, 0 is +Z), flat until `from` metres that
+ * way: the slope a scenario lands a flyer on (10.4).
+ */
+export function slope(degrees: number, toward = 0, from = 0): Ground {
+  const rise = Math.tan((degrees * Math.PI) / 180);
+  const dx = Math.sin((toward * Math.PI) / 180);
+  const dz = Math.cos((toward * Math.PI) / 180);
+  const len = Math.hypot(rise, 1);
+  const normal = [(-rise * dx) / len, 1 / len, (-rise * dz) / len] as const;
+  const flat = [0, 1, 0] as const;
+  return (x, z) => {
+    const along = x * dx + z * dz - from;
+    return along > 0 || from === 0 ? { height: rise * along, normal } : { height: 0, normal: flat };
+  };
+}
+
+/**
  * Open sea for a creature `scale` metres long: the surface at y 0 and the bed four body lengths
  * and 2 m below, deep enough that nothing touches it. Swimming filmstrips, scenarios' `"sea"`
  * and baked swim cycles use it.

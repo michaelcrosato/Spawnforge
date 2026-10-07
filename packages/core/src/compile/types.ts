@@ -202,6 +202,32 @@ export interface WingRig extends LimbChainRig {
   readonly poses: Readonly<Record<string, readonly number[]>>;
   /** Folded away inside the body under a wing case until it spreads. */
   readonly covered?: boolean;
+  /** Whether it holds the creature up in flight (a wing case does not). */
+  readonly lift: boolean;
+  /** How it strokes in flight (docs/design/10.4-flight.md). */
+  readonly stroke: WingStrokeRig;
+}
+
+/** A wing's stroke, compiled from its membrane's style: axes, angles in radians. */
+export interface WingStrokeRig {
+  /** The wing's axes in the bind pose, model space: straight out, toward the leading edge, and its plane's normal. */
+  readonly out: readonly [number, number, number];
+  readonly lead: readonly [number, number, number];
+  readonly normal: readonly [number, number, number];
+  /** +1 when a positive turn about `lead` raises the wing, −1 on the other side; 0 on the midline (it holds still). */
+  readonly sign: 1 | -1 | 0;
+  /** Half the swing about `lead` (tilted toward `normal` by `plane`). */
+  readonly amplitude: number;
+  /** The in-plane turn at full flex of each arm bone after the humerus (elbow, wrist, …). */
+  readonly flex: readonly number[];
+  /** Pitch about the wing's length, leading edge down on the downstroke. */
+  readonly twist: number;
+  /** Stroke plane, from vertical toward the wing's plane. */
+  readonly plane: number;
+  /** Share of a beat it trails the wing in front of it on its side (hind wings follow fore). */
+  readonly lag: number;
+  /** A held wing (a case): lifted and swung forward in flight instead of beating. */
+  readonly hold?: { readonly lift: number; readonly forward: number };
 }
 
 /**

@@ -16,7 +16,7 @@ import {
   resolveBlueprint,
   type Water,
 } from '@spawnforge/core';
-import { type Camera, Object3D, Quaternion, Vector3 } from 'three';
+import { type Camera, Euler, Object3D, Quaternion, Vector3 } from 'three';
 import { type CreatureObject, createCreatureObject } from './assemble.ts';
 import { applyPose } from './pose-sync.ts';
 import { createWorkerCompiler, type WorkerCompiler } from './worker-client.ts';
@@ -50,6 +50,12 @@ export interface SpawnOptions {
   readonly ground?: Ground;
   /** Water to spawn in: a swimmer starts afloat where it is deep enough. */
   readonly water?: Water;
+  /**
+   * Start in the air, at cruise, `height` metres above the ground (default its own cruising
+   * height; docs/design/10.4-flight.md). Only for a creature that can fly.
+   */
+  readonly flying?: boolean;
+  readonly height?: number;
 }
 
 export interface UpdateInput {
@@ -76,6 +82,7 @@ type Listener = (event: MotionEvent) => void;
 
 const scratch = new Vector3();
 const UP = new Vector3(0, 1, 0);
+const FLAT: Ground = () => ({ height: 0 });
 
 /**
  * A creature in a game: its Three.js object, its motion and its gameplay sockets. Call `update`
@@ -127,13 +134,23 @@ export class Creature {
       sockets[socket.name] = node;
     }
     this.sockets = sockets;
+    const x = options.position?.x ?? 0;
+    const z = options.position?.z ?? 0;
+    const flying = options.flying === true && this.controller.canFly;
+    const floor = flying
+      ? Math.max((options.ground ?? FLAT)(x, z).height, options.water?.(x, z)?.surface ?? -Infinity)
+      : 0;
     this.controller.place(
-      options.position?.x ?? 0,
-      options.position?.z ?? 0,
+      x,
+      z,
       options.heading ?? 0,
       options.ground,
       options.water,
+      flying
+        ? { flying, ...(options.height !== undefined ? { y: floor + options.height } : {}) }
+        : {},
     );
+    if (flying && options.height !== undefined) this.controller.fly({ height: options.height });
     this.ground = options.ground;
     this.water = options.water;
     applyPose(this.view, this.controller.pose);
@@ -148,14 +165,30 @@ export class Creature {
   }
   /** Ground speed in m/s. */
   get speed(): number {
-    return this.lod === 'baked' ? this.baked.speed : this.controller.speed;
+    return this.lod === 'baked' && !this.controller.flying
+      ? this.baked.speed
+      : this.controller.speed;
   }
 
-  /** Walks to a point, choosing its gait from the speed (m/s; default its natural pace). */
+  /**
+   * Walks to a point, choosing its gait from the speed (m/s; default its natural pace). A `y` is
+   * a height to dive or rise to; flying, or for a flyer asked higher than it could reach on
+   * foot, it is the height to fly at.
+   */
   moveTo(
     target: { x: number; y?: number; z: number } | null,
     options: { speed?: number } = {},
   ): void {
+    // A takeoff happens at full detail.
+    const c = this.controller;
+    if (
+      this.lod === 'baked' &&
+      target?.y !== undefined &&
+      !c.flying &&
+      c.canFly &&
+      target.y - (this.ground ?? FLAT)(target.x, target.z).height > 1.5 * c.standingHeight
+    )
+      this.toFull();
     this.controller.moveTo(target, options);
     this.baked.target = target ? new Vector3(target.x, 0, target.z) : null;
     this.baked.speed = target ? this.baked.speed : 0;
@@ -187,8 +220,29 @@ export class Creature {
   }
 
   /**
+   * Takes off (or keeps flying) and holds `height` metres above the ground (default its own
+   * cruising height), at `speed` (default its cruise); with nowhere to go it circles, or hovers if
+   * it can. Throws for a creature that cannot fly. See docs/design/10.4-flight.md.
+   */
+  fly(options: { height?: number; speed?: number } = {}): void {
+    if (this.lod === 'baked' && !this.controller.flying) this.toFull();
+    this.controller.fly(options);
+  }
+
+  /** Lands at a point (or the first clear ground ahead), then walks or swims. */
+  land(target: { x: number; z: number } | null = null): void {
+    if (this.lod === 'baked') this.toFull();
+    this.controller.land(target);
+  }
+
+  /** In the air: from the takeoff's crouch until its feet touch down. */
+  get flying(): boolean {
+    return this.controller.flying;
+  }
+
+  /**
    * Spreads the wings (1) or folds them (0) when no action asks otherwise; they move there over
-   * about 0.4 s. Flight arrives with milestone 10.4.
+   * about 0.4 s. Flying spreads them whatever this says.
    */
   setWings(spread: number): void {
     if (this.lod === 'baked' && spread > 0) this.toFull();
@@ -233,8 +287,9 @@ export class Creature {
     if (lod === this.lod) return;
     if (lod === 'full') this.toFull(ground);
     else {
-      // Busy with an action: finish it at full detail first.
+      // Busy with an action, taking off or landing: finish it at full detail first.
       if (this.controller.action) return;
+      if (this.controller.flying && this.controller.flightStage !== 'flight') return;
       this.lod = 'baked';
       this.baked.speed = this.controller.speed;
       this.baked.time = 0;
@@ -247,6 +302,8 @@ export class Creature {
     if (this.lod === 'full') return;
     this.lod = 'full';
     if (this.view.meshes.fur) this.view.meshes.fur.visible = true;
+    // A flyer has kept flying all along: it resumes in place on its next update.
+    if (this.controller.flying) return;
     const target = this.baked.target;
     this.controller.place(
       this.position.x,
@@ -266,6 +323,7 @@ export class Creature {
   ): MotionEvent[] {
     const b = this.baked;
     const c = this.controller;
+    if (c.flying) return this.updateBakedAir(dt, ground, water);
     let want = 0;
     let heading = c.heading;
     if (b.target) {
@@ -294,11 +352,13 @@ export class Creature {
     const swimming = c.medium === 'water' && water?.(c.position.x, c.position.z);
     c.position.y = swimming ? Math.max(bed, c.position.y) : bed;
     // The gait cycle whose speed is nearest, or idle when standing; in water, a swimming one.
+    const medium = swimming ? 'water' : 'land';
     const clips = this.clips().filter(
       (clip) =>
-        clip.speed === 0 ||
-        (this.compiled.motion.gaits.find((g) => g.id === clip.name)?.medium === 'water') ===
-          Boolean(swimming),
+        clip.name === 'idle' ||
+        (clip.speed > 0 &&
+          (this.compiled.motion.gaits.find((g) => g.id === clip.name)?.medium ?? 'land') ===
+            medium),
     );
     const moving = clips.filter((clip) => clip.speed > 0);
     const clip =
@@ -319,6 +379,32 @@ export class Creature {
     b.time = (b.time + dt * rate) % clip.duration;
     this.applyClip(clip, b.time);
     return [];
+  }
+
+  /**
+   * A distant flyer keeps flying (the controller steps without posing) and plays its air gait's
+   * cycle, tilted to its pitch and bank. A landing goes back to full detail.
+   */
+  private updateBakedAir(dt: number, ground: Ground, water?: Water): MotionEvent[] {
+    const c = this.controller;
+    const b = this.baked;
+    const events = c.update(dt, { ground, ...(water ? { water } : {}), pose: false });
+    this.view.signals.time.value += dt;
+    if (!c.flying || c.flightStage !== 'flight') {
+      this.toFull();
+      c.update(0, { ground, ...(water ? { water } : {}) });
+      applyPose(this.view, c.pose);
+      return events;
+    }
+    const clip = this.clips().find((k) => k.name === c.gait?.id && k.air);
+    if (clip !== b.clip) {
+      b.clip = clip;
+      b.time = 0;
+    }
+    if (!clip) return events;
+    b.time = (b.time + dt) % clip.duration;
+    this.applyClip(clip, b.time);
+    return events;
   }
 
   private applyClip(clip: BakedClip, time: number): void {
@@ -347,6 +433,13 @@ export class Creature {
     const root = this.view.bones[this.compiled.rig.root];
     if (root) {
       root.position.add(this.controller.position);
+      // An air cycle tilts with the flight: its pitch from the one baked, and the bank.
+      if (clip.air) {
+        const { pitch, roll } = this.controller.attitude;
+        root.quaternion.premultiply(
+          new Quaternion().setFromEuler(new Euler(clip.air.pitch - pitch, 0, roll, 'YXZ')),
+        );
+      }
       root.quaternion.premultiply(new Quaternion().setFromAxisAngle(UP, this.controller.heading));
     }
   }

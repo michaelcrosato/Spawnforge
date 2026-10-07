@@ -12,6 +12,7 @@ import {
   torsoFactor,
   torsoPlan,
 } from './anatomy.ts';
+import { strokeOf } from './flight.ts';
 import { headDetails, type MouthShape, mouthShape } from './head.ts';
 import { type LimbIkSetup, solveLimb } from './ik.ts';
 import type { PartHooks, SpanLimb } from './parts.ts';
@@ -1383,6 +1384,9 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
       area: 0,
       poses: {},
       ...(covered ? { covered } : {}),
+      // Compile fills in how it lifts and strokes, once the membranes are built.
+      lift: !style.shell,
+      stroke: strokeOf(undefined, 0),
     });
   };
 

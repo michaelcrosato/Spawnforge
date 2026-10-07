@@ -67,6 +67,11 @@ export async function drawFilmstrip(
       !gaits.some((g) => (g.medium ?? 'land') === 'land');
   const sea = swimming ? openSea(compiled.scale) : undefined;
   if (sea) controller.place(0, 0, 0, sea.ground, sea.water);
+  // An air gait flies: placed in the air at cruise, held level (10.4).
+  const flying = request.gait
+    ? gaits.find((g) => g.id === request.gait)?.medium === 'air'
+    : !gaits.some((g) => (g.medium ?? 'land') !== 'air');
+  if (flying) controller.place(0, 0, 0, undefined, undefined, { flying: true });
   if (request.gait) controller.lockGait(request.gait);
   const speed =
     request.speed ?? (request.gait ? controller.gaitSpeed(request.gait) : controller.paceSpeed());
@@ -153,8 +158,17 @@ export async function drawFilmstrip(
   const barW = width - labelW - 20;
   ctx.font = '11px ui-monospace, monospace';
   ctx.fillStyle = '#aab';
-  ctx.fillText('footfalls over one cycle (filled = planted)', 14, rowsTop + 12);
   const duty: Record<string, number> = {};
+  // In the air the cycle is a wingbeat and no foot touches anything (10.4).
+  if (controller.flying) {
+    ctx.fillText(
+      `in the air: one wingbeat${anonymous ? '' : ` (${controller.gait?.id ?? 'fly'})`}, no foot on the ground`,
+      14,
+      rowsTop + 12,
+    );
+    return { gait: controller.gait?.id ?? 'none', speed, cycle, stride, duty, footSlide };
+  }
+  ctx.fillText('footfalls over one cycle (filled = planted)', 14, rowsTop + 12);
   if (legs.length === 0) {
     ctx.fillText(
       `no legs: the body follows its own trail${anonymous ? '' : ' (slither)'}`,
@@ -222,16 +236,25 @@ async function drawScenario(
     marker.position.copy(p);
     added.push(marker);
   }
-  // Uneven ground or a lake: a mesh of the ground over everywhere the scenario goes.
+  // Uneven ground, a slope or a lake: a mesh of the ground over everywhere the scenario goes.
   const lake = typeof scenario.water === 'object' ? scenario.water : undefined;
-  if (scenario.ground === 'course' || lake) {
+  if (scenario.ground !== 'flat' || lake) {
     const points = [
       new THREE.Vector3(scenario.start.x, 0, scenario.start.z),
       ...run.targetPoints().values(),
       ...scenario.calls
-        .flatMap((c) => (c.do === 'moveTo' ? [c.to] : c.do === 'follow' ? c.path : []))
-        .filter((p): p is [number, number] => typeof p !== 'string')
-        .map(([x, z]) => new THREE.Vector3(x, 0, z)),
+        .flatMap((c) =>
+          c.do === 'moveTo'
+            ? [c.to]
+            : c.do === 'follow'
+              ? c.path
+              : c.do === 'land' && c.to !== undefined
+                ? [c.to]
+                : [],
+        )
+        .filter((p): p is [number, number] | [number, number, number] => typeof p !== 'string')
+        // [x, z] on the ground, or [x, y, z].
+        .map((p) => new THREE.Vector3(p[0], 0, p.length === 3 ? p[2] : p[1])),
       ...(lake
         ? [
             new THREE.Vector3(lake.x - lake.radius * 1.3, 0, lake.z - lake.radius * 1.3),
@@ -268,7 +291,7 @@ async function drawScenario(
   const sea = scenario.water === 'sea' ? waterSheet(stage) : undefined;
   if (sea) added.push(sea);
   stage.scene.add(...added);
-  const fixedGround = scenario.ground === 'course' || scenario.water !== 'none';
+  const fixedGround = scenario.ground !== 'flat' || scenario.water !== 'none';
   const frames = scenario.frames;
   const { cols, size, top } = layout;
   let next = 0;
@@ -445,8 +468,15 @@ async function drawFrame(
   /** Ground drawn in the world (a course): leave the stage's flat ground hidden. */
   fixedGround = false,
 ): Promise<void> {
-  const { renderer, scene, key, ground, grid, gridCell, centre, extent } = stage;
-  const span = closeUp ? closeUp.radius * 2 : stage.span;
+  const { renderer, scene, key, ground, grid, gridCell, centre } = stage;
+  // Flying, the frame takes in the spread wings and their stroke (10.4).
+  const wings = controller.flying ? (controller.flightNumbers?.halfSpan ?? 0) * 2.3 : 0;
+  const extent = new THREE.Vector3(
+    Math.max(stage.extent.x, wings),
+    Math.max(stage.extent.y, wings),
+    Math.max(stage.extent.z, wings),
+  );
+  const span = closeUp ? closeUp.radius * 2 : Math.max(stage.span, wings);
   applyPose(creature, controller.pose);
   creature.object.updateMatrixWorld(true);
   // The camera, ground and light follow the creature; grid lines stay put in the world.

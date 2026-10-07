@@ -9,6 +9,7 @@ import { Pose } from '../motion/pose.ts';
 import { applyStations } from '../motion/wings.ts';
 import type { Registry } from '../registry.ts';
 import { type SkinMaterialSpec, skinMaterialSpec } from '../shading/compose.ts';
+import { flightOf, lagOf, strokeOf } from './flight.ts';
 import { type MouthShape, refineHeads } from './head.ts';
 import { type CutResult, cutMouth, lineY, type MouthLine, mouthInside } from './mouth.ts';
 import { buildParts, PartSink, type SpanLimb } from './parts.ts';
@@ -34,6 +35,7 @@ import {
   type TailRig,
   type WingRig,
 } from './types.ts';
+import { DENSITY, volumeOf } from './volume.ts';
 import { foldWings } from './wings.ts';
 
 declare const performance: { now(): number };
@@ -801,11 +803,14 @@ export function compileCreature(
   const unfolded: WingRig[] = skeleton.rig.wings.map((wing, i) => {
     const frame = skeleton.wingFrames.findIndex((f) => f.wing === i);
     const locals = frame >= 0 ? (fold?.locals[frame] ?? []) : [];
+    const f = skeleton.wingFrames[frame];
     return {
       ...wing,
       feathers: sink.feathers.get(wing.id) ?? [],
       area: sink.membranes.area.get(wing.id) ?? 0,
       poses: { folded: locals.flatMap((q) => [q.x, q.y, q.z, q.w]) },
+      lift: !f?.style.shell,
+      stroke: strokeOf(f, lagOf(skeleton.wingFrames, frame)),
     };
   });
   const restPose =
@@ -969,10 +974,25 @@ export function compileCreature(
       spec.skin.fur,
     ),
     rig,
-    motion: motionData(spec, registry, {
-      hipHeight: skeleton.rig.hipHeight,
-      posture: skeleton.rig.posture,
-    }),
+    motion: {
+      ...motionData(spec, registry, {
+        hipHeight: skeleton.rig.hipHeight,
+        posture: skeleton.rig.posture,
+      }),
+      ...(wings.length > 0
+        ? {
+            flight: flightOf(
+              wings,
+              sink.membranes.outline,
+              volumeOf({
+                skin: { positions, indices, skinIndex: skinPack.skinIndex },
+                bones: bonesData,
+              } as never).volume * DENSITY,
+              spreadBounds ?? { min: v3(min), max: v3(max) },
+            ),
+          }
+        : {}),
+    },
     sockets,
     markers,
     bounds: { min: v3(min), max: v3(max) },

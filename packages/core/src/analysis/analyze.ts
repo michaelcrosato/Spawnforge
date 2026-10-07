@@ -6,16 +6,17 @@ import { strength } from '../compile/anatomy.ts';
 import { type CompiledCreature, compileCreature, type Quality } from '../compile/compile.ts';
 import { CROSS_SCALE, isUprightFront } from '../compile/skeleton.ts';
 import { allEyes, mainHead } from '../compile/types.ts';
+import { DENSITY, volumeOf } from '../compile/volume.ts';
 import { type Ground, MotionController, type Water } from '../motion/controller.ts';
 import { applyRest } from '../motion/face.ts';
+import { MAX_LOADING, turnRadius } from '../motion/flight.ts';
 import { Pose } from '../motion/pose.ts';
-import { openSea, testCourse } from '../motion/terrain.ts';
+import { openSea, slope, testCourse } from '../motion/terrain.ts';
 import type { ActionModule, GaitModule, PartModule, PatternModule, Registry } from '../registry.ts';
 import { measureBody } from '../variation/generate.ts';
 
 const G = 9.81;
 /** Flesh is about as dense as water. */
-const DENSITY = 1000;
 /** Steps per second (cycles per second) above which a gait reads as jitter at 30 frames a second. */
 const MAX_STEPS = 8;
 
@@ -31,6 +32,30 @@ export interface SwimCheck {
   readonly headClearance?: number;
   /** Diving to the bed: the deepest any part of the body went into it (m), and which. */
   readonly bed: { readonly worst: number; readonly part?: string; readonly time?: number };
+}
+
+/**
+ * A flyer's run (docs/design/10.4-flight.md): it takes off from flat ground, circles at its
+ * cruising height, then comes in to land on a 15° slope.
+ */
+export interface FlightCheck {
+  /** The height above the ground it was asked to hold (m), and the speed it circled at (m/s). */
+  readonly height: number;
+  readonly speed: number;
+  /** The worst it strayed from that height over level flight, as a share of it. */
+  readonly altitude: number;
+  /** Deepest a wing passed into the body, a leg, the other wing on its side or the ground. */
+  readonly wings: WingHit;
+  /** Landing: the deepest the body, a tail or a foot went into the slope (m), and which. */
+  readonly landing: { readonly worst: number; readonly part?: string; readonly time?: number };
+  /** Its speeds as it touched down (m/s); absent if it never did. */
+  readonly touchdown?: {
+    readonly vertical: number;
+    readonly horizontal: number;
+    readonly time: number;
+  };
+  /** Seconds simulated. */
+  readonly seconds: number;
 }
 
 /** One motion run: the worst of each problem, with where and when it happened. */
@@ -134,6 +159,9 @@ export interface Analysis {
     readonly walk: number;
     readonly max: number;
     readonly swim?: number;
+    /** Flyers: cruising speed from wing loading, and the slowest it flies flapping. */
+    readonly fly?: number;
+    readonly slow?: number;
     readonly gaits: readonly { readonly id: string; readonly from: number; readonly to: number }[];
   };
   /**
@@ -169,6 +197,8 @@ export interface Analysis {
   readonly motion: readonly MotionCheck[];
   /** For a swimmer (docs/design/10.3-swimming.md): how it holds its head and keeps off the bed. */
   readonly swimming?: SwimCheck;
+  /** For a flyer (docs/design/10.4-flight.md): level flight, its wings and its landing. */
+  readonly flight?: FlightCheck;
   /** Plausibility warnings, each with an id-based path and a fix. */
   readonly warnings: readonly Issue[];
   /** A paragraph describing the creature. */
@@ -246,25 +276,34 @@ export function analyzeCreature(
   const controller = new MotionController(compiled, { registry });
   const hip = Math.max(0.05 * L, compiled.rig.hipHeight);
   const swim = controller.swimSpeed();
+  // Flyers: cruise from wing loading and slow flight (docs/design/10.4-flight.md).
+  const fl = controller.canFly ? controller.flightNumbers : undefined;
   const speed = {
     walk: controller.paceSpeed(),
     max: controller.maxSpeed(),
     ...(swim > 0 ? { swim } : {}),
-    gaits: compiled.motion.gaits.map((g) => ({
-      id: g.id,
-      from: Math.sqrt(g.froude[0] * G * controller.lengthScale),
-      // Gaits that keep a foot down top out at Froude 1.5; runs, gallops and swimming go to
-      // their top.
-      to: Math.sqrt(
-        (g.flight || g.medium === 'water' ? g.froude[1] : Math.min(g.froude[1], 1.5)) *
-          G *
-          controller.lengthScale,
-      ),
-    })),
+    ...(fl ? { fly: fl.cruise, slow: fl.slow } : {}),
+    gaits: compiled.motion.gaits.map((g) => {
+      if (g.medium === 'air' && fl)
+        return g.air === 'hovering'
+          ? { id: g.id, from: 0, to: 0.3 * fl.cruise }
+          : { id: g.id, from: g.air === 'gliding' ? fl.stall : fl.slow, to: fl.cruise };
+      return {
+        id: g.id,
+        from: Math.sqrt(g.froude[0] * G * controller.lengthScale),
+        // Gaits that keep a foot down top out at Froude 1.5; runs, gallops and swimming go to
+        // their top.
+        to: Math.sqrt(
+          (g.flight || g.medium === 'water' ? g.froude[1] : Math.min(g.froude[1], 1.5)) *
+            G *
+            controller.lengthScale,
+        ),
+      };
+    }),
   };
   // --- Cadence: fast steps read as jitter --------------------------------------------------
   const cadence = compiled.motion.gaits
-    .filter((g) => !g.spine && g.medium !== 'water')
+    .filter((g) => !g.spine && (g.medium ?? 'land') === 'land')
     .map((g) => ({ id: g.id, ...controller.cadence(g.id) }))
     .map(({ id, speed, stride, steps }) => ({ id, speed, stride, steps }));
   // A skittish creature is meant to scurry, so its fast steps are no mistake.
@@ -376,7 +415,7 @@ export function analyzeCreature(
     // Every other legged gait at its own natural speed, so a gallop's feet are checked too.
     const paced = new Set(motion.map((m) => m.gait));
     for (const gait of compiled.motion.gaits)
-      if (!gait.spine && gait.medium !== 'water' && !paced.has(gait.id))
+      if (!gait.spine && (gait.medium ?? 'land') === 'land' && !paced.has(gait.id))
         for (const [name, ground] of grounds)
           motion.push(runMotion(compiled, registry, name, ground, torsoDepth(spec), gait.id));
   } else if (swims) {
@@ -455,12 +494,41 @@ export function analyzeCreature(
     }
   }
 
+  // --- Flight: can it, and how it flies and lands (docs/design/10.4-flight.md) ---------------
+  const lifting = compiled.rig.wings.find((w) => w.lift);
+  const wingPath = `limbs[id=${(lifting ?? compiled.rig.wings[0])?.id.replace(/\.[LR]$/, '') ?? 'wing'}]`;
+  if (fl && (fl.area <= 0 || fl.loading > MAX_LOADING)) {
+    // Area grows with the square of the wings' length.
+    const grow = fl.area > 0 ? Math.sqrt(fl.loading / MAX_LOADING) : 0;
+    warn(
+      wingPath,
+      'cannot_fly',
+      fl.area <= 0
+        ? 'its wings have nothing to lift it with (no membrane on a lifting wing), so it could not fly'
+        : `its wings carry ${Math.round(fl.loading)} N/m² of its weight; above ${MAX_LOADING} nothing could fly (it would need a span of about ${(fl.span * grow).toFixed(1)} m)`,
+      fl.area <= 0
+        ? 'give a wing a membrane (leathery, feathered or insect), or keep it on the ground ("motion": { "media": { "air": false } })'
+        : `make the wings about ${grow.toFixed(2)} times as long (length, or the membrane's span), or the body smaller or slimmer; a game may still let it fly`,
+    );
+  }
+  const flight = fl ? runFlight(compiled, registry) : undefined;
+  if (flight?.touchdown && flight.landing.worst > 0.02 * hip && flight.landing.part) {
+    const { vertical, horizontal } = flight.touchdown;
+    warn(
+      sectionPath(flight.landing.part),
+      'hard_landing',
+      `landing on a 15° slope, the ${flight.landing.part} goes ${(flight.landing.worst * 100).toFixed(1)} cm into the ground (touching down at ${vertical.toFixed(1)} m/s down, ${horizontal.toFixed(1)} m/s along)`,
+      'longer legs reach the slope first (length), or a shorter or higher-held tail and neck (tail.length, tail.curl, neck.pitch) keep clear of it',
+    );
+  }
+
   // --- Wings through the body, walking and standing spread (docs/design/9.3-wings-fins.md) ----
   if (compiled.rig.wings.length + compiled.rig.fins.length > 0) {
     const checks: [WingHit, string][] = [
       ...motion.slice(0, paceRuns).map((m) => [m.wings, MOVING[m.ground]] as [WingHit, string]),
       [wingHits(compiled, standing(compiled, 0.5)), 'half spread'],
       [wingHits(compiled, standing(compiled, 1)), 'spread'],
+      ...(flight ? [[flight.wings, 'while flying'] as [WingHit, string]] : []),
     ];
     const [hit, when] = checks.reduce((a, b) => (b[0].worst > a[0].worst ? b : a));
     if (hit.worst > Math.max(0.01, 0.01 * L) && hit.wing) {
@@ -534,6 +602,7 @@ export function analyzeCreature(
     stability,
     motion,
     ...(swimming ? { swimming } : {}),
+    ...(flight ? { flight } : {}),
     warnings: dedupe(warnings),
     description: describeCreature(spec, registry, measurements, speed),
   };
@@ -615,6 +684,141 @@ function runSwim(compiled: CompiledCreature, registry: Registry, depth: number):
   };
 }
 
+/**
+ * A flyer's run (docs/design/10.4-flight.md), 30 s at most: it takes off from flat ground and
+ * circles its takeoff point at slow-flight speed and its cruising height, then lands uphill on a
+ * 15° slope well beyond the circle. Level flight is measured against the height it was asked
+ * for; wings are checked against everything they could meet as they beat, and the landing for
+ * anything going into the slope.
+ */
+function runFlight(compiled: CompiledCreature, registry: Registry): FlightCheck {
+  const dt = 1 / 120;
+  const c = new MotionController(compiled, { registry });
+  const fl = c.flightNumbers as NonNullable<MotionController['flightNumbers']>;
+  const rig = compiled.rig;
+  const bones = compiled.bones;
+  // The circle it flies (as the controller's loiter), and the slope far enough beyond it.
+  const bank =
+    ((compiled.motion.gaits.find((g) => g.air === 'flapping')?.bank ?? 40) * Math.PI) / 180;
+  const round = Math.max(
+    1.5 * turnRadius(fl),
+    (1.2 * fl.slow * fl.slow) / (G * Math.tan(Math.min(bank, (70 * Math.PI) / 180))),
+  );
+  const from = round + 1.5 * fl.cruise + 2 * fl.span + 5;
+  const ground = slope(15, 0, from);
+  const input = { ground };
+  const height = fl.height;
+  c.fly({ speed: fl.slow });
+  const sections = bones.names
+    .map((_, i) => i)
+    .filter((i) => ['torso', 'neck', 'head', 'jaw', 'tail'].includes(bones.sections[i] as string));
+  let wings: WingHit = { worst: 0 };
+  const landing = { worst: 0 } as { worst: number; part?: string; time?: number };
+  let touchdown: FlightCheck['touchdown'];
+  let altitude = 0;
+  let steps = 0;
+  const limit = 30 / dt;
+  const a = new Vector3();
+  const checkWings = () => {
+    const w = wingHits(compiled, c.pose, ground);
+    if (w.worst > wings.worst) wings = { ...w, time: c.time };
+    const clash = wingClash(compiled, c.pose);
+    if (clash.worst > wings.worst) wings = { ...clash, time: c.time };
+  };
+  // Up to its height (10 s at most).
+  while (steps < 10 / dt) {
+    c.update(dt, input);
+    steps++;
+    if (c.flightStage === 'flight' && Math.abs(c.position.y - height) < 0.05 * height) break;
+  }
+  // Once round the circle, at most 12 s: level flight.
+  const circle = Math.min(12, (2 * Math.PI * round) / fl.slow);
+  for (let i = 0; i < circle / dt; i++, steps++) {
+    c.update(dt, input);
+    altitude = Math.max(
+      altitude,
+      Math.abs(c.position.y - ground(c.position.x, c.position.z).height - height) / height,
+    );
+    if (i % 12 === 0) checkWings();
+  }
+  // In to land uphill, beyond the foot of the slope.
+  c.land({ x: 0, z: from + Math.max(2, 3 * rig.hipHeight) });
+  let lastY = c.position.y;
+  let after = -1;
+  for (; steps < limit && after < 1; steps++) {
+    const speed = c.speed;
+    const events = c.update(dt, input);
+    const vertical = (lastY - c.position.y) / dt;
+    lastY = c.position.y;
+    if (!touchdown && events.some((e) => e.type === 'land'))
+      touchdown = { vertical: Math.max(0, vertical), horizontal: speed, time: c.time };
+    if (touchdown) after += dt;
+    const stage = c.flightStage;
+    if (stage === 'flight' && steps % 12 === 0) checkWings();
+    if ((stage === 'flare' || stage === 'descend') && steps % 2 === 0) checkWings();
+    if (stage !== 'flare' && stage !== 'descend' && !touchdown) continue;
+    const pose = c.pose;
+    const time = c.time;
+    for (const i of sections) {
+      const r = bones.radii[i] ?? 0;
+      for (const p of [pose.worldPos[i] as Vector3, pose.tail(i, a)]) {
+        const into = ground(p.x, p.z).height - (p.y - r);
+        if (into > landing.worst)
+          Object.assign(landing, { worst: into, part: bones.owners[i] ?? 'body', time });
+      }
+    }
+    for (const leg of rig.legs) {
+      const ankle = pose.tail(leg.bones.at(-1) as number, a);
+      const into = ground(ankle.x, ankle.z).height + (leg.restFoot[1] as number) - ankle.y;
+      if (into > landing.worst) Object.assign(landing, { worst: into, part: leg.id, time });
+    }
+  }
+  return {
+    height,
+    speed: fl.slow,
+    altitude,
+    wings,
+    landing,
+    ...(touchdown ? { touchdown } : {}),
+    seconds: steps * dt,
+  };
+}
+
+/**
+ * Wings on one side against each other (a hind wing under its forewing): their bones past the
+ * shoulder, as capsules. Wings on opposite sides may meet over the back, as insects' do.
+ */
+function wingClash(compiled: CompiledCreature, pose: Pose): WingHit {
+  const rig = compiled.rig;
+  const bones = compiled.bones;
+  let worst: WingHit = { worst: 0 };
+  const side = (w: (typeof rig.wings)[number]) =>
+    Math.sign(bones.positions[(w.bones[0] as number) * 3] as number);
+  const chain = (w: (typeof rig.wings)[number]) => [...w.bones.slice(1), ...w.digits.flat()];
+  const a = new Vector3();
+  const b = new Vector3();
+  const e = new Vector3();
+  const f = new Vector3();
+  const lifting = rig.wings.filter((w) => w.lift);
+  for (let i = 0; i < lifting.length; i++)
+    for (let j = i + 1; j < lifting.length; j++) {
+      const wi = lifting[i] as (typeof rig.wings)[number];
+      const wj = lifting[j] as (typeof rig.wings)[number];
+      if (side(wi) !== side(wj) || side(wi) === 0) continue;
+      for (const bi of chain(wi))
+        for (const bj of chain(wj)) {
+          a.copy(pose.worldPos[bi] as Vector3);
+          pose.tail(bi, b);
+          e.copy(pose.worldPos[bj] as Vector3);
+          pose.tail(bj, f);
+          const overlap =
+            ((bones.radii[bi] ?? 0) + (bones.radii[bj] ?? 0)) * 0.8 - segmentDistance(a, b, e, f);
+          if (overlap > worst.worst) worst = { worst: overlap, wing: wi.id, against: wj.id };
+        }
+    }
+  return worst;
+}
+
 /** Rounds up to two significant figures. */
 function roundUp(v: number): number {
   const unit = 10 ** (Math.floor(Math.log10(v)) - 1);
@@ -634,38 +838,6 @@ function dedupe(issues: Issue[]): Issue[] {
     seen.add(key);
     return true;
   });
-}
-
-/** Volume and centroid of the closed skin mesh (signed tetrahedra from the origin). */
-function volumeOf(c: CompiledCreature): { volume: number; centre: Vector3 } {
-  const p = c.skin.positions;
-  const idx = c.skin.indices;
-  let volume = 0;
-  const centre = new Vector3();
-  // Eyelids are open shells over the eyes, not part of the body's closed surface.
-  const lid = (v: number) => c.bones.sections[c.skin.skinIndex[v * 4] as number] === 'lid';
-  for (let i = 0; i < idx.length; i += 3) {
-    if (lid(idx[i] as number)) continue;
-    const a = (idx[i] as number) * 3;
-    const b = (idx[i + 1] as number) * 3;
-    const d = (idx[i + 2] as number) * 3;
-    const ax = p[a] as number;
-    const ay = p[a + 1] as number;
-    const az = p[a + 2] as number;
-    const bx = p[b] as number;
-    const by = p[b + 1] as number;
-    const bz = p[b + 2] as number;
-    const cx = p[d] as number;
-    const cy = p[d + 1] as number;
-    const cz = p[d + 2] as number;
-    const v = (ax * (by * cz - bz * cy) - ay * (bx * cz - bz * cx) + az * (bx * cy - by * cx)) / 6;
-    volume += v;
-    centre.x += (v * (ax + bx + cx)) / 4;
-    centre.y += (v * (ay + by + cy)) / 4;
-    centre.z += (v * (az + bz + cz)) / 4;
-  }
-  if (Math.abs(volume) > 1e-12) centre.divideScalar(volume);
-  return { volume: Math.abs(volume), centre };
 }
 
 /**
@@ -1286,13 +1458,19 @@ export function describeCreature(
       return module?.describe?.(layer.params) ?? layer.type;
     }),
   ];
-  const water = new Set(
+  // Walking gaits only: swimming and flying are said apart.
+  const offLand = new Set(
     spec.motion.gaits
-      .filter((g) => (registry.get('gait', g.type) as GaitModule | undefined)?.medium === 'water')
+      .filter(
+        (g) =>
+          ((registry.get('gait', g.type) as GaitModule | undefined)?.medium ?? 'land') !== 'land',
+      )
       .map((g) => g.type),
   );
-  const gaits = speed.gaits.map((g) => g.id).filter((g) => !water.has(g));
-  const swims = speed.swim !== undefined ? ` and swims up to ${speed.swim.toFixed(1)} m/s` : '';
+  const gaits = speed.gaits.map((g) => g.id).filter((g) => !offLand.has(g));
+  const swims =
+    (speed.swim !== undefined ? ` and swims up to ${speed.swim.toFixed(1)} m/s` : '') +
+    (speed.fly !== undefined ? `, and flies at about ${speed.fly.toFixed(0)} m/s` : '');
   const moves =
     gaits.length === 0 && speed.swim !== undefined
       ? `It swims at about ${speed.walk.toFixed(1)} m/s, up to ${speed.swim.toFixed(1)} m/s`

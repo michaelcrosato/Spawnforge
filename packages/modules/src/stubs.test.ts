@@ -1,19 +1,38 @@
 import {
   compileCreature,
   createRegistry,
+  defineGait,
+  definePack,
   FORMAT,
   type ModuleDefinition,
   validateBlueprint,
 } from '@spawnforge/core';
 import { describe, expect, it } from 'vitest';
+import { z } from 'zod';
 import { basicPack } from './index.ts';
 
 /**
- * Stub modules (`planned`) hold plan 2's vocabulary before it is built: each validates from its
- * own example, warns `not_built` with its milestone, never joins the defaults, and compiles
- * without it.
+ * Stub modules (`planned`) hold vocabulary before it is built: each validates from its own
+ * example, warns `not_built` with its milestone, never joins the defaults, and compiles without
+ * it. 10.4 built the last of format 0.2's, so a test pack holds one to keep the rules checked.
  */
-const registry = createRegistry([basicPack]);
+const testPack = definePack({
+  id: 'test',
+  modules: [
+    defineGait({
+      id: 'test-crawl',
+      summary: 'A stub gait for the tests.',
+      tags: ['test'],
+      planned: '99.1',
+      legPairs: 'any',
+      wave: () => 0.5,
+      duty: 0.7,
+      froude: [0, 0.3],
+      params: z.strictObject({}),
+    }),
+  ],
+});
+const registry = createRegistry([basicPack, testPack]);
 const stubs = registry.list().filter((m) => m.planned);
 
 /** A blueprint that uses the module through its example. */
@@ -56,8 +75,13 @@ function using(module: ModuleDefinition): Record<string, unknown> {
 }
 
 describe('stub modules', () => {
-  it('exist for the vocabulary format 0.2 adds', () => {
-    expect(stubs.length).toBeGreaterThan(0);
+  it('are all built in the first pack: 10.4 built the last of format 0.2', () => {
+    expect(
+      createRegistry([basicPack])
+        .list()
+        .filter((m) => m.planned),
+    ).toEqual([]);
+    expect(stubs.map((m) => m.id)).toEqual(['test-crawl']);
     for (const m of stubs) expect(m.planned, m.id).toMatch(/^\d+\.\d+$/);
   });
 

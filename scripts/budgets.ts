@@ -69,6 +69,18 @@ try {
     for (let i = 0; i < 600; i++) controller.update(1 / 60, input);
     const t = performance.now();
     for (let i = 0; i < 3000; i++) controller.update(1 / 60, input);
+    const walking = (performance.now() - t) / 3000;
+    // A flyer is also timed flying, circling over the course (10.4).
+    let flying: number | undefined;
+    const flyer = new MotionController(c, { registry });
+    if (flyer.canFly) {
+      flyer.place(0, 0, 0, ground, undefined, { flying: true });
+      flyer.fly();
+      for (let i = 0; i < 600; i++) flyer.update(1 / 60, { ground });
+      const tf = performance.now();
+      for (let i = 0; i < 3000; i++) flyer.update(1 / 60, { ground });
+      flying = (performance.now() - tf) / 3000;
+    }
     perExample.push({
       name,
       lines,
@@ -81,7 +93,8 @@ try {
       drawCalls:
         [c.skin, c.parts, c.eyes, c.membranes].filter((m) => m.indices.length > 0).length +
         (c.material.fur && c.quality !== 'low' ? 1 : 0),
-      motionMsPerFrame: Number(((performance.now() - t) / 3000).toFixed(3)),
+      motionMsPerFrame: Number(walking.toFixed(3)),
+      ...(flying !== undefined ? { flyingMsPerFrame: Number(flying.toFixed(3)) } : {}),
     });
   }
 } finally {
@@ -114,6 +127,7 @@ const report = {
     furDrawCalls: 1,
     membraneDrawCalls: 1,
     motionMsPerCreature: 0.1,
+    flyingMsPerCreature: 0.15,
     motionMsFor50: 5,
   },
   examples: perExample,

@@ -36,11 +36,11 @@ creature's size, hip height and the height of its head, which tell you where to 
 
 | Field | Meaning | Default |
 | --- | --- | --- |
-| `ground` | `"flat"`, or `"course"`: uneven ground with bumps up to 25 cm, flat within 1.5 m of the origin | `"flat"` |
+| `ground` | `"flat"`; `"course"`: uneven ground with bumps up to 25 cm, flat within 1.5 m of the origin; or a slope, `{ "slope": degrees, "toward": degrees, "from": metres }`: ground rising at `slope` degrees toward the heading `toward` (0 is +Z, 90 is +X), through the origin, or flat until `from` metres that way | `"flat"` |
 | `seed` | Seed of the course's bumps | `1` |
 | `water` | `"none"`; `"sea"`: deep water everywhere (the surface at height 0, the bed four body lengths and 2 m down); or a lake, `{ "x", "z", "radius", "depth" }` in metres, carved into the ground with its surface at 0 | `"none"` |
-| `duration` | Seconds to run, 0.5 to 60 | `6` |
-| `start` | `x` and `z` in metres, `heading` in degrees (0 faces +Z, 90 faces +X) | the origin, facing +Z |
+| `duration` | Seconds to run, 0.5 to 120 | `6` |
+| `start` | `x` and `z` in metres, `heading` in degrees (0 faces +Z, 90 faces +X); `flying` (`true` starts a flyer in the air at cruise) and `height` (metres above the ground) | the origin, facing +Z, on the ground |
 | `targets` | Named points, `[x, y, z]` in metres, that calls can aim at by name; renders mark them in amber | none |
 | `calls` | What happens when, each with `at` (seconds) and `do` | none |
 | `frames` | Frames in the filmstrip, 2 to 16, evenly spaced over the duration | `8` |
@@ -49,8 +49,10 @@ Calls (a point is `[x, z]` on the ground or `[x, y, z]`, or a target's name):
 
 | `do` | Fields | What it does |
 | --- | --- | --- |
-| `moveTo` | `to` (a point), `speed` (m/s, default its pace on land or in water) | Walks or swims there and stops; with a height (`[x, y, z]` or a target) a diver dives or rises to it |
-| `follow` | `path` (up to 32 points), `speed` | Walks through the points in order, stopping at the last: a course |
+| `moveTo` | `to` (a point), `speed` (m/s, default its pace on land, in water or in the air) | Walks, swims or flies there and stops; with a height (`[x, y, z]` or a target) a diver dives or rises to it and a flyer flies at it (taking off if it is out of reach on foot) |
+| `follow` | `path` (up to 32 points), `speed` | Walks (or flies) through the points in order, stopping at the last: a course |
+| `fly` | `height` (metres above the ground), `speed` | Takes off and circles (or hovers) until told where to go; flying, changes its height or speed |
+| `land` | `to` (a point, optional) | Comes in to land there, or on the first clear ground ahead, and walks on |
 | `drive` | `speed` (m/s), `heading` (degrees) | Keeps moving with no destination |
 | `stop` | | Stops moving |
 | `act` | `action` (one of the creature's), `target` (a point) | Starts an action aimed at the point; one runs at a time, and a new one replaces it |
@@ -60,7 +62,7 @@ Calls (a point is `[x, z]` on the ground or `[x, y, z]`, or a target's name):
 A new `moveTo`, `drive` or `stop` ends a course in progress. Calls at the same time run in the
 order written. Mistakes come back like blueprint errors, with a path under `scenario`, the
 valid values and a fix: an unknown target name, an action the creature does not have, a call
-after the end.
+after the end, `fly` or `land` for a creature without wings (`cannot_fly`).
 
 ## What you get back
 
@@ -70,7 +72,7 @@ after the end.
 | --- | --- |
 | `end` | Where it ended: `x`, `z` (metres), `heading` (degrees), `speed` (m/s) |
 | `distance` | Metres walked along the ground |
-| `events` | Every event but footsteps, with `time` in seconds: `arrive` (at a `moveTo` point or each course point), `gait` (a change of gait), `medium` (into the water or out onto land, with `medium`), `action-start`, `action-end` and the action's own (`bite-contact`, `roar-peak`, `takeoff`, `land`) |
+| `events` | Every event but footsteps, with `time` in seconds: `arrive` (at a `moveTo` point or each course point), `gait` (a change of gait), `medium` (into the water, out onto land, into the air, with `medium`), `takeoff` and `land` (a flight's, or a leap's with its `action`), `action-start`, `action-end` and the action's own (`bite-contact`, `roar-peak`); wingbeats (`flap`) are left out like footsteps |
 | `footsteps` | How many steps it took |
 | `gaits` | Gaits in the order used, each with when it began |
 | `targets` | Per target, the `closest` any snout came (metres) and when |
@@ -93,3 +95,6 @@ show where the bumps are.
   course.
 - [`swim-across.json`](../examples/scenarios/swim-across.json): a lake across the way; the river
   crocodile walks in, swims across and climbs out the far side.
+- [`flight-course.json`](../examples/scenarios/flight-course.json): a flyer takes off from flat
+  ground, circles at its cruising height, and comes in to land uphill on a 15° slope 80 m ahead.
+  Try it with the ash dragon, the storm wyvern, the cave bat or the luna moth (which hovers).

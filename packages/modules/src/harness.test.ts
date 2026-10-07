@@ -175,14 +175,17 @@ describe('module harness: gaits', () => {
     '%s moves its body within budget, the same twice',
     (id) => {
       const compiled = bodyWith('gaits', id);
-      // Swimming gaits run in open water.
-      const water = compiled.motion.gaits.find((g) => g.id === id)?.medium === 'water';
-      const sea = water ? openSea(compiled.scale) : undefined;
+      // Swimming gaits run in open water, air gaits in the air.
+      const medium = compiled.motion.gaits.find((g) => g.id === id)?.medium;
+      const sea = medium === 'water' ? openSea(compiled.scale) : undefined;
+      let speed = 0;
       const go = () => {
         const controller = new MotionController(compiled, { registry });
         if (sea) controller.place(0, 0, 0, sea.ground, sea.water);
+        if (medium === 'air') controller.place(0, 0, 0, undefined, undefined, { flying: true });
         controller.lockGait(id);
-        controller.drive(controller.gaitSpeed(id), 0);
+        speed = controller.gaitSpeed(id);
+        controller.drive(speed, 0);
         const run = runFor(controller, 3, sea);
         return { ...run, z: controller.position.z, gait: controller.gait?.id };
       };
@@ -190,7 +193,9 @@ describe('module harness: gaits', () => {
       const b = go();
       expect(a.gait).toBe(id);
       expect(finite(a.pose)).toBe(true);
-      expect(a.z, 'metres moved in 3 s').toBeGreaterThan(0.2 * compiled.scale);
+      // A hover holds still, beating its wings.
+      if (speed === 0) expect(a.events).toContain('flap');
+      else expect(a.z, 'metres moved in 3 s').toBeGreaterThan(0.2 * compiled.scale);
       expect(warm(a, b), 'motion ms per frame').toBeLessThan(MOTION_MS);
       expect(b.pose).toEqual(a.pose);
     },
