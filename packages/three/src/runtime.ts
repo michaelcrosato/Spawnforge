@@ -172,6 +172,20 @@ export class Creature {
     return this.controller.actions();
   }
 
+  /**
+   * Spreads the wings (1) or folds them (0) when no action asks otherwise; they move there over
+   * about 0.4 s. Flight arrives with milestone 10.4.
+   */
+  setWings(spread: number): void {
+    if (this.lod === 'baked' && spread > 0) this.toFull();
+    this.controller.setWings(spread);
+  }
+
+  /** How far the wings are spread now, 0 folded to 1. */
+  get wingSpread(): number {
+    return this.controller.wingSpread;
+  }
+
   /** Listens for motion events: "footstep", "gait", "action-start", "bite-contact", "roar-peak"… */
   on(type: string, listener: Listener): () => void {
     const set = this.listeners.get(type) ?? new Set();

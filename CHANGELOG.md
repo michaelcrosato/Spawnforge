@@ -78,6 +78,28 @@ Work in progress toward 0.2, phase by phase (see the plan's status table).
   it). `analyze` names the upright front when it tips the body forward and describes it as an
   upright torso. The `centaur` preset has a human torso, hooves and hands. Nothing else moves.
 - **Examples:** a tomb spider and a grove centaur.
+- **Wings, fins and membranes (9.3):** wing limbs are drawn, built spread (the bind pose) and
+  resting folded: `BonesData.rest` holds the folded pose, and everything that shows or animates a
+  creature (`Pose`, the Three.js bones, glTF node defaults, bounds, labels) starts from it. Wings
+  fold in joint space against the body, the arms and the ground; a `wing_clearance` warning names
+  one that cannot clear. `membrane.bat` stretches skin between finger bones, the body and the
+  leg behind (`trailing`), carried by station bones so it stays on the surface between its spars;
+  `membrane.insect` is a veined plate, stacked over the back; `membrane.case` is a hard shell
+  shaped where it rests, covering the wing behind it, which folds under it; `membrane.feather`
+  grows primaries, secondaries and coverts, each on a bone that folds it back along the body;
+  `membrane.fin` fans rays from a fin limb. `fin.dorsal` and `fin.tail` are drawn. Membranes are
+  one double-sided mesh (one draw call), lit through from behind, see-through where they are
+  thin, with veins; layers of region `wings` draw on them, and fur skips wings. A new action
+  goal, `wings`, spreads them over about 0.4 s (`roar` flares them; `setWings` holds a spread),
+  `render --pose spread` (and MCP `pose.spread`) shows them open, and exports carry the
+  membranes and fold. `analyze` warns `wing_intersection` (walking and standing spread), gives
+  `measurements.wingspan` and names wings and fins. Wings get `tip.<wing>` sockets. The `fish`
+  preset gains pelvic fins and membranes on its fins, so blueprints that extend it gain them too;
+  the `wyvern` preset's membrane trails to the body and its legs sit further forward.
+- **Examples:** an ash dragon, a cave bat, a storm wyvern, a rhino beetle with wing cases, a luna
+  moth with eye spots, a reef shark and a griffin.
+- **Determinism:** where two bones tie at a joint, the nearest is the first within 1e-9, so
+  Node and Chrome pick the same one; the bog troll's golden changes, with no vertex moving.
   - New recipes: a flat head, forward goblin eyes, a club tail, a bushy tail, a beetle's horn,
     a tail-only colour and a rearing cobra's belly. `patch set` replacing whole objects is
     documented.

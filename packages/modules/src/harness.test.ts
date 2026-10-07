@@ -232,5 +232,7 @@ describe('module harness: stats', () => {
         expect(computeStats(spec, analysis, registry, id)).toEqual(values);
       }
     },
+    // It analyses every example, which takes a few seconds.
+    60_000,
   );
 });

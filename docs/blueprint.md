@@ -202,8 +202,8 @@ own defaults, so `{ "id": "wing", "role": "wing" }` is already a usable wing. Ev
 | --- | --- | --- | --- |
 | `leg` (the default) | Carries the body; legs come in mirrored pairs, up to 6 | `splay`, `lift`, `stance`, `foot` | `at` 0.5, `angle` 100, `length` 0.5, 3 segments, `foot.claw` |
 | `arm` | Hangs free for grabbing and striking | `splay`, `lift`, `foot` | as a leg |
-| `wing` | Folds at rest, beats in the air (_9.3_) | `membrane`, `foot` (the wrist claw) | `at` 0.2, `angle` 40, `length` 1.2, `membrane.bat` |
-| `fin` | Steers and beats in water (_9.3_) | `membrane` | `at` 0.25, `angle` 115, `length` 0.35, 2 segments, `membrane.fin` |
+| `wing` | Rests folded, spreads when asked; flies from 10.4 | `membrane`, `foot` (a thumb at the wrist) | `at` 0.2, `angle` 40, `length` 1.2, `membrane.bat` |
+| `fin` | Holds out flat; swims from 10.3 | `membrane` | `at` 0.25, `angle` 115, `length` 0.35, 2 segments, `membrane.fin` |
 | `tentacle` | A long spring chain that curls and reaches (_9.4_) | `curl`, `curlStart`, up to 16 `segments` | `at` 0.9, `angle` 150, `length` 1.5, 10 segments |
 
 - **Legs come in mirrored pairs** (`side: "both"`), up to 6 pairs. Legs are ordered from the back;
@@ -225,11 +225,22 @@ own defaults, so `{ "id": "wing", "role": "wing" }` is already a usable wing. Ev
   `foot.claw` none). With a stance, a planted foot rolls as the creature walks: the heel lifts
   late in the step while the toes stay down, and hooves stay flat. Without one, the leg keeps
   plan 1's flat feet.
-- **Wings and fins** carry a `membrane`, set like a foot: `membrane.bat` (leathery, between finger
-  bones), `membrane.insect` (thin veined plates), `membrane.feather` (flight feathers),
-  `membrane.case` (a beetle's hard wing case, which covers the wing behind it) and `membrane.fin`
-  (rays and skin). A flipper is a fin with `"membrane": null`. A bat membrane's trailing edge runs
-  to the nearest leg behind the wing, or to the body (`trailing`).
+- **Wings and fins** carry a `membrane`, set like a foot: `membrane.bat` (leathery skin between
+  finger bones, `fingers` 3–5 and `span` for their length), `membrane.insect` (a thin veined
+  plate, `shape` and `width`), `membrane.feather` (flight feathers on bones of their own,
+  `feathers`, `length` and `tips`), `membrane.case` (a beetle's hard wing case) and `membrane.fin`
+  (`rays` fanned back from the fin limb, `width`). A flipper is a fin with `"membrane": null`. A
+  bat membrane's trailing edge runs to the nearest leg behind the wing, or to the body
+  (`"trailing": "body"`, best on walkers, whose legs swing through it).
+- **Wings rest folded** against the body, and spread (to the pose they are built in) when an
+  action asks (`roar` flares them) or a game calls `setWings`; `render --pose spread` shows them
+  open. A leathery or feathered wing folds in a Z along the flank; insect wings fold flat over
+  the back, hind wings under forewings and the left of a pair above the right; a wing behind a
+  `membrane.case` on its side folds away under the case. Attach wings high on the shoulders
+  (`angle` 30–50) and near the front (`at` 0.1–0.2), or they fold into the legs: `compile`
+  warns `wing_clearance` when one cannot fold clear, and `analyze` warns `wing_intersection`
+  when one passes into the body, a leg or the ground as it walks or spreads. Fins hold still,
+  flat; `fin.dorsal` and `fin.tail` stand on the back and the tail tip.
 - **Tentacles** take `curl` (degrees of rest curl, toward the belly; negative curls toward the
   back) and `curlStart` (the straight share before it). For eight tentacles write four entries
   with `side: "both"` at different `angle`s. On the torso at its default `at` 0.9 they trail
@@ -276,7 +287,7 @@ runs on past the snout) and `depth`; use `"lips": 0` and leave out teeth for a b
 
 A row's `count` is per row: a `spikes.row` with `side` "both" makes two rows of `count` spikes,
 while `plates.row` is one centred part whose `count` plates alternate left and right
-(`alternate`). A part on something that is not drawn yet (a wing, a tentacle) is not drawn
+(`alternate`). A part on something that is not drawn yet (a tentacle) is not drawn
 either; `validate` lists it under `notBuilt` with its host.
 
 ### Recipes
@@ -341,16 +352,16 @@ length on the coil, so they need a `length` of 0.5–0.75 to read from a distanc
   furry body and a bare head. Fur takes the colours of the skin under it (palette and layers), so
   stripes and spots show through, though detail finer than a hair does not. `"fur": {}` is a full
   coat; `null` removes an inherited one. Fur is shorter on the face, in creases and on the feet,
-  stays clear of the eyes and the mouth, and with `region` `all` leaves wing and fin membranes
-  bare. It is drawn as shells, from medium quality up; a 0.02–0.04 coat reads as fur, longer as
+  stays clear of the eyes and the mouth, and never grows on wings or fins. It is drawn as shells, from medium quality up; a 0.02–0.04 coat reads as fur, longer as
   shaggy. `.glb` exports leave it out for now (the skin under it is exported).
 - **`layers`** is the pattern stack, bottom first: `countershade`, `stripes`, `spots`, `mottle`,
   `scales`, `grime`, `scars` (pale healed streaks; `rake` 3–4 for claw marks), `bioluminescence`
   (glowing spots or dotted lines that pulse), `slime` (a wet gloss with drips), `warts` (raised
   bumps), `veins` (branching lines), `rosettes` (broken rings around a tinted centre) and `bands`
   (even rings round the body and tail). A layer's parameters sit beside its `type`. Every layer also takes
-  **`region`** (`all`, `back`, `belly`, `head`, `torso` (which includes the neck), `limbs` (every
-  limb, a wing's arm bones too), `tail` or `wings`, which covers wing and fin membranes) and
+  **`region`** (`all`, `back`, `belly`, `head`, `torso` (which includes the neck), `limbs` (legs
+  and arms), `tail` or `wings`, which covers wing and fin membranes and the bones that carry
+  them; layers of any other region leave membranes their own colour) and
   **`strength`** (0 to 1). A region only masks where the layer shows; the pattern itself is laid
   out over the whole body, so `stripes.count` counts stripes from snout to tail tip whatever the
   region, and three `scars` with `region` "head" leave about one on the head (raise `count` by
@@ -586,7 +597,7 @@ name the section to change.
 ## Not drawn yet
 
 Everything format 0.1 had is drawn today: legs and arms, `foot.claw`, horns, ears, eyes, teeth,
-mouths with lips, gums and tongues, eyelids, brows, beaks, spike rows, every material, fur, every pattern layer, several heads and tails, walking,
+mouths with lips, gums and tongues, eyelids, brows, beaks, spike rows, every material, fur, every pattern layer, several heads and tails, wings, fins and their membranes, walking,
 trotting, the tripod gait, slithering, and the bite, roar, look and idle actions. Everything in
 this table validates but is **not drawn yet**: compile skips it, and `validate` lists it under
 `notBuilt`. Each row goes when its milestone lands. Until then, approximate with what exists if
@@ -595,7 +606,6 @@ neck for a cobra's hood (see the recipes).
 
 | Not drawn yet | Milestone that draws it |
 | --- | --- |
-| Wings, fins, membranes, `fin.dorsal`, `fin.tail` | 9.3 |
 | Tentacles, `antenna`, `mandible`, `hand.pincer`, `pinch`, `lash` | 9.4 |
 | `shell`, `armor.bands`, `quills`, `plates.row`, `frill`, `hood`, `sail`, `display` | 9.5 |
 | `run`, `gallop`, `bound` | 10.1 |
@@ -610,18 +620,19 @@ milestones land.
 
 | Creature | Blueprint |
 | --- | --- |
-| Dragon | `quadruped` plus `{ "id": "wing", "role": "wing", "length": 1.5 }`; horns with `aim` "back"; `"material": "scales"` |
+| Dragon | `quadruped` plus `{ "id": "wing", "role": "wing", "length": 1.5 }` at `angle` 35; horns with `aim` "back"; `"material": "scales"` (see `examples/ash-dragon.json`) |
 | Wyvern | `wyvern` (its wings are its forelimbs); a stinger as in the recipe above |
-| Bat | `wyvern` with bat proportions: `"neck": { "length": 0.15 }`, `"tail": { "length": 0.3 }`, short legs (`length` 0.4) set back (`at` 0.85), `"head": { "shape": "snout" }`; wings `length` 2 with `"membrane": { "type": "membrane.bat", "fingers": 5 }`, big `ear.pointed`, and fur with `"region": ["head", "torso", "limbs"]` |
+| Bat | `wyvern` with bat proportions: a short neck and tail, a big `snout` head, legs under the middle (`at` 0.45), wings `length` 1.9 with `"membrane": { "type": "membrane.bat", "fingers": 5, "trailing": "leg" }`, big `ear.pointed` and fur on the head and torso (see `examples/cave-bat.json`) |
 | Hydra or cerberus | `quadruped` with `"neck": { "count": 5, "length": 0.75 }` and a small head (examples/hydra.json), or 3 with `length` 0.45 and `spread` 90 for a cerberus (examples/cerberus.json); parts on `head` appear on every head |
 | Kraken | No `extends`; a round torso, `"tail": { "length": 0 }`, four `tentacle` entries with `side` "both" at `at` 0.9 and `angle`s 60, 100, 130 and 160 (they trail like a squid's; on the `head` they ring the mouth) |
-| Shark or fish | `fish`, whose preset already has the fins: override its parts `dorsal` (`fin.dorsal`) and `tailfin` (`fin.tail`, `"shape": "forked"`) and its limb `pectoral` by id, and add `teeth.row`; `scale` 0.9 for a 1.8 m reef shark |
+| Shark or fish | `fish`, whose preset already has the fins: override its parts `dorsal` (`fin.dorsal`) and `tailfin` (`fin.tail`, `"shape": "forked"`) and its limbs `pectoral` and `pelvic` by id, and add `teeth.row` (see `examples/reef-shark.json`) |
 | Spider or scorpion | `octopod`; `mandible` (`"shape": "fang"`) for a spider; for a scorpion arms with `"foot": "hand.pincer"` and a tail with `curl` 200 |
 | Centaur | `centaur`; give its legs `foreleg` and `hindleg` `"foot": "foot.hoof"`, its `arm`s `"foot": "hand.grasp"`, and the head horns |
 | Turtle | `quadruped` with `{ "id": "shell", "type": "shell" }`, its `foreleg` and `hindleg` removed (`"remove": true`) and fin limbs with `"membrane": null` (flippers) instead; fins and no legs make it a swimmer |
 | Two-tailed fox | `quadruped` with `"tail": { "count": 2, "spread": 22, "pitch": 12, "curl": 35 }` (raised, like a kitsune's), `"foot": "foot.paw"` on both leg pairs and `"skin": { "fur": {} }` (examples/two-tailed-fox.json) |
-| Griffin | `quadruped`; `beak`, `{ "role": "wing", "membrane": "membrane.feather" }`, `foot.talon` on the forelegs and `foot.paw` on the hindlegs, fur with `"region": ["torso", "limbs", "tail"]` |
-| Moth | `hexapod`; two wing pairs with their own ids, `forewing` at `at` 0.15 and `hindwing` at 0.3, each with `membrane.insect` (`"shape": "broad"`); `antenna` with `"shape": "feather"`, fur on the torso |
+| Griffin | `quadruped`; `beak`, `{ "role": "wing", "membrane": "membrane.feather" }`, `foot.talon` on the forelegs and `foot.paw` on the hindlegs, fur (see `examples/griffin.json`) |
+| Moth | `hexapod`; two wing pairs with their own ids, `forewing` at `at` 0.15 and `hindwing` at 0.3, each with `membrane.insect` (`"shape": "broad"` and `"round"`), `spots` with `ring` and `"region": "wings"` for eye spots (see `examples/luna-moth.json`); `antenna` with `"shape": "feather"` (9.4), fur on the torso |
+| Beetle with wing cases | `hexapod` with a deep abdomen (more torso `radius` points); `{ "id": "case", "role": "wing", "attach": { "on": "torso", "at": 0.5, "angle": 6 }, "length": 0.5, "segments": 2, "membrane": "membrane.case" }` and a `wing` just behind it (`at` 0.53) with `membrane.insect` (`"shape": "round"`), which folds away under the case (see `examples/rhino-beetle.json`) |
 | Slug or snail | `serpent` with a short tail and `"material": "skin"`; eyes on stalks: a tentacle pair on the `head` (`length` 0.3, 4 segments) with `eye.basic` on it at `at` 1; `slime` |
 | Stegosaur, sail-back, porcupine | `plates.row`, `sail` or `quills` along the `spine` |
 | Frilled lizard or cobra | `frill` or `hood` on the `neck`, and `display` in `motion.actions` (it needs one of them) |

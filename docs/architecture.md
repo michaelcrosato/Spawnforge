@@ -76,7 +76,12 @@ each a pure function of the creature spec, seed and quality:
    coupled-joint IK (`ik.ts`) so the feet rest on the ground, at the height each foot module (or
    the leg's stance) asks for; a sprawled leg longer than 0.7 torso lengths keeps the hip height
    of a 0.7 one and arches its knee above the hip (spiders). Then foot parts add toe chains. Knee, hock, elbow and jaw joints
-   get helper bones.
+   get helper bones. Wings and fins are built spread, in their own plane, as tube bones that stay
+   out of the field and the grid, with a shoulder mass on the body and digits from the
+   membrane's `digits` hook; then `foldWings` (`wings.ts`) folds each wing in joint space (one
+   turn at the shoulder, in-plane turns at the joints, numbers from the membrane's `wing` hook)
+   against a quality-independent field of the body, the arms and the ground, lifting it clear in
+   small turns. The fold is the rest pose (`BonesData.rest`); the spread build is the bind pose.
 2. **SDF** (`sdf.ts`). A rounded cone per bone (elliptical cross-sections allowed), plain union
    inside a chain, a smooth minimum once where a chain meets its parent. Bones thinner than about
    a grid cell are left out and become swept tubes later (a jaw stays in with its head). The head
@@ -106,10 +111,17 @@ each a pure function of the creature spec, seed and quality:
    and follow the head or jaw, claws their toe, eyes get bones of their own). An eye that asks
    for lids gets two eyelid shells on bones of their own (`lids.ts`), joined to the skin with the
    nearest skin's coordinates, and a blink-driven chain. Parts report what they built
-   (`measure`), which stats read.
+   (`measure`), which stats read. Membrane modules build in the spread pose: `ctx.panel` spans
+   two spars (the arm, digits, the body's flank, the leg behind) with station bones, a pair per
+   station aimed at each other with a roll carried on from the station before, so a vertex
+   weighted between two stations on each side stays on the surface between the spars however
+   they move; `ctx.sheet` places rigid sheets (insect wings, fins, feather cards, each feather
+   on a bone of its own that the rest pose folds back along the body); `ctx.solid` puts hard
+   shells in the parts mesh (wing cases, shaped where they rest with `toRest`, `skinAlong` and
+   `fromRest`).
 
-The output is plain data (`CompiledCreature`): three meshes (skin, hard parts, eyes) sharing one
-skeleton, the material spec, a rig description for motion, gameplay sockets, labelled markers
+The output is plain data (`CompiledCreature`): four meshes (skin, hard parts, eyes, membranes)
+sharing one skeleton, the material spec, a rig description for motion, gameplay sockets, labelled markers
 and stats. `@spawnforge/three` turns it into three `SkinnedMesh`es with TSL materials; the shader
 for patterns is built from the same `Kit` functions the CPU uses (`packages/core/src/shading`).
 
@@ -127,6 +139,12 @@ for patterns is built from the same `Kit` functions the CPU uses (`packages/core
   shells (12 at medium, 16 at high, none at low) pushed out along the skinned normal. Each
   fragment keeps or discards itself against a hair on a rest-space lattice; colours are the skin's
   stack, evaluated per vertex in the vertex stage. The skin under fur is darker and matte.
+- **Membranes** are one double-sided mesh (`membraneMaterial`): each vertex's own colour under
+  the layers of region `wings` (`shadeMembrane`, with a surface made from its position, normal
+  and spar coordinate), veins drawn as anti-aliased lines, light through it as a glow by
+  translucency, and see-through (single pass, depth writes on) only when some vertex is. Wing
+  and fin tubes carry `limb + 2` in the skin's body coordinates, so the `wings` region finds
+  them and fur skips them.
 - **Parity.** `packages/render/src/parity.test.ts` draws the stack unlit in headless Chromium, one
   pixel per sampled skin vertex (three's `stackMaterial`), and compares it with `cpuKit` at the
   same vertices (`surfaceAt`): at least 99% of samples agree within 2/255, for every pattern on
@@ -172,7 +190,10 @@ same code runs live in the browser, checks motion in Node and renders filmstrips
   and only the head nearest an action's target lunges); jaws; leg IK to the planted feet (so actions never make feet slide); arm swing (by the
   gait phase on bipeds; above four or more legs, following the opposite foreleg's foot) and the
   `arms` reach; tail
-  springs pulling toward the rest shape (plus swish); helper bones.
+  springs pulling toward the rest shape (plus swish); helper bones; wings, turned from rest
+  toward bind by the damped `wings` goal (about 0.4 s × the time scale), the shoulders lifting
+  a little with each breath; and last the membranes' stations (`applyStations`), which every
+  other solve skips.
 - **Events**, returned by `update`: `footstep` (leg id and position), `gait` changes,
   `action-start` and `action-end`, and the moments actions declare (`bite-contact`,
   `roar-peak`) with the head's position (and, with several heads, which one in `head`).
@@ -196,7 +217,10 @@ flat ground, draws a gait cycle and reports cycle time, stride, duty per leg and
   `testCourse` ground and records the worst foot slide, ground penetration, overstretched legs
   (IK misses) and limb-limb or limb-body overlaps, each with the limb and time. Problems become
   warnings with id-based paths and fixes, next to the compile's own (`below_ground`,
-  `leg_too_short`, `part_buried`). `describeCreature` writes a paragraph from the spec, using
+  `leg_too_short`, `part_buried`, `wing_clearance`). Wings and fins are checked walking and
+  standing at spread 0.5 and 1: their bones past the shoulder and every 8th membrane vertex
+  skinned by the pose, against the body, legs, arms and ground, leaving out the membrane's
+  attached edge (`wing_intersection`; a wing covered by a case is exempt until it spreads). `describeCreature` writes a paragraph from the spec, using
   each module's optional `describe` hook, so the core never names a part.
 - **`applyPatch`** (`packages/core/src/blueprint/patch.ts`) applies `set`, `add`, `remove`,
   `mirror` and `scale` by id-based paths, including into inherited preset items, then validates
@@ -254,8 +278,11 @@ See [runtime.md](runtime.md) for how games use them.
   `StatsInput` of measured body numbers; modules never see the blueprint.
 - **Export scene** (`packages/three/src/export.ts`): `buildExportScene` assembles the skeleton,
   three skinned meshes with vertex colours and plain `MeshStandardMaterial`s (chitin's skin a
-  `MeshPhysicalMaterial` with its clearcoat), socket nodes, `AnimationClip`s and the extras, plus
-  notes on what the file leaves out (fur, glow). The render page writes it with `GLTFExporter` in headless
+  `MeshPhysicalMaterial` with its clearcoat), and a fourth, double-sided, for membranes
+  (blended by vertex alpha when see-through), socket nodes, `AnimationClip`s and the extras, plus
+  notes on what the file leaves out (fur, glow, membranes' veins and light). Bones are bound at
+  the bind pose and default to rest, so a winged creature's nodes rest folded; a clip writes a
+  track for every bone that differs from its node default. The render page writes it with `GLTFExporter` in headless
   Chromium (`Renderer.export`), as the sandbox does in the browser.
 - **Runtime** (`packages/three/src/runtime.ts`): `createBestiary` compiles through workers or on
   the calling thread with an LRU cache keyed by stable JSON, format and packs. A `Creature` wraps

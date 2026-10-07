@@ -5,6 +5,8 @@ can see what a blueprint produces. They double as the golden test set: each must
 once the pipeline lands each must compile to the same quantized mesh and skeleton on every run.
 
 Regenerate the renders with `pnpm render:examples` after changing a blueprint or the pipeline.
+Winged examples render folded, as they rest; `pnpm spawnforge render <file> --pose spread` shows
+their wings open.
 
 | Blueprint                                      | Body plan | Shows                                              |
 | ---------------------------------------------- | --------- | -------------------------------------------------- |
@@ -21,3 +23,10 @@ Regenerate the renders with `pnpm render:examples` after changing a blueprint or
 | [two-tailed-fox.json](two-tailed-fox.json) | Quadruped | Two raised tails, each its own spring; paws, fur and a pale belly |
 | [tomb-spider.json](tomb-spider.json) | Octopod | Eight arched legs (longest in front) that walk in a wave and run in alternating fours; stripes and spots on chitin |
 | [grove-centaur.json](grove-centaur.json) | Centaur | An upright human torso with shoulders, a chest and hands; hooves, horns and pointed ears; hide |
+| [ash-dragon.json](ash-dragon.json) | Quadruped | Leathery four-fingered wings on the shoulders, folded along the flanks at rest; veins on the wings, horns, a spine crest |
+| [cave-bat.json](cave-bat.json) | Wyvern | Five-fingered wings whose membrane trails to the legs, a thumb claw, big ears and fur |
+| [storm-wyvern.json](storm-wyvern.json) | Wyvern | Wings for forelimbs trailing to the body, a band across the wings, pale horns, a spined tail |
+| [rhino-beetle.json](rhino-beetle.json) | Hexapod | Hard wing cases over the abdomen, with the hind wings folded away beneath them; a nose horn; chitin |
+| [luna-moth.json](luna-moth.json) | Hexapod | Broad fore and round hind wings, see-through and veined, with ringed eye spots (a `wings` layer); fur |
+| [reef-shark.json](reef-shark.json) | Fish | Rayed pectoral fins, flat pelvic fins, a falcate dorsal fin and a forked tail fin; teeth |
+| [griffin.json](griffin.json) | Quadruped | Feathered wings (fingered primaries) folded in rows along the body, a hooked beak, talons in front and paws behind, fur |
