@@ -1086,7 +1086,8 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
           cross,
           t0: k / n,
           t1: (k + 1) / n,
-          skin: true,
+          // A hard case is its own arm: its bones carry the shell and draw nothing.
+          skin: style.shell !== true,
           tube: true,
         }),
       );
@@ -1339,6 +1340,7 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
       wing: wingRigs.length,
       limb: limb.id,
       mirror,
+      at: limb.at,
       root: rootPos.clone(),
       rootRadius,
       out: out.clone(),
@@ -1349,6 +1351,17 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
       style,
       bones: limbBones,
       digits,
+      covered: spec.limbs.some(
+        (other) =>
+          other.role === 'wing' &&
+          other.on === limb.on &&
+          other.mirror === mirror &&
+          other.at < limb.at &&
+          other.membrane !== null &&
+          (registry.get('part', other.membrane.type) as PartModule | undefined)?.provides?.includes(
+            'cover',
+          ) === true,
+      ),
     });
     wingRigs.push({
       id: limb.id,

@@ -1,4 +1,4 @@
-import { Vector3 } from 'three';
+import { type Quaternion, Vector3 } from 'three';
 import { hexToRgb, toHex } from '../blueprint/colors.ts';
 import type { PartSpec } from '../blueprint/creature.ts';
 import { type GeometryKit, geometryKit, type MeshPiece, mirrorX } from '../geometry/kit.ts';
@@ -17,7 +17,7 @@ import { type Sdf, SdfEvaluator } from './sdf.ts';
 import { aroundDirection, type PathSegment, samplePath } from './skeleton.ts';
 import { type WeightOptions, weightsAt } from './skin.ts';
 import type { BoneDef, DrivenChain } from './types.ts';
-import type { WingHooks } from './wings.ts';
+import { bindRotation as bindRotationOf, type WingHooks } from './wings.ts';
 
 /** A place on the creature where a part sits, with its frame and skin weights. */
 export interface Socket {
@@ -195,6 +195,25 @@ export interface PartBuildContext {
     across: readonly number[],
     look: MembraneLook,
   ): void;
+  /**
+   * Hard geometry in model space (bind pose) with weights per vertex, into the parts mesh: a
+   * beetle's wing case, which rides its wing's bones.
+   */
+  solid(
+    positions: readonly Vector3[],
+    normals: readonly Vector3[],
+    indices: readonly number[],
+    weights: readonly (readonly [number, number][])[],
+    look: { readonly color: string; readonly roughness: number },
+  ): void;
+  /**
+   * Where a bind-pose point riding `bone` sits when the wings rest folded, and back: for parts
+   * shaped to fit the folded pose (a wing case lying on the abdomen). Identity off wings.
+   */
+  toRest(point: Vector3, bone: number): Vector3;
+  fromRest(point: Vector3, bone: number): Vector3;
+  /** The skin first met from `from` along `dir` (unit), or undefined within `reach` metres. */
+  skinAlong(from: Vector3, dir: Vector3, reach: number): Vector3 | undefined;
   /** Membrane modules: a bone for a group of feathers, folding with the wing. */
   featherBone(parent: number, head: Vector3, tail: Vector3, up: Vector3): number;
   /** Rows and columns a membrane may use at this quality (scale counts by it). */
@@ -306,6 +325,8 @@ export interface PartsInput {
   readonly wings: ReadonlyMap<string, SpanLimb>;
   /** Membrane rows and columns scale (1 at medium). */
   readonly detail: number;
+  /** World transforms of folded wing bones at rest: bind to rest, by bone (9.3). */
+  readonly rest: ReadonlyMap<number, { readonly rotation: Quaternion; readonly position: Vector3 }>;
 }
 
 const Y = new Vector3(0, 1, 0);
@@ -791,6 +812,71 @@ export function buildParts(
         hexToRgb,
         place.on,
       ),
+    toRest: (point, bone) => {
+      const r = input.rest.get(bone);
+      const b = input.bones[bone] as BoneDef;
+      if (!r) return point.clone();
+      const bind = bindRotationOf(b);
+      return point
+        .clone()
+        .sub(b.head)
+        .applyQuaternion(bind.clone().invert())
+        .applyQuaternion(r.rotation)
+        .add(r.position);
+    },
+    fromRest: (point, bone) => {
+      const r = input.rest.get(bone);
+      const b = input.bones[bone] as BoneDef;
+      if (!r) return point.clone();
+      const bind = bindRotationOf(b);
+      return point
+        .clone()
+        .sub(r.position)
+        .applyQuaternion(r.rotation.clone().invert())
+        .applyQuaternion(bind)
+        .add(b.head);
+    },
+    skinAlong: (from, dir, reach) => {
+      const steps = 48;
+      let prev = evaluator.eval(from.x, from.y, from.z);
+      if (prev < 0) return from.clone();
+      for (let i = 1; i <= steps; i++) {
+        const t = (reach * i) / steps;
+        const v = evaluator.eval(from.x + dir.x * t, from.y + dir.y * t, from.z + dir.z * t);
+        if (v < 0) {
+          let lo = (reach * (i - 1)) / steps;
+          let hi = t;
+          for (let k = 0; k < 20; k++) {
+            const mid = (lo + hi) / 2;
+            if (
+              evaluator.eval(from.x + dir.x * mid, from.y + dir.y * mid, from.z + dir.z * mid) < 0
+            )
+              hi = mid;
+            else lo = mid;
+          }
+          return from.clone().addScaledVector(dir, (lo + hi) / 2);
+        }
+        prev = v;
+      }
+      return undefined;
+    },
+    solid: (positions, normals, indices, weights, look) => {
+      if (!sink.markers.has(id)) {
+        const p0 = positions[0];
+        if (p0) sink.markers.set(id, [p0.x, p0.y, p0.z]);
+      }
+      const base = sink.parts.positions.length / 3;
+      const c = hexToRgb(look.color);
+      positions.forEach((p, v) => {
+        const n = normals[v] as Vector3;
+        sink.parts.positions.push(p.x, p.y, p.z);
+        sink.parts.normals.push(n.x, n.y, n.z);
+        sink.parts.color.push(c[0], c[1], c[2]);
+        sink.parts.info.push(0, look.roughness);
+        sink.parts.weights.push([...(weights[v] ?? [])]);
+      });
+      for (const i of indices) sink.parts.indices.push(base + i);
+    },
     featherBone: (parent, head, tail, up) => {
       const list = sink.feathers.get(place.on) ?? [];
       input.bones.push({

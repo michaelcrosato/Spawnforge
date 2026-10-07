@@ -674,6 +674,7 @@ export function compileCreature(
       toes: toeMap,
       limbMirror,
       wings: spans,
+      rest: fold?.rest ?? new Map(),
       detail: quality === 'low' ? 0.5 : quality === 'high' ? 1.4 : 1,
     },
     sink,

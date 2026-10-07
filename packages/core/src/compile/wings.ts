@@ -39,6 +39,11 @@ export interface WingStyle {
   readonly stack: number;
   /** Plate thickness as a share of the torso length, for stacking. */
   readonly thickness: number;
+  /**
+   * A hard case shaped where it rests (a beetle's elytron): it folds onto the body without
+   * lifting clear or stacking, and a pair meets at the midline instead of overlapping.
+   */
+  readonly shell?: boolean;
 }
 
 /** A bat's wing: a shallow M spread, a Z fold against the flank. */
@@ -116,6 +121,8 @@ export interface WingFrame {
   readonly wing: number;
   readonly limb: string;
   readonly mirror: 1 | -1 | 0;
+  /** Where along its section it attaches (0 front, 1 back on the torso). */
+  readonly at: number;
   /** Where the humerus starts, and the root's radius. */
   readonly root: Vector3;
   readonly rootRadius: number;
@@ -130,6 +137,12 @@ export interface WingFrame {
   readonly style: WingStyle;
   readonly bones: readonly number[];
   readonly digits: readonly { readonly bones: readonly number[]; readonly root: 'wrist' | 'tip' }[];
+  /**
+   * Covered by a wing case in front of it on its side (a module that provides `cover`): it
+   * folds on edge along the back, hanging into the body under the case without lifting clear,
+   * hidden there as a beetle's hind wing is, and comes out as it spreads.
+   */
+  readonly covered: boolean;
 }
 
 /** A capsule something folded must keep clear of. */
@@ -171,6 +184,8 @@ export interface FoldResult {
   readonly capsules: Capsule[][];
   /** Wings that could not be folded clear of the body. */
   readonly blocked: string[];
+  /** Each folded bone's world transform at rest (its head and rotation). */
+  readonly rest: Map<number, { rotation: Quaternion; position: Vector3 }>;
 }
 
 /**
@@ -186,16 +201,20 @@ export function foldWings(
   scale: number,
 ): FoldResult {
   const locals: Quaternion[][] = frames.map(() => []);
+  const rest = new Map<number, { rotation: Quaternion; position: Vector3 }>();
   const capsules: Capsule[][] = frames.map(() => []);
   const blocked: string[] = [];
   const placed: Capsule[] = [];
+  let flat = 0;
   const margin = 0.01 * scale;
-  // Lower layers first; of a pair, the right before the left (which lies above it).
+  // Lower layers first: by layer, then wings further back (a hind wing lies under a forewing),
+  // then of a pair the right before the left (which lies above it).
   const order = frames
     .map((f, i) => ({ f, i }))
     .sort(
       (a, b) =>
         a.f.style.stack - b.f.style.stack ||
+        b.f.at - a.f.at ||
         a.f.mirror - b.f.mirror ||
         (a.f.limb < b.f.limb ? -1 : a.f.limb > b.f.limb ? 1 : 0),
     );
@@ -245,14 +264,18 @@ export function foldWings(
     // The folded wing lies in a plane: tangent to the body at its root (lie 0), turning toward
     // flat over the back (lie 90). The humerus points back and down within it; the leading edge
     // faces forward (so a forearm folds forward along the body), or outward lying flat.
+    // A covered wing stands on edge along the back instead, its leading edge up and the rest
+    // hanging down inside the body under the case.
     const lie = style.fold.lie * DEG;
-    const plane = f.rootNormal
-      .clone()
-      .multiplyScalar(Math.cos(lie))
-      .addScaledVector(U, Math.sin(lie))
-      .normalize();
-    const sweep = style.fold.sweep * DEG;
-    const droop = style.fold.droop * DEG;
+    const plane = f.covered
+      ? S.clone()
+      : f.rootNormal
+          .clone()
+          .multiplyScalar(Math.cos(lie))
+          .addScaledVector(U, Math.sin(lie))
+          .normalize();
+    const sweep = f.covered ? 90 * DEG : style.fold.sweep * DEG;
+    const droop = f.covered ? 8 * DEG : style.fold.droop * DEG;
     const hf = S.clone()
       .multiplyScalar(Math.cos(sweep))
       .addScaledVector(Z, -Math.sin(sweep))
@@ -262,9 +285,10 @@ export function foldWings(
     if (hf.lengthSq() < 1e-8) hf.copy(Z).negate().addScaledVector(plane, plane.z);
     hf.normalize();
     // The leading edge faces down the flank (the forearm and hand fold below the humerus), or
-    // outward when the wing lies over the back.
+    // outward when the wing lies over the back, or up when it is covered.
     const leadF = new Vector3().crossVectors(plane, hf).normalize();
-    if ((style.fold.lie < 45 ? -leadF.y : leadF.dot(S)) < 0) leadF.negate();
+    const facing = f.covered ? leadF.y : style.fold.lie < 45 ? -leadF.y : leadF.dot(S);
+    if (facing < 0) leadF.negate();
     const shoulder = basis(hf, leadF, new Vector3().crossVectors(hf, leadF)).multiply(
       basis(h0, lead0, axis).invert(),
     );
@@ -273,7 +297,10 @@ export function foldWings(
       (s, b) => s + (bones[b] as BoneDef).head.distanceTo((bones[b] as BoneDef).tail),
       0,
     );
-    const level = style.stack + (f.mirror > 0 && style.fold.lie >= 45 ? 0.5 : 0);
+    // Wings folded flat lie in layers: each one above every flat wing folded before it.
+    const layered = style.fold.lie >= 45 && !style.shell && !f.covered;
+    const level = layered ? flat : 0;
+    if (layered) flat++;
     if (level > 0) {
       const rise = level * Math.atan(((style.thickness + 0.004) * scale) / Math.max(1e-6, length));
       const tilt = new Vector3().crossVectors(hf, U);
@@ -287,15 +314,18 @@ export function foldWings(
     const roll = Z.clone().multiplyScalar(m);
     const yaw = Y.clone().multiplyScalar(-m);
     const pitch = new Vector3(1, 0, 0);
-    const lifts: ((step: number) => Quaternion)[] = [
-      (k) => new Quaternion().setFromAxisAngle(roll, k * 4 * DEG),
-      (k) => new Quaternion().setFromAxisAngle(yaw, k * 4 * DEG),
-      (k) => new Quaternion().setFromAxisAngle(pitch, k * 4 * DEG),
-      (k) =>
-        new Quaternion()
-          .setFromAxisAngle(roll, k * 3 * DEG)
-          .multiply(new Quaternion().setFromAxisAngle(yaw, k * 3 * DEG)),
-    ];
+    const turn = (axis: Vector3, step: number, deg: number) =>
+      new Quaternion().setFromAxisAngle(axis, step * deg * DEG);
+    // A wing against the side rolls or swings out; one lying flat pitches its tip up.
+    const lifts: ((step: number) => Quaternion)[] =
+      style.fold.lie < 45
+        ? [
+            (k) => turn(roll, k, 4),
+            (k) => turn(yaw, k, 4),
+            (k) => turn(roll, k, 3).multiply(turn(yaw, k, 3)),
+            (k) => turn(pitch, k, 4),
+          ]
+        : [(k) => turn(pitch, k, 3), (k) => turn(pitch, k, 3).multiply(turn(yaw, k, 2))];
     const pose = (lift: Quaternion) => {
       const turn = lift.clone().multiply(shoulder);
       const world = new Map<number, Quaternion>();
@@ -347,26 +377,7 @@ export function foldWings(
           const r = t === 1 ? bone.r1 : (bone.r0 + bone.r1) / 2;
           // The shoulder sits in the pectoral mass by design.
           if (b === f.bones[0] && p.distanceTo(f.root) < 2.5 * f.rootRadius) continue;
-          const dbg = (globalThis as { DEBUG_FOLD?: boolean }).DEBUG_FOLD;
-          if (p.y < r) {
-            if (dbg) console.log('  ground', b, t);
-            return false;
-          }
-          if (field(p) < r + margin) {
-            if (dbg)
-              console.log(
-                '  body',
-                b,
-                t,
-                field(p).toFixed(3),
-                (r + margin).toFixed(3),
-                p
-                  .toArray()
-                  .map((v) => v.toFixed(2))
-                  .join(','),
-              );
-            return false;
-          }
+          if (p.y < r || field(p) < r + margin) return false;
           for (const c of [...obstacles, ...placed])
             if (segmentDistance(p, c.a, c.b) < r + c.radius + 0.004 * scale) return false;
         }
@@ -374,18 +385,14 @@ export function foldWings(
       return true;
     };
     let result = pose(new Quaternion());
-    let ok = clear(result.joints);
-    let steps = 0;
+    let ok = f.covered || style.shell === true || clear(result.joints);
     for (let step = 1; step <= 12 && !ok; step++) {
       for (const lift of lifts) {
         result = pose(lift(step));
         ok = clear(result.joints);
         if (ok) break;
       }
-      steps = step;
     }
-    if ((globalThis as { DEBUG_FOLD?: boolean }).DEBUG_FOLD)
-      console.log(f.limb, 'lift steps', steps, ok);
     if (!ok) blocked.push(f.limb);
     // Local rotations: against the parent's folded world rotation, or its bind one.
     for (const b of all) {
@@ -400,11 +407,12 @@ export function foldWings(
     }
     for (const b of all) {
       const [a, e] = result.joints.get(b) as [Vector3, Vector3];
+      rest.set(b, { rotation: (result.world.get(b) as Quaternion).clone(), position: a.clone() });
       const bone = bones[b] as BoneDef;
       const c = { a, b: e, radius: Math.max(bone.r0, bone.r1) };
       (capsules[i] as Capsule[]).push(c);
       placed.push(c);
     }
   }
-  return { locals, capsules, blocked };
+  return { locals, capsules, blocked, rest };
 }
