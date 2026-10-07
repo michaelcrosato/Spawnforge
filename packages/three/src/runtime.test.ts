@@ -128,4 +128,40 @@ describe('runtime', () => {
     expect(high.position.y).toBeCloseTo(6, 3);
     bestiary.dispose();
   }, 60_000);
+
+  it('flinches, dies and stays dead at any distance', async () => {
+    const bestiary = await createBestiary({ packs: [basicPack], lodDistance: 10 });
+    const wolf = await bestiary.spawn(example('grey-wolf'), { quality: 'low' });
+    const events: string[] = [];
+    wolf.on('*', (e) => events.push(e.type));
+    for (let i = 0; i < 30; i++) bestiary.update(1 / 60);
+    wolf.hit({ direction: { x: 1, z: 0 }, bone: 'head', strength: 0.3 });
+    for (let i = 0; i < 30; i++) bestiary.update(1 / 60);
+    expect(events).toContain('hit');
+    wolf.die({ direction: { x: -1, z: 0 } });
+    expect(wolf.dead).toBe(true);
+    expect(wolf.dying).toBe(true);
+    // Dying, it stays at full detail however far the camera is.
+    const camera = new PerspectiveCamera();
+    camera.position.set(0, 2, 400);
+    for (let i = 0; i < 30; i++) bestiary.update(1 / 60, { camera });
+    expect(wolf.lod).toBe('full');
+    for (let i = 0; i < 60 * 4; i++) bestiary.update(1 / 60, { camera });
+    expect(events).toContain('death');
+    expect(wolf.dying).toBe(false);
+    // At rest it may go baked, but keeps lying where it fell, and its capsules lie with it.
+    const lying = wolf.hitCapsules().map((c) => c.start.y);
+    for (let i = 0; i < 60; i++) bestiary.update(1 / 60, { camera });
+    expect(wolf.lod).toBe('baked');
+    camera.position.set(0, 2, 3);
+    for (let i = 0; i < 60; i++) bestiary.update(1 / 60, { camera });
+    expect(wolf.lod).toBe('full');
+    expect(wolf.dead).toBe(true);
+    const after = wolf.hitCapsules().map((c) => c.start.y);
+    after.forEach((y, i) => {
+      expect(y).toBeCloseTo(lying[i] as number, 5);
+    });
+    expect(Math.max(...after)).toBeLessThan(0.5);
+    bestiary.dispose();
+  }, 60_000);
 });

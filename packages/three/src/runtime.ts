@@ -241,6 +241,40 @@ export class Creature {
   }
 
   /**
+   * A blow (docs/design/10.5-hits-death.md): `direction` is where it pushes (the attacker to the
+   * target), `bone` a bone name as `hitCapsules` gives it, `strength` 0 to 1 (default 0.5). It
+   * flinches, and staggers if the blow would knock it over. Nothing happens to a dead creature.
+   */
+  hit(options: {
+    direction: { x: number; y?: number; z: number };
+    bone?: string;
+    strength?: number;
+  }): void {
+    if (this.controller.dead) return;
+    if (this.lod === 'baked') this.toFull();
+    this.controller.hit(options);
+  }
+
+  /**
+   * Dies: it collapses onto the ground over about a second, falling away from `direction`
+   * (where the killing blow pushes), and lies there; `spawn` or `controller.place` brings one back.
+   */
+  die(options: { direction?: { x: number; y?: number; z: number } } = {}): void {
+    if (this.lod === 'baked') this.toFull();
+    this.controller.die(options);
+  }
+
+  /** Dead (dying or lying still). */
+  get dead(): boolean {
+    return this.controller.dead;
+  }
+
+  /** Collapsing, before it comes to rest. */
+  get dying(): boolean {
+    return this.controller.dying;
+  }
+
+  /**
    * Spreads the wings (1) or folds them (0) when no action asks otherwise; they move there over
    * about 0.4 s. Flying spreads them whatever this says.
    */
@@ -287,8 +321,8 @@ export class Creature {
     if (lod === this.lod) return;
     if (lod === 'full') this.toFull(ground);
     else {
-      // Busy with an action, taking off or landing: finish it at full detail first.
-      if (this.controller.action) return;
+      // Busy with an action, taking off, landing or dying: finish it at full detail first.
+      if (this.controller.action || this.controller.dying) return;
       if (this.controller.flying && this.controller.flightStage !== 'flight') return;
       this.lod = 'baked';
       this.baked.speed = this.controller.speed;
@@ -302,8 +336,9 @@ export class Creature {
     if (this.lod === 'full') return;
     this.lod = 'full';
     if (this.view.meshes.fur) this.view.meshes.fur.visible = true;
-    // A flyer has kept flying all along: it resumes in place on its next update.
-    if (this.controller.flying) return;
+    // A flyer has kept flying all along, and a dead one lies where it fell: they carry on in
+    // place.
+    if (this.controller.flying || this.controller.dead) return;
     const target = this.baked.target;
     this.controller.place(
       this.position.x,
@@ -323,6 +358,8 @@ export class Creature {
   ): MotionEvent[] {
     const b = this.baked;
     const c = this.controller;
+    // A distant corpse keeps its last pose.
+    if (c.dead) return [];
     if (c.flying) return this.updateBakedAir(dt, ground, water);
     let want = 0;
     let heading = c.heading;

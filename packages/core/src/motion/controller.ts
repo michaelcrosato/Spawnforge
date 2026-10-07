@@ -12,6 +12,7 @@ import {
   type LeapTiming,
   ramp,
 } from './actions.ts';
+import { type BoneHulls, boneHulls, hullDepth, turnWorld } from './death.ts';
 import { fabrik } from './fabrik.ts';
 import { applyFace } from './face.ts';
 import { applyStrokes, type FlightNumbers, flightNumbers, turnRadius } from './flight.ts';
@@ -118,6 +119,8 @@ export interface MotionEvent {
   readonly head?: string;
   /** `medium` events: where it moves now (into the water, out onto land). */
   readonly medium?: 'land' | 'water' | 'air';
+  /** `hit` events: the bone the blow landed on. */
+  readonly bone?: string;
 }
 
 /** Pace, posture and attitude per temperament. */
@@ -148,6 +151,37 @@ interface AirState {
   landing: { to: Vector3 | null; plan: LandingPlan | null; goRounds: number } | null;
   /** The flare's start: height and speed. */
   flare?: { y0: number; v0: number };
+}
+
+/** A death in progress, or over (docs/design/10.5-hits-death.md). */
+interface DeathState {
+  /** Seconds since it began, and how long the collapse takes. */
+  t: number;
+  readonly duration: number;
+  /** The fall: about `axis` (in the root's frame) to `angle`, pivoting on `pivot` at its feet. */
+  readonly axis: Vector3;
+  readonly angle: number;
+  readonly pivot: Vector3;
+  /** Where the feet were when it died (world), to buckle from. */
+  readonly feet: readonly Vector3[];
+  /** Lift that keeps it on the ground (m), and how far its necks droop (radians). */
+  lift: number;
+  droop: number;
+  /** Where each head came to rest last frame (its neck's droop), to search from. */
+  readonly droops: number[];
+  /** Above the ground when it died (a flyer, a swimmer): height above the floor (m) and speed. */
+  height: number;
+  vy: number;
+  readonly sinks: boolean;
+  /** How fast it sinks (m/s): to the bed within about 3 s. */
+  readonly sink: number;
+  /** Its pitch and roll when it died (a flyer banks), eased out as it falls. */
+  readonly pitch: number;
+  readonly roll: number;
+  /** When it reached the floor (s into the death), how long it has lain still, and whether it is at rest. */
+  down: number;
+  still: number;
+  rest: boolean;
 }
 
 /** Where a landing touches down and how it comes in. */
@@ -341,6 +375,23 @@ export class MotionController {
   private landedAt: number | undefined;
   /** 1 pitching about the wing roots in flight, 0 about the body's middle as on the ground. */
   private airPivot = 1;
+  /**
+   * A blow's flinch (docs/design/10.5-hits-death.md): the spine's bend with it, sideways and in
+   * pitch (radians), their rates, and how far toward the head it is centred (0 to 1).
+   */
+  private readonly flinch = { x: 0, y: 0, vx: 0, vy: 0, focus: 0 };
+  /** A blow it holds its ground against: the body's sway (m, world) and its rate. */
+  private readonly sway = new Vector3();
+  private readonly swayV = new Vector3();
+  /** A blow that knocks it off balance: the body's slide (m/s, world) and stepping time left. */
+  private readonly push = new Vector3();
+  private staggerT = 0;
+  private steadying = false;
+  /** A death in progress or over, and the bones' support hulls it rests on. */
+  private death: DeathState | null = null;
+  private hulls: BoneHulls | undefined;
+  /** The ground of the last update, for posing a death. */
+  private groundNow: Ground = FLAT;
   /** Height asked for by `moveTo` (a diver's depth), if any. */
   private targetY: number | undefined;
   /** The spine's height while swimming (m), the tail's swing and the fins' beat now. */
@@ -574,6 +625,13 @@ export class MotionController {
     Object.assign(this.strokes, { amplitude: 0, glide: 0, hover: 0, hold: 0, raise: 0 });
     this.airCrouch = 0;
     this.landedAt = undefined;
+    this.death = null;
+    this.staggerT = 0;
+    this.steadying = false;
+    this.push.set(0, 0, 0);
+    this.sway.set(0, 0, 0);
+    this.swayV.set(0, 0, 0);
+    Object.assign(this.flinch, { x: 0, y: 0, vx: 0, vy: 0, focus: 0 });
     this.targetY = undefined;
     this.heading = heading;
     this.speed = 0;
@@ -637,6 +695,8 @@ export class MotionController {
     target: { x: number; y?: number; z: number } | null,
     options: { speed?: number } = {},
   ): void {
+    // The dead go nowhere.
+    if (this.death) return;
     this.targetY = target && typeof target.y === 'number' ? target.y : undefined;
     if (!target) {
       this.target = null;
@@ -655,6 +715,7 @@ export class MotionController {
 
   /** Keep moving at a speed and heading (radians), with no target. */
   drive(speed: number, heading?: number): void {
+    if (this.death) return;
     this.target = null;
     this.atPace = false;
     this.desiredSpeed = Math.max(0, speed);
@@ -672,6 +733,7 @@ export class MotionController {
    */
   act(id: string, options: { target?: { x: number; y: number; z: number } | null } = {}): void {
     const def = this.actionDefs.get(id);
+    if (this.death && def) return;
     if (!def || def.hooks.ambient) {
       const known = this.motion.actions.map((a) => a.id);
       throw new Error(
@@ -762,6 +824,7 @@ export class MotionController {
           ? 'it has no air gait: list one in motion.gaits (or leave them out), with the air on, to fly'
           : 'it cannot fly: it has no wings',
       );
+    if (this.death) return;
     this.flyHeight = options.height;
     this.flySpeed = options.speed;
     if (this.air) return;
@@ -777,12 +840,246 @@ export class MotionController {
    * ground ahead. Waits for a running action to end.
    */
   land(target: { x: number; z: number } | null = null): void {
+    if (this.death) return;
     const to = target ? new Vector3(target.x, 0, target.z) : null;
     if (this.current) {
       this.pendingAir = { kind: 'land', to };
       return;
     }
     if (this.air) this.air.landing = { to, plan: null, goRounds: 0 };
+  }
+
+  /**
+   * A blow (docs/design/10.5-hits-death.md): `direction` is where it pushes, in world space (only
+   * its horizontal part counts); `bone` a bone name or index (default the torso's middle);
+   * `strength` 0 to 1 (default 0.5). The spine and neck flinch with it; a blow that would carry
+   * the body past its feet makes it stagger, stepping to catch itself. Fires `hit` (and
+   * `stagger`). Does nothing to a dead creature.
+   */
+  hit(options: {
+    direction: { x: number; y?: number; z: number };
+    bone?: string | number;
+    strength?: number;
+  }): void {
+    if (this.death) return;
+    const strength = Math.max(0, Math.min(1, options.strength ?? 0.5));
+    const rig = this.compiled.rig;
+    const names = this.compiled.bones.names;
+    const middle = rig.spine[Math.floor(rig.spine.length / 2)] as number;
+    const bone =
+      typeof options.bone === 'number'
+        ? options.bone
+        : options.bone !== undefined
+          ? names.indexOf(options.bone)
+          : middle;
+    if (bone < 0 || bone >= names.length)
+      throw new Error(`no bone "${options.bone}"; hit capsules name the bones a blow can land on`);
+    const push = new Vector3(options.direction.x, 0, options.direction.z);
+    if (push.lengthSq() < 1e-12) push.set(-Math.sin(this.heading), 0, -Math.cos(this.heading));
+    push.normalize();
+    // In the body's frame: toward its left (+) and forward (+).
+    const left = push.x * Math.cos(this.heading) - push.z * Math.sin(this.heading);
+    const forward = push.x * Math.sin(this.heading) + push.z * Math.cos(this.heading);
+    // The flinch: a kick to a damped spring, peaking near 0.35 rad × strength.
+    const omega = (2 * Math.PI * 2.5) / this.timeScale;
+    const kick = 0.5 * omega * strength;
+    this.flinch.vx += left * kick;
+    this.flinch.vy -= forward * kick;
+    const section = this.compiled.bones.sections[bone];
+    this.flinch.focus = section === 'head' || section === 'jaw' ? 1 : section === 'neck' ? 0.7 : 0;
+    const at = this.pose.worldPos[bone] as Vector3;
+    this.events.push({
+      type: 'hit',
+      time: this.time,
+      bone: names[bone] as string,
+      position: [at.x, at.y, at.z],
+    });
+    // The push: a velocity that friction stops over `tau`.
+    const h = this.hipHeight;
+    const v0 = 0.5 * strength * Math.sqrt(G * h);
+    const tau = 0.35 * this.timeScale;
+    if (this.air || this.medium === 'water' || this.legs.length === 0) {
+      // Flyers, swimmers and legless bodies sway with it.
+      this.swayV.addScaledVector(push, v0);
+      return;
+    }
+    if (v0 * tau > this.supportMargin(push)) {
+      this.push.addScaledVector(push, v0);
+      this.staggerT = 2.5 * tau;
+      this.steadying = true;
+      this.events.push({
+        type: 'stagger',
+        time: this.time,
+        position: [this.position.x, this.position.y, this.position.z],
+      });
+    } else this.swayV.addScaledVector(push, v0);
+  }
+
+  /**
+   * How far the body's middle may move along `direction` (world, horizontal unit) before it is
+   * past its planted feet: the support polygon, each foot a disc of 0.12 hip heights.
+   */
+  private supportMargin(direction: Vector3): number {
+    const h = this.hipHeight;
+    const feet = this.legs.filter((l) => !l.swinging).map((l) => l.planted);
+    const centre = this.pose.worldPos[
+      this.compiled.rig.spine[Math.floor(this.compiled.rig.spine.length / 2)] as number
+    ] as Vector3;
+    if (feet.length === 0) return 0;
+    const r = 0.12 * h;
+    const pts = feet.map((f) => [f.x, f.z] as [number, number]);
+    const hull = convexHull2(pts);
+    for (let t = 0; t <= 3 * h; t += 0.02 * h) {
+      const x = centre.x + direction.x * t;
+      const z = centre.z + direction.z * t;
+      if (distanceToHull(hull, x, z) > r) return t;
+    }
+    return 3 * h;
+  }
+
+  /**
+   * Dies (docs/design/10.5-hits-death.md): it stops what it was doing, fires `death`, and over
+   * about a second collapses onto the ground, falling away from `direction` (where the killing
+   * blow pushes; default from its right), never into the ground. Then it is `dead` until
+   * `place` stands it up again. In the air it falls first; in the water it sinks to the bed.
+   */
+  die(options: { direction?: { x: number; y?: number; z: number } } = {}): void {
+    if (this.death) return;
+    if (this.current) {
+      this.events.push({ type: 'action-end', time: this.time, action: this.current.id });
+      this.current = null;
+    }
+    this.pendingAir = null;
+    this.target = null;
+    this.targetY = undefined;
+    this.desiredSpeed = 0;
+    this.driveHeading = undefined;
+    this.lockedGait = undefined;
+    this.goals = {};
+    this.wingGoal = 0;
+    this.hulls ??= boneHulls(this.compiled, this.pose);
+    const rig = this.compiled.rig;
+    const pose = this.pose;
+    const push = new Vector3(options.direction?.x ?? 0, 0, options.direction?.z ?? 0);
+    // Default: hit from its right, so pushed toward its left.
+    if (push.lengthSq() < 1e-12) push.set(Math.cos(this.heading), 0, -Math.sin(this.heading));
+    push.normalize();
+    // The push in the root's frame (heading 0 faces +Z, its left is +X).
+    const local = new Vector3(
+      push.x * Math.cos(this.heading) - push.z * Math.sin(this.heading),
+      0,
+      push.x * Math.sin(this.heading) + push.z * Math.cos(this.heading),
+    );
+    // Which way it falls, and how far.
+    const spine0 = rig.spine[0] as number;
+    const legs = this.legs.length;
+    const upright = legs > 0 && legs <= 2 && this.torsoPitch() >= Math.PI / 4;
+    let fall: Vector3;
+    let angle: number;
+    if (legs === 0) {
+      // Legless: onto its side if it is taller than wide, else limp where it lies.
+      fall = new Vector3(local.x >= 0 ? 1 : -1, 0, 0);
+      angle = this.taller() ? Math.PI / 2 : 0;
+    } else if (upright) {
+      fall = local.clone();
+      angle = (80 * Math.PI) / 180;
+    } else {
+      // Onto the side away from the blow (from straight ahead or behind: onto its right).
+      fall = new Vector3(Math.abs(local.x) > 0.2 ? Math.sign(local.x) : -1, 0, 0);
+      angle = rig.posture === 'sprawl' ? (20 * Math.PI) / 180 : Math.PI / 2;
+    }
+    const axis = new Vector3().crossVectors(UP, fall).normalize();
+    // It topples over the edge of its feet on that side (or its body's, without legs).
+    let edge = 0;
+    for (const leg of this.legs)
+      edge = Math.max(edge, leg.neutral.x * fall.x + leg.neutral.z * fall.z);
+    if (legs === 0) edge = 0.5 * this.halfWidth();
+    const restZ = (pose.restPos[spine0] as Vector3).z;
+    const pivot = new Vector3(fall.x * edge, 0, restZ + fall.z * edge);
+    // Above the floor: a flyer falls, a swimmer sinks.
+    const sinks = this.medium === 'water';
+    const floorY = this.groundNow(this.position.x, this.position.z).height;
+    const height = Math.max(0, this.position.y - floorY);
+    this.air = null;
+    this.medium = 'land';
+    this.death = {
+      t: 0,
+      duration: 1.1 * this.timeScale,
+      axis,
+      angle,
+      pivot,
+      feet: this.legs.map((l) => l.planted.clone()),
+      lift: 0,
+      droop: 0,
+      droops: [],
+      height,
+      vy: 0,
+      sinks,
+      sink: height / 3,
+      pitch: this.pitch,
+      roll: this.roll,
+      down: 0,
+      still: 0,
+      rest: false,
+    };
+    this.position.y = floorY + height;
+    this.events.push({
+      type: 'death',
+      time: this.time,
+      position: [this.position.x, this.position.y, this.position.z],
+    });
+  }
+
+  /** Dying or dead (from `die` until `place`). */
+  get dead(): boolean {
+    return this.death !== null;
+  }
+
+  /** Dying: from `die` until the body comes to rest. */
+  get dying(): boolean {
+    return this.death !== null && !this.death.rest;
+  }
+
+  /** The torso's pitch at rest (radians): an upright biped's is high. */
+  private torsoPitch(): number {
+    const spine = this.compiled.rig.spine;
+    const a = this.pose.restWorldPos[spine[0] as number] as Vector3;
+    const b = this.pose.restWorldPos[spine.at(-1) as number] as Vector3;
+    return Math.atan2(b.y - a.y, Math.max(1e-6, Math.abs(b.z - a.z)));
+  }
+
+  /** The body's half-width and half-height at its middle, at rest, from its hull. */
+  private middleExtent(): { width: number; height: number } {
+    const hulls = this.hulls as BoneHulls;
+    const spine = this.compiled.rig.spine;
+    const bone = spine[Math.floor(spine.length / 2)] as number;
+    const rot = this.pose.restWorldRot[bone] as Quaternion;
+    let width = 0;
+    let height = 0;
+    const from = hulls.ranges[bone * 2] as number;
+    const to = hulls.ranges[bone * 2 + 1] as number;
+    for (let i = from; i < to; i++) {
+      const p = scratch1
+        .set(
+          hulls.points[i * 3] as number,
+          hulls.points[i * 3 + 1] as number,
+          hulls.points[i * 3 + 2] as number,
+        )
+        .applyQuaternion(rot);
+      width = Math.max(width, Math.abs(p.x));
+      height = Math.max(height, Math.abs(p.y));
+    }
+    const r = this.compiled.bones.radii[bone] ?? 0.1;
+    return { width: width || r, height: height || r };
+  }
+
+  private taller(): boolean {
+    const { width, height } = this.middleExtent();
+    return height > 1.25 * width;
+  }
+
+  private halfWidth(): number {
+    return this.middleExtent().width;
   }
 
   /** True for bodies without legs (they slither). */
@@ -890,6 +1187,14 @@ export class MotionController {
     input: { ground?: Ground; water?: Water; pose?: boolean } = {},
   ): MotionEvent[] {
     const ground = input.ground ?? FLAT;
+    this.groundNow = ground;
+    // Dead and at rest: nothing moves.
+    if (this.death?.rest) {
+      this.time += Math.min(dt, 0.25);
+      const events = this.events;
+      this.events = [];
+      return events;
+    }
     this.posing = input.pose !== false || !this.air;
     this.accumulator += Math.min(dt, 0.25);
     let steps = 0;
@@ -921,6 +1226,11 @@ export class MotionController {
 
   private step(dt: number, ground: Ground, water?: Water): void {
     this.time += dt;
+    if (this.death) {
+      this.stepDeath(dt, ground);
+      return;
+    }
+    this.stepBlows(dt);
     const temperament = TEMPERAMENTS[this.motion.temperament];
     const leaping = this.current;
     if (leaping?.hooks.leap && !leaping.leap) this.planLeap(leaping, ground);
@@ -1216,6 +1526,419 @@ export class MotionController {
       leg.swinging = true;
       leg.armed = false;
     }
+  }
+
+  // --- Hits and death (docs/design/10.5-hits-death.md) -------------------------------------
+
+  /** A blow's flinch springs back, its sway settles, and a stagger slides to a stop. */
+  private stepBlows(dt: number): void {
+    const f = this.flinch;
+    if (f.x !== 0 || f.y !== 0 || f.vx !== 0 || f.vy !== 0) {
+      const omega = (2 * Math.PI * 2.5) / this.timeScale;
+      f.vx += (-omega * omega * f.x - 2 * 0.45 * omega * f.vx) * dt;
+      f.vy += (-omega * omega * f.y - 2 * 0.45 * omega * f.vy) * dt;
+      f.x += f.vx * dt;
+      f.y += f.vy * dt;
+      if (Math.abs(f.x) + Math.abs(f.y) + Math.abs(f.vx) + Math.abs(f.vy) < 1e-5)
+        Object.assign(f, { x: 0, y: 0, vx: 0, vy: 0 });
+    }
+    if (this.sway.lengthSq() + this.swayV.lengthSq() > 0) {
+      const omega = (2 * Math.PI * 1.2) / this.timeScale;
+      this.swayV
+        .addScaledVector(this.sway, -omega * omega * dt)
+        .addScaledVector(this.swayV, -2 * 0.6 * omega * dt);
+      this.sway.addScaledVector(this.swayV, dt);
+      if (this.sway.lengthSq() + this.swayV.lengthSq() < 1e-10) {
+        this.sway.set(0, 0, 0);
+        this.swayV.set(0, 0, 0);
+      }
+    }
+    if (this.push.lengthSq() > 0) {
+      this.position.addScaledVector(this.push, dt);
+      this.push.multiplyScalar(Math.exp(-dt / (0.35 * this.timeScale)));
+      if (this.push.lengthSq() < 1e-6) this.push.set(0, 0, 0);
+    }
+    if (this.staggerT > 0) this.staggerT = Math.max(0, this.staggerT - dt);
+  }
+
+  /** The collapse: falling (or sinking) to the floor, sliding to a stop, springs going limp. */
+  private stepDeath(dt: number, ground: Ground): void {
+    const d = this.death as DeathState;
+    d.t += dt;
+    const u = Math.min(1, d.t / d.duration);
+    if (d.height > 0) {
+      d.vy = d.sinks ? -Math.max(0.4, d.sink) : d.vy - G * dt;
+      d.height = Math.max(0, d.height + d.vy * dt);
+    }
+    this.speed = damp(this.speed, 0, 4, dt);
+    this.position.x += Math.sin(this.heading) * this.speed * dt;
+    this.position.z += Math.cos(this.heading) * this.speed * dt;
+    if (this.push.lengthSq() > 0) {
+      this.position.addScaledVector(this.push, dt);
+      this.push.multiplyScalar(Math.exp(-dt / (0.35 * this.timeScale)));
+      if (this.push.lengthSq() < 1e-6) this.push.set(0, 0, 0);
+    }
+    this.position.y = ground(this.position.x, this.position.z).height + d.height;
+    // The necks droop until the heads rest on the ground (the pose stops them there).
+    d.droop = Math.min(1.4, 1.5 * d.t);
+    this.goals = { jaw: 0.25 * u, blink: Math.min(1, 2 * u) };
+    this.wingGoal = 0;
+    this.yawRate = 0;
+    this.stepParts(dt, ground);
+    // At rest once the collapse is over, it is on the floor, nothing slides and its springs
+    // have stopped (slower than 1% of its size a second for 0.3 s), or 4 s after it began.
+    let fastest = this.speed + this.push.length() + Math.abs(this.spread - this.wingGoal);
+    for (const spring of this.springs)
+      for (let i = 1; i < spring.points.length; i++)
+        fastest = Math.max(
+          fastest,
+          (spring.points[i] as Vector3).distanceTo(spring.previous[i] as Vector3) / dt,
+        );
+    if (d.height > 0) d.down = d.t;
+    const settled = d.t > d.duration + 0.2 && d.height === 0;
+    d.still = settled && fastest < 0.01 * this.compiled.scale ? d.still + dt : 0;
+    if (d.height === 0 && (d.still >= 0.3 || d.t - d.down > d.duration + 4)) d.rest = true;
+  }
+
+  /**
+   * Poses a death: posed, its hulls measured against the ground, and lifted by however deep they
+   * go, again until it rests on the ground (decision 6); then the necks droop onto it.
+   */
+  private applyDeathPose(ground: Ground): void {
+    const d = this.death as DeathState;
+    if (this.deathGround.length !== this.pose.count * 3)
+      this.deathGround = new Float64Array(this.pose.count * 3);
+    this.deathGround.fill(Number.NaN);
+    let lift = d.lift;
+    for (let pass = 0; pass < 4; pass++) {
+      this.poseDeath(ground, lift);
+      const depth = this.deathDepth(ground, false);
+      const next = Math.max(0, lift + depth);
+      if (Math.abs(next - lift) < 2e-4 * this.compiled.scale) {
+        if (next !== lift) {
+          lift = next;
+          this.poseDeath(ground, lift);
+        }
+        break;
+      }
+      lift = next;
+      if (pass === 3) this.poseDeath(ground, lift);
+    }
+    this.settleLimbs(ground);
+    // Heads that cannot rest on the ground however their necks droop lift the body.
+    let residual = this.droopNecks(ground);
+    for (let pass = 0; pass < 2 && residual > 2e-4 * this.compiled.scale; pass++) {
+      lift += residual;
+      this.poseDeath(ground, lift);
+      this.settleLimbs(ground);
+      residual = this.droopNecks(ground);
+    }
+    d.lift = lift;
+  }
+
+  /** The dying body at a lift above where its fall puts it (before the necks droop). */
+  private poseDeath(ground: Ground, lift: number): void {
+    const d = this.death as DeathState;
+    const pose = this.pose;
+    const rig = this.compiled.rig;
+    const u = Math.min(1, d.t / d.duration);
+    // The fall accelerates, from a fifth of the way in.
+    const v = Math.max(0, Math.min(1, (u - 0.15) / 0.7));
+    const angle = d.angle * v * v;
+    // The fall, from the attitude it died in (a flyer's bank fades out), onto the ground's slope
+    // where it comes to lie.
+    const fade = 1 - smooth(d.t / 0.4);
+    const fall = scratchQ3
+      .setFromEuler(
+        scratchEuler.set(
+          -this.slopeAlong(ground) * v * v,
+          0,
+          this.slopeAcross(ground) * v * v,
+          'YXZ',
+        ),
+      )
+      .multiply(scratchQ.setFromAxisAngle(d.axis, angle))
+      .multiply(scratchQ2.setFromEuler(scratchEuler.set(-d.pitch * fade, 0, d.roll * fade, 'YXZ')));
+    pose.reset();
+    const root = rig.root;
+    (pose.pos[root] as Vector3).copy(this.position);
+    (pose.rot[root] as Quaternion).setFromAxisAngle(UP, this.heading);
+    if (rig.posture === 'legless') {
+      // On its trail; turned over about the ground under its root, and lifted.
+      this.applySlither(ground);
+      const yaw = scratchQ4.setFromAxisAngle(UP, this.heading);
+      const turn = scratchQ5.copy(yaw).multiply(fall).multiply(scratchQ2.copy(yaw).invert());
+      (pose.rot[root] as Quaternion).premultiply(turn);
+      // It sinks onto the ground, as far as the ground lets it.
+      (pose.pos[root] as Vector3).y += lift - this.restBodyY * smooth(u / 0.6);
+      pose.solve();
+      this.applySprings(this.tailBones);
+    } else {
+      const spine0 = rig.spine[0] as number;
+      // The legs buckle: the body sinks while it topples, as far as the ground lets it.
+      const sink = this.restBodyY * (0.35 * smooth(u / 0.4) + 1.2 * v * v);
+      const at = scratch1.set(0, this.restBodyY - sink, (pose.restPos[spine0] as Vector3).z);
+      at.sub(d.pivot).applyQuaternion(fall).add(d.pivot);
+      at.y += lift;
+      (pose.pos[spine0] as Vector3).copy(at);
+      (pose.rot[spine0] as Quaternion).premultiply(fall);
+      this.solvePose();
+      // Feet let go of the ground and fall with the body, stopping on the ground.
+      const letGo = smooth((u - 0.05) / 0.45);
+      const body = scratchQ4
+        .copy(pose.worldRot[spine0] as Quaternion)
+        .multiply(scratchQ5.copy(pose.restWorldRot[spine0] as Quaternion).invert());
+      const down = scratch2.set(0, -1, 0).applyQuaternion(body).multiplyScalar(0.55);
+      down.y -= 0.45;
+      down.normalize();
+      for (const [k, leg] of this.legs.entries()) {
+        const first = leg.rig.bones[0] as number;
+        const hip = pose.worldPos[first] as Vector3;
+        let length = 0;
+        for (const b of leg.rig.bones) length += pose.lengths[b] as number;
+        const relaxed = scratch3.copy(hip).addScaledVector(down, 0.8 * length);
+        const foot = leg.planted.copy(d.feet[k] as Vector3).lerp(relaxed, letGo);
+        foot.y = Math.max(foot.y, ground(foot.x, foot.z).height + leg.footLift);
+        leg.swinging = false;
+      }
+      this.poseLegs(true);
+      this.applySprings();
+    }
+    this.applyHelpers();
+    this.solvePose();
+    this.applyWings();
+    this.applyJaw();
+  }
+
+  /** Legs and fins that would go into the ground, once the body rests on it, bend up off it. */
+  private settleLimbs(ground: Ground): void {
+    const pose = this.pose;
+    // Legs, then fins and flippers, bend up off the ground bone by bone from the hip or root:
+    // each bone that would go into it swings up about its joint until it lies on it.
+    // A joint's helper (a knee's) swings the bone above it up.
+    const sets = this.deathSets();
+    const chains = [...sets.legs, ...sets.fins];
+    const upper = new Map(this.compiled.rig.helpers.map(([helper, above]) => [helper, above]));
+    for (let pass = 0; pass < 3; pass++) {
+      for (const chain of chains)
+        for (const b of chain) {
+          pose.solveBone(b);
+          if (upper.has(b)) continue;
+          const depth = this.bonesDepth(ground, [b]);
+          if (depth > 0) this.raiseEnd(b, pose.lengths[b] as number, depth);
+        }
+      this.applyHelpers();
+      this.solvePose();
+      let moved = false;
+      for (const chain of chains)
+        for (const b of chain) {
+          const above = upper.get(b);
+          if (above === undefined) continue;
+          const depth = this.bonesDepth(ground, [b]);
+          if (depth <= 0) continue;
+          this.raiseEnd(above, pose.lengths[above] as number, depth);
+          moved = true;
+        }
+      if (!moved) break;
+      this.solvePose();
+    }
+    this.applyWings();
+    this.applyJaw();
+  }
+
+  /**
+   * How deep the body's hulls go into the ground (m; negative: how far above it the lowest one
+   * is). The necks and heads (`heads`) are measured apart, so they can rest on the ground on
+   * their own; springs (tails, tentacles) keep their own floors.
+   */
+  private deathDepth(ground: Ground, heads: boolean): number {
+    const sets = this.deathSets();
+    return this.bonesDepth(ground, heads ? sets.heads : sets.body);
+  }
+
+  /** How deep these bones' hulls go into the ground (m). */
+  private bonesDepth(ground: Ground, bones: readonly number[]): number {
+    const hulls = this.hulls as BoneHulls;
+    const cache = this.deathGround;
+    const step = this.floorStep;
+    let deepest = -Infinity;
+    for (const b of bones) {
+      // The ground under each bone, sampled once a frame unless the bone moved far.
+      const height = (x: number, z: number) => {
+        const k = b * 3;
+        if (!(Math.abs(x - (cache[k] as number)) + Math.abs(z - (cache[k + 1] as number)) < step)) {
+          cache[k] = x;
+          cache[k + 1] = z;
+          cache[k + 2] = ground(x, z).height;
+        }
+        return cache[k + 2] as number;
+      };
+      deepest = Math.max(deepest, hullDepth(hulls, this.pose, b, height));
+    }
+    return deepest;
+  }
+  private deathGround = new Float64Array(0);
+
+  /**
+   * Bones the body rests on, bones of the necks and heads, and each leg's bones (with its toes):
+   * legs fold out of the way rather than hold the body up. Springs are left out.
+   */
+  private deathSets(): {
+    body: number[];
+    heads: number[];
+    perHead: number[][];
+    legs: number[][];
+    fins: number[][];
+    subtree: number[][];
+  } {
+    if (this.deathBones) return this.deathBones;
+    const rig = this.compiled.rig;
+    const parents = this.pose.parents;
+    const sprung = new Set(this.springs.flatMap((s) => s.bones.slice(1)));
+    const necks = new Map<number, number>();
+    const legless = rig.posture === 'legless';
+    rig.heads.forEach((h, i) => {
+      // A legless body's neck lies on its trail (unless it reared); only its head is apart.
+      const first = legless && !this.rearing ? h.head : (h.neck[0] ?? h.head);
+      necks.set(first, i);
+    });
+    const headOf = (b: number): number => {
+      for (let x = b; x >= 0; x = parents[x] ?? -1) {
+        const i = necks.get(x);
+        if (i !== undefined) return i;
+      }
+      return -1;
+    };
+    const isSprung = (b: number): boolean => {
+      for (let x = b; x >= 0; x = parents[x] ?? -1) if (sprung.has(x)) return true;
+      return false;
+    };
+    const legOf = new Map<number, number>();
+    this.legs.forEach((leg, k) => {
+      legOf.set(leg.rig.bones[0] as number, k);
+    });
+    const whichLeg = (b: number): number => {
+      for (let x = b; x >= 0; x = parents[x] ?? -1) {
+        const k = legOf.get(x);
+        if (k !== undefined) return k;
+      }
+      return -1;
+    };
+    const finOf = new Map<number, number>();
+    rig.fins.forEach((fin, k) => {
+      for (const b of fin.bones) finOf.set(b, k);
+    });
+    const thighs = new Set(this.legs.map((l) => l.rig.bones[0] as number));
+    const sections = this.compiled.bones.sections;
+    const body: number[] = [];
+    const heads: number[] = [];
+    const perHead: number[][] = rig.heads.map(() => []);
+    const subtree: number[][] = rig.heads.map(() => []);
+    const legs: number[][] = this.legs.map(() => []);
+    const fins: number[][] = rig.fins.map(() => []);
+    for (let b = 0; b < this.pose.count; b++) {
+      const i = headOf(b);
+      if (i >= 0) (subtree[i] as number[]).push(b);
+      // Membranes ride on their spars; springs keep their own floors.
+      if (isSprung(b) || sections[b] === 'station') continue;
+      const k = whichLeg(b);
+      const f = finOf.get(b);
+      // The body rests on its thighs too; the rest of a leg folds out of the way.
+      if (thighs.has(b)) body.push(b);
+      else if (k >= 0) (legs[k] as number[]).push(b);
+      else if (f !== undefined) (fins[f] as number[]).push(b);
+      else if (i >= 0) {
+        heads.push(b);
+        (perHead[i] as number[]).push(b);
+      } else body.push(b);
+    }
+    this.deathBones = { body, heads, perHead, legs, fins, subtree };
+    return this.deathBones;
+  }
+  private deathBones: ReturnType<MotionController['deathSets']> | undefined;
+
+  /**
+   * The necks droop toward the ground by the death's droop, as far as the heads stay on it: found
+   * by bisection when the full droop would put a head into the ground.
+   */
+  private droopNecks(ground: Ground): number {
+    const d = this.death as DeathState;
+    const rig = this.compiled.rig;
+    const pose = this.pose;
+    // A legless body's neck lies on its trail, unless it reared.
+    if (rig.posture === 'legless' && !this.rearing) return 0;
+    const sets = this.deathSets().perHead;
+    let residual = 0;
+    rig.heads.forEach((head, i) => {
+      const chain = head.neck.length > 0 ? head.neck : [head.head];
+      const saved = chain.map((b) => (pose.rot[b] as Quaternion).clone());
+      // Down toward the ground, about the horizontal axis across the neck, as the body lies.
+      const from = pose.worldPos[chain[0] as number] as Vector3;
+      const to = pose.tail(head.head, scratch3);
+      const axis = new Vector3().crossVectors(
+        scratch2.subVectors(to, from),
+        scratch1.set(0, -1, 0),
+      );
+      if (axis.lengthSq() < 1e-10) return;
+      axis.normalize();
+      const bones = sets[i] as number[];
+      const below = (this.deathSets().subtree[i] as number[]).filter((b) => !chain.includes(b));
+      const sprung = this.springs.filter((sp) => below.includes(sp.bones[0] as number));
+      const apply = (droop: number) => {
+        chain.forEach((b, k) => {
+          (pose.rot[b] as Quaternion).copy(saved[k] as Quaternion);
+        });
+        pose.solveBone(pose.parents[chain[0] as number] as number);
+        for (const b of chain) {
+          turnWorld(pose, b, axis, droop / chain.length);
+          pose.solveBone(b);
+        }
+        for (const b of below) pose.solveBone(b);
+        // Antennae and other springs on the head follow it down, onto the ground.
+        if (sprung.length > 0) {
+          this.applySprings(
+            this.springs.filter((sp) => !sprung.includes(sp)).map((sp) => sp.bones[0] as number),
+          );
+          for (const b of below) pose.solveBone(b);
+        }
+        return this.bonesDepth(ground, bones);
+      };
+      if (apply(d.droop) <= 0) {
+        d.droops[i] = d.droop;
+        return;
+      }
+      // Where it rested last frame, if it still rests there.
+      const last = d.droops[i];
+      if (
+        last !== undefined &&
+        last < d.droop &&
+        apply(last) <= 0 &&
+        apply(Math.min(d.droop, last + 0.01)) > 0
+      ) {
+        apply(last);
+        return;
+      }
+      // The full droop puts the head into the ground: as far as it rests on it, raising the
+      // head if it must; whatever is left, the caller lifts the body by.
+      let lo = -0.6;
+      const low = apply(lo);
+      if (low > 0) {
+        residual = Math.max(residual, low);
+        return;
+      }
+      let hi = d.droop;
+      for (let k = 0; k < 6; k++) {
+        const mid = (lo + hi) / 2;
+        if (apply(mid) <= 0) lo = mid;
+        else hi = mid;
+      }
+      d.droops[i] = lo;
+      apply(lo);
+    });
+    this.solvePose();
+    this.applyWings();
+    this.applyJaw();
+    return residual;
   }
 
   // --- Flight (docs/design/10.4-flight.md) ------------------------------------------------
@@ -1633,6 +2356,24 @@ export class MotionController {
     this.touchdown(ground, water);
   }
 
+  /** The ground's rise along the heading over the body's length where it stands (radians). */
+  private slopeAlong(ground: Ground): number {
+    const half = 0.5 * this.compiled.scale;
+    const { x, z } = this.position;
+    const fx = Math.sin(this.heading) * half;
+    const fz = Math.cos(this.heading) * half;
+    return Math.atan2(ground(x + fx, z + fz).height - ground(x - fx, z - fz).height, 2 * half);
+  }
+
+  /** The ground's rise toward its left across the body (radians). */
+  private slopeAcross(ground: Ground): number {
+    const half = 0.25 * this.compiled.scale;
+    const { x, z } = this.position;
+    const lx = Math.cos(this.heading) * half;
+    const lz = -Math.sin(this.heading) * half;
+    return Math.atan2(ground(x + lx, z + lz).height - ground(x - lx, z - lz).height, 2 * half);
+  }
+
   /** The ground's pitch along the heading, between the front and hind feet (radians, uphill +). */
   private slopePitch(floor: (x: number, z: number) => number): number {
     const zs = this.legs.map((l) => l.neutral.z);
@@ -2024,8 +2765,14 @@ export class MotionController {
     // Keep stepping while turning on the spot or settling feet after stopping, and finish any
     // swing in progress; once every foot is close to its rest spot the legs stand still.
     const turning = Math.abs(this.yawRate) > 0.15;
-    const restless = turning || this.legs.some((l) => l.swinging || this.footError(l) > 0.12 * h);
-    const minimum = (0.25 * Math.sqrt(G / h)) / Math.PI;
+    // Staggering, and until every foot has caught up with the body after it.
+    if (this.staggerT === 0 && this.legs.every((l) => !l.swinging && this.footError(l) <= 0.04 * h))
+      this.steadying = false;
+    const staggering = this.staggerT > 0 || this.steadying;
+    const restless =
+      staggering || turning || this.legs.some((l) => l.swinging || this.footError(l) > 0.12 * h);
+    // Staggering, it steps quickly to catch itself.
+    const minimum = ((staggering ? 1.2 : 0.25) * Math.sqrt(G / h)) / Math.PI;
     if (restless) frequency = Math.max(frequency, minimum);
     // Step faster when a planted foot would fall out of reach before its lift-off (starting
     // off, speeding up): it has `halfStride` behind its rest spot plus however far ahead it is.
@@ -2367,15 +3114,17 @@ export class MotionController {
       if (look && k === lasher) this.lashRest(spring, rest, look, lash, g.lashArc ?? Math.PI / 2);
       if (look && grab > 0 && (k === reach1 || k === reach2))
         this.reachRest(spring, rest, look, grab);
-      // A whipping chain follows its strike more tightly.
-      const stiffness = k === lasher ? Math.max(spring.stiffness, 0.5) : spring.stiffness;
+      // A whipping chain follows its strike more tightly; a dead one goes limp.
+      const limp = this.death ? Math.min(1, this.death.t / this.death.duration) : 0;
+      const stiffness =
+        (k === lasher ? Math.max(spring.stiffness, 0.5) : spring.stiffness) * (1 - 0.95 * limp);
       for (let i = 1; i < pts.length; i++) {
         const p = pts[i] as Vector3;
         const prev = spring.previous[i] as Vector3;
-        const velocity = scratch1.subVectors(p, prev).multiplyScalar(0.92);
+        const velocity = scratch1.subVectors(p, prev).multiplyScalar(0.92 - 0.12 * limp);
         prev.copy(p);
         p.add(velocity);
-        p.addScaledVector(UP, -G * 0.15 * dt * dt);
+        p.addScaledVector(UP, -G * (0.15 + 0.85 * limp) * dt * dt);
         p.lerp(rest[i - 1] as Vector3, stiffness);
       }
       // One pass from the root leaves every segment its length (a second only rounds).
@@ -2394,7 +3143,11 @@ export class MotionController {
       // Tails only in the air and through a landing's absorb (10.4), following the slope of the
       // ground between samples.
       const tail = spring.kind === 'tail';
-      if (clearance && floors && (!tail || this.air !== null || this.landedAt !== undefined))
+      if (
+        clearance &&
+        floors &&
+        (!tail || this.air !== null || this.landedAt !== undefined || this.death !== null)
+      )
         for (let i = 1; i < pts.length; i++) {
           const a = pts[i - 1] as Vector3;
           const p = pts[i] as Vector3;
@@ -2428,6 +3181,17 @@ export class MotionController {
           prev.z += (p.z - prev.z) * 0.3;
         }
     }
+  }
+
+  /** Swings a bone up about its head, keeping its length, until its end is `by` higher. */
+  private raiseEnd(b: number, length: number, by: number): void {
+    const head = this.pose.worldPos[b] as Vector3;
+    const end = this.pose.tail(b, scratch2);
+    const rise = Math.min(length, end.y + by - head.y);
+    const flat = scratch1.set(end.x - head.x, 0, end.z - head.z);
+    if (flat.lengthSq() < 1e-12) flat.set(Math.sin(this.heading), 0, Math.cos(this.heading));
+    flat.setLength(Math.sqrt(Math.max(0, length * length - rise * rise)));
+    this.pose.aim(b, flat.setY(rise));
   }
 
   /**
@@ -2466,6 +3230,10 @@ export class MotionController {
 
   /** Writes the body, legs, head and springs into the pose. */
   private applyPose(ground: Ground): void {
+    if (this.death) {
+      this.applyDeathPose(ground);
+      return;
+    }
     const pose = this.pose;
     const rig = this.compiled.rig;
     pose.reset();
@@ -2503,10 +3271,13 @@ export class MotionController {
       (g.shift ?? 0) * h;
     // A lunge throws the whole body forward a little, not just the neck.
     const lunge = (g.reach ?? 0) * 0.12 * this.compiled.scale;
+    // A blow's sway, from the world into the root's frame.
+    const swayX = this.sway.x * Math.cos(this.heading) - this.sway.z * Math.sin(this.heading);
+    const swayZ = this.sway.x * Math.sin(this.heading) + this.sway.z * Math.cos(this.heading);
     (pose.pos[spine0] as Vector3).set(
-      sway,
+      sway + swayX,
       this.bodyY + bob + this.airY - (g.crouch ?? 0) * h - this.airCrouch,
-      (pose.restPos[spine0] as Vector3).z + lunge,
+      (pose.restPos[spine0] as Vector3).z + lunge + swayZ,
     );
     const tilt = scratchQ3.setFromEuler(
       scratchEuler.set(-this.pitch - (g.rear ?? 0) + this.lean, 0, this.roll, 'YXZ'),
@@ -2530,8 +3301,15 @@ export class MotionController {
     const bendBones = [...rig.spine.slice(1), ...mainNeck];
     // A swimmer's body wave runs back from the head, growing toward the hips, into the tail.
     const wave = this.medium === 'water' && this.gait?.swim !== 'legs' ? this.swimSwish * 0.3 : 0;
+    // A blow's flinch, spread over the spine and neck, or mostly the neck for a blow to the head.
+    const f = this.flinch;
+    const torsoBones = rig.spine.length - 1;
+    const flinchAt = (k: number) =>
+      (1 - f.focus) / Math.max(1, bendBones.length) +
+      (k >= torsoBones ? f.focus / Math.max(1, bendBones.length - torsoBones) : 0);
     const bendAt = (k: number) =>
       this.bend / Math.max(1, bendBones.length) +
+      f.x * flinchAt(k) +
       (sprawl ? Math.sin(this.phase * Math.PI * 2 - k * 0.6) * 0.06 * moving : 0) +
       (wave !== 0
         ? (wave / Math.max(1, bendBones.length)) *
@@ -2542,6 +3320,8 @@ export class MotionController {
       // Bends turn about the dorsal axis, which on an upright front is its own long axis.
       const axis = this.uprightFront && k >= rig.spine.length - 1 ? Y_AXIS : Z_AXIS;
       (pose.rot[b] as Quaternion).multiply(scratchQ.setFromAxisAngle(axis, -bendAt(k)));
+      if (f.y !== 0)
+        (pose.rot[b] as Quaternion).multiply(scratchQ.setFromAxisAngle(X_AXIS, -f.y * flinchAt(k)));
     });
     // A gallop or a bound flexes the back as the hind feet land and extends it as the fore feet
     // do, spread over the torso's bones.
@@ -2568,44 +3348,18 @@ export class MotionController {
 
     // Heads: keep them level, facing the way it walks (or toward a look target); jaws.
     this.applyHeads();
+    // A blow to the head snaps it with the flinch, past what keeps it level.
+    if (f.focus > 0 && (f.x !== 0 || f.y !== 0))
+      for (const head of rig.heads) {
+        const q = pose.rot[head.head] as Quaternion;
+        q.multiply(scratchQ.setFromAxisAngle(Z_AXIS, -0.6 * f.focus * f.x));
+        q.multiply(scratchQ.setFromAxisAngle(X_AXIS, -0.6 * f.focus * f.y));
+        pose.solveBone(head.head);
+      }
     this.applyJaw();
 
     // Legs: IK from the posed hips to the planted feet.
-    for (const [k, leg] of this.legs.entries()) {
-      const first = leg.rig.bones[0] as number;
-      pose.solveBone(first);
-      const hip = pose.worldPos[first] as Vector3;
-      // In the air the knees bend in the body's frame, banked and pitched with it.
-      const pole = scratch1
-        .copy(leg.pole)
-        .applyQuaternion(
-          this.air
-            ? scratchQ4
-                .copy(pose.worldRot[rig.spine[0] as number] as Quaternion)
-                .multiply(
-                  scratchQ5.copy(pose.restWorldRot[rig.spine[0] as number] as Quaternion).invert(),
-                )
-            : (pose.worldRot[rig.root] as Quaternion),
-        );
-      this.legMiss[k] = solvePrepared(leg.limb, hip, leg.planted, pole, leg.points);
-      leg.rig.bones.forEach((b, k) => {
-        pose.aim(b, scratch2.subVectors(leg.points[k + 1] as Vector3, leg.points[k] as Vector3));
-      });
-      // Toes stay flat, turned with the body; a rolling foot's toes stay on their planted tips,
-      // letting go early in the swing.
-      for (const toe of leg.rig.toes) {
-        for (const b of toe) {
-          pose.solveBone(b);
-          const restDir = scratch2.set(0, 1, 0).applyQuaternion(pose.restWorldRot[b] as Quaternion);
-          restDir.applyAxisAngle(UP, this.heading);
-          pose.aim(b, restDir);
-        }
-      }
-      if (leg.roll) {
-        const hold = leg.swinging ? 1 - Math.min(1, leg.swingU / 0.25) : 1;
-        if (hold > 0) poseToes(leg.roll, pose, this.heading, hold * hold * (3 - 2 * hold));
-      }
-    }
+    this.poseLegs(this.air !== null);
 
     // Arms swing against the legs: on bipeds by the gait's phase; above four or more legs (a
     // centaur) with the foreleg on the other side, as a walking person's arms follow their legs.
@@ -2643,6 +3397,50 @@ export class MotionController {
     this.applyFins();
     this.solvePose();
     this.applyWings();
+  }
+
+  /**
+   * Leg IK from the posed hips to each leg's `planted` foot. Knees bend toward their poles in the
+   * root's frame, or with `bodyFrame` in the body's own (in the air, or falling over).
+   */
+  private poseLegs(bodyFrame: boolean): void {
+    const pose = this.pose;
+    const rig = this.compiled.rig;
+    for (const [k, leg] of this.legs.entries()) {
+      const first = leg.rig.bones[0] as number;
+      pose.solveBone(first);
+      const hip = pose.worldPos[first] as Vector3;
+      // In the air the knees bend in the body's frame, banked and pitched with it.
+      const pole = scratch1
+        .copy(leg.pole)
+        .applyQuaternion(
+          bodyFrame
+            ? scratchQ4
+                .copy(pose.worldRot[rig.spine[0] as number] as Quaternion)
+                .multiply(
+                  scratchQ5.copy(pose.restWorldRot[rig.spine[0] as number] as Quaternion).invert(),
+                )
+            : (pose.worldRot[rig.root] as Quaternion),
+        );
+      this.legMiss[k] = solvePrepared(leg.limb, hip, leg.planted, pole, leg.points);
+      leg.rig.bones.forEach((b, k) => {
+        pose.aim(b, scratch2.subVectors(leg.points[k + 1] as Vector3, leg.points[k] as Vector3));
+      });
+      // Toes stay flat, turned with the body; a rolling foot's toes stay on their planted tips,
+      // letting go early in the swing.
+      for (const toe of leg.rig.toes) {
+        for (const b of toe) {
+          pose.solveBone(b);
+          const restDir = scratch2.set(0, 1, 0).applyQuaternion(pose.restWorldRot[b] as Quaternion);
+          restDir.applyAxisAngle(UP, this.heading);
+          pose.aim(b, restDir);
+        }
+      }
+      if (leg.roll) {
+        const hold = leg.swinging ? 1 - Math.min(1, leg.swingU / 0.25) : 1;
+        if (hold > 0) poseToes(leg.roll, pose, this.heading, hold * hold * (3 - 2 * hold));
+      }
+    }
   }
 
   /**
@@ -2938,7 +3736,9 @@ export class MotionController {
   private applySprings(skip: readonly number[] = []): void {
     // A tail kept off the floor (in the air and through a landing's absorb) is kept off it as
     // posed too: the body may have moved since its spring stepped.
-    const floored = this.air !== null || this.landedAt !== undefined;
+    const floored = this.air !== null || this.landedAt !== undefined || this.death !== null;
+    const ground = this.groundNow;
+    const height = (x: number, z: number) => ground(x, z).height;
     for (const spring of this.springs) {
       if (skip.includes(spring.bones[0] as number)) continue;
       const floors = floored && spring.kind === 'tail' ? spring.floors : undefined;
@@ -2950,6 +3750,12 @@ export class MotionController {
         // `aim` solves the bone itself.
         if (dir.lengthSq() > 1e-12) this.pose.aim(b, dir);
         else this.pose.solveBone(b);
+        // Dead, everything a spring bone carries (spikes, a stinger) stays out of the ground.
+        if (this.death && this.hulls) {
+          const depth = hullDepth(this.hulls, this.pose, b, height);
+          if (depth > 0) this.raiseEnd(b, spring.lengths[i] as number, depth);
+          return;
+        }
         if (!floors || !spring.clearance) return;
         const k = (i + 1) * 5;
         const x0 = floors[k] as number;
@@ -3095,11 +3901,66 @@ function gaitTop(gait: GaitInfo): number {
   return gait.flight ? gait.froude[1] : Math.min(gait.froude[1], 1.5);
 }
 
+/** Smoothstep of a value clamped to 0..1. */
+function smooth(x: number): number {
+  const t = Math.max(0, Math.min(1, x));
+  return t * t * (3 - 2 * t);
+}
+
 function wrapAngle(a: number): number {
   return Math.atan2(Math.sin(a), Math.cos(a));
 }
 
 /** In the air the floor is the higher of the ground and any water over it. */
+/** Convex hull of 2D points (Andrew's monotone chain), counter-clockwise. */
+function convexHull2(points: [number, number][]): [number, number][] {
+  if (points.length < 3) return points;
+  const sorted = [...points].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const cross = (o: [number, number], a: [number, number], b: [number, number]) =>
+    (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const half = (list: [number, number][]) => {
+    const out: [number, number][] = [];
+    for (const p of list) {
+      while (
+        out.length >= 2 &&
+        cross(out.at(-2) as [number, number], out.at(-1) as [number, number], p) <= 0
+      )
+        out.pop();
+      out.push(p);
+    }
+    return out;
+  };
+  const lower = half(sorted);
+  const upper = half([...sorted].reverse());
+  return [...lower.slice(0, -1), ...upper.slice(0, -1)];
+}
+
+/** Distance from (x, z) to a convex polygon, segment or point (0 inside a polygon). */
+function distanceToHull(hull: readonly [number, number][], x: number, z: number): number {
+  if (hull.length >= 3) {
+    let inside = true;
+    for (let i = 0; i < hull.length; i++) {
+      const a = hull[i] as [number, number];
+      const b = hull[(i + 1) % hull.length] as [number, number];
+      if ((b[0] - a[0]) * (z - a[1]) - (b[1] - a[1]) * (x - a[0]) < 0) inside = false;
+    }
+    if (inside) return 0;
+  }
+  let best = Infinity;
+  for (let i = 0; i < hull.length; i++) {
+    const a = hull[i] as [number, number];
+    const b = hull[(i + 1) % hull.length] as [number, number];
+    const dx = b[0] - a[0];
+    const dz = b[1] - a[1];
+    const t = Math.max(
+      0,
+      Math.min(1, ((x - a[0]) * dx + (z - a[1]) * dz) / (dx * dx + dz * dz || 1)),
+    );
+    best = Math.min(best, Math.hypot(x - a[0] - t * dx, z - a[1] - t * dz));
+  }
+  return best;
+}
+
 function airFloor(ground: Ground, water: Water | undefined): Ground {
   if (!water) return ground;
   return (x, z) => {

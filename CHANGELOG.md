@@ -234,6 +234,20 @@ Work in progress toward 0.2, phase by phase (see the plan's status table).
   `notBuilt`; nothing is.
 - **Examples:** the griffin's wings are longer, to fly; the rhino beetle, too heavy for its wings,
   is grounded (`"media": { "air": false }`); `scenarios/flight-course.json`.
+- **Hits and death (10.5):** `hit({ direction, bone, strength })` flinches the spine and neck (a
+  blow to the head snaps it) and, when the blow would carry the body past its feet, staggers it:
+  it slides and steps quickly to catch itself (`hit`, `stagger` events). `die({ direction })`
+  collapses any creature onto the game's ground without a physics engine: legs buckle, four-legged
+  bodies, birds and raptors topple onto the side away from the blow, upright bipeds fall along it,
+  sprawlers sink, snakes go limp, necks droop until the heads rest on the ground, tails and
+  tentacles flop onto it, wings fold, eyes close (`death` event); killed in the air it falls, in
+  water it sinks to the bed. Each bone's support hull (64 extreme points of what it carries) keeps
+  every example within 3% of its size of the ground, on flat and rough ground, from either side.
+  `dead` and `dying`; the dead ignore movement and actions until `place`. A `death` clip for every
+  creature; the runtime's `Creature` gains `hit`, `die`, `dead` and `dying`, keeps dying creatures
+  at full detail and corpses lying at any distance. Scenarios take `hit` and `die` calls. The
+  sandbox has hit and die buttons.
+- **Examples:** `scenarios/hit-and-die.json`.
 
 ## 0.1.0
 
