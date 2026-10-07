@@ -104,21 +104,22 @@ describe('format 0.2', () => {
     const dragon = check({
       extends: 'quadruped',
       body: { muscle: 0.8, neck: { count: 3, length: 0.7 } },
-      limbs: [{ id: 'wing', role: 'wing' }],
+      limbs: [
+        { id: 'wing', role: 'wing' },
+        { id: 'feeler', role: 'tentacle', attach: { on: 'head', at: 0.2 } },
+      ],
       skin: { fur: { length: 0.04 } },
     });
     expect(dragon.ok).toBe(true);
     expect(dragon.warnings).toEqual([]);
-    // Fur (8.4) and several heads (9.1) are built; wings are not yet (9.3).
-    expect(dragon.notBuilt?.map((i) => i.path).sort()).toEqual([
-      'limbs[id=wing].membrane.type',
-      'limbs[id=wing].role',
-    ]);
+    // Fur (8.4), several heads (9.1) and wings (9.3) are built; tentacles are not yet (9.4).
+    expect(dragon.notBuilt?.map((i) => i.path).sort()).toEqual(['limbs[id=feeler].role']);
     expect(dragon.notBuilt?.[0]?.fix).toMatch(/^keep it/);
   });
 
   it('leaves out what something else implies, and names a skipped host', () => {
-    // Wings imply flying and a pincer is not built yet: the role and the parts are listed alone.
+    // Wings imply flying, which is not built yet (10.4), and neither is a pincer: the pincer is
+    // listed, flying only when the blueprint writes it.
     const implied = check({
       extends: 'quadruped',
       limbs: [
@@ -126,11 +127,7 @@ describe('format 0.2', () => {
         { id: 'wing', role: 'wing' },
       ],
     });
-    expect(implied.notBuilt?.map((i) => i.path).sort()).toEqual([
-      'limbs[id=foreleg].foot.type',
-      'limbs[id=wing].membrane.type',
-      'limbs[id=wing].role',
-    ]);
+    expect(implied.notBuilt?.map((i) => i.path).sort()).toEqual(['limbs[id=foreleg].foot.type']);
     // Stances are drawn (8.2); swimming is not yet.
     const written = check({
       extends: 'quadruped',
@@ -215,8 +212,14 @@ describe('format 0.2', () => {
   it('compiles what is built and reports the rest', () => {
     const result = check({
       extends: 'quadruped',
-      limbs: [{ id: 'wing', role: 'wing' }],
-      parts: [{ id: 'barb', type: 'horn.curved', attach: { on: 'wing', at: 0.5 } }],
+      limbs: [
+        { id: 'wing', role: 'wing' },
+        { id: 'tail-arm', role: 'tentacle', attach: { on: 'tail', at: 0.9 } },
+      ],
+      parts: [
+        { id: 'barb', type: 'horn.curved', attach: { on: 'wing', at: 0.5 } },
+        { id: 'hook', type: 'horn.curved', attach: { on: 'tail-arm', at: 0.5 } },
+      ],
       body: { neck: { count: 2, length: 0.6 } },
     });
     expect(result.errors).toEqual([]);
@@ -224,10 +227,13 @@ describe('format 0.2', () => {
     const compiled = compileCreature(result.creature, registry, { quality: 'low' });
     expect(compiled.rig.legs).toHaveLength(4);
     expect(compiled.rig.arms).toHaveLength(0);
-    // Two heads are built (9.1); the wing is reported.
+    // Two heads (9.1) and the wings with the part on them (9.3) are built; the tentacle and
+    // the part on it are reported.
     expect(compiled.rig.heads.map((h) => h.id)).toEqual(['head', 'head.R1']);
+    expect(compiled.rig.wings.map((w) => w.id)).toEqual(['wing.L', 'wing.R']);
+    expect(compiled.markers.map((m) => m.id)).toEqual(expect.arrayContaining(['barb.L']));
     expect(compiled.warnings.map((w) => w.path)).toEqual(
-      expect.arrayContaining(['limbs[id=wing].role']),
+      expect.arrayContaining(['limbs[id=tail-arm].role', 'parts[id=hook].attach.on']),
     );
   });
 

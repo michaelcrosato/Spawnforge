@@ -18,7 +18,12 @@ export interface RenderRequest {
    */
   readonly filmstrip?: FilmstripRequest;
   /** Contact sheets: the jaw open (0 shut to 1 wide) and the eyelids shut (0 to 1). */
-  readonly pose?: { readonly jaw?: number; readonly blink?: number };
+  /** Open the jaw, shut the eyes, spread the wings (each 0 to 1; wings rest folded). */
+  readonly pose?: {
+    readonly jaw?: number;
+    readonly blink?: number;
+    readonly spread?: number;
+  };
   /** Debugging switches. */
   readonly debug?: {
     readonly hide?: readonly ('skin' | 'parts' | 'eyes')[];

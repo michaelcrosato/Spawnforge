@@ -32,7 +32,9 @@ Commands:
                                         (--quiet leaves the blueprint out)
   render <file|-> [--out f.png] [--labels] [--size px] [--quality low|medium|high]
          [--views 3/4,side,head,front,top,rear,underside] [--jaw 0-1] [--blink 0-1]
-                                        PNG contact sheet of the creature (headless Chromium)
+         [--pose rest|spread]
+                                        PNG contact sheet of the creature (headless Chromium);
+                                        wings rest folded, --pose spread opens them
   render <file|-> --filmstrip [--gait id] [--speed m/s] [--frames n] [--view side|3/4|top|front]
                                         One gait cycle as frames with a footfall diagram;
                                         prints cycle, stride, duty and foot slide
@@ -112,6 +114,7 @@ function parseOptions() {
       labels: { type: 'boolean' },
       jaw: { type: 'string' },
       blink: { type: 'string' },
+      pose: { type: 'string' },
       size: { type: 'string' },
       views: { type: 'string' },
       quality: { type: 'string' },
@@ -166,6 +169,13 @@ const VIEW_NAMES: Record<string, View> = {
 };
 
 /** --quality: low, medium or high. */
+/** `--pose`: the rest pose (wings folded) or spread. */
+function poseSpread(value: string | undefined): number {
+  if (value === undefined || value === 'rest') return 0;
+  if (value === 'spread') return 1;
+  throw new CommandError(`unknown pose "${value}": use rest or spread`);
+}
+
 function qualityOf(value: string | undefined): 'low' | 'medium' | 'high' | undefined {
   if (value === undefined) return undefined;
   if (value !== 'low' && value !== 'medium' && value !== 'high')
@@ -249,8 +259,14 @@ async function render(): Promise<{ output: unknown; exitCode?: number }> {
       ...(views ? { views } : {}),
       ...(values.quality ? { quality: qualityOf(values.quality) } : {}),
       ...(filmstrip ? { filmstrip } : {}),
-      ...(values.jaw || values.blink
-        ? { pose: { jaw: Number(values.jaw ?? 0), blink: Number(values.blink ?? 0) } }
+      ...(values.jaw || values.blink || values.pose
+        ? {
+            pose: {
+              jaw: Number(values.jaw ?? 0),
+              blink: Number(values.blink ?? 0),
+              spread: poseSpread(values.pose),
+            },
+          }
         : {}),
     });
   } catch (error) {

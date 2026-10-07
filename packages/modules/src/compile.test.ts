@@ -9,6 +9,7 @@ import {
   fingerprint,
   type MeshData,
   mainHead,
+  type PartModule,
   resolveBlueprint,
   statsInput,
   validateBlueprint,
@@ -168,6 +169,12 @@ describe('compiling', () => {
   });
 });
 
+/** The limb role a membrane module covers: fins for fin membranes, else wings. */
+const roleFor = (module: PartModule) => (module.tags.includes('fin') ? 'fin' : 'wing');
+/** The mesh a part builds into: eyes, membranes (when it made any) or the hard parts. */
+const meshOf = (c: CompiledCreature, module: PartModule) =>
+  module.material === 'eye' ? c.eyes : c.membranes.indices.length > 0 ? c.membranes : c.parts;
+
 describe('module harness', () => {
   // Stubs have no geometry yet; stubs.test.ts covers them.
   const parts = registry.list('part').filter((m) => !m.planned);
@@ -182,17 +189,25 @@ describe('module harness', () => {
               extends: 'quadruped',
               limbs: [{ id: 'foreleg', foot: { ...module.example, type: id } }],
             }
-          : {
-              format: FORMAT,
-              extends: 'quadruped',
-              parts: [
-                { ...module.example, type: id },
-                { id: 'plain', type: id },
-              ],
-            };
+          : module.slot === 'membrane'
+            ? {
+                format: FORMAT,
+                extends: 'quadruped',
+                limbs: [
+                  { id: 'wing', role: roleFor(module), membrane: { ...module.example, type: id } },
+                ],
+              }
+            : {
+                format: FORMAT,
+                extends: 'quadruped',
+                parts: [
+                  { ...module.example, type: id },
+                  { id: 'plain', type: id },
+                ],
+              };
       expect(validateBlueprint(blueprint, registry).errors).toEqual([]);
       const c = compile(blueprint);
-      const geometry = module.material === 'eye' ? c.eyes : c.parts;
+      const geometry = meshOf(c, module);
       expect(geometry.indices.length).toBeGreaterThan(0);
       checkMesh(id, geometry);
     },
@@ -242,11 +257,17 @@ describe('module harness', () => {
                 extends: 'quadruped',
                 limbs: [{ id: 'foreleg', foot: { type: id, ...params } }],
               }
-            : { format: FORMAT, extends: 'quadruped', parts: [{ id: 'x', type: id, params }] };
+            : module.slot === 'membrane'
+              ? {
+                  format: FORMAT,
+                  extends: 'quadruped',
+                  limbs: [{ id: 'wing', role: roleFor(module), membrane: { type: id, ...params } }],
+                }
+              : { format: FORMAT, extends: 'quadruped', parts: [{ id: 'x', type: id, params }] };
         const result = validateBlueprint(blueprint, registry);
         expect(result.errors).toEqual([]);
         const c = compile(blueprint);
-        checkMesh(id, module.material === 'eye' ? c.eyes : c.parts);
+        checkMesh(id, meshOf(c, module));
       }
     },
   );

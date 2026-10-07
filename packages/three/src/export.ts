@@ -16,8 +16,10 @@ import {
   MeshPhysicalMaterial,
   MeshStandardMaterial,
   Object3D,
+  type Quaternion,
   QuaternionKeyframeTrack,
   SkinnedMesh,
+  type Vector3,
   VectorKeyframeTrack,
 } from 'three';
 import { buildBones, geometryOf } from './assemble.ts';
@@ -63,8 +65,16 @@ function bakedMesh(
   return mesh;
 }
 
-/** Animation tracks for one baked clip: rotations for every bone that moves, root position. */
-function clipOf(clip: BakedClip, compiled: CompiledCreature): AnimationClip {
+/**
+ * Animation tracks for one baked clip: rotations for every bone that moves or stands away from
+ * its node default (the rest pose: a folded wing that holds still still needs its track,
+ * docs/design/9.3-wings-fins.md), and the root's position.
+ */
+function clipOf(
+  clip: BakedClip,
+  compiled: CompiledCreature,
+  rest: { readonly positions: readonly Vector3[]; readonly rotations: readonly Quaternion[] },
+): AnimationClip {
   const names = compiled.bones.names.map(exportName);
   const n = names.length;
   const times = new Float32Array(clip.frames);
@@ -75,14 +85,23 @@ function clipOf(clip: BakedClip, compiled: CompiledCreature): AnimationClip {
     const pos = new Float32Array(clip.frames * 3);
     let turns = false;
     let moves = false;
+    const q = rest.rotations[b] as Quaternion;
+    const p = rest.positions[b] as Vector3;
+    const restRot = [q.x, q.y, q.z, q.w];
+    const restPos = [p.x, p.y, p.z];
     for (let f = 0; f < clip.frames; f++) {
+      // q and -q are the same turn.
+      let dot = 0;
       for (let j = 0; j < 4; j++) {
         rot[f * 4 + j] = clip.rotations[(f * n + b) * 4 + j] as number;
+        dot += (rot[f * 4 + j] as number) * (restRot[j] as number);
         if (Math.abs((rot[f * 4 + j] as number) - (rot[j] as number)) > 1e-5) turns = true;
       }
+      if (Math.abs(dot) < 1 - 1e-6) turns = true;
       for (let j = 0; j < 3; j++) {
         pos[f * 3 + j] = clip.positions[(f * n + b) * 3 + j] as number;
         if (Math.abs((pos[f * 3 + j] as number) - (pos[j] as number)) > 1e-5) moves = true;
+        if (Math.abs((pos[f * 3 + j] as number) - (restPos[j] as number)) > 1e-5) moves = true;
       }
     }
     // Every animated bone gets a rotation track, so clips never inherit another clip's pose.
@@ -106,7 +125,7 @@ export function buildExportScene(
   registry: Registry,
   options: ExportSceneOptions = {},
 ): { scene: Group; animations: AnimationClip[]; notes: string[] } {
-  const { bones, skeleton } = buildBones(compiled);
+  const { bones, skeleton, rest } = buildBones(compiled);
   for (const bone of bones) bone.name = exportName(bone.name);
   const scene = new Group();
   scene.name = exportName(compiled.name || 'creature');
@@ -128,7 +147,7 @@ export function buildExportScene(
     node.position.set(...socket.offset);
     bones[socket.bone]?.add(node);
   }
-  const animations = (options.clips ?? []).map((clip) => clipOf(clip, compiled));
+  const animations = (options.clips ?? []).map((clip) => clipOf(clip, compiled, rest));
   scene.userData = {
     spawnforge: {
       name: compiled.name,

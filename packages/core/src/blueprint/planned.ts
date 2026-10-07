@@ -64,8 +64,6 @@ export function notBuilt(
 
   // The core's own new fields.
   const roles: Record<string, [string, string]> = {
-    wing: ['a wing', '9.3'],
-    fin: ['a fin', '9.3'],
     tentacle: ['a tentacle', '9.4'],
   };
   for (const limb of spec.limbs) {
@@ -102,7 +100,7 @@ export function notBuilt(
 }
 
 /** Limb roles the pipeline builds; the others arrive in phase 9. */
-const BUILT_ROLES: readonly LimbRole[] = ['leg', 'arm'];
+const BUILT_ROLES: readonly LimbRole[] = ['leg', 'arm', 'wing', 'fin'];
 
 /**
  * The part of a creature the pipeline can build today: limbs of the roles it knows, and the

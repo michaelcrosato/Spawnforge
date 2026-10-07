@@ -1,5 +1,5 @@
 import {
-  applyFace,
+  applyRest,
   bakeClips,
   compileCreature,
   createRegistry,
@@ -266,11 +266,31 @@ window.spawnforgeRender = async (request) => {
   const creature = createCreatureObject(compiled, registry);
   for (const name of request.debug?.hide ?? []) creature.meshes[name].visible = false;
   renderer.shadowMap.enabled = request.debug?.shadows ?? true;
-  if (request.pose && !request.filmstrip) {
-    const pose = new Pose(compiled.bones);
-    applyFace(pose, compiled.rig, request.pose.jaw ?? 0, request.pose.blink ?? 0);
+  // Stills show the rest pose (folded wings), opened or spread as asked.
+  const spread = request.filmstrip ? 0 : (request.pose?.spread ?? 0);
+  let pose: Pose | undefined;
+  if (!request.filmstrip) {
+    pose = new Pose(compiled.bones);
+    applyRest(pose, compiled.rig, {
+      jaw: request.pose?.jaw ?? 0,
+      blink: request.pose?.blink ?? 0,
+      spread,
+    });
     applyPose(creature, pose);
   }
+  // Markers follow their bones into the pose.
+  const markerAt = (m: (typeof compiled.markers)[number]) => {
+    const p = new THREE.Vector3(...m.position);
+    if (!pose || m.bone === undefined) return p;
+    const b = m.bone;
+    const bindRot = new THREE.Quaternion().fromArray(compiled.bones.rotations, b * 4);
+    const bindPos = new THREE.Vector3().fromArray(compiled.bones.positions, b * 3);
+    return p
+      .sub(bindPos)
+      .applyQuaternion(bindRot.invert())
+      .applyQuaternion(pose.worldRot[b] as THREE.Quaternion)
+      .add(pose.worldPos[b] as THREE.Vector3);
+  };
 
   const scene = new THREE.Scene();
   scene.add(new THREE.HemisphereLight('#e8eeff', '#4a4034', 1.15));
@@ -279,8 +299,9 @@ window.spawnforgeRender = async (request) => {
   scene.add(key, key.target, rim, rim.target);
   scene.add(creature.object);
 
-  const [x0, y0, z0] = compiled.bounds.min;
-  const [x1, y1, z1] = compiled.bounds.max;
+  const frameBounds = spread > 0 && compiled.spreadBounds ? compiled.spreadBounds : compiled.bounds;
+  const [x0, y0, z0] = frameBounds.min;
+  const [x1, y1, z1] = frameBounds.max;
   const min = new THREE.Vector3(x0, y0, z0);
   const max = new THREE.Vector3(x1, y1, z1);
   const centre = min.clone().add(max).multiplyScalar(0.5);
@@ -489,14 +510,10 @@ window.spawnforgeRender = async (request) => {
     if (request.labels && (view === 'side' || view === 'three-quarter' || view === 'head')) {
       // Labels stack in columns at the panel's edges, joined to their points by leader lines.
       const visible = compiled.markers
-        .filter((m) => !(view === 'side' && m.position[0] < -extent.x * 0.15))
-        .filter(
-          (m) =>
-            view !== 'head' ||
-            new THREE.Vector3(...m.position).distanceTo(headCentre) < headSize * 1.1,
-        )
+        .filter((m) => !(view === 'side' && markerAt(m).x < -extent.x * 0.15))
+        .filter((m) => view !== 'head' || markerAt(m).distanceTo(headCentre) < headSize * 1.1)
         .map((m) => {
-          const p = new THREE.Vector3(...m.position).project(camera);
+          const p = markerAt(m).project(camera);
           return { m, sx: x + (p.x * 0.5 + 0.5) * size, sy: y + (-p.y * 0.5 + 0.5) * size };
         })
         .filter((v) => v.sx > x + 4 && v.sx < x + size - 4 && v.sy > y + 4 && v.sy < y + size - 4)

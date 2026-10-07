@@ -13,7 +13,12 @@ export type BoneSection =
   | 'eye'
   /** Eyelids: skin pieces that turn about the eye, not part of the skin's field. */
   | 'lid'
-  | 'helper';
+  | 'helper'
+  /** A wing's finger bones (docs/design/9.3-wings-fins.md). */
+  | 'digit'
+  /** Bones that carry a membrane between two spars, or a group of feathers (9.3). */
+  | 'station'
+  | 'feather';
 
 /** One bone in rest pose, in model space (metres; Y up, the creature faces +Z). */
 export interface BoneDef {
@@ -49,6 +54,11 @@ export interface BoneDef {
   readonly plainCross?: readonly [number, number];
   /** Index of the chain this bone belongs to (-1 for none). */
   readonly chain: number;
+  /**
+   * Always drawn as a swept tube, never in the field or the grid's extent: wing and fin bones,
+   * which would otherwise spread the grid over the wingspan (9.3).
+   */
+  readonly tube?: boolean;
 }
 
 /**
@@ -169,6 +179,36 @@ export interface LimbChainRig {
   readonly bones: readonly number[];
 }
 
+/**
+ * A wing (docs/design/9.3-wings-fins.md): its arm bones, digits and feather groups, built spread
+ * (the bind pose) and folded at rest by its `folded` pose.
+ */
+export interface WingRig extends LimbChainRig {
+  /** Digit chains, root to tip; digit 0 continues the arm's last bone. */
+  readonly digits: readonly (readonly number[])[];
+  /** Feather group bones, which fold with the wing. */
+  readonly feathers: readonly number[];
+  /** The wing's plane in the bind pose: its unit normal, model space. */
+  readonly normal: readonly [number, number, number];
+  /** Spread: from the root to the farthest tip (m), and the membrane's area (m²). */
+  readonly span: number;
+  readonly area: number;
+  /**
+   * Named poses: a local rotation (x, y, z, w) per bone, over `bones`, then the digits in
+   * order, then `feathers`. `folded` is the rest pose; the bind pose is spread.
+   */
+  readonly poses: Readonly<Record<string, readonly number[]>>;
+}
+
+/**
+ * A membrane panel's stations: pairs of bones, one on each spar, aimed at each other, which
+ * carry the sheet between the spars exactly whatever the spars do (`applyStations`).
+ */
+export interface StationPanel {
+  readonly a: readonly number[];
+  readonly b: readonly number[];
+}
+
 /** What the motion controller needs to know about a skeleton. */
 export interface Rig {
   readonly root: number;
@@ -184,9 +224,11 @@ export interface Rig {
   readonly chains: readonly DrivenChain[];
   readonly legs: readonly LegRig[];
   readonly arms: readonly ArmRig[];
-  readonly wings: readonly LimbChainRig[];
+  readonly wings: readonly WingRig[];
   readonly fins: readonly LimbChainRig[];
   readonly tentacles: readonly LimbChainRig[];
+  /** Membrane stations, posed after everything else. */
+  readonly stations: readonly StationPanel[];
   /** Hip height above the ground in the rest pose (metres). */
   readonly hipHeight: number;
   /** Whether the creature is a sprawler (insect, lizard) or legless. */

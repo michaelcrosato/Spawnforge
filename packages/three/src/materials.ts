@@ -20,6 +20,7 @@ import {
   faceDirection,
   float,
   floor,
+  fract,
   fwidth,
   instanceIndex,
   length,
@@ -42,6 +43,7 @@ import {
   vertexStage,
 } from 'three/tsl';
 import {
+  DoubleSide,
   type LightingModelDirectInput,
   MeshBasicNodeMaterial,
   MeshPhysicalNodeMaterial,
@@ -396,6 +398,41 @@ export function partsMaterial(): MeshStandardNodeMaterial {
   material.colorNode = linear(c);
   material.roughnessNode = info.y;
   material.metalnessNode = float(0);
+  return material;
+}
+
+/**
+ * Membranes, feathers and fins (docs/design/9.3-wings-fins.md): double-sided, lit through from
+ * behind by their translucency, darkened along their veins, see-through where their opacity is
+ * below 1 (insect wings), in one draw call.
+ */
+export function membraneMaterial(seeThrough: boolean): MeshStandardNodeMaterial {
+  const material = new MeshStandardNodeMaterial();
+  const c = attribute('color', 'vec3') as N;
+  const info = attribute('info', 'vec4') as N;
+  const vein = attribute('vein', 'vec2') as N;
+  // Veins: thin lines along the membrane and a few across it, anti-aliased by their width on
+  // screen, strongest near the root.
+  const lineAt = (x: N, count: number) => {
+    const f = abs(fract(x.mul(count)).sub(0.5)).mul(2);
+    const w = fwidth(x.mul(count)).mul(1.5).add(0.04);
+    return float(1).sub(smoothstep(float(0), w, float(1).sub(f)));
+  };
+  const lines = max(lineAt(vein.y, 6), lineAt(vein.x, 3).mul(0.6));
+  const veins = info.w.mul(lines).mul(float(1).sub(vein.x.mul(0.5)));
+  const base = linear(c).mul(float(1).sub(veins.mul(0.55)));
+  material.colorNode = base;
+  material.roughnessNode = info.z;
+  material.metalnessNode = float(0);
+  // Light coming through: a soft glow of the membrane's own colour, as backlit skin shows.
+  material.emissiveNode = base.mul(info.y.mul(0.22));
+  material.side = DoubleSide;
+  if (seeThrough) {
+    material.transparent = true;
+    material.depthWrite = true;
+    material.forceSinglePass = true;
+    material.opacityNode = info.x;
+  }
   return material;
 }
 

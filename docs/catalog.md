@@ -13,7 +13,7 @@ until that milestone lands (`list-modules` gives the same as `planned`; `validat
 blueprint uses of it under `notBuilt`).
 
 - **Body plans:** `biped`, `centaur`, `fish`, `hexapod`, `octopod`, `quadruped`, `serpent`, `wyvern`
-- **Parts:** `antenna` (9.4), `armor.bands` (9.5), `beak`, `ear.pointed`, `eye.basic`, `fin.dorsal` (9.3), `fin.tail` (9.3), `foot.claw`, `foot.hoof`, `foot.pad`, `foot.paw`, `foot.talon`, `frill` (9.5), `hand.grasp`, `hand.pincer` (9.4), `hood` (9.5), `horn.curved`, `mandible` (9.4), `membrane.bat` (9.3), `membrane.case` (9.3), `membrane.feather` (9.3), `membrane.fin` (9.3), `membrane.insect` (9.3), `plates.row` (9.5), `quills` (9.5), `sail` (9.5), `shell` (9.5), `spikes.row`, `teeth.row`
+- **Parts:** `antenna` (9.4), `armor.bands` (9.5), `beak`, `ear.pointed`, `eye.basic`, `fin.dorsal` (9.3), `fin.tail` (9.3), `foot.claw`, `foot.hoof`, `foot.pad`, `foot.paw`, `foot.talon`, `frill` (9.5), `hand.grasp`, `hand.pincer` (9.4), `hood` (9.5), `horn.curved`, `mandible` (9.4), `membrane.bat`, `membrane.case` (9.3), `membrane.feather` (9.3), `membrane.fin` (9.3), `membrane.insect` (9.3), `plates.row` (9.5), `quills` (9.5), `sail` (9.5), `shell` (9.5), `spikes.row`, `teeth.row`
 - **Patterns:** `bands`, `bioluminescence`, `countershade`, `grime`, `mottle`, `rosettes`, `scales`, `scars`, `slime`, `spots`, `stripes`, `veins`, `warts`
 - **Gaits:** `bound` (10.1), `fly` (10.4), `gallop` (10.1), `glide` (10.4), `hover` (10.4), `run` (10.1), `slither`, `swim.flap` (10.3), `swim.paddle` (10.3), `swim.undulate` (10.3), `tripod`, `trot`, `walk`
 - **Actions:** `bite`, `display` (9.5), `idle`, `jump` (10.2), `lash` (9.4), `look`, `pinch` (9.4), `pounce` (10.2), `roar`
@@ -1212,8 +1212,6 @@ slot: `"mouth"` · material: `"chitin"` · defaultAttach: `{"on":"head"}`
 Leathery skin stretched between long finger bones, the body and the hind leg: bat and dragon wings.
 
 Set as a wing's or fin's membrane: { "membrane": { "type": "membrane.bat", ...params } }, not in "parts".
-
-**Not built yet** (plan milestone 9.3): it validates, but compile skips it and warns `not_built`.
 
 Provides `glide`, which actions can need.
 
