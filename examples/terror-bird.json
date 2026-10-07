@@ -70,7 +70,6 @@
   },
   "motion": {
     "temperament": "aggressive",
-    "gaits": [{ "type": "walk", "duty": 0.4 }],
     "actions": ["bite", "roar", "look", "idle"]
   }
 }

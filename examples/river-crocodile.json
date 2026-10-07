@@ -1,0 +1,45 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "River Crocodile",
+  "seed": 5170,
+  "extends": "quadruped",
+  "scale": 1.1,
+  "body": {
+    "torso": { "radius": [0.15, 0.2, 0.19, 0.14], "crossSection": "wide" },
+    "neck": { "length": 0.16, "radius": [0.13, 0.11], "pitch": 4 },
+    "head": { "shape": "wedge", "length": 0.42, "radius": 0.1, "pitch": -4, "brow": 0.3 },
+    "tail": { "length": 1.5, "radius": [0.13, 0.015], "pitch": 2, "crossSection": "tall" }
+  },
+  "limbs": [
+    { "id": "foreleg", "splay": 60, "length": 0.36, "radius": [0.06, 0.04], "foot": "foot.claw" },
+    { "id": "hindleg", "splay": 60, "length": 0.42, "radius": [0.08, 0.045], "foot": "foot.claw" }
+  ],
+  "parts": [
+    {
+      "id": "eyes",
+      "attach": { "on": "head", "at": 0.6, "angle": 35 },
+      "params": { "irisColor": "#b8a030", "pupil": "slit" }
+    },
+    { "id": "teeth", "type": "teeth.row", "params": { "count": 14, "fangs": 0 } },
+    {
+      "id": "scutes",
+      "type": "spikes.row",
+      "attach": { "on": "spine", "from": 0.2, "to": 0.95 },
+      "params": { "count": 22, "height": [0.035, 0.06, 0.03], "color": "accent" }
+    }
+  ],
+  "skin": {
+    "palette": { "base": "#4a5234", "belly": "#c8c098", "accent": "#2e3420" },
+    "material": "scales",
+    "layers": [
+      { "type": "countershade", "softness": 0.25 },
+      { "type": "scales", "size": 0.05 },
+      { "type": "bands", "color": "accent", "count": 12, "width": 0.3, "region": "tail" }
+    ]
+  },
+  "motion": {
+    "temperament": "stalking",
+    "media": { "water": true },
+    "actions": ["bite", "idle"]
+  }
+}

@@ -74,11 +74,20 @@ describe('default gaits and actions', () => {
       validateBlueprint({ format: FORMAT, ...blueprint }, registry).creature?.motion.actions.map(
         (a) => a.type,
       );
-    // A tail can lash (9.4).
-    expect(actions({ extends: 'quadruped' })).toEqual(['bite', 'idle', 'lash', 'look', 'roar']);
-    // No jaw: no bite or roar.
+    // A tail can lash (9.4); legs jump, and with a jaw pounce (10.2).
+    expect(actions({ extends: 'quadruped' })).toEqual([
+      'bite',
+      'idle',
+      'jump',
+      'lash',
+      'look',
+      'pounce',
+      'roar',
+    ]);
+    // No jaw: no bite, pounce or roar.
     expect(actions({ extends: 'quadruped', body: { head: { jaw: false } } })).toEqual([
       'idle',
+      'jump',
       'lash',
       'look',
     ]);

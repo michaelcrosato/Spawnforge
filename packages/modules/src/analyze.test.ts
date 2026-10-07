@@ -37,7 +37,10 @@ describe('analyze', () => {
       'rust-raptor',
     ]) {
       const a = analyze(example(name));
-      expect(a.motion.map((m) => m.ground)).toEqual(['flat', 'rough']);
+      // The walking pace on flat and rough ground, then each faster gait at its own speed.
+      expect(a.motion.slice(0, 2).map((m) => m.ground)).toEqual(['flat', 'rough']);
+      if (a.cadence.length > 0)
+        expect(new Set(a.motion.map((m) => m.gait))).toEqual(new Set(a.cadence.map((c) => c.id)));
       for (const m of a.motion) {
         expect(m.footSlide.worst, name).toBeLessThan(0.01);
         expect(m.overstretch.worst, name).toBeLessThan(0.1);
@@ -114,7 +117,7 @@ describe('analyze', () => {
   it('warns when a small creature steps fast, and each fix clears it', () => {
     const tiny = { extends: 'quadruped', scale: 0.1 };
     const a = analyze(tiny);
-    expect(a.cadence.map((c) => c.id)).toEqual(['walk', 'trot']);
+    expect(a.cadence.map((c) => c.id)).toEqual(['walk', 'trot', 'bound']);
     const warning = a.warnings.find((w) => w.code === 'fast_cadence');
     expect(warning?.path).toBe('scale');
     const scale = Number(/"scale": ([\d.]+)/.exec(warning?.fix ?? '')?.[1]);

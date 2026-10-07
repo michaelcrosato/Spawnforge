@@ -1,4 +1,4 @@
-import { defineGait } from '@spawnforge/core';
+import { defineGait, speedProfile } from '@spawnforge/core';
 import { z } from 'zod';
 
 export default defineGait({
@@ -10,18 +10,19 @@ export default defineGait({
   duty: 0.5,
   froude: [0.4, 2.5],
   params: z.strictObject({
-    duty: z
-      .number()
-      .min(0.3)
-      .max(0.7)
+    duty: speedProfile(0.3, 0.7)
       .optional()
-      .describe('Share of the cycle each foot is planted'),
+      .describe(
+        'Share of the cycle each foot is planted: one number, or [slowest, fastest] across its speeds',
+      ),
     stepHeight: z
       .number()
       .min(0)
       .max(1)
       .default(0.2)
       .describe('Foot lift as a share of hip height'),
-    stride: z.number().min(0.2).max(2).default(1).describe('Stride length multiplier'),
+    stride: speedProfile(0.2, 2)
+      .default(1)
+      .describe('Stride length multiplier: one number, or [slowest, fastest]'),
   }),
 });

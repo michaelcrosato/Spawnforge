@@ -118,17 +118,51 @@ export interface PatternModule<P extends z.ZodType = z.ZodType> extends ModuleBa
   readonly describe?: (params: Readonly<Record<string, unknown>>) => string;
 }
 
+/** One leg, as a gait's `offsets` sees it. */
+export interface GaitLeg {
+  /** 0 is the hindmost pair. */
+  readonly pair: number;
+  readonly side: 'left' | 'right';
+  /** Leg pairs on the body. */
+  readonly pairs: number;
+}
+
 export interface GaitModule<P extends z.ZodType = z.ZodType> extends ModuleBase<'gait', P> {
   /** Leg pairs the gait works with. `0` is a legless spine gait; `'any'` is one pair or more. */
   readonly legPairs: 'any' | readonly number[];
   /** Phase offset between successive leg pairs, counted from the back, for a given pair count. */
   readonly wave: (pairs: number) => number;
-  /** Default share of the cycle each foot is planted, or one per leg-pair count. */
-  readonly duty: number | ((pairs: number) => number);
+  /**
+   * The phase at which each leg's foot lands, 0 to 1, in place of the wave: a gallop's lead, a
+   * bound's pairs landing together. Gets the gait's resolved parameters.
+   */
+  readonly offsets?: (leg: GaitLeg, params: Readonly<Record<string, unknown>>) => number;
+  /**
+   * Default share of the cycle each foot is planted: one number, one per leg-pair count, or
+   * `[slowest, fastest]` across the gait's Froude range (duty falls as an animal speeds up).
+   */
+  readonly duty: number | ((pairs: number) => number) | readonly [number, number];
   /** Speeds the gait suits, as Froude numbers v²/(g·h). */
   readonly froude: readonly [number, number];
+  /** The Froude number it looks typical at (default the middle of its range, at most 1). */
+  readonly natural?: number;
+  /** Hip heights (m) the gait suits, such as a bound for small bodies (default any). */
+  readonly hip?: readonly [number, number];
+  /**
+   * Postures the gait suits (default any): a gallop needs legs under the body, not a lizard's
+   * sprawl.
+   */
+  readonly postures?: readonly ('upright' | 'sprawl')[];
+  /** How far the spine flexes and extends each stride, 0 to 1 (default 0; a `flex` param wins). */
+  readonly flex?: number;
   /** Where the gait moves the creature (default `land`). */
   readonly medium?: Medium;
+  /**
+   * For water gaits, what drives it (10.3): `body`, a wave down the body into the tail (fish,
+   * eels, crocodiles; these dive); `legs`, legs paddling at the surface; `fins`, fin limbs
+   * beating like a turtle's flippers (these dive too).
+   */
+  readonly swim?: 'body' | 'legs' | 'fins';
   /** Body features or capabilities the gait needs, beside its leg pairs (see `Need`). */
   readonly needs?: readonly Need[];
   readonly hooks?: unknown;

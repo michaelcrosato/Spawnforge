@@ -77,3 +77,22 @@ export class FootstepRings {
     }
   }
 }
+
+/** A lake's surface: a translucent disc at height 0 over the bowl `withLake` carves. */
+export function waterMesh(lake: { x: number; z: number; radius: number }): THREE.Mesh {
+  const geometry = new THREE.CircleGeometry(lake.radius * 1.25, 96);
+  geometry.rotateX(-Math.PI / 2);
+  const mesh = new THREE.Mesh(
+    geometry,
+    new THREE.MeshStandardMaterial({
+      color: '#3f7f9f',
+      transparent: true,
+      opacity: 0.45,
+      roughness: 0.15,
+      depthWrite: false,
+    }),
+  );
+  mesh.position.set(lake.x, 0, lake.z);
+  mesh.renderOrder = 1;
+  return mesh;
+}

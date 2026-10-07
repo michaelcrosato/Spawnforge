@@ -18,5 +18,5 @@
       { "type": "scales", "size": 0.025 }
     ]
   },
-  "motion": { "actions": ["bite", "look"] }
+  "motion": { "media": { "water": true }, "actions": ["bite", "look"] }
 }

@@ -60,14 +60,14 @@ describe('scenarios', () => {
     const scenario = parse({
       calls: [
         { at: 0, do: 'act', action: 'pinch' },
-        { at: 0, do: 'gait', gait: 'gallop' },
+        { at: 0, do: 'gait', gait: 'tripod' },
       ],
     });
     const motion = creature('quadruped').motion;
     const issues = checkScenario(scenario, motion, registry);
     expect(issues.map((i) => [i.path, i.code, i.expected])).toEqual([
-      ['calls[0].action', 'unknown_action', '"bite", "lash", "look", "roar"'],
-      ['calls[1].gait', 'unknown_gait', '"walk", "trot"'],
+      ['calls[0].action', 'unknown_action', '"bite", "jump", "lash", "look", "pounce", "roar"'],
+      ['calls[1].gait', 'unknown_gait', '"walk", "trot", "gallop"'],
     ]);
   });
 

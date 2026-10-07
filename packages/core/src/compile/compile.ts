@@ -969,7 +969,10 @@ export function compileCreature(
       spec.skin.fur,
     ),
     rig,
-    motion: motionData(spec, registry),
+    motion: motionData(spec, registry, {
+      hipHeight: skeleton.rig.hipHeight,
+      posture: skeleton.rig.posture,
+    }),
     sockets,
     markers,
     bounds: { min: v3(min), max: v3(max) },

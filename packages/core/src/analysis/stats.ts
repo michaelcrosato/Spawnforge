@@ -6,8 +6,8 @@ import type { Analysis } from './analyze.ts';
 export interface StatsInput {
   /** Metres and kilograms (see `Analysis.measurements`). */
   readonly measurements: Analysis['measurements'];
-  /** m/s: walking pace and top speed. */
-  readonly speed: { readonly walk: number; readonly max: number };
+  /** m/s: walking pace and top speed, and top speed in the water for a swimmer. */
+  readonly speed: { readonly walk: number; readonly max: number; readonly swim?: number };
   /** The main head's bite reach in metres, or null without a jaw. */
   readonly biteReach: number | null;
   /** Heads (each with its jaw, if the head has one). */
@@ -81,7 +81,11 @@ export function statsInput(spec: CreatureSpec, analysis: Analysis, registry: Reg
   }
   return {
     measurements: analysis.measurements,
-    speed: { walk: analysis.speed.walk, max: analysis.speed.max },
+    speed: {
+      walk: analysis.speed.walk,
+      max: analysis.speed.max,
+      ...(analysis.speed.swim !== undefined ? { swim: analysis.speed.swim } : {}),
+    },
     biteReach: analysis.reach.bite,
     heads: spec.body.neck.count,
     legs: legs.length,

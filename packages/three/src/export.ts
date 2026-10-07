@@ -199,6 +199,8 @@ export function buildExportScene(
         loop: c.loop,
         speed: c.speed,
         distance: c.distance,
+        // The root track moves the creature (a jump): apply it, or strip it and move it yourself.
+        ...(c.rootMotion ? { rootMotion: true } : {}),
         events: c.events.map((e) => ({
           type: e.type,
           time: e.time,

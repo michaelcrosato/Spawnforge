@@ -79,6 +79,10 @@
     "low": "a3d74dba",
     "medium": "8ad7854f"
   },
+  "river-crocodile": {
+    "low": "25e69670",
+    "medium": "0086c0c3"
+  },
   "rust-raptor": {
     "low": "21d7ec06",
     "medium": "0d5b3563"
@@ -86,6 +90,14 @@
   "sail-back": {
     "low": "99fa579b",
     "medium": "2d1b2cd8"
+  },
+  "sand-cheetah": {
+    "low": "e1e27138",
+    "medium": "ce1c394b"
+  },
+  "sea-turtle": {
+    "low": "14514b88",
+    "medium": "f73331ae"
   },
   "stone-tortoise": {
     "low": "e140aebb",
@@ -110,5 +122,9 @@
   "two-tailed-fox": {
     "low": "3bfc69b6",
     "medium": "ba4e2b9d"
+  },
+  "wild-horse": {
+    "low": "0222bce9",
+    "medium": "aa87b34f"
   }
 }

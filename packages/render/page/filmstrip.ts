@@ -3,6 +3,7 @@ import {
   type CompiledCreature,
   MotionController,
   mainHead,
+  openSea,
   parseScenario,
   type Registry,
   ScenarioRun,
@@ -57,18 +58,30 @@ export async function drawFilmstrip(
       anonymous,
     );
   const controller = new MotionController(compiled, { registry });
+  // A water gait, or a body that only swims, swims in deep water: the surface at 0 and the bed
+  // far below, drawn as a sheet of water instead of the floor (10.3).
+  const gaits = compiled.motion.gaits;
+  const swimming = request.gait
+    ? gaits.find((g) => g.id === request.gait)?.medium === 'water'
+    : gaits.some((g) => g.medium === 'water') &&
+      !gaits.some((g) => (g.medium ?? 'land') === 'land');
+  const sea = swimming ? openSea(compiled.scale) : undefined;
+  if (sea) controller.place(0, 0, 0, sea.ground, sea.water);
   if (request.gait) controller.lockGait(request.gait);
   const speed =
     request.speed ?? (request.gait ? controller.gaitSpeed(request.gait) : controller.paceSpeed());
   controller.drive(speed, 0);
   const frames = Math.max(2, Math.min(16, Math.round(request.frames ?? 8)));
+  const surface = sea ? waterSheet(stage) : undefined;
+  if (surface) stage.scene.add(surface);
+  const step = () => controller.update(STEP, sea ?? {});
 
   // Warm up for a few seconds, then wait for the cycle to start.
-  for (let i = 0; i < 480; i++) controller.update(STEP);
+  for (let i = 0; i < 480; i++) step();
   let guard = 0;
   let last = controller.phase;
   for (;;) {
-    controller.update(STEP);
+    step();
     if (controller.phase < last) break;
     last = controller.phase;
     if (++guard > 2400) throw new Error('the gait cycle did not advance; is the speed 0?');
@@ -106,15 +119,29 @@ export async function drawFilmstrip(
     }
     if (nextFrame < frames && phase >= nextFrame / frames) {
       frameSteps.push(phases.length - 1);
-      await drawFrame(controller, creature, stage, request, ctx, {
-        x: (nextFrame % cols) * size,
-        y: top + Math.floor(nextFrame / cols) * size,
-        size,
-        label: `${nextFrame + 1}  t = ${(controller.time - startTime).toFixed(2)} s`,
-      });
+      surface?.position.set(controller.position.x, 0, controller.position.z);
+      await drawFrame(
+        controller,
+        creature,
+        stage,
+        request,
+        ctx,
+        {
+          x: (nextFrame % cols) * size,
+          y: top + Math.floor(nextFrame / cols) * size,
+          size,
+          label: `${nextFrame + 1}  t = ${(controller.time - startTime).toFixed(2)} s`,
+        },
+        undefined,
+        sea !== undefined,
+      );
       nextFrame++;
     }
-    controller.update(STEP);
+    step();
+  }
+  if (surface) {
+    stage.scene.remove(surface);
+    surface.geometry.dispose();
   }
   const cycle = controller.time - startTime;
   const stride = controller.position.z - startZ;
@@ -195,8 +222,9 @@ async function drawScenario(
     marker.position.copy(p);
     added.push(marker);
   }
-  // Uneven ground: a mesh of the course over everywhere the scenario goes.
-  if (scenario.ground === 'course') {
+  // Uneven ground or a lake: a mesh of the ground over everywhere the scenario goes.
+  const lake = typeof scenario.water === 'object' ? scenario.water : undefined;
+  if (scenario.ground === 'course' || lake) {
     const points = [
       new THREE.Vector3(scenario.start.x, 0, scenario.start.z),
       ...run.targetPoints().values(),
@@ -204,6 +232,12 @@ async function drawScenario(
         .flatMap((c) => (c.do === 'moveTo' ? [c.to] : c.do === 'follow' ? c.path : []))
         .filter((p): p is [number, number] => typeof p !== 'string')
         .map(([x, z]) => new THREE.Vector3(x, 0, z)),
+      ...(lake
+        ? [
+            new THREE.Vector3(lake.x - lake.radius * 1.3, 0, lake.z - lake.radius * 1.3),
+            new THREE.Vector3(lake.x + lake.radius * 1.3, 0, lake.z + lake.radius * 1.3),
+          ]
+        : []),
     ];
     const box = new THREE.Box3().setFromPoints(points).expandByScalar(stage.span * 2);
     const size = box.getSize(new THREE.Vector3());
@@ -225,13 +259,22 @@ async function drawScenario(
     terrain.receiveShadow = true;
     added.push(terrain);
   }
+  // Water: a translucent disc over a lake, or a sheet over the sea that follows the creature.
+  if (lake) {
+    const disc = waterSheet(stage, lake.radius * 1.25);
+    disc.position.set(lake.x, 0, lake.z);
+    added.push(disc);
+  }
+  const sea = scenario.water === 'sea' ? waterSheet(stage) : undefined;
+  if (sea) added.push(sea);
   stage.scene.add(...added);
-  const fixedGround = scenario.ground === 'course';
+  const fixedGround = scenario.ground === 'course' || scenario.water !== 'none';
   const frames = scenario.frames;
   const { cols, size, top } = layout;
   let next = 0;
   while (next < frames) {
     if (run.time >= (next / (frames - 1)) * scenario.duration - 1e-9 || run.done) {
+      sea?.position.set(run.controller.position.x, 0, run.controller.position.z);
       await drawFrame(
         run.controller,
         creature,
@@ -468,4 +511,22 @@ async function drawFrame(
   ctx.fillRect(at.x + 8, at.y + 8, w + 12, 20);
   ctx.fillStyle = '#ddd';
   ctx.fillText(at.label, at.x + 14, at.y + 22);
+}
+
+/** A sheet of water at the surface (y 0) for swimming filmstrips, translucent so the swimmer shows. */
+function waterSheet(stage: Stage, radius?: number): THREE.Mesh {
+  const sheet = new THREE.Mesh(
+    radius === undefined
+      ? new THREE.PlaneGeometry(stage.span * 6, stage.span * 6)
+      : new THREE.CircleGeometry(radius, 64),
+    new THREE.MeshStandardMaterial({
+      color: '#3f7f9f',
+      transparent: true,
+      opacity: 0.3,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    }),
+  );
+  sheet.rotation.x = -Math.PI / 2;
+  return sheet;
 }

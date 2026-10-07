@@ -206,7 +206,7 @@ own defaults, so `{ "id": "wing", "role": "wing" }` is already a usable wing. Ev
 | `leg` (the default) | Carries the body; legs come in mirrored pairs, up to 6 | `splay`, `lift`, `stance`, `foot` | `at` 0.5, `angle` 100, `length` 0.5, 3 segments, `foot.claw` |
 | `arm` | Hangs free for grabbing and striking | `splay`, `lift`, `foot` | as a leg |
 | `wing` | Rests folded, spreads when asked; flies from 10.4 | `membrane`, `foot` (a thumb at the wrist) | `at` 0.2, `angle` 40, `length` 1.2, `membrane.bat` |
-| `fin` | Holds out flat; swims from 10.3 | `membrane` | `at` 0.25, `angle` 115, `length` 0.35, 2 segments, `membrane.fin` |
+| `fin` | Holds out flat; long ones (`length` 0.4 or more) beat as flippers when it swims | `membrane` | `at` 0.25, `angle` 115, `length` 0.35, 2 segments, `membrane.fin` |
 | `tentacle` | A long spring chain that curls, sways and reaches | `curl`, `curlStart`, up to 16 `segments` | `at` 0.9, `angle` 150, `length` 1.5, 10 segments |
 
 - **Legs come in mirrored pairs** (`side: "both"`), up to 6 pairs. Legs are ordered from the back;
@@ -443,18 +443,33 @@ when the creature moves.
 - **`temperament`**: `calm`, `stalking`, `skittish`, `aggressive` or `lumbering`. It sets the
   walking pace, how fast it turns, a crouch and a lowered head for stalkers, and idle behaviour.
 - **Speed is chosen at run time** by whatever moves the creature (a game, or the sandbox).
-  Stride length and timing scale with leg length and speed (bigger creatures step more slowly),
-  and four-legged creatures switch from walk to trot as they speed up.
+  Stride length and timing scale with leg length and speed (bigger creatures step more slowly).
+  Gaits change with speed as dynamic similarity predicts: walk below a Froude number
+  (v²/(g·hip)) of about 0.5, trot or run up to about 2.5, gallop (or bound, for small
+  four-legged bodies) above. The legs ease into a new gait's footfalls over a stride or two.
 - **`media`**: where the creature moves, as switches `land`, `water` and `air`. Left out, each
   follows the body: `land` with legs (or no legs and no fins or tentacles on the torso), `water`
   for a body with fins or tentacles on the torso and no legs, `air` with wings. Switches merge
   over that:
-  `"media": { "water": true }` adds swimming to a walker (_10.3_), `{ "air": false }` grounds a
-  winged one; flying needs a wing limb (_10.4_).
+  `"media": { "water": true }` adds swimming to a walker or a snake, `{ "air": false }` grounds
+  a winged one; flying needs a wing limb (_10.4_).
+- **Swimming.** A creature that swims takes to water deeper than about its hip height (a
+  legless one, a little more than its girth) and walks or slithers out where it is shallower;
+  one that only swims stops at the shore. Walkers and paddlers swim with the back awash and the
+  head out; fish and other divers hold their depth, or dive and rise to a height a game or
+  scenario asks for, pitching toward it and never into the bed. The tail beats at a frequency
+  from a Strouhal number of 0.3 (faster the faster it swims), so its tip sweeps about a fifth of
+  the body's length side to side; flippers beat with it, and legs paddle or trail. In water its
+  pace is its swimming gait's, and `analyze` gives `speed.swim`, checks that a swimmer at the
+  surface holds its head out (`head_underwater`) and that nothing goes into the bed when it dives
+  (`hits_bed`). Games pass the water with the ground (docs/runtime.md); scenarios take `"water"`.
 - **`gaits`** are worked out from the body and its media, so you rarely need to list them. On
   land each suits a leg count: `walk` (any legs), `trot` (2 pairs), `tripod` (3 pairs), `slither`
-  (no legs), and from 10.1 `run` (2 legs), `gallop` and `bound` (4 legs). In water (_10.3_):
-  `swim.undulate`, `swim.paddle`, `swim.flap`; in the air (_10.4_): `fly`, `glide`, `hover`
+  (no legs), `run` (2 legs), `gallop` (4 legs, hips 0.3 m up or higher) and `bound` (4 legs,
+  hips 0.35 m up or lower, like a weasel's). In water: `swim.undulate` (a wave down the body
+  into the tail: fish, snakes, crocodiles at speed), `swim.paddle` (legs cycling at the surface,
+  slowly) and `swim.flap` (long fins as flippers: turtles); in the air (_10.4_): `fly`, `glide`,
+  `hover`
   (insect wings). Leave the field out to use every gait that suits the body; a list replaces
   the defaults only for the media its gaits serve, so `["walk"]` on a dragon still flies. A
   gait's parameters sit beside its `type`:
@@ -462,12 +477,18 @@ when the creature moves.
     reaches, so on short or sprawled legs large values change nothing (the legs step faster
     instead). Long, nearly straight legs take the longest strides.
   - `duty` is the share of the cycle each foot is planted. Above 0.5 a biped walks; below 0.5
-    it runs, with moments where no foot touches the ground: a raptor's sprint is
-    `{ "type": "walk", "duty": 0.4 }` (0.4 is the lowest).
-  - Each gait covers a range of speeds for the leg length (Froude number v²/(g·hip) up to 0.5
-    for `walk`, 1.5 for `trot`), so `stride` does not raise the top speed. A biped's top speed is
-    about √(0.5·9.8·hip), 2.1 m/s for a 0.9 m hip; `analyze` reports it as `speed.max`. Running
-    and galloping arrive with milestone 10.1.
+    it runs, with moments where no foot touches the ground (`run` goes from 0.45 to 0.3 as it
+    speeds up).
+  - `duty` and `stride` may be one number or `[slowest, fastest]` across the gait's speeds:
+    `{ "type": "walk", "duty": [0.8, 0.65] }` plants the feet longer when it ambles.
+  - `gallop` takes `style` (`transverse` like a horse, `rotary` like a cheetah or a dog), `lead`
+    (`left` or `right`: the foreleg that lands last) and `flex` (how far the back flexes and
+    stretches each stride); `bound` takes `flex`; `run` takes `lean` (degrees forward at speed).
+  - Each gait covers a range of speeds for the leg length (Froude number up to 0.5 for `walk`,
+    2.5 for `trot` and `tripod`, 8 for `run`, 12 for `gallop`), so `stride` does not raise the
+    top speed. Gaits that keep a foot down top out at a Froude number of 1.5; a run or a gallop
+    goes to the top of its range. A horse with 1.3 m hips gallops at up to 12 m/s; `analyze`
+    reports it as `speed.max`, and checks every gait at its own natural speed.
   - `stepHeight` lifts the feet higher (a share of hip height); `slither` takes `amplitude` and
     `waves` for the shape of its S-curve.
 - **`actions`**: what the creature can do when asked. `bite` and `roar` need a jaw, `look`
@@ -476,7 +497,11 @@ when the creature moves.
   nearest the target winds up and whips toward it (`arc`, the most it sweeps in degrees).
   `display` is a threat display: it faces the target, rears a little and hisses, opens frills
   and hoods, raises quills and sails and spreads any wings, holds and folds back (`duration`,
-  `intensity`). Later milestones add `jump` and `pounce` (_10.2_). Some actions need what a module provides rather than a section:
+  `intensity`). `jump` (needs legs) crouches, leaps a ballistic arc to the target over the
+  ground and lands, absorbing it: `power` (how far it leaps unaimed and at most, up to about 9
+  hip heights), `crouch` and `height` (metres it clears in the middle, over an obstacle).
+  `pounce` (needs legs and a jaw) leaps so its head meets the target and bites as it lands. Both
+  fire `takeoff` and `land`. Some actions need what a module provides rather than a section:
   `display` needs a part that provides `display` (`frill`, `hood`, `quills` or `sail`; wings do
   not), `pinch` a `hand.pincer`; `describe-module` and the catalogue list what each module
   provides, and a `needs` entry that is a list means any of them. Leave the field out to get
@@ -663,8 +688,8 @@ leaves it out, for just the verdict). Each issue has:
 
 `notBuilt`, when present, lists what the blueprint uses that the format has but the pipeline
 does not draw yet, each with the milestone that builds it. It is neither an error nor a warning:
-keep those features. It names what the blueprint (or its preset) writes, so swimming that fins
-imply is not listed on its own: the fin is. A part on a
+keep those features. It names what the blueprint (or its preset) writes, so flying that wings
+imply is not listed on its own. A part on a
 host that is not drawn names its host. `list-modules` gives each module that is not drawn yet a
 `planned` milestone.
 
@@ -683,16 +708,13 @@ Everything format 0.1 had is drawn today: legs and arms, `foot.claw`, horns, ear
 mouths with lips, gums and tongues, eyelids, brows, beaks, spike rows, every material, fur, every
 pattern layer, several heads and tails, wings, fins and their membranes, tentacles, antennae,
 mandibles, pincers, shells, armour bands, plates, quills, frills, hoods, sails, walking,
-trotting, the tripod gait, slithering, and the bite, roar, look, idle, pinch, lash and display
-actions. Everything in this table validates but is **not drawn yet** (or does not move yet):
+trotting, running, galloping, bounding, the tripod gait, slithering, swimming, and the bite,
+roar, look, idle, pinch, lash, display, jump and pounce actions. Everything in this table validates but is **not drawn yet** (or does not move yet):
 compile and motion skip it, and `validate` lists it under `notBuilt`. Each row goes when its
 milestone lands.
 
 | Not drawn yet | Milestone that draws it |
 | --- | --- |
-| `run`, `gallop`, `bound` | 10.1 |
-| `jump`, `pounce` | 10.2 |
-| Swimming (`media.water`, `swim.*`) | 10.3 |
 | Flying (`media.air`, `fly`, `glide`, `hover`) | 10.4 |
 
 ### Recipes for the new bodies
@@ -707,10 +729,11 @@ milestones land.
 | Bat | `wyvern` with bat proportions: a short neck and tail, a big `snout` head, legs under the middle (`at` 0.45), wings `length` 1.9 with `"membrane": { "type": "membrane.bat", "fingers": 5, "trailing": "leg" }`, big `ear.pointed` and fur on the head and torso (see `examples/cave-bat.json`) |
 | Hydra or cerberus | `quadruped` with `"neck": { "count": 5, "length": 0.75 }` and a small head (examples/hydra.json), or 3 with `length` 0.45 and `spread` 90 for a cerberus (examples/cerberus.json); parts on `head` appear on every head |
 | Kraken | `serpent` with a short, thick torso (the mantle), no tail, a big `round` head and four `tentacle` entries on the `head` with `side` "both" at `angle`s 25 to 155, plus two long feeding tentacles with a club in their `radius`; `suckers` on the limbs (see `examples/kraken.json`). Tentacles on the torso trail behind instead, like a squid's |
+| Crocodile | `quadruped` with a `wide` torso, a long low `wedge` head, legs `splay` 60 with `foot.claw`, a long `tall` tail, a `spikes.row` of low scutes, `"media": { "water": true }` (see `examples/river-crocodile.json`): it walks in, swims with its back awash and climbs out |
 | Shark or fish | `fish`, whose preset already has the fins: override its parts `dorsal` (`fin.dorsal`) and `tailfin` (`fin.tail`, `"shape": "forked"`) and its limbs `pectoral` and `pelvic` by id (`"remove": true` drops the pelvic pair), and add `teeth.row` (see `examples/reef-shark.json`). Its fins already make it a swimmer, so it needs no `media`. Paired fins hold out flat, so check them in the `top` and `front` views |
 | Spider or scorpion | `octopod`; `mandible` (`"shape": "fang"`) for a spider (see `examples/tomb-spider.json`); for a scorpion a slimmer even torso, `arm`s at `at` 0 with `lift` 80 and `"foot": "hand.pincer"`, a tail with `pitch` 60 and `curl` 160, a `horn.curved` stinger on its tip, and `pinch` and `lash` (see `examples/dune-scorpion.json`) |
 | Centaur | `centaur`; give its legs `foreleg` and `hindleg` `"foot": "foot.hoof"`, its `arm`s `"foot": "hand.grasp"`, and the head horns |
-| Turtle or tortoise | `quadruped` with a `wide` torso and `{ "id": "shell", "type": "shell", "params": { "dome": 0.95, "overhang": 0.28 } }`, short legs with `foot.pad` (see `examples/stone-tortoise.json`); for a sea turtle remove `foreleg` and `hindleg` (`"remove": true`) and add fin limbs with `"membrane": null` (flippers), which make it a swimmer |
+| Turtle or tortoise | `quadruped` with a `wide` torso and `{ "id": "shell", "type": "shell", "params": { "dome": 0.95, "overhang": 0.28 } }`, short legs with `foot.pad` (see `examples/stone-tortoise.json`); for a sea turtle remove `foreleg` and `hindleg` (`"remove": true`) and add fin limbs with `"membrane": null` (flippers; `length` 0.4 or more so they beat), which make it a swimmer (see `examples/sea-turtle.json`) |
 | Two-tailed fox | `quadruped` with `"tail": { "count": 2, "spread": 22, "pitch": 12, "curl": 35 }` (raised, like a kitsune's), `"foot": "foot.paw"` on both leg pairs and `"skin": { "fur": {} }` (examples/two-tailed-fox.json) |
 | Griffin | `quadruped`; `beak`, `{ "role": "wing", "membrane": "membrane.feather" }`, `foot.talon` on the forelegs and `foot.paw` on the hindlegs, fur (see `examples/griffin.json`) |
 | Moth | `hexapod`; two wing pairs with their own ids, `forewing` at `at` 0.15 and `hindwing` at 0.3, each with `membrane.insect` (`"shape": "broad"` and `"round"`), `spots` with `ring` and `"region": "wings"` for eye spots (see `examples/luna-moth.json`); `antenna` with `"shape": "feather"`, fur on the torso. A moth cannot bite: `"head": { "jaw": false }` drops the jaw, and with it `bite` and `roar` |

@@ -15,8 +15,8 @@ blueprint uses of it under `notBuilt`).
 - **Body plans:** `biped`, `centaur`, `fish`, `hexapod`, `octopod`, `quadruped`, `serpent`, `wyvern`
 - **Parts:** `antenna`, `armor.bands`, `beak`, `ear.pointed`, `eye.basic`, `fin.dorsal`, `fin.tail`, `foot.claw`, `foot.hoof`, `foot.pad`, `foot.paw`, `foot.talon`, `frill`, `hand.grasp`, `hand.pincer`, `hood`, `horn.curved`, `mandible`, `membrane.bat`, `membrane.case`, `membrane.feather`, `membrane.fin`, `membrane.insect`, `plates.row`, `quills`, `sail`, `shell`, `spikes.row`, `teeth.row`
 - **Patterns:** `bands`, `bioluminescence`, `countershade`, `grime`, `mottle`, `rosettes`, `scales`, `scars`, `slime`, `spots`, `stripes`, `suckers`, `veins`, `warts`
-- **Gaits:** `bound` (10.1), `fly` (10.4), `gallop` (10.1), `glide` (10.4), `hover` (10.4), `run` (10.1), `slither`, `swim.flap` (10.3), `swim.paddle` (10.3), `swim.undulate` (10.3), `tripod`, `trot`, `walk`
-- **Actions:** `bite`, `display`, `idle`, `jump` (10.2), `lash`, `look`, `pinch`, `pounce` (10.2), `roar`
+- **Gaits:** `bound`, `fly` (10.4), `gallop`, `glide` (10.4), `hover` (10.4), `run`, `slither`, `swim.flap`, `swim.paddle`, `swim.undulate`, `tripod`, `trot`, `walk`
+- **Actions:** `bite`, `display`, `idle`, `jump`, `lash`, `look`, `pinch`, `pounce`, `roar`
 - **Themes:** `aquatic`, `beast`, `demon`, `dragon`, `eldritch`, `insect`, `reptile`
 - **Stats:** `rpg`
 
@@ -1717,18 +1717,18 @@ Add to skin.layers as { "type": "warts", ...params }; every layer also takes "re
 
 ### `bound`
 
-Small quadrupeds leaping with both hind legs, then both front legs, like a rabbit or a weasel.
+Small quadrupeds leaping with both hind legs, then both front legs, like a rabbit or a weasel; the back flexes and stretches with each leap.
 
 List in motion.gaits as "bound", or { "type": "bound", ...params }.
 
-**Not built yet** (plan milestone 10.1): it validates, but compile skips it and warns `not_built`.
-
-legPairs: `[2]` · duty: `0.3` · froude: `[1,5]` · wave: `0.5`
+legPairs: `[2]` · duty: `[0.35,0.22]` · froude: `[1.5,10]` · wave: `0.5`
 
 | Parameter | Type | Range | Default | Description |
 | --- | --- | --- | --- | --- |
-| `flex` | number | 0–1 | `0.7` | How much the spine flexes each bound |
-| `stride` | number | 0.2–2 | `1` | Stride length multiplier |
+| `duty` | number or list of number | 0.15–0.6 |  | Share of the cycle each foot is planted: one number, or [slowest, fastest] (default [0.35, 0.22]) |
+| `flex` | number | 0–1 | `0.6` | How much the spine flexes each bound |
+| `stepHeight` | number | 0–1 | `0.25` | Foot lift as a share of hip height |
+| `stride` | number or list of number | 0.2–2 | `1` | Stride length multiplier: one number, or [slowest, fastest] |
 
 ```json
 { "motion": { "gaits": ["bound"] } }
@@ -1755,20 +1755,20 @@ legPairs: `"any"` · duty: `0` · froude: `[0.5,8]` · wave: `[{"pairs":1,"wave"
 
 ### `gallop`
 
-Fast four-legged gait with a leading leg and a moment in the air, like a horse.
+Fast four-legged gait with a leading foreleg and a moment in the air, like a horse (transverse) or a cheetah (rotary); the back flexes each stride.
 
 List in motion.gaits as "gallop", or { "type": "gallop", ...params }.
 
-**Not built yet** (plan milestone 10.1): it validates, but compile skips it and warns `not_built`.
-
-legPairs: `[2]` · duty: `0.3` · froude: `[2,6]` · wave: `0.1`
+legPairs: `[2]` · duty: `[0.4,0.22]` · froude: `[2,12]` · wave: `0.45`
 
 | Parameter | Type | Range | Default | Description |
 | --- | --- | --- | --- | --- |
-| `style` | "transverse" \| "rotary" |  | `"transverse"` | "transverse" like a horse, "rotary" like a cheetah or a dog |
-| `lead` | "left" \| "right" |  | `"left"` | Which front leg leads |
+| `style` | "transverse" \| "rotary" |  | `"transverse"` | "transverse" like a horse (the forefeet land in the same order as the hind), "rotary" like a cheetah or a dog (in the opposite order) |
+| `lead` | "left" \| "right" |  | `"right"` | Which foreleg lands last, leading |
+| `duty` | number or list of number | 0.15–0.6 |  | Share of the cycle each foot is planted: one number, or [slowest, fastest] (default [0.4, 0.22]) |
 | `flex` | number | 0–1 | `0.4` | How much the spine flexes each stride |
-| `stride` | number | 0.2–2 | `1` | Stride length multiplier |
+| `stepHeight` | number | 0–1 | `0.22` | Foot lift as a share of hip height |
+| `stride` | number or list of number | 0.2–2 | `1` | Stride length multiplier: one number, or [slowest, fastest] |
 
 ```json
 { "motion": { "gaits": ["gallop"] } }
@@ -1812,18 +1812,17 @@ legPairs: `"any"` · duty: `0` · froude: `[0,0.5]` · wave: `[{"pairs":1,"wave"
 
 ### `run`
 
-Two-legged running with a moment in the air each stride, for raptors and runners.
+Two-legged running with a moment in the air each stride, for raptors and runners: feet are down less as it speeds up, and the body leans in.
 
 List in motion.gaits as "run", or { "type": "run", ...params }.
 
-**Not built yet** (plan milestone 10.1): it validates, but compile skips it and warns `not_built`.
-
-legPairs: `[1]` · duty: `0.35` · froude: `[0.5,3]` · wave: `0.5`
+legPairs: `[1]` · duty: `[0.45,0.3]` · froude: `[0.5,8]` · wave: `0.5`
 
 | Parameter | Type | Range | Default | Description |
 | --- | --- | --- | --- | --- |
-| `duty` | number | 0.2–0.5 |  | Share of the cycle each foot is planted |
-| `stride` | number | 0.2–2 | `1` | Stride length multiplier |
+| `duty` | number or list of number | 0.2–0.6 |  | Share of the cycle each foot is planted: one number, or [slowest, fastest] (default [0.45, 0.3]) |
+| `stepHeight` | number | 0–1 | `0.25` | Foot lift as a share of hip height |
+| `stride` | number or list of number | 0.2–2 | `1` | Stride length multiplier: one number, or [slowest, fastest] |
 | `lean` | number | 0–45 | `15` | Degrees the body leans forward at speed |
 
 ```json
@@ -1849,13 +1848,11 @@ legPairs: `[0]` · duty: `1` · froude: `[0,3]` · wave: `0`
 
 ### `swim.flap`
 
-Swims by beating fins or flippers like wings, like a turtle or a penguin.
+Swims by beating long fins or flippers like wings, like a turtle or a penguin; it dives.
 
 List in motion.gaits as "swim.flap", or { "type": "swim.flap", ...params }.
 
-**Not built yet** (plan milestone 10.3): it validates, but compile skips it and warns `not_built`.
-
-legPairs: `"any"` · duty: `0.5` · froude: `[0,1]` · wave: `[{"pairs":1,"wave":0},{"pairs":2,"wave":0},{"pairs":3,"wave":0}]`
+legPairs: `"any"` · duty: `0.5` · froude: `[0,1.2]` · wave: `[{"pairs":1,"wave":0},{"pairs":2,"wave":0},{"pairs":3,"wave":0}]`
 
 | Parameter | Type | Range | Default | Description |
 | --- | --- | --- | --- | --- |
@@ -1867,13 +1864,11 @@ legPairs: `"any"` · duty: `0.5` · froude: `[0,1]` · wave: `[{"pairs":1,"wave"
 
 ### `swim.paddle`
 
-Swims at the surface by paddling its legs, like a dog or a bear.
+Swims at the surface by paddling its legs in circles under the hips, like a dog, a bear or a crocodile going slowly.
 
 List in motion.gaits as "swim.paddle", or { "type": "swim.paddle", ...params }.
 
-**Not built yet** (plan milestone 10.3): it validates, but compile skips it and warns `not_built`.
-
-legPairs: `"any"` · duty: `0.5` · froude: `[0,0.5]` · wave: `[{"pairs":1,"wave":0.5},{"pairs":2,"wave":0.5},{"pairs":3,"wave":0.5}]`
+legPairs: `"any"` · duty: `0.5` · froude: `[0,0.4]` · wave: `[{"pairs":1,"wave":0.5},{"pairs":2,"wave":0.5},{"pairs":3,"wave":0.5}]`
 
 | Parameter | Type | Range | Default | Description |
 | --- | --- | --- | --- | --- |
@@ -1885,17 +1880,15 @@ legPairs: `"any"` · duty: `0.5` · froude: `[0,0.5]` · wave: `[{"pairs":1,"wav
 
 ### `swim.undulate`
 
-Swims with a body wave that grows toward the tail, like a fish, an eel or a crocodile.
+Swims with a body wave that grows toward the tail, like a fish, an eel, a sea serpent or a crocodile; it dives and steers in three dimensions.
 
 List in motion.gaits as "swim.undulate", or { "type": "swim.undulate", ...params }.
 
-**Not built yet** (plan milestone 10.3): it validates, but compile skips it and warns `not_built`.
-
-legPairs: `"any"` · duty: `1` · froude: `[0,1]` · wave: `[{"pairs":1,"wave":0},{"pairs":2,"wave":0},{"pairs":3,"wave":0}]`
+legPairs: `"any"` · duty: `1` · froude: `[0.05,1.2]` · wave: `[{"pairs":1,"wave":0},{"pairs":2,"wave":0},{"pairs":3,"wave":0}]`
 
 | Parameter | Type | Range | Default | Description |
 | --- | --- | --- | --- | --- |
-| `amplitude` | number | 0–1 | `0.2` | Tail-beat width as a share of body length |
+| `amplitude` | number | 0.02–1 | `0.2` | Tail-beat width as a share of body length; the beat comes faster as it narrows |
 | `waves` | number | 0.5–3 | `1` | Body waves along the length |
 
 ```json
@@ -1912,9 +1905,9 @@ legPairs: `[3,4]` · duty: `0.5` · froude: `[0.1,3]` · wave: `0.5`
 
 | Parameter | Type | Range | Default | Description |
 | --- | --- | --- | --- | --- |
-| `duty` | number | 0.3–0.8 |  | Share of the cycle each foot is planted |
+| `duty` | number or list of number | 0.3–0.8 |  | Share of the cycle each foot is planted: one number, or [slowest, fastest] across its speeds |
 | `stepHeight` | number | 0–1 | `0.25` | Foot lift as a share of hip height |
-| `stride` | number | 0.2–2 | `1` | Stride length multiplier |
+| `stride` | number or list of number | 0.2–2 | `1` | Stride length multiplier: one number, or [slowest, fastest] |
 
 ```json
 { "motion": { "gaits": ["tripod"] } }
@@ -1930,9 +1923,9 @@ legPairs: `[2]` · duty: `0.5` · froude: `[0.4,2.5]` · wave: `0.5`
 
 | Parameter | Type | Range | Default | Description |
 | --- | --- | --- | --- | --- |
-| `duty` | number | 0.3–0.7 |  | Share of the cycle each foot is planted |
+| `duty` | number or list of number | 0.3–0.7 |  | Share of the cycle each foot is planted: one number, or [slowest, fastest] across its speeds |
 | `stepHeight` | number | 0–1 | `0.2` | Foot lift as a share of hip height |
-| `stride` | number | 0.2–2 | `1` | Stride length multiplier |
+| `stride` | number or list of number | 0.2–2 | `1` | Stride length multiplier: one number, or [slowest, fastest] |
 
 ```json
 { "motion": { "gaits": ["trot"] } }
@@ -1948,9 +1941,9 @@ legPairs: `"any"` · duty: `[{"pairs":1,"duty":0.62},{"pairs":2,"duty":0.75},{"p
 
 | Parameter | Type | Range | Default | Description |
 | --- | --- | --- | --- | --- |
-| `duty` | number | 0.4–0.95 |  | Share of the cycle each foot is planted; defaults by leg count |
+| `duty` | number or list of number | 0.4–0.95 |  | Share of the cycle each foot is planted; defaults by leg count: one number, or [slowest, fastest] across its speeds |
 | `stepHeight` | number | 0–1 | `0.15` | Foot lift as a share of hip height |
-| `stride` | number | 0.2–2 | `1` | Stride length multiplier |
+| `stride` | number or list of number | 0.2–2 | `1` | Stride length multiplier: one number, or [slowest, fastest] |
 
 ```json
 { "motion": { "gaits": ["walk"] } }
@@ -2011,18 +2004,17 @@ needs: `[]`
 
 ### `jump`
 
-Crouches, leaps to a target point or over a height and lands on its legs; fires takeoff and land events.
+Crouches, leaps to a target point (or ahead) over the ground and any height asked for, and lands on its legs, absorbing it; fires takeoff and land events.
 
 List in motion.actions as "jump", or { "type": "jump", ...params }.
-
-**Not built yet** (plan milestone 10.2): it validates, but compile skips it and warns `not_built`.
 
 needs: `["legs"]`
 
 | Parameter | Type | Range | Default | Description |
 | --- | --- | --- | --- | --- |
-| `power` | number | 0–1 | `0.6` | How hard it springs, 0 to 1 |
-| `crouch` | number | 0–1 | `0.5` | How deep it crouches first |
+| `power` | number | 0–1 | `0.6` | How hard it springs, 0 to 1: how far it leaps unaimed, and at most |
+| `crouch` | number | 0–1 | `0.5` | How deep it crouches first, 0 to 1 |
+| `height` | number | 0–5 | `0` | Least height in metres it clears above the ground in the middle of the leap (over an obstacle); 0 for a natural arc |
 
 ```json
 { "motion": { "actions": ["jump"] } }
@@ -2081,18 +2073,16 @@ needs: `["pincer"]`
 
 ### `pounce`
 
-A jump that ends in a bite on the target; fires takeoff, land and bite-contact events.
+A low crouch, a leap at the target and a bite as it lands, the head meeting the target; fires takeoff, land and bite-contact events.
 
 List in motion.actions as "pounce", or { "type": "pounce", ...params }.
-
-**Not built yet** (plan milestone 10.2): it validates, but compile skips it and warns `not_built`.
 
 needs: `["legs","jaw"]`
 
 | Parameter | Type | Range | Default | Description |
 | --- | --- | --- | --- | --- |
-| `power` | number | 0–1 | `0.7` | How hard it springs, 0 to 1 |
-| `reach` | number | 0–1 | `0.8` | How far the head lunges at the end |
+| `power` | number | 0–1 | `0.7` | How hard it springs, 0 to 1: how far it can pounce |
+| `reach` | number | 0–1 | `0.8` | How far the head lunges at the end, as a share of what the neck can reach |
 
 ```json
 { "motion": { "actions": ["pounce"] } }
@@ -2181,7 +2171,7 @@ Generic action-RPG numbers: health from mass, speed from legs and gaits, attack 
 
 Game numbers from a creature's body: spawnforge analyze creature.json --stats rpg (MCP: analyze with "stats": "rpg").
 
-outputs: `{"health":"Hit points: grows with the cube root of mass, so a creature twice as long is about twice as tough","speed":"Top speed in m/s, from the fastest gait the legs allow","attack":"Damage per hit: one head’s teeth and horns, plus claws and other weapons, scaled by size","attacks":"Attacks per turn: one per head","defence":"Damage reduction, added up: each shell, plate row or armour band 10 × its cover (its size over the torso length, at most 1) + 0.15 a piece; skin chitin 6, scales 3, hide 2; 0.25 a spike; plus the cube root of mass; times level","perception":"How far it notices things, in metres: eye size and ears","threat":"A one-number summary for encounter tables"}`
+outputs: `{"health":"Hit points: grows with the cube root of mass, so a creature twice as long is about twice as tough","speed":"Top speed in m/s, from the fastest gait the legs allow","swim":"Top swimming speed in m/s; 0 for a creature that does not swim","attack":"Damage per hit: one head’s teeth and horns, plus claws and other weapons, scaled by size","attacks":"Attacks per turn: one per head","defence":"Damage reduction, added up: each shell, plate row or armour band 10 × its cover (its size over the torso length, at most 1) + 0.15 a piece; skin chitin 6, scales 3, hide 2; 0.25 a spike; plus the cube root of mass; times level","perception":"How far it notices things, in metres: eye size and ears","threat":"A one-number summary for encounter tables"}`
 
 | Parameter | Type | Range | Default | Description |
 | --- | --- | --- | --- | --- |

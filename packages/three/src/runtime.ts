@@ -14,6 +14,7 @@ import {
   type Quality,
   type Registry,
   resolveBlueprint,
+  type Water,
 } from '@spawnforge/core';
 import { type Camera, Object3D, Quaternion, Vector3 } from 'three';
 import { type CreatureObject, createCreatureObject } from './assemble.ts';
@@ -47,11 +48,18 @@ export interface SpawnOptions {
   readonly position?: { readonly x: number; readonly z: number };
   readonly heading?: number;
   readonly ground?: Ground;
+  /** Water to spawn in: a swimmer starts afloat where it is deep enough. */
+  readonly water?: Water;
 }
 
 export interface UpdateInput {
   /** Height (and optionally normal) of the ground at (x, z); flat ground at y = 0 by default. */
   readonly ground?: Ground;
+  /**
+   * Water at (x, z): its surface height, or null where there is none (the ground is its bed).
+   * Creatures that swim take to it where it is deep enough, and walk out where it is not.
+   */
+  readonly water?: Water;
   /** For level of detail: distant creatures play baked cycles. */
   readonly camera?: Camera;
 }
@@ -88,6 +96,7 @@ export class Creature {
   private readonly listeners = new Map<string, Set<Listener>>();
   /** The ground from the last update, for placing feet when switching back to full motion. */
   private ground: Ground | undefined;
+  private water: Water | undefined;
   private readonly clips: () => readonly BakedClip[];
   private baked = {
     time: 0,
@@ -123,8 +132,10 @@ export class Creature {
       options.position?.z ?? 0,
       options.heading ?? 0,
       options.ground,
+      options.water,
     );
     this.ground = options.ground;
+    this.water = options.water;
     applyPose(this.view, this.controller.pose);
   }
 
@@ -141,7 +152,10 @@ export class Creature {
   }
 
   /** Walks to a point, choosing its gait from the speed (m/s; default its natural pace). */
-  moveTo(target: { x: number; z: number } | null, options: { speed?: number } = {}): void {
+  moveTo(
+    target: { x: number; y?: number; z: number } | null,
+    options: { speed?: number } = {},
+  ): void {
     this.controller.moveTo(target, options);
     this.baked.target = target ? new Vector3(target.x, 0, target.z) : null;
     this.baked.speed = target ? this.baked.speed : 0;
@@ -197,10 +211,14 @@ export class Creature {
   /** Advances motion by `dt` seconds and poses the meshes; returns the events it fired. */
   update(dt: number, input: UpdateInput = {}): MotionEvent[] {
     if (input.ground) this.ground = input.ground;
+    if (input.water) this.water = input.water;
     let events: MotionEvent[];
-    if (this.lod === 'baked') events = this.updateBaked(dt, input.ground);
+    if (this.lod === 'baked') events = this.updateBaked(dt, input.ground, input.water);
     else {
-      events = this.controller.update(dt, input.ground ? { ground: input.ground } : {});
+      events = this.controller.update(dt, {
+        ...(input.ground ? { ground: input.ground } : {}),
+        ...(input.water ? { water: input.water } : {}),
+      });
       applyPose(this.view, this.controller.pose);
     }
     for (const event of events) {
@@ -230,12 +248,22 @@ export class Creature {
     this.lod = 'full';
     if (this.view.meshes.fur) this.view.meshes.fur.visible = true;
     const target = this.baked.target;
-    this.controller.place(this.position.x, this.position.z, this.heading, ground ?? this.ground);
+    this.controller.place(
+      this.position.x,
+      this.position.z,
+      this.heading,
+      ground ?? this.ground,
+      this.water,
+    );
     if (target) this.controller.moveTo({ x: target.x, z: target.z }, { speed: this.desired });
   }
 
   /** Cheap motion for distant creatures: steer, then play the nearest baked gait cycle. */
-  private updateBaked(dt: number, ground: Ground = () => ({ height: 0 })): MotionEvent[] {
+  private updateBaked(
+    dt: number,
+    ground: Ground = () => ({ height: 0 }),
+    water?: Water,
+  ): MotionEvent[] {
     const b = this.baked;
     const c = this.controller;
     let want = 0;
@@ -261,9 +289,17 @@ export class Creature {
     if (b.speed < 1e-3 && want === 0) b.speed = 0;
     c.position.x += Math.sin(c.heading) * b.speed * dt;
     c.position.z += Math.cos(c.heading) * b.speed * dt;
-    c.position.y = ground(c.position.x, c.position.z).height;
-    // The gait cycle whose speed is nearest, or idle when standing.
-    const clips = this.clips();
+    // A distant swimmer keeps its depth (clear of the bed); everything else stands on the ground.
+    const bed = ground(c.position.x, c.position.z).height;
+    const swimming = c.medium === 'water' && water?.(c.position.x, c.position.z);
+    c.position.y = swimming ? Math.max(bed, c.position.y) : bed;
+    // The gait cycle whose speed is nearest, or idle when standing; in water, a swimming one.
+    const clips = this.clips().filter(
+      (clip) =>
+        clip.speed === 0 ||
+        (this.compiled.motion.gaits.find((g) => g.id === clip.name)?.medium === 'water') ===
+          Boolean(swimming),
+    );
     const moving = clips.filter((clip) => clip.speed > 0);
     const clip =
       b.speed > 0.01 && moving.length > 0

@@ -1,7 +1,8 @@
 import type { CompiledCreature } from '../compile/compile.ts';
 import { mainHead } from '../compile/types.ts';
 import type { Registry } from '../registry.ts';
-import { MotionController, type MotionEvent } from './controller.ts';
+import { type Ground, MotionController, type MotionEvent, type Water } from './controller.ts';
+import { openSea } from './terrain.ts';
 
 /**
  * One animation baked from the motion controller: a local rotation and position per bone per
@@ -28,6 +29,11 @@ export interface BakedClip {
   readonly distance: number;
   /** Events in the clip (footsteps, action moments), timed from its start. */
   readonly events: readonly MotionEvent[];
+  /**
+   * The root moves in the clip (a jump, a pounce): its track carries the creature from where the
+   * clip starts, so a game either lets it move the creature or strips it (docs/runtime.md).
+   */
+  readonly rootMotion?: boolean;
 }
 
 export interface BakeOptions {
@@ -77,7 +83,8 @@ function record(
   name: string,
   frames: number,
   dt: number,
-  extra: { loop: boolean; speed: number },
+  extra: { loop: boolean; speed: number; rootMotion?: boolean },
+  input: { ground?: Ground; water?: Water } = {},
 ): BakedClip {
   const pose = controller.pose;
   const n = pose.count;
@@ -91,11 +98,12 @@ function record(
   const startZ = controller.position.z;
   for (let f = 0; f < frames; f++) {
     if (f > 0)
-      for (const event of controller.update(dt))
+      for (const event of controller.update(dt, input))
         events.push({ ...event, time: event.time - start });
     // The root stays at the origin facing +Z: a game places the creature, the clip moves it.
-    const x = controller.position.x;
-    const z = controller.position.z;
+    // With root motion it starts there and travels, as the action carries it.
+    const x = extra.rootMotion ? startX : controller.position.x;
+    const z = extra.rootMotion ? startZ : controller.position.z;
     for (let b = 0; b < n; b++) {
       const q = pose.rot[b];
       const p = pose.pos[b];
@@ -121,6 +129,7 @@ function record(
     speed: extra.speed,
     distance: Math.hypot(controller.position.x - startX, controller.position.z - startZ),
     events,
+    ...(extra.rootMotion ? { rootMotion: true } : {}),
   };
 }
 
@@ -188,14 +197,18 @@ function bakeGait(
   gait: string,
 ): BakedClip {
   const controller = new MotionController(compiled, { registry });
+  // Swimming gaits are baked in open water, the surface at y 0 (10.3).
+  const water = compiled.motion.gaits.find((g) => g.id === gait)?.medium === 'water';
+  const input: { ground?: Ground; water?: Water } = water ? openSea(compiled.scale) : {};
+  if (water) controller.place(0, 0, 0, input.ground, input.water);
   controller.lockGait(gait);
   const speed = controller.gaitSpeed(gait);
   controller.drive(speed, 0);
   // Settle into the gait, then start at the top of a cycle.
-  for (let i = 0; i < 480; i++) controller.update(STEP);
+  for (let i = 0; i < 480; i++) controller.update(STEP, input);
   let last = controller.phase;
   for (let guard = 0; ; guard++) {
-    controller.update(STEP);
+    controller.update(STEP, input);
     if (controller.phase < last) break;
     last = controller.phase;
     if (guard > 4800) throw new Error(`the ${gait} cycle did not advance`);
@@ -206,7 +219,7 @@ function bakeGait(
   const t0 = controller.time;
   last = controller.phase;
   for (let guard = 0; ; guard++) {
-    controller.update(STEP);
+    controller.update(STEP, input);
     if (controller.phase < last) break;
     last = controller.phase;
     if (guard > 4800) throw new Error(`the ${gait} cycle did not advance`);
@@ -214,10 +227,7 @@ function bakeGait(
   const cycle = controller.time - t0;
   // At least 12 frames a cycle, so quick little steps still read.
   const frames = Math.max(12, Math.round(cycle * fps)) + 1;
-  return record(controller, gait, frames, cycle / (frames - 1), {
-    loop: true,
-    speed,
-  });
+  return record(controller, gait, frames, cycle / (frames - 1), { loop: true, speed }, input);
 }
 
 function bakeAction(
@@ -232,9 +242,16 @@ function bakeAction(
   const target = head
     ? { x: head.x, y: head.y, z: head.z + compiled.scale * 0.6 }
     : { x: 0, y: compiled.scale * 0.5, z: compiled.scale * 2 };
-  controller.act(action, { target });
+  // A leap goes as far as it leaps unaimed, and plans its arc (so its length) on its first step.
+  const leaps = registry.get('action', action)?.hooks?.leap !== undefined;
+  controller.act(action, leaps ? {} : { target });
+  if (leaps) controller.update(STEP);
   const duration = controller.actionState?.duration ?? 1;
   // A little after the action ends, so it settles back.
   const frames = Math.round((duration + 0.25) * fps) + 1;
-  return record(controller, action, frames, 1 / fps, { loop: false, speed: 0 });
+  return record(controller, action, frames, 1 / fps, {
+    loop: false,
+    speed: 0,
+    ...(leaps ? { rootMotion: true } : {}),
+  });
 }

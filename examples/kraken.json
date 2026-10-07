@@ -85,5 +85,5 @@
       { "type": "suckers", "count": 16, "width": 0.9, "bump": 0.6, "region": "limbs" }
     ]
   },
-  "motion": { "temperament": "stalking", "actions": ["bite", "lash"] }
+  "motion": { "temperament": "stalking", "media": { "water": true }, "actions": ["bite", "lash"] }
 }

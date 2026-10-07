@@ -89,7 +89,7 @@ describe('locomotion', () => {
 
   it('trots with diagonal pairs moving together', () => {
     const { controller } = creature('quadruped');
-    controller.drive(controller.maxSpeed() * 0.8, 0);
+    controller.drive(controller.gaitSpeed('trot'), 0);
     const { steps } = run(controller, 6);
     expect(controller.gait?.id).toBe('trot');
     const late = steps.filter((s) => s.time > 3);
@@ -285,5 +285,121 @@ describe('actions', () => {
       .sub(controller.position)
       .applyAxisAngle(new (rest.constructor as typeof Vector3)(0, 1, 0), -controller.heading);
     expect(settled.distanceTo(rest)).toBeLessThan(0.1 * compiled.scale);
+  });
+});
+
+/** Steps a controller, recording footsteps and the share of frames with no foot planted. */
+function airtime(controller: MotionController, seconds: number) {
+  const steps: { leg: string; time: number }[] = [];
+  let frames = 0;
+  let flying = 0;
+  for (let t = 0; t < seconds; t += 1 / 120) {
+    for (const e of controller.update(1 / 120))
+      if (e.type === 'footstep' && e.leg) steps.push({ leg: e.leg, time: e.time });
+    if (t < seconds / 2) continue;
+    frames++;
+    if (controller.feet().every((f) => !f.planted)) flying++;
+  }
+  return { steps, flight: flying / Math.max(1, frames) };
+}
+
+describe('gaits that change with speed (10.1)', () => {
+  it('gallops with the lead foreleg last and a moment in the air', () => {
+    const { compiled, controller } = creature('quadruped', { scale: 1.2 });
+    expect(compiled.motion.gaits.map((g) => g.id)).toContain('gallop');
+    controller.lockGait('gallop');
+    controller.drive(controller.gaitSpeed('gallop'), 0);
+    const { steps, flight } = airtime(controller, 6);
+    expect(flight).toBeGreaterThan(0.03);
+    // A transverse gallop leading right: left hind, right hind, left fore, right fore.
+    const order = steps.filter((s) => s.time > 3).map((s) => s.leg);
+    const next: Record<string, string> = {
+      'hindleg.L': 'hindleg.R',
+      'hindleg.R': 'foreleg.L',
+      'foreleg.L': 'foreleg.R',
+      'foreleg.R': 'hindleg.L',
+    };
+    for (let i = 1; i < order.length; i++) expect(order[i]).toBe(next[order[i - 1] as string]);
+  });
+
+  it('gallops rotary when asked: the forefeet land in the other order', () => {
+    const { controller } = creature('quadruped', {
+      scale: 1.2,
+      motion: { gaits: ['walk', { type: 'gallop', style: 'rotary' }] },
+    });
+    controller.lockGait('gallop');
+    controller.drive(controller.gaitSpeed('gallop'), 0);
+    const order = airtime(controller, 6)
+      .steps.filter((s) => s.time > 3)
+      .map((s) => s.leg);
+    const next: Record<string, string> = {
+      'hindleg.R': 'hindleg.L',
+      'hindleg.L': 'foreleg.L',
+      'foreleg.L': 'foreleg.R',
+      'foreleg.R': 'hindleg.R',
+    };
+    for (let i = 1; i < order.length; i++) expect(order[i]).toBe(next[order[i - 1] as string]);
+  });
+
+  it('runs a biped with both feet off the ground each stride, faster than it walks', () => {
+    const { controller } = creature('biped');
+    expect(controller.maxSpeed()).toBeGreaterThan(2 * controller.gaitSpeed('walk'));
+    controller.drive(controller.gaitSpeed('run'), 0);
+    const { flight } = airtime(controller, 5);
+    expect(controller.gait?.id).toBe('run');
+    expect(flight).toBeGreaterThan(0.05);
+  });
+
+  it('bounds only small quadrupeds, each pair landing together', () => {
+    const big = creature('quadruped', { scale: 1.5 });
+    expect(big.compiled.motion.gaits.map((g) => g.id)).not.toContain('bound');
+    const { compiled, controller } = creature('quadruped', { scale: 0.4 });
+    expect(compiled.motion.gaits.map((g) => g.id)).toContain('bound');
+    expect(compiled.motion.gaits.map((g) => g.id)).not.toContain('gallop');
+    controller.lockGait('bound');
+    controller.drive(controller.gaitSpeed('bound'), 0);
+    const late = airtime(controller, 5).steps.filter((s) => s.time > 2.5);
+    const time = (leg: string) => late.find((s) => s.leg === leg)?.time ?? Number.NaN;
+    const cycle = 1 / controller.cadence('bound').steps;
+    expect(Math.abs(time('hindleg.L') - time('hindleg.R'))).toBeLessThan(0.08 * cycle);
+  });
+
+  it('speeds up from a walk to a gallop and back without a planted foot sliding', () => {
+    const { compiled, controller } = creature('quadruped', { scale: 1.2 });
+    const gaits: string[] = [];
+    let worstSlide = 0;
+    for (const share of [0.1, 0.3, 0.6, 1, 0.3, 0.1]) {
+      controller.drive(controller.maxSpeed() * share * 0.7, 0);
+      const result = run(controller, 3);
+      worstSlide = Math.max(worstSlide, result.worstSlide);
+      gaits.push(controller.gait?.id ?? '');
+    }
+    expect(gaits).toContain('gallop');
+    expect(gaits).toContain('trot');
+    expect(gaits.at(-1)).toBe('walk');
+    expect(worstSlide).toBeLessThan(0.02 * compiled.scale);
+  });
+
+  it('takes duty and stride as profiles across a gait’s speeds', () => {
+    const { compiled } = creature('quadruped', {
+      motion: { gaits: [{ type: 'walk', duty: [0.8, 0.65], stride: [0.9, 1.2] }, 'trot'] },
+    });
+    const walk = compiled.motion.gaits.find((g) => g.id === 'walk');
+    expect(walk).toMatchObject({ duty: 0.8, dutyFast: 0.65, stride: 0.9, strideFast: 1.2 });
+    const trot = compiled.motion.gaits.find((g) => g.id === 'trot');
+    // Plan 1's gaits keep their data exactly: nothing new is written for them.
+    expect(Object.keys(trot ?? {}).sort()).toEqual(
+      [
+        'amplitude',
+        'duty',
+        'froude',
+        'id',
+        'spine',
+        'stepHeight',
+        'stride',
+        'wave',
+        'waves',
+      ].sort(),
+    );
   });
 });

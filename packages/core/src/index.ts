@@ -47,6 +47,7 @@ export {
   SIDES,
   SKIN_MATERIALS,
   STANCES,
+  speedProfile,
   TEMPERAMENTS,
   TONGUES,
 } from './blueprint/schema.ts';
@@ -108,6 +109,8 @@ export {
   type ActionGoals,
   type ActionHooks,
   envelope,
+  type LeapPlan,
+  type LeapTiming,
   ramp,
 } from './motion/actions.ts';
 export { type BakedClip, type BakeOptions, bakeClips, clipNames } from './motion/clips.ts';
@@ -119,6 +122,8 @@ export {
   type MotionData,
   type MotionEvent,
   type MotionOptions,
+  type Water,
+  type WaterSample,
 } from './motion/controller.ts';
 export { applyFace, applyRest, JAW_OPEN } from './motion/face.ts';
 export { motionData } from './motion/gaits.ts';
@@ -132,7 +137,7 @@ export {
   ScenarioRun,
   ScenarioSchema,
 } from './motion/scenario.ts';
-export { testCourse } from './motion/terrain.ts';
+export { type Lake, openSea, testCourse, withLake } from './motion/terrain.ts';
 export { applyStations, applyWings } from './motion/wings.ts';
 export * from './registry.ts';
 export { createRng, deriveSeed, type Rng } from './rng.ts';
