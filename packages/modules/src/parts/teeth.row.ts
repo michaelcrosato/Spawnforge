@@ -121,11 +121,14 @@ export default definePart({
             // Out of the mouth is the socket's -X on the upper row and +X on the lower, times
             // the side of the head.
             const outward = (row === 'upper' ? -1 : 1) * side * LEAN[tooth.kind] * length;
+            // On several heads each row is a little coarser, so a hydra's teeth stay within the
+            // part budget (gate 9).
+            const coarse = ctx.copies > 1;
             const path = ctx.geo
-              .arc(length, bend, { segments: 4 })
+              .arc(length, bend, { segments: coarse ? 3 : 4 })
               .map((q, i, all) => q.clone().setX(q.x + (outward * i) / (all.length - 1)));
             const piece = ctx.geo.sweep(path, (u) => base * (1 - u * 0.95), {
-              sides: 6,
+              sides: coarse ? 5 : 6,
               tip: 'point',
             });
             // A quarter of each tooth stands in the gum.

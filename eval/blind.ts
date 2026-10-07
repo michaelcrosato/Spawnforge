@@ -3,22 +3,32 @@
  *
  *   node eval/blind.ts prepare eval/runs/<run>   renders each prompt's final valid blueprint
  *                                                anonymously into <run>/blind/rNN.png, shuffled,
- *                                                and writes the key to <run>/blind-key.json
- *   node eval/blind.ts score eval/runs/<run>     compares <run>/blind-answers.json with the key
+ *                                                and writes the key to <run>/blind-key.json and
+ *                                                the prompt list to <run>/blind/prompts.md
+ *   node eval/blind.ts score eval/runs/<run> [--threshold n]
+ *                                                compares <run>/blind-answers.json with the key
+ *                                                (gate: n matches, default 16)
  *
- * The reviewer sees only the images and the prompt list; never the key or the blueprints.
+ * The suite comes from the run's run.json (`"suite": "b"` uses prompts-b.json). The reviewer sees
+ * only the images and the prompt list; never the key or the blueprints.
  */
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { validate } from '@spawnforge/cli';
 import { createRng } from '@spawnforge/core';
 
-const [mode, dir] = process.argv.slice(2);
+const [mode, dir, ...rest] = process.argv.slice(2);
 if (!dir || (mode !== 'prepare' && mode !== 'score')) {
-  console.error('usage: node eval/blind.ts prepare|score <run folder>');
+  console.error('usage: node eval/blind.ts prepare|score <run folder> [--threshold n]');
   process.exit(2);
 }
-const prompts = JSON.parse(readFileSync(new URL('./prompts.json', import.meta.url), 'utf8')) as {
+const flag = rest.indexOf('--threshold');
+const threshold = flag >= 0 ? Number(rest[flag + 1]) : 16;
+const runInfo = existsSync(join(dir, 'run.json'))
+  ? (JSON.parse(readFileSync(join(dir, 'run.json'), 'utf8')) as { suite?: string })
+  : {};
+const suiteFile = runInfo.suite === 'b' ? './prompts-b.json' : './prompts.json';
+const prompts = JSON.parse(readFileSync(new URL(suiteFile, import.meta.url), 'utf8')) as {
   id: string;
   prompt: string;
 }[];
@@ -62,6 +72,11 @@ if (mode === 'prepare') {
   }
   await renderer.close();
   writeFileSync(join(dir, 'blind-key.json'), `${JSON.stringify(key, null, 2)}\n`);
+  // The prompts in id order, for the reviewer (the order says nothing about the renders').
+  writeFileSync(
+    join(dir, 'blind', 'prompts.md'),
+    `# Prompts\n\n${prompts.map((p) => `- \`${p.id}\`: ${p.prompt}`).join('\n')}\n`,
+  );
   console.log(`rendered ${order.length} creatures into ${join(dir, 'blind')}`);
 } else {
   const key = JSON.parse(readFileSync(join(dir, 'blind-key.json'), 'utf8')) as Record<
@@ -78,13 +93,13 @@ if (mode === 'prepare') {
     correct: answers[render] === truth,
   }));
   const correct = rows.filter((r) => r.correct).length;
-  const summary = { correct, total: rows.length, threshold: 16, gate: correct >= 16, rows };
+  const summary = { correct, total: rows.length, threshold, gate: correct >= threshold, rows };
   writeFileSync(join(dir, 'blind-score.json'), `${JSON.stringify(summary, null, 2)}\n`);
   for (const r of rows)
     console.log(
       `${r.render}  ${r.correct ? 'ok  ' : 'MISS'}  answer ${r.answer || '-'}  truth ${r.truth}`,
     );
   console.log(
-    `\n${correct}/${rows.length} matched. Gate (≥ 16): ${summary.gate ? 'PASS' : 'FAIL'}`,
+    `\n${correct}/${rows.length} matched. Gate (≥ ${threshold}): ${summary.gate ? 'PASS' : 'FAIL'}`,
   );
 }

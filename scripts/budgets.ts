@@ -2,7 +2,9 @@
  * Measures the plan's budgets: compile time (Node, and Chromium as in the sandbox), skin
  * triangles, draw calls and motion update time for one and for 50 creatures.
  *
- *   node scripts/budgets.ts [--out report.json]
+ *   node scripts/budgets.ts [name …] [--out report.json]
+ *
+ * Names limit it to those examples (the herd still walks the ones measured).
  */
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
@@ -17,7 +19,10 @@ import {
 import { basicPack } from '@spawnforge/modules';
 import { Renderer } from '@spawnforge/render';
 
-const { values } = parseArgs({ options: { out: { type: 'string' } } });
+const { values, positionals } = parseArgs({
+  allowPositionals: true,
+  options: { out: { type: 'string' } },
+});
 const registry = createRegistry([basicPack]);
 const dir = new URL('../examples/', import.meta.url);
 const examples = readdirSync(dir)
@@ -26,7 +31,8 @@ const examples = readdirSync(dir)
     name: f.replace('.json', ''),
     lines: readFileSync(new URL(f, dir), 'utf8').split('\n').length,
     blueprint: JSON.parse(readFileSync(new URL(f, dir), 'utf8')),
-  }));
+  }))
+  .filter((e) => positionals.length === 0 || positionals.includes(e.name));
 
 const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)] ?? 0;
 const ground = testCourse(1, 0.3, 2);
@@ -44,9 +50,14 @@ try {
       return performance.now() - t;
     });
     const c = compiled.at(-1) as CompiledCreature;
-    // In Chromium, through the render page (the second render is warm).
+    // In Chromium, through the render page: the median of three warm compiles.
     await renderer.render({ blueprint, size: 64, views: ['side'] });
-    const chrome = (await renderer.render({ blueprint, size: 64, views: ['side'] })).info.compileMs;
+    const chromeTimes: number[] = [];
+    for (let i = 0; i < 3; i++)
+      chromeTimes.push(
+        (await renderer.render({ blueprint, size: 64, views: ['side'] })).info.compileMs,
+      );
+    const chrome = median(chromeTimes);
     const controller = new MotionController(c, { registry });
     controller.drive(controller.paceSpeed(), 0.3);
     for (let i = 0; i < 600; i++) controller.update(1 / 60, { ground });
