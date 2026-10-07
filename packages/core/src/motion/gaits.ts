@@ -83,7 +83,9 @@ export function motionData(
     const legs = spine ? [] : phasesOf(module, pairs, wave, p);
     const flex = num('flex', module.flex ?? 0);
     const lean = num('lean', 0);
-    const flight = hasFlight(legs, Math.min(duty, dutyFast));
+    // Only land gaits can have a suspension phase; an air gait has no planted feet at all.
+    const flight =
+      (module.medium ?? 'land') === 'land' && hasFlight(legs, Math.min(duty, dutyFast));
     gaits.push({
       id: module.id,
       wave,
@@ -104,6 +106,15 @@ export function motionData(
       ...(flight ? { flight } : {}),
       ...(module.medium && module.medium !== 'land' ? { medium: module.medium } : {}),
       ...(module.swim ? { swim: module.swim } : {}),
+      ...(module.air
+        ? {
+            air: module.air,
+            ...(typeof p.stroke === 'number' ? { stroke: p.stroke } : {}),
+            ...(typeof p.bank === 'number' ? { bank: p.bank } : {}),
+            ...(typeof p.sink === 'number' ? { sink: p.sink } : {}),
+            ...(typeof p.rate === 'number' ? { rate: p.rate } : {}),
+          }
+        : {}),
     });
   }
   // Slowest first, so the controller starts walking.

@@ -1,0 +1,6 @@
+{
+  "ground": { "slope": 15, "toward": 0, "from": 60 },
+  "duration": 50,
+  "frames": 12,
+  "calls": [{ "at": 0, "do": "fly" }, { "at": 24, "do": "land", "to": [0, 80] }]
+}

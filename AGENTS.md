@@ -90,7 +90,11 @@ the controller plans and flies a ballistic arc over the game's ground; `jump` an
 `takeoff` and `land`; leaping clips keep root motion; `docs/design/10.2-jumps.md`) and 10.3
 (`water` beside `ground`; `swim.undulate`, `swim.paddle` and `swim.flap`; floating, diving and
 climbing out; `head_underwater`, `hits_bed`, `speed.swim`; scenarios' `"water"`, `withLake`,
-`openSea`; `docs/design/10.3-swimming.md`).
+`openSea`; `docs/design/10.3-swimming.md`) and 10.4 (`fly`, `glide` and `hover`: takeoff,
+cruise from wing loading, banked turns, flap-gliding, hovering and landings with a flare on any
+slope; strokes compiled per wing; `fly()`, `land()`, `spawn({ flying })`; air cycles baked at exact
+phases, `takeoff` and `land` clips; distant flyers keep flying; `cannot_fly`, `hard_landing` and a
+flight course in `analyze`; scenarios' slopes and `fly`/`land`; `docs/design/10.4-flight.md`).
 
 ## Repo map
 

@@ -137,7 +137,7 @@ export {
   ScenarioRun,
   ScenarioSchema,
 } from './motion/scenario.ts';
-export { type Lake, openSea, testCourse, withLake } from './motion/terrain.ts';
+export { type Lake, openSea, slope, testCourse, withLake } from './motion/terrain.ts';
 export { applyStations, applyWings } from './motion/wings.ts';
 export * from './registry.ts';
 export { createRng, deriveSeed, type Rng } from './rng.ts';

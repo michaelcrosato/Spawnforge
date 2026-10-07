@@ -1364,7 +1364,7 @@ export function validateBlueprint(
   }
   if (errors.length > 0) return { ok: false, errors, warnings };
   const creature = expandCreature(outcome.doc, registry);
-  const planned = notBuilt(creature, registry, outcome.written);
+  const planned = notBuilt(creature, registry);
   const blueprint =
     options.minimal === false
       ? undefined

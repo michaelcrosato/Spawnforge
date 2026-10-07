@@ -212,6 +212,28 @@ Work in progress toward 0.2, phase by phase (see the plan's status table).
   runtime takes `water` in `update` and `spawn`. `withLake` and `openSea` make water for tests,
   and the sandbox's course has a lake. Swimming is no longer listed under `notBuilt`.
 - **Examples:** a river crocodile and a sea turtle; the reed viper and the kraken swim too.
+- **Flight (10.4):** `fly`, `glide` and `hover` are built. A winged creature flies when asked
+  (`fly()`, a scenario's `fly`, a `moveTo` higher than it could reach on foot, `spawn({ flying,
+  height })`): it crouches and leaps into a climb, cruises at a speed from its wing loading,
+  holds its height over the ground ahead and under its wingtips, banks into turns, glides
+  between flaps, circles (or, with insect wings, hovers) with nowhere to go, and `land()`s with a
+  flare onto any slope, wings raised as its feet reach down (hoverers come straight down). Wings
+  beat at a rate from Pennycuick's fit, strokes compiled into each wing from its membrane:
+  leathery and feathered wings flex on the upstroke, insect wings stroke steeper with the hind
+  wing just behind, cases lift. Events `takeoff`, `land`, `flap` and `medium` `air`; the
+  controller gains `flying`, `flightStage`, `wingbeat`, `attitude` and `poseBeat`, and
+  `update(dt, { pose: false })` for level of detail. `analyze` gives `speed.fly` and
+  `speed.slow`, warns `cannot_fly` over 700 N/m², and flies a course (take off, circle, land on a
+  15° slope) with `wing_intersection` while flying and `hard_landing`; `rpg` gains `fly`. Air
+  cycles bake over whole wingbeats at exact phases (`air.pitch` in the clip and the export), and
+  flyers get `takeoff` and `land` clips with root motion. The runtime's `Creature` gains `fly`,
+  `land` and `flying`; distant flyers keep flying on baked cycles, tilted to their bank. Scenarios
+  take a slope (`{ "slope", "toward", "from" }`), `fly` and `land` calls, `start.flying` and run
+  up to 120 s; filmstrips frame the spread wings in the air. Gait modules declare their role in
+  the air (`air`: `flapping`, `gliding`, `hovering`). Flight is no longer listed under
+  `notBuilt`; nothing is.
+- **Examples:** the griffin's wings are longer, to fly; the rhino beetle, too heavy for its wings,
+  is grounded (`"media": { "air": false }`); `scenarios/flight-course.json`.
 
 ## 0.1.0
 

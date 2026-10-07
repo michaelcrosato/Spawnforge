@@ -1,8 +1,11 @@
+import type { Quaternion, Vector3 } from 'three';
 import type { CompiledCreature } from '../compile/compile.ts';
 import { mainHead } from '../compile/types.ts';
 import type { Registry } from '../registry.ts';
 import { type Ground, MotionController, type MotionEvent, type Water } from './controller.ts';
 import { openSea } from './terrain.ts';
+
+const FLAT: Ground = () => ({ height: 0 });
 
 /**
  * One animation baked from the motion controller: a local rotation and position per bone per
@@ -34,6 +37,11 @@ export interface BakedClip {
    * clip starts, so a game either lets it move the creature or strips it (docs/runtime.md).
    */
   readonly rootMotion?: boolean;
+  /**
+   * An air cycle (`fly`, `glide`, `hover`): the root sits at the origin in the air, and the body
+   * pitch (radians, nose up) it was baked at, so a game can tilt it to the flight path.
+   */
+  readonly air?: { readonly pitch: number };
 }
 
 export interface BakeOptions {
@@ -47,10 +55,17 @@ export interface BakeOptions {
 
 const STEP = 1 / 120;
 
-/** What `clips` may name for this creature: idle, its gaits and its actions. */
+/**
+ * What `clips` may name for this creature: idle, its gaits and its actions, and for a flyer
+ * `takeoff` and `land`.
+ */
 export function clipNames(compiled: CompiledCreature, registry: Registry): string[] {
-  const actions = new MotionController(compiled, { registry }).actions();
-  return ['idle', ...compiled.motion.gaits.map((g) => g.id), ...actions];
+  const controller = new MotionController(compiled, { registry });
+  const actions = controller.actions();
+  const flight = controller.canFly
+    ? ['takeoff', 'land'].filter((name) => !actions.includes(name))
+    : [];
+  return ['idle', ...compiled.motion.gaits.map((g) => g.id), ...actions, ...flight];
 }
 
 /**
@@ -69,10 +84,14 @@ export function bakeClips(
   for (const name of wanted)
     if (!known.includes(name))
       throw new Error(`no clip "${name}" for this creature; it has ${known.join(', ')}`);
-  const gaits = new Set(compiled.motion.gaits.map((g) => g.id));
+  const gaits = new Map(compiled.motion.gaits.map((g) => [g.id, g]));
+  const actions = new MotionController(compiled, { registry }).actions();
   return wanted.map((name) => {
     if (name === 'idle') return bakeIdle(compiled, registry, fps, options.idleSeconds ?? 4);
+    if (gaits.get(name)?.medium === 'air') return bakeAir(compiled, registry, fps, name);
     if (gaits.has(name)) return bakeGait(compiled, registry, fps, name);
+    if (name === 'takeoff' && !actions.includes(name)) return bakeTakeoff(compiled, registry, fps);
+    if (name === 'land' && !actions.includes(name)) return bakeLand(compiled, registry, fps);
     return bakeAction(compiled, registry, fps, name);
   });
 }
@@ -253,5 +272,142 @@ function bakeAction(
     loop: false,
     speed: 0,
     ...(leaps ? { rootMotion: true } : {}),
+  });
+}
+
+/**
+ * An air gait's cycle (docs/design/10.4-flight.md): flown level at cruise (a hover in place) high
+ * above flat ground until the strokes settle, then posed frame by frame at exact phases over whole
+ * wingbeats, at least 0.5 s of them, the root at the origin. A glide holds still, so half a
+ * second of it. Never baked on land.
+ */
+function bakeAir(
+  compiled: CompiledCreature,
+  registry: Registry,
+  fps: number,
+  gait: string,
+): BakedClip {
+  const controller = new MotionController(compiled, { registry });
+  const fl = controller.flightNumbers;
+  if (!fl || !controller.canFly) throw new Error(`"${gait}" needs wings to fly with`);
+  // High enough that a glide, sinking all the while, never nears the ground.
+  const y = 50 + 20 * fl.cruise;
+  controller.place(0, 0, 0, FLAT, undefined, { flying: true, y });
+  controller.lockGait(gait);
+  const speed = controller.gaitSpeed(gait);
+  controller.fly({ height: y, speed });
+  controller.drive(speed, 0);
+  for (let i = 0; i < 4 * 120; i++) controller.update(STEP);
+  const beat = controller.wingbeat;
+  const beats = beat > 0 ? Math.max(1, Math.ceil(0.5 * beat - 1e-9)) : 0;
+  const duration = beats > 0 ? beats / beat : 0.5;
+  // At least 8 frames a beat, so a fast stroke still reads.
+  const frames = Math.max(8 * Math.max(1, beats), Math.round(duration * fps)) + 1;
+  const pose = controller.pose;
+  const n = pose.count;
+  const rotations = new Float32Array(frames * n * 4);
+  const positions = new Float32Array(frames * n * 3);
+  const start = controller.phase;
+  const at = controller.position.clone();
+  for (let f = 0; f < frames; f++) {
+    controller.poseBeat(start + (beats * f) / (frames - 1));
+    for (let b = 0; b < n; b++) {
+      const q = pose.rot[b] as Quaternion;
+      const p = pose.pos[b] as Vector3;
+      rotations.set([q.x, q.y, q.z, q.w], (f * n + b) * 4);
+      const root = pose.parents[b] === -1;
+      positions.set(root ? [p.x - at.x, p.y - at.y, p.z - at.z] : [p.x, p.y, p.z], (f * n + b) * 3);
+    }
+  }
+  // Exact phases close the loop; the blink and breath hold.
+  const blink = new Float32Array(frames).fill(pose.blink);
+  const breath = new Float32Array(frames).fill(pose.breath);
+  const events: MotionEvent[] = [];
+  // One flap a beat, as the downstroke starts (phase 0.25).
+  for (let k = 0; k < beats; k++) {
+    const t = (((((0.25 - start) % 1) + 1) % 1) + k) / beat;
+    if (t < duration) events.push({ type: 'flap', time: t });
+  }
+  events.sort((a, b) => a.time - b.time);
+  return {
+    name: gait,
+    duration,
+    loop: true,
+    frames,
+    rotations,
+    positions,
+    blink,
+    breath,
+    speed,
+    distance: speed * duration,
+    events,
+    air: { pitch: controller.attitude.pitch },
+  };
+}
+
+/**
+ * A takeoff from standing on flat ground (root motion): the crouch, the leap and the climb into
+ * flight, ending half a second after powered flight begins, heading +Z.
+ */
+function bakeTakeoff(compiled: CompiledCreature, registry: Registry, fps: number): BakedClip {
+  const controller = new MotionController(compiled, { registry });
+  for (let i = 0; i < 120; i++) controller.update(STEP);
+  const probe = new MotionController(compiled, { registry });
+  for (let i = 0; i < 120; i++) probe.update(STEP);
+  probe.fly();
+  probe.drive(probe.flightNumbers?.cruise ?? 1, 0);
+  // Time it on a twin: the controller is deterministic.
+  let t = 0;
+  let flying = 0;
+  for (let guard = 0; guard < 120 * 30 && flying < 0.5; guard++) {
+    probe.update(STEP);
+    t += STEP;
+    if (probe.flightStage === 'flight') flying += STEP;
+  }
+  controller.fly();
+  controller.drive(controller.flightNumbers?.cruise ?? 1, 0);
+  const frames = Math.round(t * fps) + 1;
+  return record(controller, 'takeoff', frames, t / (frames - 1), {
+    loop: false,
+    speed: 0,
+    rootMotion: true,
+  });
+}
+
+/**
+ * A landing on flat ground (root motion): from the start of the flare, coming in at slow flight
+ * heading +Z (a hoverer's from the start of its descent), to the feet planted half a second
+ * after touchdown.
+ */
+function bakeLand(compiled: CompiledCreature, registry: Registry, fps: number): BakedClip {
+  const approach = () => {
+    const controller = new MotionController(compiled, { registry });
+    const fl = controller.flightNumbers;
+    if (!fl) throw new Error('"land" needs wings to fly with');
+    controller.place(0, 0, 0, FLAT, undefined, { flying: true });
+    controller.land({ x: 0, z: 6 * fl.height + 8 * fl.slow });
+    return controller;
+  };
+  // Time it on a twin: from the flare to half a second after touchdown.
+  const probe = approach();
+  let before = 0;
+  let length = 0;
+  let down = -1;
+  for (let guard = 0; guard < 120 * 120; guard++) {
+    const events = probe.update(STEP);
+    const stage = probe.flightStage;
+    if (stage !== 'flare' && stage !== 'descend' && probe.flying) before++;
+    else length += STEP;
+    if (down < 0 && events.some((e) => e.type === 'land')) down = 0;
+    else if (down >= 0) down += STEP;
+    if (down >= 0.5) break;
+  }
+  const controller = approach();
+  for (let i = 0; i < before; i++) controller.update(STEP);
+  const frames = Math.round(length * fps) + 1;
+  return record(controller, 'land', frames, length / (frames - 1), {
+    loop: false,
+    speed: 0,
+    rootMotion: true,
   });
 }

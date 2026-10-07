@@ -35,12 +35,11 @@ The workflow is always the same:
 3. Run `validate` (the MCP tool, or `spawnforge validate file.json`). Fix every error using its
    `fix`, then validate again until `ok` is true. Read the warnings too.
 
-Format 0.2 already holds everything plan 2 adds (wings, fins, tentacles, several heads and tails,
-shells, quills, fur, swimming and flying, …), and some of it is not drawn yet. A blueprint may use
-all of it: it validates, and `validate` lists what is not drawn yet under `notBuilt`, with the
-milestone that builds it. **Keep those features**; they appear once built. [Not drawn
-yet](#not-drawn-yet) has the list; in the [catalogue](catalog.md) a milestone in brackets marks
-a module that is not drawn yet.
+Format 0.2 holds everything plan 2 adds (wings, fins, tentacles, several heads and tails,
+shells, quills, fur, swimming and flying, …), and all of it is drawn and moves. A pack can still
+declare a module before it is built: `validate` lists such features under `notBuilt`, with the
+milestone that builds it. **Keep those features**; they appear once built. In the
+[catalogue](catalog.md) a milestone in brackets marks a module that is not drawn yet.
 
 ## Units and directions
 
@@ -205,7 +204,7 @@ own defaults, so `{ "id": "wing", "role": "wing" }` is already a usable wing. Ev
 | --- | --- | --- | --- |
 | `leg` (the default) | Carries the body; legs come in mirrored pairs, up to 6 | `splay`, `lift`, `stance`, `foot` | `at` 0.5, `angle` 100, `length` 0.5, 3 segments, `foot.claw` |
 | `arm` | Hangs free for grabbing and striking | `splay`, `lift`, `foot` | as a leg |
-| `wing` | Rests folded, spreads when asked; flies from 10.4 | `membrane`, `foot` (a thumb at the wrist) | `at` 0.2, `angle` 40, `length` 1.2, `membrane.bat` |
+| `wing` | Rests folded, spreads when asked or to fly | `membrane`, `foot` (a thumb at the wrist) | `at` 0.2, `angle` 40, `length` 1.2, `membrane.bat` |
 | `fin` | Holds out flat; long ones (`length` 0.4 or more) beat as flippers when it swims | `membrane` | `at` 0.25, `angle` 115, `length` 0.35, 2 segments, `membrane.fin` |
 | `tentacle` | A long spring chain that curls, sways and reaches | `curl`, `curlStart`, up to 16 `segments` | `at` 0.9, `angle` 150, `length` 1.5, 10 segments |
 
@@ -452,7 +451,8 @@ when the creature moves.
   for a body with fins or tentacles on the torso and no legs, `air` with wings. Switches merge
   over that:
   `"media": { "water": true }` adds swimming to a walker or a snake, `{ "air": false }` grounds
-  a winged one; flying needs a wing limb (_10.4_).
+  a winged one (a beetle too heavy for its wings, `examples/rhino-beetle.json`); flying needs a
+  wing limb.
 - **Swimming.** A creature that swims takes to water deeper than about its hip height (a
   legless one, a little more than its girth) and walks or slithers out where it is shallower;
   one that only swims stops at the shore. Walkers and paddlers swim with the back awash and the
@@ -463,13 +463,27 @@ when the creature moves.
   pace is its swimming gait's, and `analyze` gives `speed.swim`, checks that a swimmer at the
   surface holds its head out (`head_underwater`) and that nothing goes into the bed when it dives
   (`hits_bed`). Games pass the water with the ground (docs/runtime.md); scenarios take `"water"`.
+- **Flying.** A creature with wings flies only when asked (a game's `fly()`, a scenario's `fly`
+  call, or a point higher than it could reach on foot); otherwise it walks as it would without
+  flight. It crouches, leaps and climbs away, cruises at a speed set by its wing loading (its
+  weight over its wings' area: a 560 kg dragon about 25 m/s, a 4 kg bat 10), holds a height above
+  the ground (by default its span clear of it), banks into turns, glides between flaps where its
+  wings can, circles when it has nowhere to go (insect wings hover instead) and lands with a
+  flare, wings raised as its feet reach for the ground (a hoverer comes straight down). Bigger
+  wings beat slower. Leathery and feathered wings flex on the upstroke; insect wings stroke on a
+  steeper plane, a hind wing just behind its forewing; a beetle's cases lift clear. `analyze`
+  gives `speed.fly` and `speed.slow`, warns `cannot_fly` when the wings carry more than 700 N/m²
+  (with how much longer they need to be), and flies a course (take off, circle, land on a 15°
+  slope), checking the beating wings (`wing_intersection` "while flying") and the landing
+  (`hard_landing`). Look at it with `render --filmstrip --gait fly` and the scenario
+  `examples/scenarios/flight-course.json`.
 - **`gaits`** are worked out from the body and its media, so you rarely need to list them. On
   land each suits a leg count: `walk` (any legs), `trot` (2 pairs), `tripod` (3 pairs), `slither`
   (no legs), `run` (2 legs), `gallop` (4 legs, hips 0.3 m up or higher) and `bound` (4 legs,
   hips 0.35 m up or lower, like a weasel's). In water: `swim.undulate` (a wave down the body
   into the tail: fish, snakes, crocodiles at speed), `swim.paddle` (legs cycling at the surface,
-  slowly) and `swim.flap` (long fins as flippers: turtles); in the air (_10.4_): `fly`, `glide`,
-  `hover`
+  slowly) and `swim.flap` (long fins as flippers: turtles); in the air: `fly` (flapping), `glide`
+  (wings held spread between flaps; leathery, feathered and broad insect wings) and `hover`
   (insect wings). Leave the field out to use every gait that suits the body; a list replaces
   the defaults only for the media its gaits serve, so `["walk"]` on a dragon still flies. A
   gait's parameters sit beside its `type`:
@@ -704,18 +718,10 @@ name the section to change.
 
 ## Not drawn yet
 
-Everything format 0.1 had is drawn today: legs and arms, `foot.claw`, horns, ears, eyes, teeth,
-mouths with lips, gums and tongues, eyelids, brows, beaks, spike rows, every material, fur, every
-pattern layer, several heads and tails, wings, fins and their membranes, tentacles, antennae,
-mandibles, pincers, shells, armour bands, plates, quills, frills, hoods, sails, walking,
-trotting, running, galloping, bounding, the tripod gait, slithering, swimming, and the bite,
-roar, look, idle, pinch, lash, display, jump and pounce actions. Everything in this table validates but is **not drawn yet** (or does not move yet):
-compile and motion skip it, and `validate` lists it under `notBuilt`. Each row goes when its
-milestone lands.
-
-| Not drawn yet | Milestone that draws it |
-| --- | --- |
-| Flying (`media.air`, `fly`, `glide`, `hover`) | 10.4 |
+Nothing: everything format 0.2 holds is drawn today and moves, from legs, horns and every pattern
+layer to several heads and tails, wings, fins, tentacles, shells, quills, frills, walking,
+running, galloping, slithering, swimming and flying, and every action. A module a pack declares
+before it is built validates, is skipped by compile and motion, and is listed under `notBuilt`.
 
 ### Recipes for the new bodies
 

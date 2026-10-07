@@ -31,17 +31,23 @@ export default definePart({
   slot: 'membrane',
   material: 'chitin',
   attach: { on: 'limb' },
-  provides: ['hover'],
+  provides: ['hover', 'glide'],
   params,
   example: { type: 'membrane.insect', shape: 'broad', width: 0.8 },
   describe: (p, { count }) =>
     `${count === 1 ? 'a ' : ''}${p.shape === 'broad' ? 'broad ' : ''}insect wing${count === 1 ? '' : 's'}`,
   hooks: {
     // Straight when spread; folded flat back over the abdomen (docs/design/9.3-wings-fins.md).
-    wing: () => ({
+    // Broad wings (moths, butterflies) row in a big, near-vertical stroke; narrow and round
+    // ones beat flatter and twist more (docs/design/10.4-flight.md).
+    wing: (raw) => ({
       bind: [-4, 0, 0],
       fold: { sweep: 96, droop: -6, lie: 90, joints: [0, 0, 0], digits: 0, flex: 0 },
       thickness: 0.004,
+      stroke:
+        (raw as Params).shape === 'broad'
+          ? { amplitude: 65, flex: 0, twist: 25, plane: 20 }
+          : { amplitude: 55, flex: 0, twist: 40, plane: 55 },
     }),
     build(ctx, raw) {
       const p = raw as Params;

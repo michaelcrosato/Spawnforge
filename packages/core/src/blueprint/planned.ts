@@ -3,19 +3,12 @@ import type { CreatureSpec, LimbRole } from './creature.ts';
 import type { Issue } from './issues.ts';
 
 /**
- * Format 0.2 holds all of plan 2's vocabulary before it is built. A blueprint may use any of it:
- * it validates, and compile skips what it cannot draw yet. This lists what is skipped, naming the
- * plan milestone that builds each thing. Pass `written` (the blueprint merged with its preset,
- * before defaults) to include fields that something else implies, such as a medium (from the
- * limbs), or whose defaults already have a value, such as `motion.media.water`, only when the
- * blueprint sets them; the thing that implies them is listed anyway. Each milestone
- * deletes its rows here.
+ * Vocabulary may be in the format before it is built: a blueprint may use it, it validates, and
+ * compile skips what it cannot draw yet. This lists what is skipped, naming the plan milestone
+ * that builds each thing: modules marked `planned` and limbs of roles not built. Format 0.2's
+ * vocabulary is all built since 10.4; packs may still add planned modules.
  */
-export function notBuilt(
-  spec: CreatureSpec,
-  registry: Registry,
-  written?: Readonly<Record<string, unknown>>,
-): Issue[] {
+export function notBuilt(spec: CreatureSpec, registry: Registry): Issue[] {
   const issues: Issue[] = [];
   const seen = new Set<string>();
   const add = (path: string, what: string, milestone: string) => {
@@ -60,18 +53,6 @@ export function notBuilt(
 
   // Every limb role is built since 9.4, and so is what sits on each.
 
-  // Fields whose defaults have a value: only when the blueprint writes them.
-  if (written) {
-    const get = (...path: string[]) =>
-      path.reduce<unknown>(
-        (node, key) =>
-          typeof node === 'object' && node !== null
-            ? (node as Record<string, unknown>)[key]
-            : undefined,
-        written,
-      );
-    if (get('motion', 'media', 'air') === true) add('motion.media.air', 'flying', '10.4');
-  }
   return issues;
 }
 

@@ -37,13 +37,13 @@
       "id": "wing",
       "role": "wing",
       "attach": { "on": "torso", "at": 0.15, "side": "both", "angle": 28 },
-      "length": 1.3,
+      "length": 1.45,
       "segments": 3,
       "radius": [0.05, 0.02],
       "membrane": {
         "type": "membrane.feather",
         "feathers": 22,
-        "length": 1,
+        "length": 1.15,
         "tips": "fingered",
         "color": "#7a5a34",
         "tipColor": "#2e2218"

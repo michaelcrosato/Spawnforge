@@ -57,6 +57,8 @@ export default definePart({
       bind: [-8, 12, -6],
       fold: { sweep: 90, droop: 0, lie: 0, joints: [165, -160, 0], digits: 0, flex: 0 },
       thickness: 0.01,
+      // A bird's wing half-folds less than a bat's on the upstroke, so its feathers stay fanned.
+      stroke: { amplitude: 45, flex: 0.25, twist: 12, plane: 0 },
     }),
     build(ctx, raw) {
       const p = raw as Params;

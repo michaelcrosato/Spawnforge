@@ -53,5 +53,6 @@
     "palette": { "base": "#4a2818", "belly": "#2a160e", "accent": "#8a5a30" },
     "material": "chitin",
     "layers": [{ "type": "countershade", "softness": 0.3 }]
-  }
+  },
+  "motion": { "media": { "air": false } }
 }

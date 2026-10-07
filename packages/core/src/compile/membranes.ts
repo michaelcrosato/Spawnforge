@@ -42,6 +42,8 @@ export class MembraneSink {
   readonly stations: StationPanel[] = [];
   /** Area per wing limb (m²), for flight later. */
   readonly area = new Map<string, number>();
+  /** Every vertex of each wing's membrane in the bind pose, for its planform outline (10.4). */
+  readonly outline = new Map<string, Vector3[]>();
 }
 
 /** Arc-length samples of a spar. */
@@ -289,6 +291,9 @@ export function stationPanel(
     }
   }
   sink.area.set(options.owner, (sink.area.get(options.owner) ?? 0) + area);
+  const outline = sink.outline.get(options.owner) ?? [];
+  for (const row of grid) for (const p of row) outline.push(p.clone());
+  sink.outline.set(options.owner, outline);
 }
 
 /**
@@ -342,5 +347,10 @@ export function rigidSheet(
     const p2 = positions[indices[i + 2] as number] as Vector3;
     area += new Vector3().subVectors(p1, p0).cross(new Vector3().subVectors(p2, p0)).length() / 2;
   }
-  if (owner) sink.area.set(owner, (sink.area.get(owner) ?? 0) + area);
+  if (owner) {
+    sink.area.set(owner, (sink.area.get(owner) ?? 0) + area);
+    const outline = sink.outline.get(owner) ?? [];
+    for (const p of positions) outline.push(p.clone());
+    sink.outline.set(owner, outline);
+  }
 }

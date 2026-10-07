@@ -243,7 +243,18 @@ async function main(): Promise<void> {
         });
         return button;
       }),
+      // A flyer takes off from where it walks, and lands ahead (10.4).
+      ...(focus?.controller.canFly ? [flightButton(focus.controller)] : []),
     );
+  };
+  const flightButton = (c: MotionController) => {
+    const button = document.createElement('button');
+    button.textContent = 'fly / land';
+    button.addEventListener('click', () => {
+      if (c.flying) c.land();
+      else c.fly();
+    });
+    return button;
   };
 
   const logEvent = (text: string) => {

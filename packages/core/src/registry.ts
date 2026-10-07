@@ -163,6 +163,12 @@ export interface GaitModule<P extends z.ZodType = z.ZodType> extends ModuleBase<
    * beating like a turtle's flippers (these dive too).
    */
   readonly swim?: 'body' | 'legs' | 'fins';
+  /**
+   * For air gaits, how it flies (10.4): `flapping`, powered strokes; `gliding`, wings held
+   * spread; `hovering`, strokes in a horizontal plane holding it in place. The core picks among
+   * them by role, never by id (docs/design/10.4-flight.md).
+   */
+  readonly air?: 'flapping' | 'gliding' | 'hovering';
   /** Body features or capabilities the gait needs, beside its leg pairs (see `Need`). */
   readonly needs?: readonly Need[];
   readonly hooks?: unknown;

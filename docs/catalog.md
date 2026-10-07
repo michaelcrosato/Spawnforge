@@ -15,7 +15,7 @@ blueprint uses of it under `notBuilt`).
 - **Body plans:** `biped`, `centaur`, `fish`, `hexapod`, `octopod`, `quadruped`, `serpent`, `wyvern`
 - **Parts:** `antenna`, `armor.bands`, `beak`, `ear.pointed`, `eye.basic`, `fin.dorsal`, `fin.tail`, `foot.claw`, `foot.hoof`, `foot.pad`, `foot.paw`, `foot.talon`, `frill`, `hand.grasp`, `hand.pincer`, `hood`, `horn.curved`, `mandible`, `membrane.bat`, `membrane.case`, `membrane.feather`, `membrane.fin`, `membrane.insect`, `plates.row`, `quills`, `sail`, `shell`, `spikes.row`, `teeth.row`
 - **Patterns:** `bands`, `bioluminescence`, `countershade`, `grime`, `mottle`, `rosettes`, `scales`, `scars`, `slime`, `spots`, `stripes`, `suckers`, `veins`, `warts`
-- **Gaits:** `bound`, `fly` (10.4), `gallop`, `glide` (10.4), `hover` (10.4), `run`, `slither`, `swim.flap`, `swim.paddle`, `swim.undulate`, `tripod`, `trot`, `walk`
+- **Gaits:** `bound`, `fly`, `gallop`, `glide`, `hover`, `run`, `slither`, `swim.flap`, `swim.paddle`, `swim.undulate`, `tripod`, `trot`, `walk`
 - **Actions:** `bite`, `display`, `idle`, `jump`, `lash`, `look`, `pinch`, `pounce`, `roar`
 - **Themes:** `aquatic`, `beast`, `demon`, `dragon`, `eldritch`, `insect`, `reptile`
 - **Stats:** `rpg`
@@ -1290,7 +1290,7 @@ A thin, veined insect wing on a hinge, for flies, dragonflies, moths and bees.
 
 Set as a wing's or fin's membrane: { "membrane": { "type": "membrane.insect", ...params } }, not in "parts".
 
-Provides `hover`, which actions can need.
+Provides `hover`, `glide`, which actions can need.
 
 slot: `"membrane"` · material: `"chitin"` · defaultAttach: `{"on":"limb"}`
 
@@ -1740,8 +1740,6 @@ Flapping flight: power strokes on the way down, wings folded on the way up.
 
 List in motion.gaits as "fly", or { "type": "fly", ...params }.
 
-**Not built yet** (plan milestone 10.4): it validates, but compile skips it and warns `not_built`.
-
 legPairs: `"any"` · duty: `0` · froude: `[0.5,8]` · wave: `[{"pairs":1,"wave":0},{"pairs":2,"wave":0},{"pairs":3,"wave":0}]`
 
 | Parameter | Type | Range | Default | Description |
@@ -1780,8 +1778,6 @@ Soaring and gliding on spread wings between flaps.
 
 List in motion.gaits as "glide", or { "type": "glide", ...params }.
 
-**Not built yet** (plan milestone 10.4): it validates, but compile skips it and warns `not_built`.
-
 legPairs: `"any"` · duty: `0` · froude: `[0.5,8]` · wave: `[{"pairs":1,"wave":0},{"pairs":2,"wave":0},{"pairs":3,"wave":0}]`
 
 | Parameter | Type | Range | Default | Description |
@@ -1797,8 +1793,6 @@ legPairs: `"any"` · duty: `0` · froude: `[0.5,8]` · wave: `[{"pairs":1,"wave"
 Hovering in place on fast figure-eight wingbeats, like an insect or a hummingbird.
 
 List in motion.gaits as "hover", or { "type": "hover", ...params }.
-
-**Not built yet** (plan milestone 10.4): it validates, but compile skips it and warns `not_built`.
 
 legPairs: `"any"` · duty: `0` · froude: `[0,0.5]` · wave: `[{"pairs":1,"wave":0},{"pairs":2,"wave":0},{"pairs":3,"wave":0}]`
 
@@ -2171,7 +2165,7 @@ Generic action-RPG numbers: health from mass, speed from legs and gaits, attack 
 
 Game numbers from a creature's body: spawnforge analyze creature.json --stats rpg (MCP: analyze with "stats": "rpg").
 
-outputs: `{"health":"Hit points: grows with the cube root of mass, so a creature twice as long is about twice as tough","speed":"Top speed in m/s, from the fastest gait the legs allow","swim":"Top swimming speed in m/s; 0 for a creature that does not swim","attack":"Damage per hit: one head’s teeth and horns, plus claws and other weapons, scaled by size","attacks":"Attacks per turn: one per head","defence":"Damage reduction, added up: each shell, plate row or armour band 10 × its cover (its size over the torso length, at most 1) + 0.15 a piece; skin chitin 6, scales 3, hide 2; 0.25 a spike; plus the cube root of mass; times level","perception":"How far it notices things, in metres: eye size and ears","threat":"A one-number summary for encounter tables"}`
+outputs: `{"health":"Hit points: grows with the cube root of mass, so a creature twice as long is about twice as tough","speed":"Top speed in m/s, from the fastest gait the legs allow","swim":"Top swimming speed in m/s; 0 for a creature that does not swim","fly":"Cruising speed in the air in m/s; 0 for a creature that does not fly","attack":"Damage per hit: one head’s teeth and horns, plus claws and other weapons, scaled by size","attacks":"Attacks per turn: one per head","defence":"Damage reduction, added up: each shell, plate row or armour band 10 × its cover (its size over the torso length, at most 1) + 0.15 a piece; skin chitin 6, scales 3, hide 2; 0.25 a spike; plus the cube root of mass; times level","perception":"How far it notices things, in metres: eye size and ears","threat":"A one-number summary for encounter tables"}`
 
 | Parameter | Type | Range | Default | Description |
 | --- | --- | --- | --- | --- |

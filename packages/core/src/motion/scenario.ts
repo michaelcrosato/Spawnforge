@@ -4,7 +4,7 @@ import { formatPath, fromZodIssues, type Issue } from '../blueprint/issues.ts';
 import type { CompiledCreature } from '../compile/compile.ts';
 import type { ActionModule, Registry } from '../registry.ts';
 import { type Ground, MotionController, type MotionEvent, type Water } from './controller.ts';
-import { openSea, testCourse, withLake } from './terrain.ts';
+import { openSea, slope, testCourse, withLake } from './terrain.ts';
 
 /**
  * Scenarios script a creature's motion for `render` and `analyze`: the ground, named targets,
@@ -15,7 +15,7 @@ import { openSea, testCourse, withLake } from './terrain.ts';
  */
 
 const range = (min: number, max: number) => z.number().min(min).max(max);
-const time = range(0, 60).describe('Seconds from the start');
+const time = range(0, 120).describe('Seconds from the start');
 const point2 = z
   .tuple([range(-1000, 1000), range(-1000, 1000)])
   .describe('A point on the ground in metres, [x, z]');
@@ -29,20 +29,41 @@ const name = z
   .describe("The name of one of the scenario's targets");
 const where2 = z.union([point2, name]);
 const where3 = z.union([point3, name]);
-const speed = range(0, 30).describe('Metres a second (default: its walking pace)');
+/** Where `moveTo` and `follow` go: on the ground, or at a height (a diver or a flyer). */
+const whereAny = z.union([point2, point3, name]);
+const speed = range(0, 60).describe(
+  'Metres a second (default: its pace on land, in water or in the air)',
+);
 
 const call = z.discriminatedUnion('do', [
   z
-    .strictObject({ at: time, do: z.literal('moveTo'), to: where2, speed: speed.optional() })
-    .describe('Walk to a point (or a target, on the ground below it) and stop there'),
+    .strictObject({ at: time, do: z.literal('moveTo'), to: whereAny, speed: speed.optional() })
+    .describe(
+      'Go to a point and stop there: [x, z] on the ground, or [x, y, z] (or a target) at a height a swimmer dives to or a flyer flies to',
+    ),
   z
     .strictObject({
       at: time,
       do: z.literal('follow'),
-      path: z.array(where2).min(1).max(32),
+      path: z.array(whereAny).min(1).max(32),
       speed: speed.optional(),
     })
-    .describe('Walk through the points in order, stopping at the last: a course'),
+    .describe('Go through the points in order, stopping at the last: a course, on foot or flying'),
+  z
+    .strictObject({
+      at: time,
+      do: z.literal('fly'),
+      height: range(0.5, 200).optional().describe('Metres above the ground (default: its own)'),
+      speed: speed.optional(),
+    })
+    .describe('Take off (a creature with wings) and fly, circling or hovering until told where'),
+  z
+    .strictObject({
+      at: time,
+      do: z.literal('land'),
+      to: where2.optional().describe('Where to touch down (default: the first clear ground ahead)'),
+    })
+    .describe('Land: approach, flare and touch down'),
   z
     .strictObject({
       at: time,
@@ -74,10 +95,19 @@ const call = z.discriminatedUnion('do', [
 
 export const ScenarioSchema = z.strictObject({
   ground: z
-    .enum(['flat', 'course'])
+    .union([
+      z.enum(['flat', 'course']),
+      z
+        .strictObject({
+          slope: range(-40, 40).describe('Degrees the ground rises'),
+          toward: range(-360, 360).default(0).describe('Degrees: the way it rises, 0 is +Z'),
+          from: range(0, 1000).default(0).describe('Metres that way it stays flat first'),
+        })
+        .describe('Ground rising at `slope` degrees (through the origin, or flat until `from`)'),
+    ])
     .default('flat')
     .describe(
-      '"flat", or "course": uneven ground with bumps up to 25 cm, flat within 1.5 m of the origin',
+      '"flat"; "course": uneven ground with bumps up to 25 cm, flat within 1.5 m of the origin; or a slope',
     ),
   seed: z.number().int().min(0).max(2147483647).default(1).describe("Seed of the course's bumps"),
   water: z
@@ -96,14 +126,19 @@ export const ScenarioSchema = z.strictObject({
     .describe(
       '"none", "sea" (deep water everywhere: the bed 4 body lengths and 2 m down, the surface at 0), or a lake',
     ),
-  duration: range(0.5, 60).default(6).describe('Seconds to run'),
+  duration: range(0.5, 120).default(6).describe('Seconds to run'),
   start: z
     .strictObject({
       x: range(-1000, 1000).default(0).describe('Metres'),
       z: range(-1000, 1000).default(0).describe('Metres'),
       heading: range(-360, 360).default(0).describe('Degrees: 0 faces +Z, 90 faces +X'),
+      flying: z
+        .boolean()
+        .default(false)
+        .describe('Start in the air at cruise (a creature with wings)'),
+      height: range(0.5, 200).optional().describe('Metres above the ground when it starts flying'),
     })
-    .default({ x: 0, z: 0, heading: 0 }),
+    .default({ x: 0, z: 0, heading: 0, flying: false }),
   targets: z
     .record(z.string().regex(NAME, 'names are lowercase words joined by dots or dashes'), point3)
     .default({})
@@ -180,7 +215,7 @@ function checkNames(scenario: Scenario): Issue[] {
 export function checkScenario(
   scenario: Scenario,
   motion: {
-    readonly gaits: readonly { id: string }[];
+    readonly gaits: readonly { id: string; medium?: string }[];
     readonly actions: readonly { id: string }[];
   },
   registry: Registry,
@@ -211,6 +246,15 @@ export function checkScenario(
         message: `"${c.gait}" is not one of the creature's gaits`,
         expected: gaits.map((g) => `"${g}"`).join(', ') || 'none',
         fix: 'use one of its gaits, or null to let speed choose',
+      });
+    if ((c.do === 'fly' || c.do === 'land') && !motion.gaits.some((g) => g.medium === 'air'))
+      issues.push({
+        severity: 'error',
+        path: `calls[${i}].do`,
+        code: 'cannot_fly',
+        message: `"${c.do}" needs a creature that flies, and this one has no air gait`,
+        expected: 'a creature with wings and an air gait',
+        fix: 'give it wings, or take the call out',
       });
   });
   return issues;
@@ -288,7 +332,11 @@ export class ScenarioRun {
     this.compiled = compiled;
     this.scenario = scenario;
     const land: Ground =
-      scenario.ground === 'course' ? testCourse(scenario.seed) : () => ({ height: 0 });
+      scenario.ground === 'course'
+        ? testCourse(scenario.seed)
+        : typeof scenario.ground === 'object'
+          ? slope(scenario.ground.slope, scenario.ground.toward, scenario.ground.from)
+          : () => ({ height: 0 });
     const water = scenario.water;
     if (water === 'sea') {
       const sea = openSea(compiled.scale);
@@ -303,8 +351,11 @@ export class ScenarioRun {
       this.water = undefined;
     }
     this.controller = new MotionController(compiled, { registry });
-    const { x, z, heading } = scenario.start;
-    this.controller.place(x, z, heading * DEG, this.ground, this.water);
+    const { x, z, heading, flying, height } = scenario.start;
+    this.controller.place(x, z, heading * DEG, this.ground, this.water, {
+      flying,
+      ...(height === undefined ? {} : { y: this.ground(x, z).height + height }),
+    });
     this.last.copy(this.controller.position);
     this.targets = new Map(
       Object.entries(scenario.targets).map(([n, p]) => [n, new Vector3(p[0], p[1], p[2])]),
@@ -339,6 +390,7 @@ export class ScenarioRun {
         this.footsteps++;
         continue;
       }
+      if (e.type === 'flap') continue;
       this.events.push({
         type: e.type,
         time: round(this.time),
@@ -431,6 +483,17 @@ export class ScenarioRun {
       case 'gait':
         c.lockGait(call.gait);
         return;
+      case 'fly':
+        c.fly({
+          ...(call.height === undefined ? {} : { height: call.height }),
+          ...(call.speed === undefined ? {} : { speed: call.speed }),
+        });
+        return;
+      case 'land': {
+        const p = call.to === undefined ? null : this.point(call.to);
+        c.land(p ? { x: p.x, z: p.z } : null);
+        return;
+      }
     }
   }
 

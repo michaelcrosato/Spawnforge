@@ -1,0 +1,79 @@
+{
+  "budgets": {
+    "compileMs": 500,
+    "skinTriangles": 30000,
+    "partTriangles": 20000,
+    "membraneTriangles": 12000,
+    "drawCalls": 3,
+    "furDrawCalls": 1,
+    "membraneDrawCalls": 1,
+    "motionMsPerCreature": 0.1,
+    "flyingMsPerCreature": 0.15,
+    "motionMsFor50": 5
+  },
+  "examples": [
+    {
+      "name": "ash-dragon",
+      "lines": 71,
+      "compileMs": 193,
+      "chromeCompileMs": 240,
+      "skinTriangles": 17018,
+      "partTriangles": 6828,
+      "membraneTriangles": 1288,
+      "drawCalls": 4,
+      "motionMsPerFrame": 0.092,
+      "flyingMsPerFrame": 0.077
+    },
+    {
+      "name": "cave-bat",
+      "lines": 56,
+      "compileMs": 246,
+      "chromeCompileMs": 256,
+      "skinTriangles": 22022,
+      "partTriangles": 3888,
+      "membraneTriangles": 1552,
+      "drawCalls": 5,
+      "motionMsPerFrame": 0.06,
+      "flyingMsPerFrame": 0.062
+    },
+    {
+      "name": "griffin",
+      "lines": 79,
+      "compileMs": 266,
+      "chromeCompileMs": 255,
+      "skinTriangles": 20104,
+      "partTriangles": 4440,
+      "membraneTriangles": 1920,
+      "drawCalls": 5,
+      "motionMsPerFrame": 0.07,
+      "flyingMsPerFrame": 0.057
+    },
+    {
+      "name": "luna-moth",
+      "lines": 69,
+      "compileMs": 309,
+      "chromeCompileMs": 322,
+      "skinTriangles": 27184,
+      "partTriangles": 1400,
+      "membraneTriangles": 600,
+      "drawCalls": 5,
+      "motionMsPerFrame": 0.062,
+      "flyingMsPerFrame": 0.033
+    },
+    {
+      "name": "storm-wyvern",
+      "lines": 51,
+      "compileMs": 142,
+      "chromeCompileMs": 167,
+      "skinTriangles": 16030,
+      "partTriangles": 6694,
+      "membraneTriangles": 1292,
+      "drawCalls": 4,
+      "motionMsPerFrame": 0.052,
+      "flyingMsPerFrame": 0.068
+    }
+  ],
+  "herd50": {
+    "medianMsPerFrame": 3.74
+  }
+}

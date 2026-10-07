@@ -89,4 +89,43 @@ describe('runtime', () => {
     expect(stalker.position.z).toBeGreaterThan(z);
     bestiary.dispose();
   }, 30_000);
+
+  it('flies, keeps flying at a distance on baked cycles, and lands at full detail', async () => {
+    const bestiary = await createBestiary({ packs: [basicPack], lodDistance: 10 });
+    const bat = await bestiary.spawn(example('cave-bat'), { quality: 'low' });
+    const events: string[] = [];
+    bat.on('*', (e) => events.push(e.type));
+    bat.fly({ height: 4 });
+    expect(bat.flying).toBe(true);
+    for (let i = 0; i < 360; i++) bestiary.update(1 / 60);
+    expect(events).toContain('takeoff');
+    expect(events).toContain('flap');
+    expect(bat.position.y).toBeGreaterThan(2);
+    // Far away it keeps flying on the controller, posed from its baked wingbeat.
+    const camera = new PerspectiveCamera();
+    camera.position.set(0, 2, 400);
+    bat.moveTo({ x: 30, z: 0 });
+    for (let i = 0; i < 120; i++) bestiary.update(1 / 60, { camera });
+    expect(bat.lod).toBe('baked');
+    expect(bat.flying).toBe(true);
+    const flaps = events.filter((e) => e === 'flap').length;
+    for (let i = 0; i < 120; i++) bestiary.update(1 / 60, { camera });
+    expect(events.filter((e) => e === 'flap').length).toBeGreaterThan(flaps);
+    // Landing comes back to full detail and puts it on the ground.
+    bat.land({ x: bat.position.x + 10, z: bat.position.z });
+    expect(bat.lod).toBe('full');
+    for (let i = 0; i < 60 * 30 && bat.flying; i++) bestiary.update(1 / 60);
+    expect(bat.flying).toBe(false);
+    expect(events).toContain('land');
+    expect(bat.position.y).toBeCloseTo(0, 3);
+    // Spawned in the air, at the height asked for.
+    const high = await bestiary.spawn(example('cave-bat'), {
+      quality: 'low',
+      flying: true,
+      height: 6,
+    });
+    expect(high.flying).toBe(true);
+    expect(high.position.y).toBeCloseTo(6, 3);
+    bestiary.dispose();
+  }, 60_000);
 });

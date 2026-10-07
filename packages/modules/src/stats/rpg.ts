@@ -28,6 +28,7 @@ export default defineStats({
       'Hit points: grows with the cube root of mass, so a creature twice as long is about twice as tough',
     speed: 'Top speed in m/s, from the fastest gait the legs allow',
     swim: 'Top swimming speed in m/s; 0 for a creature that does not swim',
+    fly: 'Cruising speed in the air in m/s; 0 for a creature that does not fly',
     attack:
       'Damage per hit: one head’s teeth and horns, plus claws and other weapons, scaled by size',
     attacks: 'Attacks per turn: one per head',
@@ -71,6 +72,7 @@ export default defineStats({
         health: round(health),
         speed: Math.round(speed * 10) / 10,
         swim: Math.round((input.speed.swim ?? 0) * 10) / 10,
+        fly: Math.round((input.speed.fly ?? 0) * 10) / 10,
         attack: round(attack),
         attacks,
         defence: round(defence),
