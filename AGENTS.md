@@ -69,7 +69,10 @@ forelegs and reach to bite, and a balance check that names it,
 `BonesData.rest` apart from the bind pose everywhere a creature is shown or exported; leathery,
 insect, feathered and cased wings and rayed fins as one double-sided membrane mesh, carried by
 station bones; `fin.dorsal` and `fin.tail`; the `wings` goal, `render --pose spread`,
-`wing_intersection`; `docs/design/9.3-wings-fins.md`).
+`wing_intersection`; `docs/design/9.3-wings-fins.md`) and 9.4 (tentacles that curl onto the
+ground, sway on soft springs and reach by FABRIK; part modules with bones of their own through a
+`bones` hook, so `antenna`, `mandible` and `hand.pincer` are one file each; `jaw` and `grip`
+drives; `pinch`, `lash`, `suckers`; `tentacle_intersection`; `docs/design/9.4-tentacles-parts.md`).
 
 ## Repo map
 

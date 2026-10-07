@@ -216,12 +216,48 @@ export interface PartBuildContext {
   skinAlong(from: Vector3, dir: Vector3, reach: number): Vector3 | undefined;
   /** Membrane modules: a bone for a group of feathers, folding with the wing. */
   featherBone(parent: number, head: Vector3, tail: Vector3, up: Vector3): number;
+  /**
+   * A socket-space point (+X side, +Y out of the skin, +Z forward; mirrored on a right-hand copy)
+   * in model space, for placing a part's own bones.
+   */
+  toModel(socket: Socket, point: Vector3): Vector3;
+  /**
+   * Parts with bones (docs/design/9.4-tentacles-parts.md): each chain the `bones` hook declared,
+   * its bone ids and its joints in model space (one more than bones), root first.
+   */
+  readonly chains: readonly {
+    readonly bones: readonly number[];
+    readonly points: readonly Vector3[];
+  }[];
   /** Rows and columns a membrane may use at this quality (scale counts by it). */
   readonly detail: number;
 }
 
 /** Hooks a part module provides (membrane modules add `WingHooks`). */
+/** A chain of bones a part declares for itself (docs/design/9.4-tentacles-parts.md). */
+export interface PartChain {
+  /** Joints in model space, root first (one more than bones); place them with `ctx.toModel`. */
+  readonly points: readonly Vector3[];
+  /** The bone it hangs from; the part's socket's bone when left out. */
+  readonly parent?: number;
+  /** Bones' radius (metres) at each joint, for their capsules; 1% of the torso when left out. */
+  readonly radii?: readonly number[];
+  /** Each bone's local Z; the chain's own plane when left out. */
+  readonly up?: Vector3;
+  /**
+   * What moves it: `spring` sways (antennae), `jaw` opens with the jaw (mandibles), `grip`
+   * closes with the `grip` goal (a pincer's finger). Left out, it holds still.
+   */
+  readonly drive?: 'spring' | 'jaw' | 'grip';
+  /** Springs: how hard it is pulled back toward rest per step, 0 to 1. */
+  readonly stiffness?: number;
+  /** jaw and grip: each bone's turn about its local X at full drive (radians). */
+  readonly pose?: readonly number[];
+}
+
 export interface PartHooks extends WingHooks {
+  /** Bones of the part's own, built before `build`, which gets them as `ctx.chains`. */
+  bones?(ctx: PartBuildContext, params: Record<string, unknown>): readonly PartChain[];
   /**
    * A foot's height: how far above the ground it holds the leg's tip (metres). Without it the
    * stance decides (docs/design/8.2-feet.md).
@@ -286,6 +322,8 @@ export class PartSink {
   };
   /** What each part reported building, by its id in the blueprint (largest over its copies). */
   readonly sizes = new Map<string, { size: number; count: number }>();
+  /** Driven chains of parts' own bones (docs/design/9.4-tentacles-parts.md). */
+  readonly partChains: DrivenChain[] = [];
   /** Membranes, feathers and their stations (docs/design/9.3-wings-fins.md). */
   readonly membranes = new MembraneSink();
   /** Feather group bones by the wing they fold with. */
@@ -903,6 +941,13 @@ export function buildParts(
       });
       for (const i of indices) sink.parts.indices.push(base + i);
     },
+    toModel: (socket, point) =>
+      socket.position
+        .clone()
+        .addScaledVector(socket.side, mirror < 0 ? -point.x : point.x)
+        .addScaledVector(socket.normal, point.y)
+        .addScaledVector(socket.forward, point.z),
+    chains: [],
     featherBone: (parent, head, tail, up) => {
       const list = sink.feathers.get(place.on) ?? [];
       input.bones.push({
@@ -977,22 +1022,89 @@ export function buildParts(
     };
   };
 
+  /**
+   * A part's own bones (docs/design/9.4-tentacles-parts.md): its `bones` hook's chains become
+   * bones after the body's, named `<part>.<chain>.<k>`, hanging from the socket's bone; driven
+   * ones join the rig's chains. Returns the context `build` gets, with them as `chains`.
+   */
+  const withBones = (
+    ctx: PartBuildContext,
+    hooks: PartHooks,
+    params: Record<string, unknown>,
+  ): PartBuildContext => {
+    if (!hooks.bones) return ctx;
+    const declared = hooks.bones(ctx, params);
+    if (declared.length === 0) return ctx;
+    const weights = ctx.socket().weights;
+    let main = weights[0]?.[0] ?? 0;
+    let most = -1;
+    for (const [b, w] of weights)
+      if (w > most) {
+        most = w;
+        main = b;
+      }
+    const built = declared.map((chain, c) => {
+      const bones: number[] = [];
+      const points = chain.points.map((p) => p.clone());
+      for (let k = 0; k + 1 < points.length; k++) {
+        const head = points[k] as Vector3;
+        const tail = points[k + 1] as Vector3;
+        const along = new Vector3().subVectors(tail, head).normalize();
+        const up = chain.up?.clone() ?? new Vector3(0, 1, 0);
+        if (Math.abs(up.dot(along)) > 0.99) up.set(1, 0, 0);
+        const r = (i: number) => chain.radii?.[i] ?? 0.01 * input.scale;
+        input.bones.push({
+          name: `${ctx.id}.${c}.${k}`,
+          parent: k === 0 ? (chain.parent ?? main) : (bones[k - 1] as number),
+          section: 'part',
+          owner: ctx.id,
+          head: head.clone(),
+          tail: tail.clone(),
+          up,
+          r0: r(k),
+          r1: r(k + 1),
+          cross: [1, 1],
+          t0: k / (points.length - 1),
+          t1: (k + 1) / (points.length - 1),
+          skin: false,
+          chain: -1,
+        });
+        bones.push(input.bones.length - 1);
+      }
+      if (chain.drive && bones.length > 0)
+        sink.partChains.push({
+          owner: ctx.id,
+          bones,
+          drive: chain.drive,
+          ...(chain.stiffness !== undefined ? { stiffness: chain.stiffness } : {}),
+          ...(chain.pose ? { poses: { full: [...chain.pose] } } : {}),
+        });
+      return { bones, points };
+    });
+    return { ...ctx, chains: built };
+  };
+
   for (const part of parts) {
     const module = input.registry.get('part', part.type) as PartModule | undefined;
     const hooks = module?.hooks as PartHooks | undefined;
     if (!module || !hooks?.build) continue;
     try {
+      const params = part.params as Record<string, unknown>;
       hooks.build(
-        contextFor(
-          part.id,
-          part.baseId,
-          part.type,
-          module,
-          part.mirror,
-          { on: part.on, at: part.at, from: part.from, to: part.to, angle: part.angle },
-          [],
+        withBones(
+          contextFor(
+            part.id,
+            part.baseId,
+            part.type,
+            module,
+            part.mirror,
+            { on: part.on, at: part.at, from: part.from, to: part.to, angle: part.angle },
+            [],
+          ),
+          hooks,
+          params,
         ),
-        part.params as Record<string, unknown>,
+        params,
       );
     } catch (error) {
       notes.push({
@@ -1071,17 +1183,22 @@ export function buildParts(
         limbBone: first.parent,
       };
     });
+    const params = foot.params as Record<string, unknown>;
     hooks.build(
-      contextFor(
-        `${foot.limbId}.foot`,
-        `${foot.limbId}.foot`,
-        foot.type,
-        module,
-        foot.mirror,
-        { on: foot.limbId, at: 1, from: 0, to: 1, angle: 0 },
-        toeSockets,
+      withBones(
+        contextFor(
+          `${foot.limbId}.foot`,
+          `${foot.limbId}.foot`,
+          foot.type,
+          module,
+          foot.mirror,
+          { on: foot.limbId, at: 1, from: 0, to: 1, angle: 0 },
+          toeSockets,
+        ),
+        hooks,
+        params,
       ),
-      foot.params as Record<string, unknown>,
+      params,
     );
   }
   return { eyeBones, notes };

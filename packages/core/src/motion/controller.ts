@@ -5,7 +5,8 @@ import { type PreparedLimb, prepareLimb, solvePrepared } from '../compile/ik.ts'
 import { type HeadRig, mainHead } from '../compile/types.ts';
 import type { ActionModule, Registry } from '../registry.ts';
 import { createRng, type Rng } from '../rng.ts';
-import type { ActionContext, ActionGoals, ActionHooks } from './actions.ts';
+import { type ActionContext, type ActionGoals, type ActionHooks, ramp } from './actions.ts';
+import { fabrik } from './fabrik.ts';
 import { applyFace } from './face.ts';
 import { Pose } from './pose.ts';
 import { type FootRoll, footRoll, heelAt, plantToes, poseToes } from './roll.ts';
@@ -107,6 +108,15 @@ interface Spring {
   readonly stiffness: number;
   /** Swung by the `swish` goal and the sprawling wave (tails). */
   readonly swish: boolean;
+  /** A tail, a tentacle or a part's chain (an antenna). */
+  readonly kind: 'tail' | 'tentacle' | 'part';
+  /** Per point, how far above the ground it stays (tentacles and parts drape; tails don't). */
+  readonly clearance: number[] | undefined;
+  /**
+   * Per point, where the ground was last sampled under it and its height there (x, z, height):
+   * terrain changes over metres, so a point resamples only once it has moved a little.
+   */
+  readonly floors: Float64Array | undefined;
 }
 
 export interface MotionOptions {
@@ -156,8 +166,19 @@ export class MotionController {
   /** How far the wings are spread (damped toward the `wings` goal), and the standing goal. */
   private spread = 0;
   private wingGoal = 0;
+  /** How far grip-driven parts are shut, damped toward the `grip` goal. */
+  /** Grip-driven parts on the creature's left and right, damped toward the `grip` goal. */
+  private gripLeft = 0;
+  private gripRight = 0;
+  private readonly reachPoints: Vector3[] = [];
+  /** Per arm, how far the `arms` goal turns it at 1 (radians). */
+  private readonly armReach: readonly number[];
+  /** How far a spring point moves before it samples the ground under it again (m). */
+  private readonly floorStep: number;
   private wingTree: number[] | undefined;
   private bodyTree: number[] | null | undefined;
+  /** The bones springs hang from: all but the springs' own past their roots (`springRoots`). */
+  private rootTree: number[] | undefined;
   private readonly trail: Vector3[] = [];
   private target: Vector3 | null = null;
   private desiredSpeed = 0;
@@ -264,6 +285,19 @@ export class MotionController {
         compiled.bones.sections[compiled.bones.parents[arm.bones[0] as number] as number] ===
         'neck',
     );
+    // How far each arm turns to reach forward: hanging arms 1.3 rad, arms already held forward
+    // (a scorpion's claws) only enough to lift the hand a little above level.
+    this.armReach = compiled.rig.arms.map((arm) => {
+      const first = arm.bones[0] as number;
+      const last = arm.bones.at(-1) as number;
+      const hand = scratch1
+        .set(0, this.pose.lengths[last] as number, 0)
+        .applyQuaternion(this.pose.restWorldRot[last] as Quaternion)
+        .add(this.pose.restWorldPos[last] as Vector3)
+        .sub(this.pose.restWorldPos[first] as Vector3);
+      return Math.max(0.25, Math.min(1.3, 0.62 - Math.atan2(hand.y, hand.z)));
+    });
+    this.floorStep = 0.05 * compiled.scale;
     this.timeScale = Math.sqrt(this.hipHeight / 1);
     const rng = createRng(compiled.seed);
     for (const action of motion.actions) {
@@ -321,6 +355,13 @@ export class MotionController {
       ...bones.map((b) => (this.pose.worldPos[b] as Vector3).clone()),
       this.pose.tail(bones.at(-1) as number),
     ];
+    const first = bones[0] as number;
+    const kind = this.compiled.rig.tentacles.some((t) => t.bones[0] === first)
+      ? 'tentacle'
+      : this.compiled.bones.sections[first] === 'part'
+        ? 'part'
+        : 'tail';
+    const radii = this.compiled.bones.radii;
     return {
       bones,
       points,
@@ -328,7 +369,23 @@ export class MotionController {
       lengths: bones.map((b) => this.pose.lengths[b] as number),
       stiffness,
       swish,
+      kind,
+      clearance:
+        kind === 'tail'
+          ? undefined
+          : points.map(
+              (_, i) => 0.8 * (radii[bones[Math.min(i, bones.length - 1)] as number] ?? 0),
+            ),
+      floors: kind === 'tail' ? undefined : new Float64Array(points.length * 3).fill(Number.NaN),
     };
+  }
+
+  /** Which side of the body a point is on: 1 left, -1 right (0 without a point). */
+  private sideOf(point: Vector3 | null | undefined): number {
+    if (!point) return 0;
+    const x = point.x - this.position.x;
+    const z = point.z - this.position.z;
+    return x * Math.cos(this.heading) - z * Math.sin(this.heading) >= 0 ? 1 : -1;
   }
 
   /**
@@ -565,7 +622,12 @@ export class MotionController {
     } else {
       this.stepLegs(dt, ground, froude);
     }
-    this.stepSprings(dt);
+    this.stepSprings(dt, ground);
+    // Pincers snap shut fast (about 0.08 s); with `nearest`, only on the target's side.
+    const grip = Math.max(-1, Math.min(1, this.goals.grip ?? 0));
+    const gripSide = this.goals.nearest ? this.sideOf(this.goals.look) : 0;
+    this.gripLeft = damp(this.gripLeft, gripSide < 0 ? 0 : grip, 40, dt);
+    this.gripRight = damp(this.gripRight, gripSide > 0 ? 0 : grip, 40, dt);
     // Wings spread and fold over about 0.4 s (longer on big creatures).
     if (this.compiled.rig.wings.length > 0) {
       const want = Math.max(0, Math.min(1, this.goals.wings ?? this.wingGoal));
@@ -930,19 +992,59 @@ export class MotionController {
     return this.springRest;
   }
 
-  private stepSprings(dt: number): void {
-    for (const spring of this.springs) {
+  private stepSprings(dt: number, ground: Ground): void {
+    if (this.springs.length === 0) return;
+    // The roots follow their bones; the rest feel inertia, gravity and a pull toward rest.
+    this.solveRoots();
+    // Sprawlers carry the body's side-to-side wave on into the tail.
+    const moving = Math.min(1, this.speed / Math.max(1e-3, this.paceSpeed()));
+    const wave =
+      this.compiled.rig.posture === 'sprawl'
+        ? Math.sin(this.phase * Math.PI * 2 - 1.2) * 0.15 * moving
+        : 0;
+    // A lash whips the tail or tentacle nearest the target; a grab reaches the two nearest
+    // tentacles for it (docs/design/9.4-tentacles-parts.md).
+    const g = this.goals;
+    const look = g.look ?? null;
+    const lash = look ? Math.max(-1, Math.min(1, g.lash ?? 0)) : 0;
+    const grab = look ? Math.max(0, Math.min(1, g.grab ?? 0)) : 0;
+    const trailing = this.compiled.rig.posture === 'legless' ? this.tailBones[0] : undefined;
+    let lasher = -1;
+    let reach1 = -1;
+    let reach2 = -1;
+    if (look && (lash !== 0 || grab > 0)) {
+      let best = Infinity;
+      let d1 = Infinity;
+      let d2 = Infinity;
+      for (const [k, spring] of this.springs.entries()) {
+        if (spring.kind === 'part' || spring.bones[0] === trailing) continue;
+        const d = (spring.points.at(-1) as Vector3).distanceToSquared(look);
+        if (d < best) {
+          best = d;
+          lasher = k;
+        }
+        if (spring.kind !== 'tentacle') continue;
+        if (d < d1) {
+          d2 = d1;
+          reach2 = reach1;
+          d1 = d;
+          reach1 = k;
+        } else if (d < d2) {
+          d2 = d;
+          reach2 = k;
+        }
+      }
+      if (lash === 0) lasher = -1;
+    }
+    for (const [k, spring] of this.springs.entries()) {
       const pts = spring.points;
-      // The root follows its bone; the rest feel inertia, gravity and a pull toward rest.
-      this.solvePose();
       (pts[0] as Vector3).copy(this.pose.worldPos[spring.bones[0] as number] as Vector3);
-      // Sprawlers carry the body's side-to-side wave on into the tail.
-      const moving = Math.min(1, this.speed / Math.max(1e-3, this.paceSpeed()));
-      const wave =
-        this.compiled.rig.posture === 'sprawl'
-          ? Math.sin(this.phase * Math.PI * 2 - 1.2) * 0.15 * moving
-          : 0;
       const rest = this.restChain(spring.bones, spring.swish ? (this.goals.swish ?? 0) + wave : 0);
+      if (look && k === lasher) this.lashRest(spring, rest, look, lash, g.lashArc ?? Math.PI / 2);
+      if (look && grab > 0 && (k === reach1 || k === reach2))
+        this.reachRest(spring, rest, look, grab);
+      // A whipping chain follows its strike more tightly.
+      const stiffness = k === lasher ? Math.max(spring.stiffness, 0.5) : spring.stiffness;
       for (let i = 1; i < pts.length; i++) {
         const p = pts[i] as Vector3;
         const prev = spring.previous[i] as Vector3;
@@ -950,19 +1052,81 @@ export class MotionController {
         prev.copy(p);
         p.add(velocity);
         p.addScaledVector(UP, -G * 0.15 * dt * dt);
-        p.lerp(rest[i - 1] as Vector3, spring.stiffness);
+        p.lerp(rest[i - 1] as Vector3, stiffness);
       }
-      for (let it = 0; it < 2; it++) {
+      // One pass from the root leaves every segment its length (a second only rounds).
+      for (let i = 1; i < pts.length; i++) {
+        const a = pts[i - 1] as Vector3;
+        const b = pts[i] as Vector3;
+        const len = spring.lengths[i - 1] as number;
+        const d = scratch2.subVectors(b, a);
+        const l = d.length() || 1;
+        b.copy(a).addScaledVector(d, len / l);
+      }
+      // Tentacles and antennae lie on the ground rather than sink, sliding with some friction:
+      // a joint that would go under swings up onto the ground, keeping its segment's length.
+      const clearance = spring.clearance;
+      const floors = spring.floors;
+      if (clearance && floors)
         for (let i = 1; i < pts.length; i++) {
           const a = pts[i - 1] as Vector3;
-          const b = pts[i] as Vector3;
+          const p = pts[i] as Vector3;
+          const k = i * 3;
+          const moved =
+            Math.abs(p.x - (floors[k] as number)) + Math.abs(p.z - (floors[k + 1] as number));
+          if (!(moved < this.floorStep)) {
+            floors[k] = p.x;
+            floors[k + 1] = p.z;
+            floors[k + 2] = ground(p.x, p.z).height;
+          }
+          const floor = (floors[k + 2] as number) + (clearance[i] as number);
+          if (p.y >= floor) continue;
           const len = spring.lengths[i - 1] as number;
-          const d = scratch2.subVectors(b, a);
-          const l = d.length() || 1;
-          b.copy(a).addScaledVector(d, len / l);
+          const rise = Math.min(len, floor - a.y);
+          const flat = scratch2.set(p.x - a.x, 0, p.z - a.z);
+          if (flat.lengthSq() < 1e-12) flat.set(1, 0, 0);
+          flat.setLength(Math.sqrt(Math.max(0, len * len - rise * rise)));
+          p.set(a.x + flat.x, a.y + rise, a.z + flat.z);
+          const prev = spring.previous[i] as Vector3;
+          prev.y = p.y;
+          prev.x += (p.x - prev.x) * 0.3;
+          prev.z += (p.z - prev.z) * 0.3;
         }
-      }
     }
+  }
+
+  /**
+   * Swings a chain's rest shape about its root toward `target` (a lash): `v` 1 turns it the whole
+   * way (at most `arc` radians), negative winds it up away. Near the end of the strike, a target
+   * in reach draws the tip onto it.
+   */
+  private lashRest(spring: Spring, rest: Vector3[], target: Vector3, v: number, arc: number): void {
+    const root = spring.points[0] as Vector3;
+    const n = spring.bones.length;
+    const toTip = scratch1.subVectors(rest[n - 1] as Vector3, root);
+    const toTarget = scratch2.subVectors(target, root);
+    const axis = scratch4.crossVectors(toTip, toTarget);
+    if (axis.lengthSq() < 1e-12) axis.copy(UP);
+    else axis.normalize();
+    const angle = v > 0 ? Math.min(arc, toTip.angleTo(toTarget)) * v : 0.5 * arc * v;
+    const turn = scratchQ.setFromAxisAngle(axis, angle);
+    for (let i = 0; i < n; i++) (rest[i] as Vector3).sub(root).applyQuaternion(turn).add(root);
+    const w = ramp(v, 0.6, 1);
+    let total = 0;
+    for (const l of spring.lengths) total += l;
+    if (w > 0 && root.distanceTo(target) < 0.98 * total) this.reachRest(spring, rest, target, w);
+  }
+
+  /** Bends a chain's rest shape toward `target` by FABRIK, blended by `w` (a grab). */
+  private reachRest(spring: Spring, rest: Vector3[], target: Vector3, w: number): void {
+    const n = spring.bones.length;
+    const pts = this.reachPoints;
+    while (pts.length <= n) pts.push(new Vector3());
+    pts.length = n + 1;
+    (pts[0] as Vector3).copy(spring.points[0] as Vector3);
+    for (let i = 0; i < n; i++) (pts[i + 1] as Vector3).copy(rest[i] as Vector3);
+    fabrik(pts, spring.lengths, target);
+    for (let i = 0; i < n; i++) (rest[i] as Vector3).lerp(pts[i + 1] as Vector3, w);
   }
 
   /** Writes the body, legs, head and springs into the pose. */
@@ -977,7 +1141,7 @@ export class MotionController {
     if (rig.posture === 'legless') {
       this.applySlither(ground);
       // The main tail follows the trail; extra tails swing on their springs.
-      if (this.springs.length > 1) {
+      if (this.springs.length > 0) {
         this.applySprings(this.tailBones);
         this.solvePose();
       }
@@ -1068,8 +1232,11 @@ export class MotionController {
     // Arms swing against the legs: on bipeds by the gait's phase; above four or more legs (a
     // centaur) with the foreleg on the other side, as a walking person's arms follow their legs.
     // An action's `arms` raises them forward to reach for what it looks at.
-    const reachArms = g.arms ?? 0;
-    for (const arm of rig.arms) {
+    const armSide = g.nearest ? this.sideOf(g.look) : 0;
+    for (const [k, arm] of rig.arms.entries()) {
+      // With `nearest`, only the arm on the target's side reaches (one claw pinches).
+      const reachArms =
+        armSide !== 0 && (arm.side === 'left' ? 1 : -1) !== armSide ? 0 : (g.arms ?? 0);
       const first = arm.bones[0] as number;
       let swing: number;
       const fore = this.legs.length > 2 ? this.foreleg(arm.side === 'left' ? 'right' : 'left') : -1;
@@ -1086,7 +1253,10 @@ export class MotionController {
           Math.sin(this.phase * Math.PI * 2 + (arm.side === 'left' ? Math.PI : 0)) * 0.25 * moving;
       }
       (pose.rot[first] as Quaternion).premultiply(
-        scratchQ.setFromAxisAngle(X_AXIS, swing * (1 - reachArms) + 1.3 * reachArms),
+        scratchQ.setFromAxisAngle(
+          X_AXIS,
+          swing * (1 - reachArms) + (this.armReach[k] ?? 1.3) * reachArms,
+        ),
       );
     }
 
@@ -1126,7 +1296,7 @@ export class MotionController {
    * and solves last (docs/design/9.3-wings-fins.md).
    */
   private solvePose(): void {
-    if (!this.bodyTree) {
+    if (this.bodyTree === undefined) {
       const sections = this.compiled.bones.sections;
       const tree: number[] = [];
       for (let b = 0; b < sections.length; b++) if (sections[b] !== 'station') tree.push(b);
@@ -1134,6 +1304,29 @@ export class MotionController {
     }
     if (this.bodyTree === null) this.pose.solve();
     else for (const b of this.bodyTree) this.pose.solveBone(b);
+  }
+
+  /**
+   * Forward kinematics for what the springs hang from: every bone but stations and the springs'
+   * own bones past their roots (which the springs then set), and what hangs from those.
+   */
+  private solveRoots(): void {
+    if (this.rootTree === undefined) {
+      const { parents, sections } = this.compiled.bones;
+      const skip = new Uint8Array(sections.length);
+      for (const spring of this.springs) for (const b of spring.bones.slice(1)) skip[b] = 1;
+      const tree: number[] = [];
+      for (let b = 0; b < sections.length; b++) {
+        const parent = parents[b] as number;
+        if (parent >= 0 && skip[parent]) skip[b] = 1;
+        if (!skip[b] && sections[b] !== 'station') tree.push(b);
+      }
+      // A spring hanging from another spring's bone needs everything solved.
+      const nested = this.springs.some((s) => skip[s.bones[0] as number]);
+      this.rootTree = nested ? [] : tree;
+    }
+    if (this.rootTree.length === 0) this.solvePose();
+    else for (const b of this.rootTree) this.pose.solveBone(b);
   }
 
   /** Every bone hanging from a wing's shoulder except the stations, in solving order. */
@@ -1292,7 +1485,10 @@ export class MotionController {
   private applyJaw(): void {
     this.pose.breath = this.goals.breath ?? 0;
     this.pose.time = this.time;
-    applyFace(this.pose, this.compiled.rig, this.goals.jaw ?? 0, this.goals.blink ?? 0);
+    applyFace(this.pose, this.compiled.rig, this.goals.jaw ?? 0, this.goals.blink ?? 0, [
+      this.gripLeft,
+      this.gripRight,
+    ]);
   }
 
   /** Aims each spring chain's bones along its points, except chains starting in `skip`. */
@@ -1300,12 +1496,13 @@ export class MotionController {
     for (const spring of this.springs) {
       if (skip.includes(spring.bones[0] as number)) continue;
       spring.bones.forEach((b, i) => {
-        this.pose.solveBone(b);
         const dir = scratch1.subVectors(
           spring.points[i + 1] as Vector3,
           spring.points[i] as Vector3,
         );
+        // `aim` solves the bone itself.
         if (dir.lengthSq() > 1e-12) this.pose.aim(b, dir);
+        else this.pose.solveBone(b);
       });
     }
   }

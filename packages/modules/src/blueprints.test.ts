@@ -74,10 +74,12 @@ describe('default gaits and actions', () => {
       validateBlueprint({ format: FORMAT, ...blueprint }, registry).creature?.motion.actions.map(
         (a) => a.type,
       );
-    expect(actions({ extends: 'quadruped' })).toEqual(['bite', 'idle', 'look', 'roar']);
+    // A tail can lash (9.4).
+    expect(actions({ extends: 'quadruped' })).toEqual(['bite', 'idle', 'lash', 'look', 'roar']);
     // No jaw: no bite or roar.
     expect(actions({ extends: 'quadruped', body: { head: { jaw: false } } })).toEqual([
       'idle',
+      'lash',
       'look',
     ]);
     // A list replaces the default.

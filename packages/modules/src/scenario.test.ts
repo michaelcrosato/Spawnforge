@@ -66,7 +66,7 @@ describe('scenarios', () => {
     const motion = creature('quadruped').motion;
     const issues = checkScenario(scenario, motion, registry);
     expect(issues.map((i) => [i.path, i.code, i.expected])).toEqual([
-      ['calls[0].action', 'unknown_action', '"bite", "look", "roar"'],
+      ['calls[0].action', 'unknown_action', '"bite", "lash", "look", "roar"'],
       ['calls[1].gait', 'unknown_gait', '"walk", "trot"'],
     ]);
   });

@@ -1,4 +1,5 @@
 import {
+  type ActionModule,
   type CompiledCreature,
   MotionController,
   mainHead,
@@ -308,25 +309,26 @@ async function drawAction(
   for (let i = 0; i < 120; i++) controller.update(STEP);
   const main = mainHead(compiled.rig);
   const head = (controller.pose.worldPos[main.head] as THREE.Vector3).clone();
-  // Bite and roar at a point ahead; look to one side, so the turn shows.
-  const target = head
-    .clone()
-    .add(
-      new THREE.Vector3(...(action === 'look' ? [0.9, 0.1, 0.4] : [0, -0.15, 0.7])).multiplyScalar(
-        compiled.scale,
-      ),
-    );
+  // Actions of the head and mouth (bite, roar) frame the head; actions of the body (a lash, a
+  // pinch, a jump) frame the whole creature.
+  const tags = (registry.get('action', action) as ActionModule | undefined)?.tags ?? [];
+  const onHead = tags.includes('mouth') || tags.includes('head');
+  // Bite and roar at a point ahead; look to one side, so the turn shows; the body's actions
+  // ahead and to the left, so a lash sweeps and one claw pinches.
+  const toward = action === 'look' ? [0.9, 0.1, 0.4] : onHead ? [0, -0.15, 0.7] : [0.5, -0.15, 0.6];
+  const target = head.clone().add(new THREE.Vector3(...toward).multiplyScalar(compiled.scale));
   controller.act(action, { target });
-  // Frame the main head and neck, with room for a lunge or a raised head.
   const neckRoot = main.neck[0];
   const base = (
     neckRoot === undefined ? head : (controller.pose.worldPos[neckRoot] as THREE.Vector3)
   ).clone();
   const headLength = compiled.bones.lengths[main.head] ?? 0.2 * compiled.scale;
-  const closeUp = {
-    centre: head.clone().lerp(base, 0.35),
-    radius: Math.max(head.distanceTo(base) * 0.75 + headLength * 1.6, 0.3 * compiled.scale),
-  };
+  const closeUp = onHead
+    ? {
+        centre: head.clone().lerp(base, 0.35),
+        radius: Math.max(head.distanceTo(base) * 0.75 + headLength * 1.6, 0.3 * compiled.scale),
+      }
+    : undefined;
   const frames = Math.max(2, Math.min(16, Math.round(request.frames ?? 8)));
   const { cols, size, top } = layout;
   const events: { type: string; time: number }[] = [];

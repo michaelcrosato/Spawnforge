@@ -118,13 +118,23 @@ describe('module harness: patterns', () => {
   );
 });
 
-/** The first body plan whose creature has the gait or action by default. */
+/**
+ * The first body plan whose creature has the gait or action by default, or else the first
+ * example that has it (a pinch needs pincers, which no body plan carries).
+ */
 function bodyWith(kind: 'gaits' | 'actions', id: string): CompiledCreature {
   for (const plan of registry.ids('bodyPlan')) {
     const compiled = compile({ format: FORMAT, extends: plan });
     if (compiled.motion[kind].some((m) => m.id === id)) return compiled;
   }
-  throw new Error(`no body plan has ${id}`);
+  const dir = new URL('../../../examples/', import.meta.url);
+  for (const file of readdirSync(dir)
+    .filter((f) => f.endsWith('.json'))
+    .sort()) {
+    const compiled = compile(JSON.parse(readFileSync(new URL(file, dir), 'utf8')));
+    if (compiled.motion[kind].some((m) => m.id === id)) return compiled;
+  }
+  throw new Error(`no body plan or example has ${id}`);
 }
 
 /** Runs a controller and returns its final pose and the worst milliseconds per frame. */

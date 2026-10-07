@@ -1386,12 +1386,110 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
     });
   };
 
+  /**
+   * A tentacle (docs/design/9.4-tentacles-parts.md): a chain of even bones from just inside the
+   * skin, leaving along the surface and on toward the section's far end (behind on the torso,
+   * forward on the head), straight for `curlStart` and then turning by `curl` toward the belly.
+   * Thin bones become swept tubes; the chain hangs on a spring. A tentacle that would reach into
+   * the ground is turned up at its root until it rests on it.
+   */
+  const tentacleRigs: LimbChainRig[] = [];
+  const tentacleLimb = (limb: LimbSpec, frame: ReturnType<typeof samplePath>) => {
+    const out = aroundDirection(frame, limb.angle, limb.mirror);
+    // On toward the section's far end: back along the torso, neck and tail, forward round the
+    // mouth on the head.
+    const along = limb.on === 'head' ? frame.forward.clone() : frame.forward.clone().negate();
+    const dir0 = out.clone().multiplyScalar(0.3).addScaledVector(along, 0.7).normalize();
+    const belly = frame.up.clone().negate();
+    const axis = new Vector3().crossVectors(dir0, belly);
+    if (axis.lengthSq() < 1e-8) axis.crossVectors(dir0, frame.forward);
+    axis.normalize();
+    const n = limb.segments;
+    const R = limb.length * L;
+    const straight = Math.min(n - 1, Math.round(limb.curlStart * n));
+    const turn = (limb.curl * DEG) / Math.max(1, n - straight);
+    const root = frame.point
+      .clone()
+      .addScaledVector(out, radiusAt(frame.radius, frame.cross, limb.angle) * 0.7);
+    // Curling toward the belly until it meets the ground, then lying on it and curling on
+    // across it, away from the midline.
+    const points = [root.clone()];
+    const ups: Vector3[] = [];
+    const dir = dir0.clone();
+    const ax = axis.clone();
+    const sideways = new Vector3(0, Math.sign(out.x || dir0.x || 1), 0);
+    let grounded = false;
+    for (let k = 0; k < n; k++) {
+      const r = sampleProfile(limb.radius, (k + 1) / n) * L;
+      if (k >= straight) dir.applyAxisAngle(ax, turn);
+      const prev = points[k] as Vector3;
+      let next = prev.clone().addScaledVector(dir, R / n);
+      if (!grounded && next.y < r) {
+        grounded = true;
+        ax.copy(sideways).multiplyScalar(Math.sign(limb.curl) || 1);
+      }
+      if (grounded) {
+        dir.y = 0;
+        if (dir.lengthSq() < 1e-8) dir.copy(along).setY(0);
+        dir.normalize();
+        next = prev.clone().addScaledVector(dir, R / n);
+        next.y = Math.max(r, Math.min(prev.y, next.y));
+      }
+      points.push(next);
+      ups.push(new Vector3().crossVectors(dir, ax).normalize());
+    }
+    const chain = { points, ups };
+    const bones: number[] = [];
+    for (let k = 0; k < n; k++)
+      bones.push(
+        b.bone({
+          name: `${limb.id}.${k}`,
+          parent: k === 0 ? frame.bone : (bones[k - 1] as number),
+          section: 'limb',
+          owner: limb.id,
+          head: (chain.points[k] as Vector3).clone(),
+          tail: (chain.points[k + 1] as Vector3).clone(),
+          up: (chain.ups[k] as Vector3).clone(),
+          r0: sampleProfile(limb.radius, k / n) * L,
+          r1: sampleProfile(limb.radius, (k + 1) / n) * L,
+          cross: [1, 1],
+          t0: k / n,
+          t1: (k + 1) / n,
+          skin: true,
+        }),
+      );
+    b.chain(
+      {
+        id: limb.id,
+        section: 'limb',
+        owner: limb.id,
+        parentBone: frame.bone,
+        blend: 0.6 * sampleProfile(limb.radius, 0) * L,
+        masses: [],
+      },
+      bones,
+    );
+    b.path(
+      limb.id,
+      bones.map((id, k) => ({ bone: id, t0: k / n, t1: (k + 1) / n })),
+    );
+    tentacleRigs.push({
+      id: limb.id,
+      side: limb.mirror === 1 ? 'left' : limb.mirror === -1 ? 'right' : 'center',
+      bones,
+    });
+  };
+
   for (const limb of spec.limbs) {
     const path = b.paths.get(limb.on);
     if (!path) continue;
     const frame = samplePath(b.bones, path, limb.at);
     if (limb.role === 'wing' || limb.role === 'fin') {
       spanLimb(limb, frame);
+      continue;
+    }
+    if (limb.role === 'tentacle') {
+      tentacleLimb(limb, frame);
       continue;
     }
     const rootPos = limbRoot(limb, frame);
@@ -1681,12 +1779,22 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
         swish: true,
       }))
       .filter((c) => c.bones.length > 1)
-      .sort((a, b) => (a.owner === 'tail' ? -1 : b.owner === 'tail' ? 1 : 0)),
+      .sort((a, b) => (a.owner === 'tail' ? -1 : b.owner === 'tail' ? 1 : 0))
+      // Tentacles hang on softer springs (docs/design/9.4-tentacles-parts.md).
+      .concat(
+        tentacleRigs.map((t) => ({
+          owner: t.id,
+          bones: [...t.bones],
+          drive: 'spring' as const,
+          stiffness: 0.18,
+          swish: false as boolean,
+        })),
+      ),
     legs: legRigs,
     arms: armRigs,
     wings: wingRigs,
     fins: finRigs,
-    tentacles: [],
+    tentacles: tentacleRigs,
     stations: [],
     hipHeight:
       legRoots.length > 0 ? legRoots.reduce((a, c) => a + c, 0) / legRoots.length : center.y,

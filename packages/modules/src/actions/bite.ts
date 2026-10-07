@@ -38,6 +38,8 @@ export default defineAction({
       out.crouch = 0.06 * envelope(t, 0, 0.2, 0.3, 0.45);
       // Arms, where it has them, reach out to seize what it bites.
       out.arms = 0.7 * envelope(t, 0.15, 0.4, 0.55, 0.9);
+      // Tentacles, where it has them, reach for it too.
+      out.grab = 0.8 * envelope(t, 0.15, 0.4, 0.55, 0.9);
     },
   },
 });

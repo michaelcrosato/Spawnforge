@@ -103,9 +103,14 @@ each a pure function of the creature spec, seed and quality:
    inside is lofted from the cut's edge: each side's lip and gum strip runs on into a palate or
    a floor that closes at the throat, walls join them at the corners, and a tongue lies on the
    floor. Inside vertices carry their depth and kind for `shadeMouth`.
-7. **Thin sections** become swept tubes skinned to their bones (toes, tail tips).
+7. **Thin sections** become swept tubes skinned to their bones (toes, tail tips, tentacle tips).
+   A tentacle is a chain of even bones from just inside the skin, out along the surface toward
+   the section's far end (back on the torso, forward round the mouth on the head), straight for
+   `curlStart`, then turning toward the belly; where it would meet the ground it lies on it and
+   curls on across it.
 8. **Body coordinates**: along the spine, around the body, along the limb, crease depth and region
-   weights per vertex. Textures read these instead of UVs. The lips' line reads as a crease.
+   weights per vertex. Textures read these instead of UVs. The lips' line reads as a crease. On a
+   tentacle, `height` runs round its own bone, -1 on the inside of its curl, where suckers go.
 9. **Parts** (`parts.ts`). Sockets march from a section's centreline to the skin; part modules
    build pieces in socket space and emit them with the socket's weights (teeth stand in the gums
    and follow the head or jaw, claws their toe, eyes get bones of their own). An eye that asks
@@ -118,7 +123,13 @@ each a pure function of the creature spec, seed and quality:
    they move; `ctx.sheet` places rigid sheets (insect wings, fins, feather cards, each feather
    on a bone of its own that the rest pose folds back along the body); `ctx.solid` puts hard
    shells in the parts mesh (wing cases, shaped where they rest with `toRest`, `skinAlong` and
-   `fromRest`).
+   `fromRest`). A part module with a `bones` hook declares chains of its own before it builds
+   (an antenna, a pair of mandibles, a pincer's moving finger): points placed with
+   `ctx.toModel`, radii, and a drive (`spring` with a stiffness, or `jaw` or `grip` with a `full`
+   pose of turns about each bone's X). Compile appends the bones (`<part>.<chain>.<k>`, section
+   `part`, parented to the socket's bone or the chain's own `parent`) and their driven chains,
+   and `build` gets them as `ctx.chains` to weight pieces to (`ctx.solid` takes weights per
+   vertex).
 
 The output is plain data (`CompiledCreature`): four meshes (skin, hard parts, eyes, membranes)
 sharing one skeleton, the material spec, a rig description for motion, gameplay sockets, labelled markers
@@ -178,8 +189,13 @@ same code runs live in the browser, checks motion in Node and renders filmstrips
   the body follows its own path in S-curves. A rearing neck (a cobra) keeps its raised pose.
 - **Actions** are modules (`hooks.goals` in an action module) that write body-relative goals
   each step: a point to look at, how far to lunge toward it, head raise and shake, jaw opening,
-  crouch, rear, weight shift, breath, blink, tail swish and `arms` (raising the arms to reach
-  for the look target, as `bite` does). Ambient actions (idle) run all the
+  crouch, rear, weight shift, breath, blink, tail swish, `arms` (raising the arms to reach
+  for the look target, as `bite` does; arms already held forward only lift a little), `grip`
+  (shutting grip-driven parts; negative opens them wide), `nearest` (only the side nearest the
+  look target reaches and grips), `grab` (bending the two tentacles nearest the target toward
+  it by FABRIK, `bite` sets it) and `lash` with `lashArc` (swinging the tail or tentacle nearest
+  the target about its root toward it, negative winding up away; near the end of the strike a
+  target in reach draws its tip on by FABRIK). Ambient actions (idle) run all the
   time; main actions (`act(id, { target })`) run one at a time on top and override the goals
   they set. Durations scale by √(hip height / 1 m). The core never names an action: it only
   applies goals, and it needs the module registry (`new MotionController(compiled,
@@ -189,17 +205,21 @@ same code runs live in the browser, checks motion in Node and renders filmstrips
   the neck; with several heads, the others replay the main head's glances after a seeded delay,
   and only the head nearest an action's target lunges); jaws; leg IK to the planted feet (so actions never make feet slide); arm swing (by the
   gait phase on bipeds; above four or more legs, following the opposite foreleg's foot) and the
-  `arms` reach; tail
-  springs pulling toward the rest shape (plus swish); helper bones; wings, turned from rest
+  `arms` reach; springs (tails, tentacles, antennae) pulling toward the rest shape (plus swish
+  on tails; a lash or grab bends that shape first), tentacles and antennae lying on the ground
+  rather than sinking; helper bones; wings, turned from rest
   toward bind by the damped `wings` goal (about 0.4 s × the time scale), the shoulders lifting
   a little with each breath; and last the membranes' stations (`applyStations`), which every
   other solve skips.
 - **Events**, returned by `update`: `footstep` (leg id and position), `gait` changes,
   `action-start` and `action-end`, and the moments actions declare (`bite-contact`,
-  `roar-peak`) with the head's position (and, with several heads, which one in `head`).
+  `roar-peak`, `pinch-contact`, `lash-contact`) with the head's position (and, with several
+  heads, which one in `head`).
 - **Jaws and blinks** are bone turns (`applyFace`, shared with the render page's `--jaw` and
   `--blink`): every jaw about its hinge, every blink-driven chain toward its `closed` pose (turns
-  about each bone's local X). **Breathing** travels with the pose as a number that `applyPose`
+  about each bone's local X), and parts' jaw-driven chains (mandibles) and grip-driven chains (a
+  pincer's finger, per side) by their `full` pose times the jaw or the grip, which the
+  controller damps toward its goal in about 0.03 s. **Breathing** travels with the pose as a number that `applyPose`
   feeds to the skin shader (the torso swells along its normals), and so does the clock
   (`Pose.time`) for pulsing patterns.
 
@@ -220,7 +240,11 @@ flat ground, draws a gait cycle and reports cycle time, stride, duty per leg and
   `leg_too_short`, `part_buried`, `wing_clearance`). Wings and fins are checked walking and
   standing at spread 0.5 and 1: their bones past the shoulder and every 8th membrane vertex
   skinned by the pose, against the body, legs, arms and ground, leaving out the membrane's
-  attached edge (`wing_intersection`; a wing covered by a case is exempt until it spreads). `describeCreature` writes a paragraph from the spec, using
+  attached edge (`wing_intersection`; a wing covered by a case is exempt until it spreads).
+  Tentacles past their first quarter are checked walking and standing against the body, legs and
+  arms (`tentacle_intersection`; touching each other is fine). The ground-penetration check
+  measures a torso by its half-height, flattened as its cross-section and a legless body's belly
+  are. `describeCreature` writes a paragraph from the spec, using
   each module's optional `describe` hook, so the core never names a part.
 - **`applyPatch`** (`packages/core/src/blueprint/patch.ts`) applies `set`, `add`, `remove`,
   `mirror` and `scale` by id-based paths, including into inherited preset items, then validates

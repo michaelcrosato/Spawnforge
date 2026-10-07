@@ -18,7 +18,9 @@ export type BoneSection =
   | 'digit'
   /** Bones that carry a membrane between two spars, or a group of feathers (9.3). */
   | 'station'
-  | 'feather';
+  | 'feather'
+  /** A part's own bones, from its `bones` hook: antennae, mandibles, pincer fingers (9.4). */
+  | 'part';
 
 /** One bone in rest pose, in model space (metres; Y up, the creature faces +Z). */
 export interface BoneDef {
@@ -163,7 +165,7 @@ export interface TailRig {
 export interface DrivenChain {
   readonly owner: string;
   readonly bones: readonly number[];
-  readonly drive: 'spring' | 'blink' | 'jaw' | 'flare';
+  readonly drive: 'spring' | 'blink' | 'jaw' | 'grip' | 'flare';
   /** Springs: how hard each point is pulled back toward its rest place per step (0 to 1). */
   readonly stiffness?: number;
   /** Springs: whether the action goals' `swish` swings it (tails). */

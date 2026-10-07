@@ -51,6 +51,7 @@ import patternsScars from './patterns/scars.ts';
 import patternsSlime from './patterns/slime.ts';
 import patternsSpots from './patterns/spots.ts';
 import patternsStripes from './patterns/stripes.ts';
+import patternsSuckers from './patterns/suckers.ts';
 import patternsVeins from './patterns/veins.ts';
 import patternsWarts from './patterns/warts.ts';
 import gaitsBound from './gaits/bound.ts';
@@ -132,6 +133,7 @@ export const basicPack = definePack({
     patternsSlime,
     patternsSpots,
     patternsStripes,
+    patternsSuckers,
     patternsVeins,
     patternsWarts,
     gaitsBound,

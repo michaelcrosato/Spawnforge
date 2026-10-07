@@ -111,7 +111,7 @@ events it fired. Every event has `type` and `time` (seconds of the creature's mo
 | `gait` | `gait` | It changes gait (walk to trot…) |
 | `arrive` | | It reaches its `moveTo` target |
 | `action-start`, `action-end` | `action` | An action begins or ends |
-| `bite-contact`, `roar-peak` | `action`, `position` (the head), `head` (with several heads: which one, such as `head.L1`) | Moments actions mark: the jaw snaps shut, the roar is loudest |
+| `bite-contact`, `roar-peak`, `pinch-contact`, `lash-contact` | `action`, `position` (the head), `head` (with several heads: which one, such as `head.L1`) | Moments actions mark: the jaw snaps shut, the roar is loudest, a pincer snaps shut, a lash strikes |
 | `*` | | Every event |
 
 Events carry no target or creature: hold those in your listener. Timing events fire on time

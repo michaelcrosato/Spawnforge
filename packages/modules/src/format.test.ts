@@ -108,26 +108,26 @@ describe('format 0.2', () => {
         { id: 'wing', role: 'wing' },
         { id: 'feeler', role: 'tentacle', attach: { on: 'head', at: 0.2 } },
       ],
+      parts: [{ id: 'ruff', type: 'frill' }],
       skin: { fur: { length: 0.04 } },
     });
     expect(dragon.ok).toBe(true);
     expect(dragon.warnings).toEqual([]);
-    // Fur (8.4), several heads (9.1) and wings (9.3) are built; tentacles are not yet (9.4).
-    expect(dragon.notBuilt?.map((i) => i.path).sort()).toEqual(['limbs[id=feeler].role']);
+    // Fur (8.4), several heads (9.1), wings (9.3) and tentacles (9.4) are built; frills are not
+    // yet (9.5).
+    expect(dragon.notBuilt?.map((i) => i.path).sort()).toEqual(['parts[id=ruff].type']);
     expect(dragon.notBuilt?.[0]?.fix).toMatch(/^keep it/);
   });
 
-  it('leaves out what something else implies, and names a skipped host', () => {
-    // Wings imply flying, which is not built yet (10.4), and neither is a pincer: the pincer is
+  it('leaves out what something else implies', () => {
+    // Wings imply flying, which is not built yet (10.4), and neither is a frill: the frill is
     // listed, flying only when the blueprint writes it.
     const implied = check({
       extends: 'quadruped',
-      limbs: [
-        { id: 'foreleg', foot: 'hand.pincer' },
-        { id: 'wing', role: 'wing' },
-      ],
+      limbs: [{ id: 'wing', role: 'wing' }],
+      parts: [{ id: 'ruff', type: 'frill' }],
     });
-    expect(implied.notBuilt?.map((i) => i.path).sort()).toEqual(['limbs[id=foreleg].foot.type']);
+    expect(implied.notBuilt?.map((i) => i.path).sort()).toEqual(['parts[id=ruff].type']);
     // Stances are drawn (8.2); swimming is not yet.
     const written = check({
       extends: 'quadruped',
@@ -143,12 +143,10 @@ describe('format 0.2', () => {
       parts: [{ id: 'eyes', type: 'eye.basic', attach: { on: 'stalk', at: 1 } }],
     });
     expect(stalks.errors).toEqual([]);
-    // Tentacles on the head are stalks, not a swimmer's arms: it stays on land.
+    // Tentacles on the head are stalks, not a swimmer's arms: it stays on land. They are built
+    // (9.4), and so is what sits on them.
     expect(stalks.creature?.motion.media).toEqual({ land: true, water: false, air: false });
-    const eyes = stalks.notBuilt?.find((i) => i.path === 'parts[id=eyes].attach.on');
-    expect(eyes?.message).toMatch(
-      /^"eye.basic" sits on "stalk.L", which is not built yet \(plan milestone 9.4\)/,
-    );
+    expect(stalks.notBuilt).toBeUndefined();
   });
 
   it('names the modules that provide what an action needs', () => {
@@ -219,6 +217,7 @@ describe('format 0.2', () => {
       parts: [
         { id: 'barb', type: 'horn.curved', attach: { on: 'wing', at: 0.5 } },
         { id: 'hook', type: 'horn.curved', attach: { on: 'tail-arm', at: 0.5 } },
+        { id: 'ruff', type: 'frill' },
       ],
       body: { neck: { count: 2, length: 0.6 } },
     });
@@ -227,14 +226,15 @@ describe('format 0.2', () => {
     const compiled = compileCreature(result.creature, registry, { quality: 'low' });
     expect(compiled.rig.legs).toHaveLength(4);
     expect(compiled.rig.arms).toHaveLength(0);
-    // Two heads (9.1) and the wings with the part on them (9.3) are built; the tentacle and
-    // the part on it are reported.
+    // Two heads (9.1), the wings with the part on them (9.3) and the tentacle with its (9.4)
+    // are built; the frill is reported.
     expect(compiled.rig.heads.map((h) => h.id)).toEqual(['head', 'head.R1']);
     expect(compiled.rig.wings.map((w) => w.id)).toEqual(['wing.L', 'wing.R']);
-    expect(compiled.markers.map((m) => m.id)).toEqual(expect.arrayContaining(['barb.L']));
-    expect(compiled.warnings.map((w) => w.path)).toEqual(
-      expect.arrayContaining(['limbs[id=tail-arm].role', 'parts[id=hook].attach.on']),
+    expect(compiled.rig.tentacles.map((t) => t.id)).toEqual(['tail-arm.L', 'tail-arm.R']);
+    expect(compiled.markers.map((m) => m.id)).toEqual(
+      expect.arrayContaining(['barb.L', 'hook.L', 'hook.R']),
     );
+    expect(compiled.warnings.map((w) => w.path)).toEqual(['parts[id=ruff].type']);
   });
 
   // The recipes in docs/blueprint.md, "Recipes for the new bodies", written out.
