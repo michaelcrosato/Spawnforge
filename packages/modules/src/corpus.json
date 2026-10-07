@@ -1682,5 +1682,81 @@
   "eval/runs/2026-10-06-phase7-format/b20-glow-slug.attempt0.json": {
     "ok": true,
     "errors": []
+  },
+  "eval/runs/2026-10-07-phase9-variation/v01.a.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-07-phase9-variation/v01.b.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-07-phase9-variation/v01.c.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-07-phase9-variation/v01.species.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-07-phase9-variation/v02.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-07-phase9-variation/v03.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-07-phase9-variation/v04.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-07-phase9-variation/v05.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-07-phase9-variation/v06.species.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-07-phase9-variation/v07.a.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-07-phase9-variation/v07.b.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-07-phase9-variation/v07.c.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-07-phase9-variation/v08.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-07-phase9-variation/v09.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-07-phase9-variation/v10.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-07-phase9-variation/v11.a.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-07-phase9-variation/v11.b.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-07-phase9-variation/v11.c.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-07-phase9-variation/v12.json": {
+    "ok": true,
+    "errors": []
   }
 }
