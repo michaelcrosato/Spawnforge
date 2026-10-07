@@ -126,6 +126,15 @@ export function colorRef(fallback: string) {
     .describe('A palette name such as "accent", or a colour such as "#2a1e14"');
 }
 
+/**
+ * A gait setting that may change with speed: one number, or `[slowest, fastest]` across the
+ * gait's speed range, interpolated in Froude number (docs/design/10.1-gaits.md).
+ */
+export function speedProfile(min: number, max: number) {
+  const n = z.number().min(min).max(max);
+  return z.union([n, z.array(n).length(2)]);
+}
+
 /** `defaults` come from the packs (`Registry.defaults()`): the foot and layers a blueprint gets. */
 export function buildBlueprintSchema(ids: ModuleIds = NO_IDS, defaults: PackDefaults = {}) {
   const torso = z

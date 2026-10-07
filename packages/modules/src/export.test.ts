@@ -92,6 +92,7 @@ describe('stats', () => {
     expect(Object.keys(a)).toEqual([
       'health',
       'speed',
+      'swim',
       'attack',
       'attacks',
       'defence',

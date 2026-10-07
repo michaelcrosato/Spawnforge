@@ -74,7 +74,8 @@ and the way to use the runtime in Node or tests.
 - **`bestiary.spawn(blueprint, options)`** returns a `Promise<Creature>`. Options: `seed` (an
   integer that overrides the blueprint's, for a different individual's details), `quality`
   (`low`, `medium` or `high`, default medium), `position` (`{ x, z }`), `heading` (radians, 0
-  faces +Z) and `ground` (to stand it on terrain from the start).
+  faces +Z), `ground` (to stand it on terrain from the start) and `water` (to start a swimmer
+  afloat).
 - **Invalid blueprints** reject the promise with an `Error` whose message lists each problem with
   its path, the same errors `validate` gives. A species (with `{ "min", "max" }` ranges) is not a
   creature: `instantiate` it first (`instantiate(species, seed, registry)` from
@@ -88,17 +89,24 @@ and the way to use the runtime in Node or tests.
 
 | Call | Takes | Notes |
 | --- | --- | --- |
-| `moveTo(target, { speed })` | `{ x, z }` (a `Vector3` works), speed in m/s | Steers, picks the gait from the speed, fires `arrive` when there; `null` stops |
+| `moveTo(target, { speed })` | `{ x, z }` or `{ x, y, z }` (a `Vector3` works), speed in m/s | Steers, picks the gait from the speed, fires `arrive` when there; `null` stops. Without a speed it keeps its pace on land and its swimming pace in water; a `y` is the height a swimmer dives or rises to |
 | `stop()` | | Slows to a stand |
 | `lookAt(point)` | `{ x, y, z }` or `null` | The head tracks the point; `null` looks ahead again |
 | `act(id, { target })` | an action id, a point or an `Object3D` | Starts it now, replacing a running action; throws, naming the creature's actions, if it has no such action |
 | `actions()` | | The action ids it can start (`bite`, `roar`, `look`…) |
 | `setWings(spread)` | 0 folded to 1 spread | Spreads or folds the wings over about 0.4 s when no action asks otherwise (`roar` flares them); `wingSpread` reads where they are |
-| `update(dt, { ground })` | seconds | One creature; `bestiary.update(dt, { ground, camera })` does all |
+| `update(dt, { ground, water })` | seconds | One creature; `bestiary.update(dt, { ground, water, camera })` does all |
 
-Read `creature.position` (a `Vector3` on the ground), `heading` (radians) and `speed` (m/s).
-Without `ground`, the ground is flat at y = 0; `ground(x, z)` returns `{ height, normal? }`, so
-creatures walk on any terrain or physics engine.
+Read `creature.position` (a `Vector3` on the ground, or where it swims), `heading` (radians) and
+`speed` (m/s). Without `ground`, the ground is flat at y = 0; `ground(x, z)` returns
+`{ height, normal? }`, so creatures walk on any terrain or physics engine.
+
+**Water.** `water(x, z)` returns `{ surface }` (the water's height there) or `null` where there
+is none; the ground under it is the bed. A creature that swims takes to water deeper than about
+its hip height and walks out where it is shallower (a `medium` event each way); one that only
+swims stops at the shore. At a distance, with baked cycles, a swimmer keeps its depth and plays
+its swimming cycle. `withLake(ground, { x, z, radius, depth })` from `@spawnforge/core` carves a
+lake into a ground function for testing, and `openSea(scale)` gives deep water everywhere.
 
 ### Events
 
@@ -108,9 +116,11 @@ events it fired. Every event has `type` and `time` (seconds of the creature's mo
 | Type | Extra fields | When |
 | --- | --- | --- |
 | `footstep` | `leg` (a leg id such as `foreleg.L`), `position` `[x, y, z]` | A foot plants |
-| `gait` | `gait` | It changes gait (walk to trot…) |
+| `gait` | `gait` | It changes gait (walk to trot, trot to gallop, walk to swim…); the legs ease into the new footfalls over a stride or two |
+| `medium` | `medium` (`water` or `land`) | It takes to the water, or climbs out onto land |
 | `arrive` | | It reaches its `moveTo` target |
 | `action-start`, `action-end` | `action` | An action begins or ends |
+| `takeoff`, `land` | `action`, `position` (the head) | A `jump` or `pounce` leaves the ground and comes down; in between every foot is off the ground and the creature flies a ballistic arc over the game's ground to the target |
 | `bite-contact`, `roar-peak`, `pinch-contact`, `lash-contact`, `display-peak` | `action`, `position` (the head), `head` (with several heads: which one, such as `head.L1`) | Moments actions mark: the jaw snaps shut, the roar is loudest, a pincer snaps shut, a lash strikes, a display is fully open |
 | `*` | | Every event |
 
@@ -174,19 +184,29 @@ A `.glb` holds:
   address nodes as `name.property`.
 - **Baked clips:** `idle` (glances, weight shifts and blinks as eyelid bone turns, `eye_eyes_L_upper`
   and `_lower`; breathing is a shader
-  effect and stays out of the file), one cycle of each gait (`walk`, `trot`, `tripod`, `slither`)
-  and each action (`bite`, `roar`, `look`). Frames are at `--fps` (default 30).
+  effect and stays out of the file), one cycle of each gait (`walk`, `trot`, `run`, `gallop`,
+  `bound`, `tripod`, `slither`, and the swimming gaits, baked in open water with the surface at
+  y = 0, so the root's height is its depth) and each action (`bite`, `roar`, `look`). Frames are at `--fps` (default 30).
   - Gait clips are exactly one cycle, in place: the root stays at the origin facing +Z, the clip
     loops seamlessly, and the game moves the creature.
   - Action clips run the action and then 0.25 s of settling back, so they are a little longer
     than the action: its end is the `action-end` event, and its moments (`bite-contact`) are
     events too. Their length rounds to whole frames, so it moves a little with `--fps`.
+  - Leaping actions (`jump`, `pounce`) are baked unaimed and keep their **root motion**: the
+    root starts at the origin and its position track carries the creature forward and up
+    through the leap, and the clip's extras say `rootMotion: true`. Either let the clip move
+    the creature (then put the object where the clip ended, adding its root track's last
+    position, before playing the next clip), or strip the root track
+    (`clip.tracks = clip.tracks.filter((t) => t.name !== \`${rootBone}.position\`)`) and move
+    the object along the leap yourself: the `takeoff` and `land` events give its timing and
+    the root track's last position how far it goes.
 - **Sockets** as empty nodes under their bones, named `socket_` plus the socket name
   (`socket_mouth`, `socket_claw_foreleg_L_0`).
 - **Extras** on the creature's root node, under `spawnforge`: `format`, the minimal `blueprint`
   (rebuild or edit the creature from it), `seed`, `scale`, `quality`, `sockets` (name, node and
   bone), `hitCapsules` (bone and radius), `clips` (name, duration, loop, `speed` it was baked at,
-  `distance` one cycle covers, and `events` with their times), and `stats` when asked for.
+  `distance` one cycle covers, `rootMotion` for clips whose root track moves, and `events` with
+  their times), and `stats` when asked for.
 
 ### Playing a .glb in Three.js
 

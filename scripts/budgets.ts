@@ -13,6 +13,7 @@ import {
   compileCreature,
   createRegistry,
   MotionController,
+  openSea,
   resolveBlueprint,
   testCourse,
 } from '@spawnforge/core';
@@ -59,10 +60,15 @@ try {
       );
     const chrome = median(chromeTimes);
     const controller = new MotionController(c, { registry });
+    // A body that only swims is timed swimming in open water (10.3).
+    const swims = !c.motion.gaits.some((g) => (g.medium ?? 'land') === 'land');
+    const sea = swims ? openSea(c.scale) : undefined;
+    const input = sea ?? { ground };
+    if (sea) controller.place(0, 0, 0, sea.ground, sea.water);
     controller.drive(controller.paceSpeed(), 0.3);
-    for (let i = 0; i < 600; i++) controller.update(1 / 60, { ground });
+    for (let i = 0; i < 600; i++) controller.update(1 / 60, input);
     const t = performance.now();
-    for (let i = 0; i < 3000; i++) controller.update(1 / 60, { ground });
+    for (let i = 0; i < 3000; i++) controller.update(1 / 60, input);
     perExample.push({
       name,
       lines,

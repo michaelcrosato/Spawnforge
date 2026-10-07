@@ -3629,22 +3629,63 @@
       "additionalProperties": false
     },
     "gait:bound": {
-      "description": "Small quadrupeds leaping with both hind legs, then both front legs, like a rabbit or a weasel.",
+      "description": "Small quadrupeds leaping with both hind legs, then both front legs, like a rabbit or a weasel; the back flexes and stretches with each leap.",
       "type": "object",
       "properties": {
+        "duty": {
+          "description": "Share of the cycle each foot is planted: one number, or [slowest, fastest] (default [0.35, 0.22])",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.15,
+              "maximum": 0.6
+            },
+            {
+              "minItems": 2,
+              "maxItems": 2,
+              "type": "array",
+              "items": {
+                "type": "number",
+                "minimum": 0.15,
+                "maximum": 0.6
+              }
+            }
+          ]
+        },
         "flex": {
-          "default": 0.7,
+          "default": 0.6,
           "description": "How much the spine flexes each bound",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "stepHeight": {
+          "default": 0.25,
+          "description": "Foot lift as a share of hip height",
           "type": "number",
           "minimum": 0,
           "maximum": 1
         },
         "stride": {
           "default": 1,
-          "description": "Stride length multiplier",
-          "type": "number",
-          "minimum": 0.2,
-          "maximum": 2
+          "description": "Stride length multiplier: one number, or [slowest, fastest]",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.2,
+              "maximum": 2
+            },
+            {
+              "minItems": 2,
+              "maxItems": 2,
+              "type": "array",
+              "items": {
+                "type": "number",
+                "minimum": 0.2,
+                "maximum": 2
+              }
+            }
+          ]
         }
       },
       "additionalProperties": false
@@ -3671,12 +3712,12 @@
       "additionalProperties": false
     },
     "gait:gallop": {
-      "description": "Fast four-legged gait with a leading leg and a moment in the air, like a horse.",
+      "description": "Fast four-legged gait with a leading foreleg and a moment in the air, like a horse (transverse) or a cheetah (rotary); the back flexes each stride.",
       "type": "object",
       "properties": {
         "style": {
           "default": "transverse",
-          "description": "\"transverse\" like a horse, \"rotary\" like a cheetah or a dog",
+          "description": "\"transverse\" like a horse (the forefeet land in the same order as the hind), \"rotary\" like a cheetah or a dog (in the opposite order)",
           "type": "string",
           "enum": [
             "transverse",
@@ -3684,12 +3725,32 @@
           ]
         },
         "lead": {
-          "default": "left",
-          "description": "Which front leg leads",
+          "default": "right",
+          "description": "Which foreleg lands last, leading",
           "type": "string",
           "enum": [
             "left",
             "right"
+          ]
+        },
+        "duty": {
+          "description": "Share of the cycle each foot is planted: one number, or [slowest, fastest] (default [0.4, 0.22])",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.15,
+              "maximum": 0.6
+            },
+            {
+              "minItems": 2,
+              "maxItems": 2,
+              "type": "array",
+              "items": {
+                "type": "number",
+                "minimum": 0.15,
+                "maximum": 0.6
+              }
+            }
           ]
         },
         "flex": {
@@ -3699,12 +3760,33 @@
           "minimum": 0,
           "maximum": 1
         },
+        "stepHeight": {
+          "default": 0.22,
+          "description": "Foot lift as a share of hip height",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
         "stride": {
           "default": 1,
-          "description": "Stride length multiplier",
-          "type": "number",
-          "minimum": 0.2,
-          "maximum": 2
+          "description": "Stride length multiplier: one number, or [slowest, fastest]",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.2,
+              "maximum": 2
+            },
+            {
+              "minItems": 2,
+              "maxItems": 2,
+              "type": "array",
+              "items": {
+                "type": "number",
+                "minimum": 0.2,
+                "maximum": 2
+              }
+            }
+          ]
         }
       },
       "additionalProperties": false
@@ -3738,21 +3820,56 @@
       "additionalProperties": false
     },
     "gait:run": {
-      "description": "Two-legged running with a moment in the air each stride, for raptors and runners.",
+      "description": "Two-legged running with a moment in the air each stride, for raptors and runners: feet are down less as it speeds up, and the body leans in.",
       "type": "object",
       "properties": {
         "duty": {
-          "description": "Share of the cycle each foot is planted",
+          "description": "Share of the cycle each foot is planted: one number, or [slowest, fastest] (default [0.45, 0.3])",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.2,
+              "maximum": 0.6
+            },
+            {
+              "minItems": 2,
+              "maxItems": 2,
+              "type": "array",
+              "items": {
+                "type": "number",
+                "minimum": 0.2,
+                "maximum": 0.6
+              }
+            }
+          ]
+        },
+        "stepHeight": {
+          "default": 0.25,
+          "description": "Foot lift as a share of hip height",
           "type": "number",
-          "minimum": 0.2,
-          "maximum": 0.5
+          "minimum": 0,
+          "maximum": 1
         },
         "stride": {
           "default": 1,
-          "description": "Stride length multiplier",
-          "type": "number",
-          "minimum": 0.2,
-          "maximum": 2
+          "description": "Stride length multiplier: one number, or [slowest, fastest]",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.2,
+              "maximum": 2
+            },
+            {
+              "minItems": 2,
+              "maxItems": 2,
+              "type": "array",
+              "items": {
+                "type": "number",
+                "minimum": 0.2,
+                "maximum": 2
+              }
+            }
+          ]
         },
         "lean": {
           "default": 15,
@@ -3786,7 +3903,7 @@
       "additionalProperties": false
     },
     "gait:swim.flap": {
-      "description": "Swims by beating fins or flippers like wings, like a turtle or a penguin.",
+      "description": "Swims by beating long fins or flippers like wings, like a turtle or a penguin; it dives.",
       "type": "object",
       "properties": {
         "stroke": {
@@ -3800,7 +3917,7 @@
       "additionalProperties": false
     },
     "gait:swim.paddle": {
-      "description": "Swims at the surface by paddling its legs, like a dog or a bear.",
+      "description": "Swims at the surface by paddling its legs in circles under the hips, like a dog, a bear or a crocodile going slowly.",
       "type": "object",
       "properties": {
         "stroke": {
@@ -3814,14 +3931,14 @@
       "additionalProperties": false
     },
     "gait:swim.undulate": {
-      "description": "Swims with a body wave that grows toward the tail, like a fish, an eel or a crocodile.",
+      "description": "Swims with a body wave that grows toward the tail, like a fish, an eel, a sea serpent or a crocodile; it dives and steers in three dimensions.",
       "type": "object",
       "properties": {
         "amplitude": {
           "default": 0.2,
-          "description": "Tail-beat width as a share of body length",
+          "description": "Tail-beat width as a share of body length; the beat comes faster as it narrows",
           "type": "number",
-          "minimum": 0,
+          "minimum": 0.02,
           "maximum": 1
         },
         "waves": {
@@ -3839,10 +3956,24 @@
       "type": "object",
       "properties": {
         "duty": {
-          "description": "Share of the cycle each foot is planted",
-          "type": "number",
-          "minimum": 0.3,
-          "maximum": 0.8
+          "description": "Share of the cycle each foot is planted: one number, or [slowest, fastest] across its speeds",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.3,
+              "maximum": 0.8
+            },
+            {
+              "minItems": 2,
+              "maxItems": 2,
+              "type": "array",
+              "items": {
+                "type": "number",
+                "minimum": 0.3,
+                "maximum": 0.8
+              }
+            }
+          ]
         },
         "stepHeight": {
           "default": 0.25,
@@ -3853,10 +3984,24 @@
         },
         "stride": {
           "default": 1,
-          "description": "Stride length multiplier",
-          "type": "number",
-          "minimum": 0.2,
-          "maximum": 2
+          "description": "Stride length multiplier: one number, or [slowest, fastest]",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.2,
+              "maximum": 2
+            },
+            {
+              "minItems": 2,
+              "maxItems": 2,
+              "type": "array",
+              "items": {
+                "type": "number",
+                "minimum": 0.2,
+                "maximum": 2
+              }
+            }
+          ]
         }
       },
       "additionalProperties": false
@@ -3866,10 +4011,24 @@
       "type": "object",
       "properties": {
         "duty": {
-          "description": "Share of the cycle each foot is planted",
-          "type": "number",
-          "minimum": 0.3,
-          "maximum": 0.7
+          "description": "Share of the cycle each foot is planted: one number, or [slowest, fastest] across its speeds",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.3,
+              "maximum": 0.7
+            },
+            {
+              "minItems": 2,
+              "maxItems": 2,
+              "type": "array",
+              "items": {
+                "type": "number",
+                "minimum": 0.3,
+                "maximum": 0.7
+              }
+            }
+          ]
         },
         "stepHeight": {
           "default": 0.2,
@@ -3880,10 +4039,24 @@
         },
         "stride": {
           "default": 1,
-          "description": "Stride length multiplier",
-          "type": "number",
-          "minimum": 0.2,
-          "maximum": 2
+          "description": "Stride length multiplier: one number, or [slowest, fastest]",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.2,
+              "maximum": 2
+            },
+            {
+              "minItems": 2,
+              "maxItems": 2,
+              "type": "array",
+              "items": {
+                "type": "number",
+                "minimum": 0.2,
+                "maximum": 2
+              }
+            }
+          ]
         }
       },
       "additionalProperties": false
@@ -3893,10 +4066,24 @@
       "type": "object",
       "properties": {
         "duty": {
-          "description": "Share of the cycle each foot is planted; defaults by leg count",
-          "type": "number",
-          "minimum": 0.4,
-          "maximum": 0.95
+          "description": "Share of the cycle each foot is planted; defaults by leg count: one number, or [slowest, fastest] across its speeds",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.4,
+              "maximum": 0.95
+            },
+            {
+              "minItems": 2,
+              "maxItems": 2,
+              "type": "array",
+              "items": {
+                "type": "number",
+                "minimum": 0.4,
+                "maximum": 0.95
+              }
+            }
+          ]
         },
         "stepHeight": {
           "default": 0.15,
@@ -3907,10 +4094,24 @@
         },
         "stride": {
           "default": 1,
-          "description": "Stride length multiplier",
-          "type": "number",
-          "minimum": 0.2,
-          "maximum": 2
+          "description": "Stride length multiplier: one number, or [slowest, fastest]",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0.2,
+              "maximum": 2
+            },
+            {
+              "minItems": 2,
+              "maxItems": 2,
+              "type": "array",
+              "items": {
+                "type": "number",
+                "minimum": 0.2,
+                "maximum": 2
+              }
+            }
+          ]
         }
       },
       "additionalProperties": false
@@ -3979,22 +4180,29 @@
       "additionalProperties": false
     },
     "action:jump": {
-      "description": "Crouches, leaps to a target point or over a height and lands on its legs; fires takeoff and land events.",
+      "description": "Crouches, leaps to a target point (or ahead) over the ground and any height asked for, and lands on its legs, absorbing it; fires takeoff and land events.",
       "type": "object",
       "properties": {
         "power": {
           "default": 0.6,
-          "description": "How hard it springs, 0 to 1",
+          "description": "How hard it springs, 0 to 1: how far it leaps unaimed, and at most",
           "type": "number",
           "minimum": 0,
           "maximum": 1
         },
         "crouch": {
           "default": 0.5,
-          "description": "How deep it crouches first",
+          "description": "How deep it crouches first, 0 to 1",
           "type": "number",
           "minimum": 0,
           "maximum": 1
+        },
+        "height": {
+          "default": 0,
+          "description": "Least height in metres it clears above the ground in the middle of the leap (over an obstacle); 0 for a natural arc",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 5
         }
       },
       "additionalProperties": false
@@ -4061,19 +4269,19 @@
       "additionalProperties": false
     },
     "action:pounce": {
-      "description": "A jump that ends in a bite on the target; fires takeoff, land and bite-contact events.",
+      "description": "A low crouch, a leap at the target and a bite as it lands, the head meeting the target; fires takeoff, land and bite-contact events.",
       "type": "object",
       "properties": {
         "power": {
           "default": 0.7,
-          "description": "How hard it springs, 0 to 1",
+          "description": "How hard it springs, 0 to 1: how far it can pounce",
           "type": "number",
           "minimum": 0,
           "maximum": 1
         },
         "reach": {
           "default": 0.8,
-          "description": "How far the head lunges at the end",
+          "description": "How far the head lunges at the end, as a share of what the neck can reach",
           "type": "number",
           "minimum": 0,
           "maximum": 1

@@ -70,7 +70,6 @@ export function notBuilt(
             : undefined,
         written,
       );
-    if (get('motion', 'media', 'water') === true) add('motion.media.water', 'swimming', '10.3');
     if (get('motion', 'media', 'air') === true) add('motion.media.air', 'flying', '10.4');
   }
   return issues;

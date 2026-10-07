@@ -1,0 +1,6 @@
+{
+  "water": { "x": 0, "z": 8, "radius": 4, "depth": 2 },
+  "duration": 40,
+  "frames": 8,
+  "calls": [{ "at": 0, "do": "moveTo", "to": [0, 16] }]
+}

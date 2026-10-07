@@ -5,7 +5,13 @@ import { type PreparedLimb, prepareLimb, solvePrepared } from '../compile/ik.ts'
 import { type HeadRig, mainHead } from '../compile/types.ts';
 import type { ActionModule, Registry } from '../registry.ts';
 import { createRng, type Rng } from '../rng.ts';
-import { type ActionContext, type ActionGoals, type ActionHooks, ramp } from './actions.ts';
+import {
+  type ActionContext,
+  type ActionGoals,
+  type ActionHooks,
+  type LeapTiming,
+  ramp,
+} from './actions.ts';
 import { fabrik } from './fabrik.ts';
 import { applyFace } from './face.ts';
 import { Pose } from './pose.ts';
@@ -13,6 +19,8 @@ import { type FootRoll, footRoll, heelAt, plantToes, poseToes } from './roll.ts'
 import { applyStations, applyWings } from './wings.ts';
 
 const G = 9.81;
+/** How far a gait with flight lowers the body, as a share of hip height. */
+const LOW = 0.12;
 const STEP = 1 / 120;
 const UP = new Vector3(0, 1, 0);
 const X_AXIS = new Vector3(1, 0, 0);
@@ -24,12 +32,34 @@ export interface GaitInfo {
   readonly id: string;
   /** Phase offset between successive leg pairs, for this creature's pair count. */
   readonly wave: number;
+  /**
+   * Where each leg's foot lands in the cycle, 0 to 1, by `2 × pair + (right ? 1 : 0)` (pair 0 is
+   * the hindmost), for gaits that set it themselves (a gallop's lead); else the wave formula.
+   */
+  readonly phases?: readonly number[];
+  /** Share of the cycle each foot is planted, at the slow end of the gait's Froude range. */
   readonly duty: number;
+  /** The same at the fast end, when it changes with speed (10.1). */
+  readonly dutyFast?: number;
   /** Speeds the gait suits, as Froude numbers. */
   readonly froude: readonly [number, number];
+  /** The Froude number it looks typical at (default the middle of its range, at most 1). */
+  readonly natural?: number;
   /** Foot lift as a share of hip height. */
   readonly stepHeight: number;
   readonly stride: number;
+  /** Stride multiplier at the fast end, when it changes with speed. */
+  readonly strideFast?: number;
+  /** How far the spine flexes and extends each stride, 0 to 1. */
+  readonly flex?: number;
+  /** Degrees the body leans forward at the top of the gait's range. */
+  readonly lean?: number;
+  /** Every foot leaves the ground at once some time in the cycle. */
+  readonly flight?: boolean;
+  /** Where the gait moves it, when not on land (10.3, 10.4). */
+  readonly medium?: 'water' | 'air';
+  /** What drives a water gait: a body wave, paddling legs or beating fins. */
+  readonly swim?: 'body' | 'legs' | 'fins';
   /** Slither gaits move the spine instead of legs. */
   readonly spine: boolean;
   readonly amplitude: number;
@@ -49,10 +79,18 @@ export interface GroundSample {
 }
 /** Height (and optionally normal) of the ground at (x, z). */
 export type Ground = (x: number, z: number) => GroundSample;
+
+export interface WaterSample {
+  /** Height of the water's surface (m). */
+  readonly surface: number;
+}
+/** Water at (x, z): its surface, or null where there is none (the ground is the bed). */
+export type Water = (x: number, z: number) => WaterSample | null;
 const FLAT: Ground = () => ({ height: 0 });
 
 /**
- * Something that happened during `update`: a `footstep` (with `leg` and `position`), a `gait`
+ * Something that happened during `update`: a `footstep` (with `leg` and `position`), a `medium`
+ * change (into the water or out), a `gait`
  * change, an action's start and end (`action-start`, `action-end`), or an event an action
  * declares, such as `bite-contact` or `roar-peak` (with `action` and the head's `position`).
  */
@@ -65,6 +103,8 @@ export interface MotionEvent {
   readonly action?: string;
   /** Action events: the head that acted (`head`, `head.L1`, …), when there are several. */
   readonly head?: string;
+  /** `medium` events: where it moves now (into the water, out onto land). */
+  readonly medium?: 'land' | 'water' | 'air';
 }
 
 /** Pace, posture and attitude per temperament. */
@@ -82,7 +122,8 @@ const TEMPERAMENTS: Record<
 interface LegState {
   readonly rig: LegRigData;
   readonly limb: PreparedLimb;
-  readonly offset: number;
+  /** Where in the cycle the foot lands; eased toward a new gait's when the gait changes. */
+  offset: number;
   /** Rest foot position relative to the root, in body space. */
   readonly neutral: Vector3;
   readonly pole: Vector3;
@@ -132,10 +173,30 @@ interface RunningAction {
   readonly params: Record<string, unknown>;
   readonly target: Vector3 | null;
   readonly start: number;
-  readonly duration: number;
-  readonly events: readonly { at: number; type: string }[];
+  /** Seconds; a leap's is set once its arc is planned. */
+  duration: number;
+  events: readonly { at: number; type: string }[];
   readonly rng: Rng;
   progress: number;
+  /** A leaping action's arc, planned on its first step (docs/design/10.2-jumps.md). */
+  leap?: Leap;
+}
+
+/** A planned leap: a ballistic arc from where it stands to where it lands. */
+interface Leap {
+  readonly from: Vector3;
+  readonly to: Vector3;
+  readonly heading: number;
+  /** Launch speed upward (m/s) and seconds in the air. */
+  readonly rise: number;
+  readonly flight: number;
+  /** Seconds after the action starts at which it leaves the ground and lands. */
+  readonly takeoff: number;
+  readonly land: number;
+  /** Shares of the action's progress at which it leaves the ground and lands. */
+  readonly timing: LeapTiming;
+  airborne: boolean;
+  landed: boolean;
 }
 
 const damp = (current: number, target: number, rate: number, dt: number) =>
@@ -191,9 +252,27 @@ export class MotionController {
   private roll = 0;
   private bodyY = 0;
   private bend = 0;
+  /** Duty now: the gait's at this speed, eased across a gait change. */
+  private dutyNow = 0.7;
+  /** Height the body has risen in a flight phase, and its vertical speed (m, m/s). */
+  private airY = 0;
+  private airV = 0;
+  private airborne = false;
+  /** Forward lean of a running body (radians), eased. */
+  private lean = 0;
+  /** Where it is moving: on land (or wading) or swimming (10.3). */
+  medium: 'land' | 'water' = 'land';
+  /** Height asked for by `moveTo` (a diver's depth), if any. */
+  private targetY: number | undefined;
+  /** The spine's height while swimming (m), the tail's swing and the fins' beat now. */
+  private swimY = 0;
+  private swimSwish = 0;
+  private finBeat = 0;
   private events: MotionEvent[] = [];
   private readonly restBodyY: number;
   private readonly halfStride: number;
+  /** The same with the body lowered for a gait with flight, which reaches further (10.1). */
+  private readonly halfStrideLow: number;
   /** A legless body whose neck rises well above it in the rest pose. */
   private readonly rearing: boolean;
   /** Arms on the neck: an upright front (a centaur's human torso) that stays upright. */
@@ -231,16 +310,15 @@ export class MotionController {
     const spine0 = compiled.rig.spine[0] as number;
     this.restBodyY = (this.pose.restPos[spine0] as Vector3).y;
     this.bodyY = this.restBodyY;
-    const legGaits = motion.gaits.filter((g) => !g.spine);
-    this.gait = legGaits[0] ?? motion.gaits[0];
+    // Start on land: a walking gait, else a slither; a fish (no land gait) starts swimming.
+    const land = motion.gaits.filter((g) => (g.medium ?? 'land') === 'land');
+    this.gait = land.find((g) => !g.spine) ?? land[0] ?? motion.gaits[0];
     this.legs = compiled.rig.legs.map((rig) => {
-      const s = rig.side === 'left' ? 0 : 1;
-      const wave = this.gait?.wave ?? 0.25;
       const neutral = new Vector3(...rig.restFoot);
       return {
         rig,
         limb: prepareLimb({ lengths: rig.lengths, bends: rig.bends }),
-        offset: (((rig.pair * wave + 0.5 * s) % 1) + 1) % 1,
+        offset: offsetFor(rig, this.gait),
         neutral,
         pole: new Vector3(...rig.pole),
         footLift: neutral.y,
@@ -256,24 +334,30 @@ export class MotionController {
     });
     for (const leg of this.legs)
       if (leg.roll) plantToes(leg.roll, leg.neutral, leg.footLift, 0, () => 0);
+    this.dutyNow = this.gait?.duty ?? 0.7;
     // How far a foot can travel fore and aft of its neutral spot while planted.
-    this.halfStride = Math.max(
-      0.05 * compiled.scale,
-      Math.min(
-        ...this.legs.map((leg) => {
-          // Room fore and aft of the rest foot within the leg's reach, allowing for how far the
-          // foot sits out to the side and ahead of or behind the hip.
-          const hip = this.pose.restWorldPos[leg.rig.bones[0] as number] as Vector3;
-          const dx = leg.neutral.x - hip.x;
-          const dy = hip.y - leg.neutral.y;
-          // Bipeds stand nearly straight-legged and use more of their reach.
-          const most = (this.legs.length <= 2 ? 0.97 : 0.93) * leg.rig.reach;
-          const across = Math.sqrt(Math.max(0, most * most - dx * dx - dy * dy));
-          return Math.max(0, across - Math.abs(leg.neutral.z - hip.z)) * 0.85;
-        }),
-        Number.POSITIVE_INFINITY,
-      ),
-    );
+    // How far a foot can travel fore and aft of its neutral spot while planted, standing and
+    // with the body lowered by `LOW` of the hip height as a galloper's is.
+    const room = (drop: number) =>
+      Math.max(
+        0.05 * compiled.scale,
+        Math.min(
+          ...this.legs.map((leg) => {
+            // Room fore and aft of the rest foot within the leg's reach, allowing for how far the
+            // foot sits out to the side and ahead of or behind the hip.
+            const hip = this.pose.restWorldPos[leg.rig.bones[0] as number] as Vector3;
+            const dx = leg.neutral.x - hip.x;
+            const dy = hip.y - drop - leg.neutral.y;
+            // Bipeds stand nearly straight-legged and use more of their reach.
+            const most = (this.legs.length <= 2 ? 0.97 : 0.93) * leg.rig.reach;
+            const across = Math.sqrt(Math.max(0, most * most - dx * dx - dy * dy));
+            return Math.max(0, across - Math.abs(leg.neutral.z - hip.z)) * 0.85;
+          }),
+          Number.POSITIVE_INFINITY,
+        ),
+      );
+    this.halfStride = room(0);
+    this.halfStrideLow = room(LOW * this.hipHeight);
     const main = mainHead(compiled.rig);
     const neckRoot = main.neck[0];
     this.rearing =
@@ -395,8 +479,10 @@ export class MotionController {
    * tail at rest. Use it to spawn or teleport a creature, or to take one back from a baked
    * animation.
    */
-  place(x: number, z: number, heading = this.heading, ground: Ground = FLAT): void {
+  place(x: number, z: number, heading = this.heading, ground: Ground = FLAT, water?: Water): void {
     this.position.set(x, ground(x, z).height, z);
+    this.medium = 'land';
+    this.targetY = undefined;
     this.heading = heading;
     this.speed = 0;
     this.yawRate = 0;
@@ -418,13 +504,30 @@ export class MotionController {
         plantToes(leg.roll, foot, leg.footLift, heading, (x, z) => ground(x, z).height);
       }
     }
+    // Put in water deep enough to swim, a swimmer starts afloat: at the surface if it also
+    // walks, else halfway down.
+    const depth = this.depthAt(ground, water, x, z);
+    if (this.swims && depth > this.swimDepth) {
+      this.enterMedium('water', ground);
+      this.events.length = 0;
+      const bed = ground(x, z).height;
+      this.swimY = this.walks ? bed + depth : bed + depth / 2;
+      this.stepSwim(0, bed, bed + depth);
+    }
     this.applyPose(ground);
     for (const [i, spring] of this.springs.entries())
       this.springs[i] = this.makeSpring(spring.bones, spring.stiffness, spring.swish);
   }
 
-  /** Walk toward a point on the ground. `speed` in m/s (default: the temperament's pace). */
-  moveTo(target: { x: number; z: number } | null, options: { speed?: number } = {}): void {
+  /**
+   * Walk toward a point on the ground. `speed` in m/s (default: the temperament's pace). A `y`
+   * is the height a swimmer dives or rises to (10.3); walkers ignore it.
+   */
+  moveTo(
+    target: { x: number; y?: number; z: number } | null,
+    options: { speed?: number } = {},
+  ): void {
+    this.targetY = target && typeof target.y === 'number' ? target.y : undefined;
     if (!target) {
       this.target = null;
       this.desiredSpeed = 0;
@@ -432,11 +535,15 @@ export class MotionController {
     }
     this.target = new Vector3(target.x, 0, target.z);
     this.desiredSpeed = options.speed ?? this.paceSpeed();
+    this.atPace = options.speed === undefined;
   }
+  /** Whether `moveTo` was given no speed, so it keeps the pace of the medium it is in. */
+  private atPace = false;
 
   /** Keep moving at a speed and heading (radians), with no target. */
   drive(speed: number, heading?: number): void {
     this.target = null;
+    this.atPace = false;
     this.desiredSpeed = Math.max(0, speed);
     if (heading !== undefined) this.driveHeading = heading;
   }
@@ -474,7 +581,10 @@ export class MotionController {
       target,
       start: this.time,
       duration: Math.max(0.05, def.hooks.duration(def.params) * this.timeScale),
-      events: [...(def.hooks.events?.(def.params) ?? [])].sort((a, b) => a.at - b.at),
+      // A leap's events wait for its arc (`planLeap`), which needs the ground.
+      events: def.hooks.leap
+        ? []
+        : [...(def.hooks.events?.(def.params) ?? [])].sort((a, b) => a.at - b.at),
       rng: createRng(this.compiled.seed).stream(`act.${id}.${this.actionCount++}`),
       progress: -1,
     };
@@ -524,7 +634,7 @@ export class MotionController {
         `no gait "${id}" for this creature; it has ${this.motion.gaits.map((g) => g.id).join(', ') || 'none'}`,
       );
     const [lo, hi] = gait.froude;
-    const fr = Math.max(lo + 0.05, Math.min((lo + hi) / 2, 1, hi));
+    const fr = gait.natural ?? Math.max(lo + 0.05, Math.min((lo + hi) / 2, 1, hi));
     return Math.sqrt(fr * G * this.hipHeight);
   }
 
@@ -537,25 +647,48 @@ export class MotionController {
     this.lookTarget = point ? new Vector3(point.x, point.y, point.z) : null;
   }
 
-  /** Walking speed for the temperament, from its Froude number. */
+  /**
+   * The length its speeds scale with (m): its hip height, or for a legless body 0.12 of its
+   * length. Gait speeds are Froude numbers of it.
+   */
+  get lengthScale(): number {
+    return this.hipHeight;
+  }
+
+  /**
+   * Walking speed for the temperament, from its Froude number; in the water (or for a body that
+   * only swims) the natural speed of its slowest swimming gait.
+   */
   paceSpeed(): number {
+    const swim = this.gaitsIn('water')[0];
+    if (swim && (this.medium === 'water' || !this.walks)) return this.gaitSpeed(swim.id);
     const fr = TEMPERAMENTS[this.motion.temperament].walk;
     return Math.sqrt(fr * G * this.hipHeight);
   }
 
-  /** Fastest speed any of its gaits allows. */
+  /**
+   * Fastest speed any of its gaits allows. Gaits that keep a foot down top out at a Froude number
+   * of 1.5; a gait with flight (a run, a gallop) goes to the top of its range.
+   */
   maxSpeed(): number {
-    const fr = Math.max(...this.motion.gaits.map((g) => g.froude[1]), 0.5);
-    return Math.sqrt(Math.min(fr, 1.5) * G * this.hipHeight);
+    const land = this.gaitsIn('land');
+    const fr = Math.max(...(land.length > 0 ? land : this.motion.gaits).map(gaitTop), 0.5);
+    return Math.sqrt(fr * G * this.hipHeight);
+  }
+
+  /** Fastest speed in the water (m/s): the top of its swimming gaits, or 0 if it cannot swim. */
+  swimSpeed(): number {
+    const fr = Math.max(0, ...this.gaitsIn('water').map((g) => g.froude[1]));
+    return Math.sqrt(fr * G * this.hipHeight);
   }
 
   /** Advances by `dt` seconds and poses the skeleton. Returns events since the last update. */
-  update(dt: number, input: { ground?: Ground } = {}): MotionEvent[] {
+  update(dt: number, input: { ground?: Ground; water?: Water } = {}): MotionEvent[] {
     const ground = input.ground ?? FLAT;
     this.accumulator += Math.min(dt, 0.25);
     let steps = 0;
     while (this.accumulator >= STEP && steps < 30) {
-      this.step(STEP, ground);
+      this.step(STEP, ground, input.water);
       this.accumulator -= STEP;
       steps++;
     }
@@ -565,10 +698,17 @@ export class MotionController {
     return events;
   }
 
-  private step(dt: number, ground: Ground): void {
+  private step(dt: number, ground: Ground, water?: Water): void {
     this.time += dt;
     const temperament = TEMPERAMENTS[this.motion.temperament];
+    const leaping = this.current;
+    if (leaping?.hooks.leap && !leaping.leap) this.planLeap(leaping, ground);
     this.updateGoals();
+    if (leaping?.leap && !leaping.leap.landed) {
+      this.stepLeap(leaping.leap, dt, ground);
+      this.stepParts(dt, ground);
+      return;
+    }
 
     // Steering.
     let wantSpeed = this.goals.stop ? 0 : this.desiredSpeed;
@@ -598,32 +738,44 @@ export class MotionController {
     this.speed += Math.max(-accel * dt, Math.min(accel * dt, wantSpeed - this.speed));
     if (this.speed < 1e-4 && wantSpeed === 0) this.speed = 0;
     const forward = new Vector3(Math.sin(this.heading), 0, Math.cos(this.heading));
+    // A swimmer that cannot walk turns back rather than beach itself.
+    if (this.medium === 'water' && !this.walks) {
+      const x = this.position.x + forward.x * this.speed * dt;
+      const z = this.position.z + forward.z * this.speed * dt;
+      if (this.depthAt(ground, water, x, z) <= this.swimDepth) this.speed = 0;
+    }
     this.position.addScaledVector(forward, this.speed * dt);
+
+    // Water deep enough to swim in, for a creature that swims, takes it off its feet (10.3).
+    const depth = this.depthAt(ground, water, this.position.x, this.position.z);
+    const swimming = this.swims && depth > this.swimDepth;
+    if (swimming !== (this.medium === 'water'))
+      this.enterMedium(swimming ? 'water' : 'land', ground);
+    if (this.medium === 'water') {
+      const bed = ground(this.position.x, this.position.z).height;
+      this.stepSwim(dt, bed, bed + depth);
+      this.stepParts(dt, ground);
+      return;
+    }
     this.position.y = ground(this.position.x, this.position.z).height;
 
     // Gait from speed (Froude number), switching walk to trot near 0.5.
     const froude = (this.speed * this.speed) / (G * this.hipHeight);
-    const legGaits = this.motion.gaits.filter((g) => !g.spine);
-    if (legGaits.length > 1 && !this.lockedGait) {
-      const best = legGaits.reduce((a, g) =>
-        froude >= g.froude[0] &&
-        froude <= g.froude[1] &&
-        (a.froude[0] > froude || a.froude[1] < froude || g.froude[0] > a.froude[0])
-          ? g
-          : a,
-      );
-      if (best !== this.gait) {
-        this.gait = best;
-        this.events.push({ type: 'gait', time: this.time, gait: best.id });
-        this.retimeLegs();
-      }
-    }
+    this.chooseGait(
+      this.gaitsIn('land').filter((g) => !g.spine),
+      froude,
+    );
 
     if (this.compiled.rig.posture === 'legless') {
       this.stepSlither(dt, ground);
     } else {
       this.stepLegs(dt, ground, froude);
     }
+    this.stepParts(dt, ground);
+  }
+
+  /** Springs, grips, flares and wings, which run whatever the body is doing. */
+  private stepParts(dt: number, ground: Ground): void {
     this.stepSprings(dt, ground);
     // Pincers snap shut fast (about 0.08 s); with `nearest`, only on the target's side.
     const grip = Math.max(-1, Math.min(1, this.goals.grip ?? 0));
@@ -636,6 +788,314 @@ export class MotionController {
     if (this.compiled.rig.wings.length > 0) {
       const want = Math.max(0, Math.min(1, this.goals.wings ?? this.wingGoal));
       this.spread = damp(this.spread, want, 7.5 / this.timeScale, dt);
+    }
+  }
+
+  /**
+   * The gait among `gaits` whose speed range holds this Froude number, preferring the one that
+   * starts fastest; the legs ease into it over a stride or two (`easeOffsets`).
+   */
+  private chooseGait(gaits: readonly GaitInfo[], froude: number): void {
+    if (gaits.length < 2 || this.lockedGait) return;
+    const best = gaits.reduce((a, g) =>
+      froude >= g.froude[0] &&
+      froude <= g.froude[1] &&
+      (a.froude[0] > froude || a.froude[1] < froude || g.froude[0] > a.froude[0])
+        ? g
+        : a,
+    );
+    if (best === this.gait) return;
+    this.gait = best;
+    this.events.push({ type: 'gait', time: this.time, gait: best.id });
+  }
+
+  /** Its gaits for a medium, slowest first. */
+  private gaitsIn(medium: 'land' | 'water' | 'air'): GaitInfo[] {
+    return this.motion.gaits.filter((g) => (g.medium ?? 'land') === medium);
+  }
+
+  /** Whether it has a gait for water, and one for land. */
+  private get swims(): boolean {
+    return this.motion.gaits.some((g) => g.medium === 'water');
+  }
+  private get walks(): boolean {
+    return this.motion.gaits.some((g) => (g.medium ?? 'land') === 'land');
+  }
+
+  /** Depth of water at (x, z): its surface above the ground there, 0 where there is none. */
+  private depthAt(ground: Ground, water: Water | undefined, x: number, z: number): number {
+    const w = water?.(x, z);
+    return w ? Math.max(0, w.surface - ground(x, z).height) : 0;
+  }
+
+  /** The torso's thickest radius (m). */
+  private get girth(): number {
+    let r = 0;
+    for (const b of this.compiled.rig.spine) r = Math.max(r, this.compiled.bones.radii[b] ?? 0);
+    return Math.max(r, 0.02 * this.compiled.scale);
+  }
+
+  /**
+   * Water this deep takes it off its feet: about its hip height for a walker, a little more than
+   * its girth for a legless body (docs/design/10.3-swimming.md).
+   */
+  private get swimDepth(): number {
+    return this.compiled.rig.posture === 'legless' ? 1.6 * this.girth : 0.85 * this.hipHeight;
+  }
+
+  /** Into the water or out of it: the gait for that medium, feet down again on land. */
+  private enterMedium(medium: 'land' | 'water', ground: Ground): void {
+    this.medium = medium;
+    this.events.push({ type: 'medium', time: this.time, medium });
+    // Heading somewhere at its own pace: the pace of the new medium.
+    if (this.atPace && this.target) this.desiredSpeed = this.paceSpeed();
+    const gaits = this.gaitsIn(medium);
+    const gait = (medium === 'land' ? gaits.find((g) => !g.spine) : undefined) ?? gaits[0];
+    if (gait && !this.lockedGait && gait !== this.gait) {
+      this.gait = gait;
+      this.retimeLegs();
+      this.events.push({ type: 'gait', time: this.time, gait: gait.id });
+    }
+    this.trail.length = 0;
+    if (medium === 'water') {
+      this.swimY = this.position.y + this.restBodyY;
+      this.airY = 0;
+      return;
+    }
+    // Out onto land: every foot finds the ground under its hip.
+    this.position.y = ground(this.position.x, this.position.z).height;
+    this.pitch = 0;
+    for (const leg of this.legs) {
+      const foot = this.neutralAt(leg, this.heading, leg.planted);
+      foot.y = ground(foot.x, foot.z).height + leg.footLift;
+      leg.liftoff.copy(foot);
+      leg.target.copy(foot);
+      leg.swinging = false;
+      leg.armed = true;
+    }
+  }
+
+  /**
+   * Swimming (docs/design/10.3-swimming.md). The body holds a height in the water: at the surface
+   * for paddlers and for walkers not asked to dive, else where it is or where `moveTo` asks,
+   * pitching toward it, never out of the water or into the bed. A wave runs down the body into
+   * the tail at a frequency from a Strouhal number of 0.3; legs paddle or trail; fins beat.
+   */
+  private stepSwim(dt: number, bed: number, surface: number): void {
+    this.chooseGait(this.gaitsIn('water'), this.froudeNow());
+    const gait = this.gait;
+    const style = gait?.swim ?? 'body';
+    const h = this.hipHeight;
+    const r = this.girth;
+    // Paddlers and walkers float with the back awash; divers keep under.
+    const floats = style === 'legs' || (this.walks && this.targetY === undefined);
+    const top = surface - (floats ? 0.4 : 1.3) * r;
+    // Off the bed by the body's girth (and legs), and by how far a pitched snout or tail dips
+    // below the middle of the body.
+    const [ahead, behind] = this.reaches();
+    const dip = Math.max(0, -Math.sin(this.pitch) * ahead, Math.sin(this.pitch) * behind);
+    const bottom = bed + 1.3 * r + (this.legs.length > 0 ? 0.6 * h : 0) + dip;
+    const asked = this.targetY !== undefined ? this.targetY + this.restBodyY : undefined;
+    let want = asked ?? (floats ? top : this.swimY);
+    want = bottom > top ? top : Math.max(bottom, Math.min(top, want));
+    // Climb or dive at up to about 35° to the travel, easing out over the last stretch.
+    const gap = want - this.swimY;
+    const climb = Math.min(
+      Math.max(0.15 * Math.sqrt(G * h), this.speed * Math.tan(0.6)),
+      2 * Math.abs(gap),
+    );
+    const dy = Math.max(-climb * dt, Math.min(climb * dt, gap));
+    this.swimY += dy;
+    this.position.y = this.swimY - this.restBodyY;
+    this.bodyY = damp(this.bodyY, this.restBodyY, 8, dt);
+    this.pitch = damp(
+      this.pitch,
+      dt > 0 ? Math.atan2(dy / dt, Math.max(this.speed, 0.5)) : 0,
+      6,
+      dt,
+    );
+    this.roll = damp(this.roll, Math.max(-0.35, Math.min(0.35, -this.yawRate * 0.15)), 6, dt);
+    this.bend = damp(this.bend, Math.max(-0.5, Math.min(0.5, this.yawRate * 0.25)), 6, dt);
+    this.lean = damp(this.lean, 0, 4, dt);
+    this.airY = 0;
+
+    // Tail beat: Strouhal St = f·A/U ≈ 0.3, with A the tail's sweep; a slow beat at rest.
+    const length = this.spineLength();
+    const sweep = Math.max(0.05, gait?.amplitude ?? 0.2) * length;
+    const frequency = Math.max(0.4 / this.timeScale, (0.3 * this.speed) / sweep);
+    this.phase = (this.phase + frequency * dt) % 1;
+    const effort = Math.min(1, 0.35 + this.speed / Math.max(1e-3, this.gaitSpeedFor(gait)));
+    // The tail swings at its root far enough for its tip to cover the sweep (side to side), a
+    // third as far when legs or fins drive.
+    const tailLength = this.tailBones.reduce((sum, b) => sum + (this.pose.lengths[b] as number), 0);
+    const swing = Math.asin(Math.min(0.7, (0.5 * sweep) / Math.max(1e-3, tailLength)));
+    this.swimSwish =
+      (style === 'body' ? 1 : 0.35) * swing * effort * Math.sin(this.phase * Math.PI * 2);
+    this.finBeat = (style === 'fins' ? 0.7 : 0.12) * effort * Math.sin(this.phase * Math.PI * 2);
+
+    // Legs paddle in circles under the hips, or trail along the body.
+    for (const leg of this.legs) {
+      const foot = this.neutralAt(leg, this.heading, leg.planted);
+      if (style === 'legs') {
+        const a = (this.phase - leg.offset) * Math.PI * 2;
+        foot.addScaledVector(
+          scratch3.set(Math.sin(this.heading), 0, Math.cos(this.heading)),
+          Math.cos(a) * 0.3 * h,
+        );
+        foot.y += (0.25 + 0.15 * Math.sin(a)) * h;
+      } else {
+        foot.addScaledVector(
+          scratch3.set(Math.sin(this.heading), 0, Math.cos(this.heading)),
+          -0.35 * h,
+        );
+        foot.y += 0.45 * h;
+      }
+      leg.target.copy(foot);
+      leg.swinging = true;
+      leg.armed = false;
+    }
+  }
+
+  /** A gait's natural speed (m/s). */
+  private gaitSpeedFor(gait: GaitInfo | undefined): number {
+    return gait ? this.gaitSpeed(gait.id) : this.paceSpeed();
+  }
+
+  /**
+   * Plans a leaping action's arc on its first step, when the ground is known: where it lands (the
+   * target, or where its head meets it for a pounce, within its reach), then the lowest launch
+   * angle from the action's that clears the ground and any height it asks for. The action's
+   * length becomes the crouch, the flight and the recovery (docs/design/10.2-jumps.md).
+   */
+  private planLeap(c: RunningAction, ground: Ground): void {
+    const plan = c.hooks.leap?.(c.params);
+    if (!plan) return;
+    const h = this.hipHeight;
+    const from = new Vector3(this.position.x, 0, this.position.z);
+    from.y = ground(from.x, from.z).height;
+    const facing = new Vector3(Math.sin(this.heading), 0, Math.cos(this.heading));
+    const dir = c.target ? new Vector3(c.target.x - from.x, 0, c.target.z - from.z) : facing;
+    let distance = c.target ? dir.length() : plan.reach * h;
+    if (dir.lengthSq() < 1e-12) dir.copy(facing);
+    dir.normalize();
+    if (plan.head && c.target) {
+      // A pounce lands short, so the snout meets the target as the feet come down.
+      const head = this.pose.worldPos[mainHead(this.compiled.rig).head] as Vector3;
+      const ahead =
+        (head.x - this.position.x) * Math.sin(this.heading) +
+        (head.z - this.position.z) * Math.cos(this.heading);
+      distance -= Math.max(0, ahead) + 0.15 * h;
+    }
+    distance = Math.max(0.2 * h, Math.min(distance, plan.most * h));
+    const to = from.clone().addScaledVector(dir, distance);
+    to.y = ground(to.x, to.z).height;
+    const drop = to.y - from.y;
+    const height = plan.height ?? 0;
+    let rise = 0;
+    let flight = 0;
+    for (let deg = (plan.angle * 180) / Math.PI; deg <= 80; deg += 2.5) {
+      const angle = (deg * Math.PI) / 180;
+      const cos = Math.cos(angle);
+      const denom = 2 * cos * cos * (distance * Math.tan(angle) - drop);
+      if (denom <= 1e-9) continue;
+      const speed = Math.sqrt((G * distance * distance) / denom);
+      rise = speed * Math.sin(angle);
+      flight = distance / (speed * cos);
+      // The arc must clear the ground all the way, and the height asked for in its middle half.
+      let clear = true;
+      for (let k = 1; k < 16 && clear; k++) {
+        const t = (flight * k) / 16;
+        const y = from.y + rise * t - 0.5 * G * t * t;
+        const x = from.x + (dir.x * (distance * k)) / 16;
+        const z = from.z + (dir.z * (distance * k)) / 16;
+        const need = k >= 4 && k <= 12 ? Math.max(height, 0.05 * h) : 0.02 * h;
+        if (y < ground(x, z).height + need) clear = false;
+      }
+      if (clear) break;
+    }
+    const takeoff = plan.crouch * this.timeScale;
+    const land = takeoff + flight;
+    c.duration = land + plan.recover * this.timeScale;
+    const timing = { takeoff: takeoff / c.duration, land: land / c.duration };
+    c.events = [
+      ...(c.hooks.events?.(c.params, timing) ?? []),
+      { at: timing.takeoff, type: 'takeoff' },
+      { at: timing.land, type: 'land' },
+    ].sort((a, b) => a.at - b.at);
+    c.leap = {
+      from,
+      to,
+      heading: Math.atan2(dir.x, dir.z),
+      rise,
+      flight,
+      takeoff,
+      land,
+      timing,
+      airborne: false,
+      landed: false,
+    };
+  }
+
+  /**
+   * A leap's body: it crouches and turns to face where it lands, flies the arc with its legs
+   * tucked, then lands with every foot planted on the ground there.
+   */
+  private stepLeap(leap: Leap, dt: number, ground: Ground): void {
+    const elapsed = this.time - (this.current?.start ?? this.time);
+    const h = this.hipHeight;
+    if (elapsed < leap.takeoff) {
+      const turn = wrapAngle(leap.heading - this.heading);
+      const step = turn * Math.min(1, 10 * dt);
+      this.heading = wrapAngle(this.heading + step);
+      this.yawRate = damp(this.yawRate, step / dt, 8, dt);
+      this.speed = damp(this.speed, 0, 12, dt);
+      this.position.y = ground(this.position.x, this.position.z).height;
+      this.stepLegs(dt, ground, this.froudeNow());
+      return;
+    }
+    if (!leap.airborne) {
+      leap.airborne = true;
+      this.heading = leap.heading;
+      this.yawRate = 0;
+      for (const leg of this.legs) {
+        leg.swinging = true;
+        leg.armed = false;
+      }
+    }
+    const t = Math.min(elapsed - leap.takeoff, leap.flight);
+    const u = leap.flight > 0 ? t / leap.flight : 1;
+    this.position.lerpVectors(leap.from, leap.to, u);
+    this.position.y = leap.from.y + leap.rise * t - 0.5 * G * t * t;
+    this.speed = leap.from.distanceTo(leap.to) / Math.max(leap.flight, 1e-3);
+    // Nose up as it leaves, level at the top, down as it comes in.
+    this.pitch = damp(this.pitch, 0.25 * Math.cos(Math.PI * u), 10, dt);
+    this.roll = damp(this.roll, 0, 10, dt);
+    if (elapsed < leap.land) {
+      // Legs tuck under the body in the air and reach down again to land.
+      const tuck = Math.sin(Math.PI * u) * 0.25 * h;
+      for (const leg of this.legs) {
+        this.neutralAt(leg, this.heading, leg.planted);
+        leg.planted.y += tuck;
+        leg.target.copy(leg.planted);
+        leg.swingU = 0.5;
+      }
+      return;
+    }
+    // Down: every foot plants where it is, on the ground there.
+    leap.landed = true;
+    this.position.copy(leap.to);
+    this.speed = 0;
+    for (const leg of this.legs) {
+      const foot = this.neutralAt(leg, this.heading, leg.planted);
+      foot.y = ground(foot.x, foot.z).height + leg.footLift;
+      leg.liftoff.copy(foot);
+      leg.target.copy(foot);
+      leg.swinging = false;
+      leg.armed = true;
+      if (leg.roll) {
+        leg.roll.heel = 0;
+        plantToes(leg.roll, foot, leg.footLift, this.heading, (x, z) => ground(x, z).height);
+      }
     }
   }
 
@@ -690,6 +1150,7 @@ export class MotionController {
           params: c.params,
           target: c.target,
           rng: c.rng,
+          ...(c.leap ? { leap: c.leap.timing } : {}),
         },
         main,
       );
@@ -706,12 +1167,35 @@ export class MotionController {
     }
   }
 
+  /** Sets every leg's offset to the gait's at once (a locked gait, before it moves). */
   private retimeLegs(): void {
-    const wave = this.gait?.wave ?? 0.25;
+    for (const leg of this.legs) leg.offset = offsetFor(leg.rig, this.gait);
+    this.dutyNow = this.dutyAt(this.gait, this.froudeNow());
+  }
+
+  /**
+   * Eases each leg's offset toward the gait's, the shorter way round the cycle, by at most a
+   * quarter of a cycle per cycle, so a gait change never snaps a foot down or skips a step
+   * (docs/design/10.1-gaits.md).
+   */
+  private easeOffsets(frequency: number, dt: number): void {
+    const most = 0.25 * Math.max(frequency, 0.5) * dt;
     for (const leg of this.legs) {
-      const s = leg.rig.side === 'left' ? 0 : 1;
-      (leg as { offset: number }).offset = (((leg.rig.pair * wave + 0.5 * s) % 1) + 1) % 1;
+      const goal = offsetFor(leg.rig, this.gait);
+      const d = ((((goal - leg.offset) % 1) + 1.5) % 1) - 0.5;
+      if (d === 0) continue;
+      leg.offset = (((leg.offset + Math.max(-most, Math.min(most, d))) % 1) + 1) % 1;
     }
+  }
+
+  /** The gait's duty at a Froude number: its profile across its range, else its one value. */
+  private dutyAt(gait: GaitInfo | undefined, froude: number): number {
+    if (!gait) return 0.7;
+    return profileAt(gait, gait.duty, gait.dutyFast, froude);
+  }
+
+  private froudeNow(): number {
+    return (this.speed * this.speed) / (G * this.hipHeight);
   }
 
   /**
@@ -720,12 +1204,14 @@ export class MotionController {
    * faster instead. `strideScale` stands in for the gait's own `stride` multiplier.
    */
   private strideAt(gait: GaitInfo | undefined, froude: number, strideScale?: number): number {
-    const duty = gait?.duty ?? 0.7;
+    const duty = this.dutyAt(gait, froude);
     const h = this.hipHeight;
+    const scale = gait ? profileAt(gait, gait.stride, gait.strideFast, froude) : 1;
     const natural =
-      Math.max(0.35 * h, 2.3 * h * Math.max(froude, 0.01) ** 0.3) *
-      (strideScale ?? gait?.stride ?? 1);
-    return Math.min(natural, (2 * this.halfStride) / Math.max(duty, 0.3));
+      Math.max(0.35 * h, 2.3 * h * Math.max(froude, 0.01) ** 0.3) * (strideScale ?? scale);
+    // A gait with flight plants each foot briefly, so its stance may use a lower duty here.
+    const half = gait?.flight ? this.halfStrideLow : this.halfStride;
+    return Math.min(natural, (2 * half) / Math.max(duty, gait?.flight ? 0.15 : 0.3));
   }
 
   /**
@@ -746,7 +1232,10 @@ export class MotionController {
 
   private stepLegs(dt: number, ground: Ground, froude: number): void {
     const gait = this.gait;
-    const duty = gait?.duty ?? 0.7;
+    // Duty follows the gait's profile at this speed, and eases across a gait change.
+    const wantDuty = this.dutyAt(gait, froude);
+    this.dutyNow = this.dutyNow === wantDuty ? wantDuty : damp(this.dutyNow, wantDuty, 4, dt);
+    const duty = this.dutyNow;
     const h = this.hipHeight;
     const stride = this.strideAt(gait, froude);
     let frequency = this.speed / stride;
@@ -763,7 +1252,8 @@ export class MotionController {
       if (leg.swinging) continue;
       const local = (((this.phase - leg.offset) % 1) + 1) % 1;
       if (local >= duty) continue;
-      const budget = Math.max(0.05 * this.halfStride, this.halfStride + this.footAhead(leg));
+      const half = gait?.flight ? this.halfStrideLow : this.halfStride;
+      const budget = Math.max(0.05 * half, half + this.footAhead(leg));
       frequency = Math.max(frequency, (this.speed * (duty - local)) / budget);
     }
     frequency = Math.min(frequency, Math.max(unhurried * 3, minimum));
@@ -825,6 +1315,25 @@ export class MotionController {
       }
     }
 
+    // Flight: with every foot off the ground the body rises and falls on a ballistic arc that
+    // lands when the next foot does (docs/design/10.1-gaits.md); on the ground it settles.
+    const airborne = advanced && this.speed > 0.02 * h && this.legs.every((l) => l.swinging);
+    if (airborne && !this.airborne) {
+      let until = 1;
+      for (const leg of this.legs)
+        until = Math.min(until, (((leg.offset - this.phase) % 1) + 1) % 1);
+      this.airV = (G * until) / Math.max(frequency, 1e-3) / 2;
+    }
+    this.airborne = airborne;
+    if (airborne) {
+      this.airY = Math.max(0, this.airY + this.airV * dt);
+      this.airV -= G * dt;
+    } else {
+      this.airY = damp(this.airY, 0, 30, dt);
+      this.airV = 0;
+    }
+    this.easeOffsets(frequency, dt);
+
     // Planted feet roll: late in the stance the heel lifts (straight up, so the foot does not
     // slide) while the toes stay down; standing still, it settles.
     const rolling = advanced && this.speed > 0.02 * h;
@@ -881,7 +1390,10 @@ export class MotionController {
     this.roll = damp(this.roll, Math.max(-0.35, Math.min(0.35, wantRoll)), 10, dt);
     const mean =
       this.legs.reduce((a, l) => a + (footY(l) - l.footLift), 0) / Math.max(1, this.legs.length);
-    const crouch = TEMPERAMENTS[this.motion.temperament].crouch * this.restBodyY;
+    // A gait with flight runs low, which gives its legs the room for a longer stance.
+    const crouch =
+      TEMPERAMENTS[this.motion.temperament].crouch * this.restBodyY +
+      (gait?.flight ? LOW * h * Math.min(1, this.speed / Math.max(1e-3, this.paceSpeed())) : 0);
     let wantY = this.restBodyY - crouch + (mean - this.position.y) * 0.8;
     // Sink the body where a planted foot (in a dip) would be out of the leg's reach.
     let drop = 0;
@@ -903,6 +1415,9 @@ export class MotionController {
     wantY -= Math.min(drop, 0.5 * this.restBodyY);
     this.bodyY = damp(this.bodyY, wantY, 12, dt);
     this.bend = damp(this.bend, Math.max(-0.5, Math.min(0.5, this.yawRate * 0.25)), 6, dt);
+    // A runner leans into its speed, more toward the top of the gait's range.
+    const lean = gait?.lean ? ((gait.lean * Math.PI) / 180) * profileAt(gait, 0, 1, froude) : 0;
+    this.lean = damp(this.lean, lean, 4, dt);
   }
 
   private footError(leg: LegState): number {
@@ -964,6 +1479,25 @@ export class MotionController {
     }
   }
 
+  /**
+   * How far the snout reaches ahead of the body's middle, and the tail tip behind it (m), along
+   * the body at rest: what dips furthest when a swimmer pitches.
+   */
+  private reaches(): readonly [number, number] {
+    if (!this.reachCache) {
+      const r = this.compiled.rig;
+      const sum = (bones: readonly number[]) =>
+        bones.reduce((s, b) => s + (this.pose.lengths[b] as number), 0);
+      const torso = sum(r.spine) / 2;
+      this.reachCache = [
+        torso + sum(mainHead(r).neck) + sum([mainHead(r).head]),
+        torso + sum(this.tailBones),
+      ];
+    }
+    return this.reachCache;
+  }
+  private reachCache: readonly [number, number] | undefined;
+
   private spineLength(): number {
     const r = this.compiled.rig;
     let len = 0;
@@ -1003,7 +1537,7 @@ export class MotionController {
     // Sprawlers carry the body's side-to-side wave on into the tail.
     const moving = Math.min(1, this.speed / Math.max(1e-3, this.paceSpeed()));
     const wave =
-      this.compiled.rig.posture === 'sprawl'
+      this.compiled.rig.posture === 'sprawl' && this.medium !== 'water'
         ? Math.sin(this.phase * Math.PI * 2 - 1.2) * 0.15 * moving
         : 0;
     // A lash whips the tail or tentacle nearest the target; a grab reaches the two nearest
@@ -1043,7 +1577,11 @@ export class MotionController {
     for (const [k, spring] of this.springs.entries()) {
       const pts = spring.points;
       (pts[0] as Vector3).copy(this.pose.worldPos[spring.bones[0] as number] as Vector3);
-      const rest = this.restChain(spring.bones, spring.swish ? (this.goals.swish ?? 0) + wave : 0);
+      const swim = this.medium === 'water' ? this.swimSwish : 0;
+      const rest = this.restChain(
+        spring.bones,
+        spring.swish ? (this.goals.swish ?? 0) + wave + swim : 0,
+      );
       if (look && k === lasher) this.lashRest(spring, rest, look, lash, g.lashArc ?? Math.PI / 2);
       if (look && grab > 0 && (k === reach1 || k === reach2))
         this.reachRest(spring, rest, look, grab);
@@ -1142,7 +1680,8 @@ export class MotionController {
     (pose.pos[root] as Vector3).copy(this.position);
     (pose.rot[root] as Quaternion).setFromAxisAngle(UP, this.heading);
 
-    if (rig.posture === 'legless') {
+    // On land a legless body follows its trail; swimming, every body is posed as below.
+    if (rig.posture === 'legless' && this.medium === 'land') {
       this.applySlither(ground);
       // The main tail follows the trail; extra tails swing on their springs.
       if (this.springs.length > 0) {
@@ -1159,7 +1698,12 @@ export class MotionController {
     const spine0 = rig.spine[0] as number;
     const h = this.hipHeight;
     const moving = Math.min(1, this.speed / Math.max(1e-3, this.paceSpeed()));
-    const bob = -Math.cos(this.phase * Math.PI * 4) * 0.025 * h * moving;
+    // Gaits with flight rise and fall on their own arc (`airY`) instead of the walking bob;
+    // swimmers float.
+    const bob =
+      this.gait?.flight || this.medium === 'water'
+        ? 0
+        : -Math.cos(this.phase * Math.PI * 4) * 0.025 * h * moving;
     const sway =
       (rig.legs.length <= 2 ? Math.sin(this.phase * Math.PI * 2) * 0.02 * h * moving : 0) +
       (g.shift ?? 0) * h;
@@ -1167,14 +1711,14 @@ export class MotionController {
     const lunge = (g.reach ?? 0) * 0.12 * this.compiled.scale;
     (pose.pos[spine0] as Vector3).set(
       sway,
-      this.bodyY + bob - (g.crouch ?? 0) * h,
+      this.bodyY + bob + this.airY - (g.crouch ?? 0) * h,
       (pose.restPos[spine0] as Vector3).z + lunge,
     );
     const tilt = scratchQ3.setFromEuler(
-      scratchEuler.set(-this.pitch - (g.rear ?? 0), 0, this.roll, 'YXZ'),
+      scratchEuler.set(-this.pitch - (g.rear ?? 0) + this.lean, 0, this.roll, 'YXZ'),
     );
     (pose.rot[spine0] as Quaternion).premultiply(tilt);
-    const sprawl = rig.posture === 'sprawl';
+    const sprawl = rig.posture === 'sprawl' && this.medium !== 'water';
     const mainNeck = mainHead(rig).neck;
     // An upright front leans back against most of the body's pitch and rearing, so it stays
     // upright on slopes as a rider would (docs/design/9.2-legs-centaurs.md).
@@ -1183,14 +1727,32 @@ export class MotionController {
         scratchQ.setFromAxisAngle(X_AXIS, -0.8 * (this.pitch + (g.rear ?? 0))),
       );
     const bendBones = [...rig.spine.slice(1), ...mainNeck];
+    // A swimmer's body wave runs back from the head, growing toward the hips, into the tail.
+    const wave = this.medium === 'water' && this.gait?.swim !== 'legs' ? this.swimSwish * 0.3 : 0;
     const bendAt = (k: number) =>
       this.bend / Math.max(1, bendBones.length) +
-      (sprawl ? Math.sin(this.phase * Math.PI * 2 - k * 0.6) * 0.06 * moving : 0);
+      (sprawl ? Math.sin(this.phase * Math.PI * 2 - k * 0.6) * 0.06 * moving : 0) +
+      (wave !== 0
+        ? (wave / Math.max(1, bendBones.length)) *
+          (1 - k / Math.max(1, bendBones.length)) *
+          Math.cos(this.phase * Math.PI * 2 + k * 0.7)
+        : 0);
     bendBones.forEach((b, k) => {
       // Bends turn about the dorsal axis, which on an upright front is its own long axis.
       const axis = this.uprightFront && k >= rig.spine.length - 1 ? Y_AXIS : Z_AXIS;
       (pose.rot[b] as Quaternion).multiply(scratchQ.setFromAxisAngle(axis, -bendAt(k)));
     });
+    // A gallop or a bound flexes the back as the hind feet land and extends it as the fore feet
+    // do, spread over the torso's bones.
+    const flex = this.gait?.flex ?? 0;
+    if (flex > 0 && moving > 0 && rig.spine.length > 1) {
+      const hind = this.legs.find((l) => l.rig.pair === 0)?.offset ?? 0;
+      const angle = flex * 0.12 * moving * Math.cos(2 * Math.PI * (this.phase - hind));
+      for (const b of rig.spine.slice(1))
+        (pose.rot[b] as Quaternion).multiply(
+          scratchQ.setFromAxisAngle(X_AXIS, angle / (rig.spine.length - 1)),
+        );
+    }
     // Other necks bend with the main one, bone for bone, so the heads turn together.
     rig.heads.forEach((h, i) => {
       if (i === rig.main) return;
@@ -1266,8 +1828,34 @@ export class MotionController {
 
     this.applySprings();
     this.applyHelpers();
+    this.applyFins();
     this.solvePose();
     this.applyWings();
+  }
+
+  /**
+   * Fins and flippers beat up and down about the body's long axis while it swims, hard for a
+   * flipper stroke, gently for a fish's steering fins (docs/design/10.3-swimming.md).
+   */
+  private applyFins(): void {
+    if (this.finBeat === 0 || this.medium !== 'water') return;
+    const pose = this.pose;
+    for (const fin of this.compiled.rig.fins) {
+      const first = fin.bones[0] as number;
+      const parent = pose.parents[first] as number;
+      if (parent < 0) continue;
+      pose.solveBone(parent);
+      // The body's long axis in the parent's frame.
+      const axis = scratch1
+        .set(Math.sin(this.heading), 0, Math.cos(this.heading))
+        .applyQuaternion(scratchQ2.copy(pose.worldRot[parent] as Quaternion).invert())
+        .normalize();
+      const side = fin.side === 'left' ? 1 : fin.side === 'right' ? -1 : 0;
+      if (side === 0) continue;
+      (pose.rot[first] as Quaternion).premultiply(
+        scratchQ.setFromAxisAngle(axis, side * this.finBeat),
+      );
+    }
   }
 
   /**
@@ -1613,6 +2201,28 @@ export class MotionController {
     });
     this.solvePose();
   }
+}
+
+/** Where a leg's foot lands in a gait's cycle: the gait's own phases, else the wave formula. */
+function offsetFor(rig: LegRigData, gait: GaitInfo | undefined): number {
+  const s = rig.side === 'left' ? 0 : 1;
+  const own = gait?.phases?.[2 * rig.pair + s];
+  if (own !== undefined) return own;
+  const wave = gait?.wave ?? 0.25;
+  return (((rig.pair * wave + 0.5 * s) % 1) + 1) % 1;
+}
+
+/** A gait setting at a Froude number: `slow` to `fast` across the gait's range (10.1). */
+function profileAt(gait: GaitInfo, slow: number, fast: number | undefined, froude: number): number {
+  if (fast === undefined || fast === slow) return slow;
+  const [lo, hi] = gait.froude;
+  const t = hi > lo ? Math.max(0, Math.min(1, (froude - lo) / (hi - lo))) : 0;
+  return slow + (fast - slow) * t;
+}
+
+/** The highest Froude number a gait is used at: flight gaits their range's top, others 1.5. */
+function gaitTop(gait: GaitInfo): number {
+  return gait.flight ? gait.froude[1] : Math.min(gait.froude[1], 1.5);
 }
 
 function wrapAngle(a: number): number {

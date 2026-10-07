@@ -83,6 +83,14 @@ themes `dragon`, `aquatic`, `eldritch` and `beast`; `generate --requires air,wat
 attacks per head and armour; `docs/design/9.6-variation.md`). Gate 9 passed: suites A and B
 20/20 valid and matched blind (suite B 20/20 meeting `expects`), variation 12/12, fuzz and budgets
 met (`eval/runs/2026-10-07-gate9/`). `analyze --summary` and `patch --out` came from its feedback.
+Then 10.1 (gait modules give per-leg footfalls, duty and stride profiles, a natural speed, hip
+ranges, postures and spine flex; `run`, `gallop` and `bound`; gaits with flight lift the body on
+a ballistic arc; legs ease into a new gait; `docs/design/10.1-gaits.md`) and 10.2 (a `leap` hook:
+the controller plans and flies a ballistic arc over the game's ground; `jump` and `pounce`,
+`takeoff` and `land`; leaping clips keep root motion; `docs/design/10.2-jumps.md`) and 10.3
+(`water` beside `ground`; `swim.undulate`, `swim.paddle` and `swim.flap`; floating, diving and
+climbing out; `head_underwater`, `hits_bed`, `speed.swim`; scenarios' `"water"`, `withLake`,
+`openSea`; `docs/design/10.3-swimming.md`).
 
 ## Repo map
 
@@ -121,7 +129,7 @@ pnpm spawnforge render examples/ridgeback-stalker.json --labels   # PNG contact 
 pnpm spawnforge render examples/grey-wolf.json --views head --jaw 0.8   # the head, mouth open (--blink 1 shuts the eyes)
 pnpm spawnforge render examples/ash-dragon.json --pose spread   # wings open (they rest folded)
 pnpm spawnforge analyze examples/ridgeback-stalker.json --scenario examples/scenarios/stalk-and-bite.json
-                              # scripted motion (targets, a course, timed calls); render takes it too
+                              # scripted motion (targets, a course, water, timed calls); render takes it too
 pnpm render:examples          # re-render examples/*.png after changing a blueprint or the pipeline
 pnpm fuzz [count] [quality]   # compile random blueprints from the schema (the PoC gate runs 1,000)
 pnpm budgets                  # compile time, triangles, draw calls and motion cost of the examples

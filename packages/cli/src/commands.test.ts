@@ -158,7 +158,7 @@ describe('analyze with a scenario', () => {
     expect(shape.errors.map((e) => e.path)).toEqual(['scenario.calls[0].do']);
     const action = analyze({
       blueprint,
-      scenario: { calls: [{ at: 0, do: 'act', action: 'pounce' }] },
+      scenario: { calls: [{ at: 0, do: 'act', action: 'pinch' }] },
     });
     expect(action.ok).toBe(false);
     if (action.ok) return;

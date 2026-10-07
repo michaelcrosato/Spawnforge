@@ -6,11 +6,11 @@ import { strength } from '../compile/anatomy.ts';
 import { type CompiledCreature, compileCreature, type Quality } from '../compile/compile.ts';
 import { CROSS_SCALE, isUprightFront } from '../compile/skeleton.ts';
 import { allEyes, mainHead } from '../compile/types.ts';
-import { type Ground, MotionController } from '../motion/controller.ts';
+import { type Ground, MotionController, type Water } from '../motion/controller.ts';
 import { applyRest } from '../motion/face.ts';
 import { Pose } from '../motion/pose.ts';
-import { testCourse } from '../motion/terrain.ts';
-import type { ActionModule, PartModule, PatternModule, Registry } from '../registry.ts';
+import { openSea, testCourse } from '../motion/terrain.ts';
+import type { ActionModule, GaitModule, PartModule, PatternModule, Registry } from '../registry.ts';
 import { measureBody } from '../variation/generate.ts';
 
 const G = 9.81;
@@ -19,9 +19,24 @@ const DENSITY = 1000;
 /** Steps per second (cycles per second) above which a gait reads as jitter at 30 frames a second. */
 const MAX_STEPS = 8;
 
+/** A swimmer's checks: at the surface, and diving toward the bed of shallow water. */
+export interface SwimCheck {
+  readonly gait: string;
+  /** m/s. */
+  readonly speed: number;
+  /**
+   * For a creature that swims at the surface (paddlers, and walkers that swim): how far the top
+   * of its head sits above the water on average (m); below 0 it swims with its head under.
+   */
+  readonly headClearance?: number;
+  /** Diving to the bed: the deepest any part of the body went into it (m), and which. */
+  readonly bed: { readonly worst: number; readonly part?: string; readonly time?: number };
+}
+
 /** One motion run: the worst of each problem, with where and when it happened. */
 export interface MotionCheck {
-  readonly ground: 'flat' | 'rough';
+  /** Where it ran: on flat or rough ground, or in open water for a body that only swims. */
+  readonly ground: 'flat' | 'rough' | 'water';
   readonly gait: string;
   /** m/s. */
   readonly speed: number;
@@ -111,10 +126,14 @@ export interface Analysis {
     /** The longest tentacle, root to tip (m); only with tentacles. */
     readonly tentacleReach?: number;
   };
-  /** m/s: the temperament's walking pace, and the top speed its gaits allow. */
+  /**
+   * m/s: the temperament's walking pace, and the top speed its gaits allow; for a swimmer, its
+   * top speed in the water (a body that only swims has its swimming pace as `walk`).
+   */
   readonly speed: {
     readonly walk: number;
     readonly max: number;
+    readonly swim?: number;
     readonly gaits: readonly { readonly id: string; readonly from: number; readonly to: number }[];
   };
   /**
@@ -148,6 +167,8 @@ export interface Analysis {
     readonly feet: number;
   };
   readonly motion: readonly MotionCheck[];
+  /** For a swimmer (docs/design/10.3-swimming.md): how it holds its head and keeps off the bed. */
+  readonly swimming?: SwimCheck;
   /** Plausibility warnings, each with an id-based path and a fix. */
   readonly warnings: readonly Issue[];
   /** A paragraph describing the creature. */
@@ -224,18 +245,26 @@ export function analyzeCreature(
   // --- Speed and reach -------------------------------------------------------------------
   const controller = new MotionController(compiled, { registry });
   const hip = Math.max(0.05 * L, compiled.rig.hipHeight);
+  const swim = controller.swimSpeed();
   const speed = {
     walk: controller.paceSpeed(),
     max: controller.maxSpeed(),
+    ...(swim > 0 ? { swim } : {}),
     gaits: compiled.motion.gaits.map((g) => ({
       id: g.id,
-      from: Math.sqrt(g.froude[0] * G * hip),
-      to: Math.sqrt(Math.min(g.froude[1], 1.5) * G * hip),
+      from: Math.sqrt(g.froude[0] * G * controller.lengthScale),
+      // Gaits that keep a foot down top out at Froude 1.5; runs, gallops and swimming go to
+      // their top.
+      to: Math.sqrt(
+        (g.flight || g.medium === 'water' ? g.froude[1] : Math.min(g.froude[1], 1.5)) *
+          G *
+          controller.lengthScale,
+      ),
     })),
   };
   // --- Cadence: fast steps read as jitter --------------------------------------------------
   const cadence = compiled.motion.gaits
-    .filter((g) => !g.spine)
+    .filter((g) => !g.spine && g.medium !== 'water')
     .map((g) => ({ id: g.id, ...controller.cadence(g.id) }))
     .map(({ id, speed, stride, steps }) => ({ id, speed, stride, steps }));
   // A skittish creature is meant to scurry, so its fast steps are no mistake.
@@ -331,89 +360,105 @@ export function analyzeCreature(
 
   // --- Motion on flat and rough ground ------------------------------------------------------
   const motion: MotionCheck[] = [];
-  if (compiled.motion.gaits.length > 0) {
+  /** How many runs, first in `motion`, are at the walking pace (the rest run faster gaits). */
+  let paceRuns = 0;
+  const walks = compiled.motion.gaits.some((g) => (g.medium ?? 'land') === 'land');
+  const swims = compiled.motion.gaits.some((g) => g.medium === 'water');
+  if (walks) {
     const rough = testCourse(options.terrainSeed ?? 3, 0.25 * hip, 0);
-    for (const [name, ground] of [
+    const grounds = [
       ['flat', () => ({ height: 0 })],
       ['rough', rough],
-    ] as const) {
+    ] as const;
+    for (const [name, ground] of grounds)
       motion.push(runMotion(compiled, registry, name, ground, torsoDepth(spec)));
+    paceRuns = motion.length;
+    // Every other legged gait at its own natural speed, so a gallop's feet are checked too.
+    const paced = new Set(motion.map((m) => m.gait));
+    for (const gait of compiled.motion.gaits)
+      if (!gait.spine && gait.medium !== 'water' && !paced.has(gait.id))
+        for (const [name, ground] of grounds)
+          motion.push(runMotion(compiled, registry, name, ground, torsoDepth(spec), gait.id));
+  } else if (swims) {
+    // A body that only swims is checked in open water.
+    const sea = openSea(L);
+    motion.push(
+      runMotion(compiled, registry, 'water', sea.ground, torsoDepth(spec), undefined, sea.water),
+    );
+    paceRuns = 1;
+  }
+  for (const [k, check] of motion.entries()) {
+    const where = WHERE[check.ground];
+    // The faster gaits' runs check the feet and the ground; how limbs, heads, wings and
+    // tentacles clear each other is judged at the walking pace, where a creature spends its
+    // time (a gallop's gathered legs brush the belly, as real ones do).
+    const paced = k < paceRuns;
+    if (check.footSlide.worst > 0.02 * L && check.footSlide.leg)
+      warn(
+        `limbs[id=${check.footSlide.leg.replace(/\.[LR]$/, '')}]`,
+        'foot_slide',
+        `a planted foot slides ${(check.footSlide.worst * 100).toFixed(1)} cm ${where} (${check.gait})`,
+        'lengthen the leg or move it so the foot sits under the hip (attach.at, splay)',
+      );
+    const path = sectionPath(check.penetration.part ?? '');
+    const known = warnings.some((w) => w.path === path && w.code === 'below_ground');
+    if (check.penetration.worst > 0.03 * L && check.penetration.part && !known)
+      warn(
+        path,
+        'ground_penetration',
+        `the ${check.penetration.part} goes ${(check.penetration.worst * 100).toFixed(1)} cm into the ground ${where}`,
+        spec.limbs.some((l) => l.role === 'leg')
+          ? 'lengthen the legs, raise the section (pitch, curl) or make it slimmer'
+          : 'raise the section (pitch, curl), lower the torso pitch or make it slimmer',
+      );
+    if (check.overstretch.worst > 0.15 && check.overstretch.leg)
+      warn(
+        `limbs[id=${check.overstretch.leg.replace(/\.[LR]$/, '')}]`,
+        'overstretch',
+        `the leg is stretched past its reach ${Math.round(check.overstretch.worst * 100)}% of the time ${where}`,
+        'lengthen it, or give the gait a smaller stride',
+      );
+    if (paced && check.heads.worst > 0.01 * L && check.heads.between) {
+      const [a, b] = check.heads.between;
+      warn(
+        'body.neck',
+        'head_intersection',
+        `${a} and ${b} pass ${(check.heads.worst * 100).toFixed(1)} cm into each other ${where}`,
+        `fan the necks wider (body.neck.spread about ${Math.min(170, Math.round(spec.body.neck.spread + 15))}) or make them longer, or the heads smaller`,
+      );
     }
-    for (const check of motion) {
-      const where = check.ground === 'flat' ? 'on flat ground' : 'on rough ground';
-      if (check.footSlide.worst > 0.02 * L && check.footSlide.leg)
-        warn(
-          `limbs[id=${check.footSlide.leg.replace(/\.[LR]$/, '')}]`,
-          'foot_slide',
-          `a planted foot slides ${(check.footSlide.worst * 100).toFixed(1)} cm ${where} (${check.gait})`,
-          'lengthen the leg or move it so the foot sits under the hip (attach.at, splay)',
-        );
-      const path = sectionPath(check.penetration.part ?? '');
-      const known = warnings.some((w) => w.path === path && w.code === 'below_ground');
-      if (check.penetration.worst > 0.03 * L && check.penetration.part && !known)
-        warn(
-          path,
-          'ground_penetration',
-          `the ${check.penetration.part} goes ${(check.penetration.worst * 100).toFixed(1)} cm into the ground ${where}`,
-          spec.limbs.some((l) => l.role === 'leg')
-            ? 'lengthen the legs, raise the section (pitch, curl) or make it slimmer'
-            : 'raise the section (pitch, curl), lower the torso pitch or make it slimmer',
-        );
-      if (check.overstretch.worst > 0.15 && check.overstretch.leg)
-        warn(
-          `limbs[id=${check.overstretch.leg.replace(/\.[LR]$/, '')}]`,
-          'overstretch',
-          `the leg is stretched past its reach ${Math.round(check.overstretch.worst * 100)}% of the time ${where}`,
-          'lengthen it, or give the gait a smaller stride',
-        );
-      if (check.heads.worst > 0.01 * L && check.heads.between) {
-        const [a, b] = check.heads.between;
-        warn(
-          'body.neck',
-          'head_intersection',
-          `${a} and ${b} pass ${(check.heads.worst * 100).toFixed(1)} cm into each other ${where}`,
-          `fan the necks wider (body.neck.spread about ${Math.min(170, Math.round(spec.body.neck.spread + 15))}) or make them longer, or the heads smaller`,
-        );
-      }
-      if (check.intersection.worst > 0.01 * L && check.intersection.between) {
-        const [a, b] = check.intersection.between;
-        const id = a.replace(/\.[LR]$/, '');
-        const limb = spec.limbs.find((l) => l.id === id);
-        const depth = check.intersection.worst;
-        // Splay that moves the foot sideways by the overlap, with some room to spare.
-        const splay =
-          Math.ceil((Math.atan2(depth * 1.5, (limb?.length ?? 0.5) * L) * 180) / Math.PI / 5) * 5;
-        const section = ['torso', 'neck', 'head', 'jaw', 'tail', 'spine'].includes(b);
-        const cm = (depth * 100).toFixed(0);
-        // Which remedy works depends on what meets (gate 8's agents found the old list misled):
-        // splay clears a leg from the body; two legs of a pair meet under it, where only
-        // attaching them higher or thinning them helps; front and hind legs meet in the stride.
-        const pair = !section && b.replace(/\.[LR]$/, '') === id;
-        const angle = limb?.angle;
-        warn(
-          `limbs[id=${id}]`,
-          'limb_intersection',
-          `${a} (its ${check.intersection.segment ?? 'lower'} segment) passes ${(depth * 100).toFixed(1)} cm into ${b} ${where}`,
-          section
-            ? `move it clear of the ${b} by about ${cm} cm: about ${splay}° more splay works best; or a smaller gait stride or stepHeight, or a thinner ${b === 'torso' ? 'body' : b}. On a broad body a lower attach.angle can make it worse`
-            : pair
-              ? `the pair meets under the body: attach both higher up the side (a lower attach.angle${angle !== undefined ? `, e.g. ${Math.max(0, Math.round(angle - 15))}` : ''}) or make them thinner (radius); splay barely helps here`
-              : `the front and hind legs meet in the stride: a smaller gait stride, attach.at further apart, or thinner legs, by about ${cm} cm`,
-        );
-      }
+    if (paced && check.intersection.worst > 0.01 * L && check.intersection.between) {
+      const [a, b] = check.intersection.between;
+      const id = a.replace(/\.[LR]$/, '');
+      const limb = spec.limbs.find((l) => l.id === id);
+      const depth = check.intersection.worst;
+      // Splay that moves the foot sideways by the overlap, with some room to spare.
+      const splay =
+        Math.ceil((Math.atan2(depth * 1.5, (limb?.length ?? 0.5) * L) * 180) / Math.PI / 5) * 5;
+      const section = ['torso', 'neck', 'head', 'jaw', 'tail', 'spine'].includes(b);
+      const cm = (depth * 100).toFixed(0);
+      // Which remedy works depends on what meets (gate 8's agents found the old list misled):
+      // splay clears a leg from the body; two legs of a pair meet under it, where only
+      // attaching them higher or thinning them helps; front and hind legs meet in the stride.
+      const pair = !section && b.replace(/\.[LR]$/, '') === id;
+      const angle = limb?.angle;
+      warn(
+        `limbs[id=${id}]`,
+        'limb_intersection',
+        `${a} (its ${check.intersection.segment ?? 'lower'} segment) passes ${(depth * 100).toFixed(1)} cm into ${b} ${where}`,
+        section
+          ? `move it clear of the ${b} by about ${cm} cm: about ${splay}° more splay works best; or a smaller gait stride or stepHeight, or a thinner ${b === 'torso' ? 'body' : b}. On a broad body a lower attach.angle can make it worse`
+          : pair
+            ? `the pair meets under the body: attach both higher up the side (a lower attach.angle${angle !== undefined ? `, e.g. ${Math.max(0, Math.round(angle - 15))}` : ''}) or make them thinner (radius); splay barely helps here`
+            : `the front and hind legs meet in the stride: a smaller gait stride, attach.at further apart, or thinner legs, by about ${cm} cm`,
+      );
     }
   }
 
   // --- Wings through the body, walking and standing spread (docs/design/9.3-wings-fins.md) ----
   if (compiled.rig.wings.length + compiled.rig.fins.length > 0) {
     const checks: [WingHit, string][] = [
-      ...motion.map(
-        (m) =>
-          [m.wings, m.ground === 'flat' ? 'walking' : 'walking on rough ground'] as [
-            WingHit,
-            string,
-          ],
-      ),
+      ...motion.slice(0, paceRuns).map((m) => [m.wings, MOVING[m.ground]] as [WingHit, string]),
       [wingHits(compiled, standing(compiled, 0.5)), 'half spread'],
       [wingHits(compiled, standing(compiled, 1)), 'spread'],
     ];
@@ -443,13 +488,9 @@ export function analyzeCreature(
   // --- Tentacles through the body while walking (docs/design/9.4-tentacles-parts.md) --------
   if (compiled.rig.tentacles.length > 0) {
     const checks: [TentacleHit, string][] = [
-      ...motion.map(
-        (m) =>
-          [m.tentacles, m.ground === 'flat' ? 'walking' : 'walking on rough ground'] as [
-            TentacleHit,
-            string,
-          ],
-      ),
+      ...motion
+        .slice(0, paceRuns)
+        .map((m) => [m.tentacles, MOVING[m.ground]] as [TentacleHit, string]),
       [tentacleHits(compiled, standing(compiled, 0)), 'standing'],
     ];
     const [hit, when] = checks.reduce((a, b) => (b[0].worst > a[0].worst ? b : a));
@@ -464,6 +505,25 @@ export function analyzeCreature(
     }
   }
 
+  // --- Swimming: heads above the surface, bodies off the bed (docs/design/10.3-swimming.md) ---
+  const swimming = swims ? runSwim(compiled, registry, torsoDepth(spec)) : undefined;
+  if (swimming?.headClearance !== undefined && swimming.headClearance < -0.01 * L)
+    warn(
+      'body.neck',
+      'head_underwater',
+      `the head swims ${(-swimming.headClearance * 100).toFixed(1)} cm under the surface (${swimming.gait})`,
+      'raise the neck (a higher neck.pitch) or the head (head.pitch), so it holds its head out of the water',
+    );
+  if (swimming && swimming.bed.worst > 0.03 * L && swimming.bed.part) {
+    const path = sectionPath(swimming.bed.part);
+    warn(
+      path,
+      'hits_bed',
+      `the ${swimming.bed.part} goes ${(swimming.bed.worst * 100).toFixed(1)} cm into the bed when it dives`,
+      'make it slimmer, or raise it (pitch, curl) so it clears what is under the body',
+    );
+  }
+
   return {
     name: compiled.name,
     parts: compiled.partSizes,
@@ -473,8 +533,85 @@ export function analyzeCreature(
     reach,
     stability,
     motion,
+    ...(swimming ? { swimming } : {}),
     warnings: dedupe(warnings),
     description: describeCreature(spec, registry, measurements, speed),
+  };
+}
+
+const WHERE: Record<MotionCheck['ground'], string> = {
+  flat: 'on flat ground',
+  rough: 'on rough ground',
+  water: 'in the water',
+};
+const MOVING: Record<MotionCheck['ground'], string> = {
+  flat: 'walking',
+  rough: 'walking on rough ground',
+  water: 'swimming',
+};
+
+/**
+ * A swimmer's checks (docs/design/10.3-swimming.md). In open water at its swimming pace, a
+ * creature that swims at the surface should hold its head out. Then, in water a few body
+ * depths deep, it dives at the bed ahead, which nothing of its body should go into.
+ */
+function runSwim(compiled: CompiledCreature, registry: Registry, depth: number): SwimCheck {
+  const dt = 1 / 120;
+  const rig = compiled.rig;
+  const bones = compiled.bones;
+  const L = compiled.scale;
+  const sections = bones.names
+    .map((_, i) => i)
+    .filter((i) => ['torso', 'neck', 'head', 'jaw', 'tail'].includes(bones.sections[i] as string));
+  const head = mainHead(rig).head;
+
+  // At the surface.
+  const sea = openSea(L);
+  const c = new MotionController(compiled, { registry });
+  c.place(0, 0, 0, sea.ground, sea.water);
+  const speed = c.paceSpeed();
+  c.drive(speed, 0);
+  const atSea = { ground: sea.ground, water: sea.water };
+  for (let i = 0; i < 360; i++) c.update(dt, atSea);
+  const gait = c.gait;
+  const walks = compiled.motion.gaits.some((g) => (g.medium ?? 'land') === 'land');
+  const floats = gait?.swim === 'legs' || walks;
+  let clearance = 0;
+  let frames = 0;
+  for (let i = 0; i < 240; i++) {
+    c.update(dt, atSea);
+    const p = c.pose.worldPos[head] as Vector3;
+    clearance += p.y + (bones.radii[head] ?? 0);
+    frames++;
+  }
+
+  // Diving at the bed of water a few times deeper than it needs to swim.
+  let girth = 0.02 * L;
+  for (const b of rig.spine) girth = Math.max(girth, bones.radii[b] ?? 0);
+  const deep = 6 * girth + (rig.posture === 'legless' ? 0 : 1.7 * rig.hipHeight);
+  const shallow: Ground = () => ({ height: -deep });
+  const d = new MotionController(compiled, { registry });
+  d.place(0, 0, 0, shallow, sea.water);
+  d.moveTo({ x: 0, y: -deep, z: 40 * L });
+  const bed = { worst: 0 } as { worst: number; part?: string; time?: number };
+  const a = new Vector3();
+  for (let i = 0; i < 720; i++) {
+    d.update(dt, { ground: shallow, water: sea.water });
+    if (i % 4 !== 0) continue;
+    for (const s of sections) {
+      const r = (bones.radii[s] ?? 0) * (bones.sections[s] === 'torso' ? depth : 1);
+      for (const p of [d.pose.worldPos[s] as Vector3, d.pose.tail(s, a)]) {
+        const into = -deep - (p.y - r);
+        if (into > bed.worst)
+          Object.assign(bed, { worst: into, part: bones.owners[s] ?? 'body', time: d.time });
+      }
+    }
+  }
+  return {
+    gait: gait?.id ?? 'none',
+    speed,
+    ...(floats ? { headClearance: clearance / Math.max(1, frames) } : {}),
+    bed,
   };
 }
 
@@ -621,20 +758,28 @@ function torsoDepth(spec: CreatureSpec): number {
   return CROSS_SCALE[spec.body.torso.crossSection][1] * (legless && s > 0 ? 1 - 0.1 * s : 1);
 }
 
-/** Walks the creature at its pace for two gait cycles after a warm-up, watching for problems. */
+/**
+ * Walks the creature at its pace (or runs one gait at its natural speed) for two gait cycles
+ * after a warm-up, watching for problems.
+ */
 function runMotion(
   compiled: CompiledCreature,
   registry: Registry,
-  ground: 'flat' | 'rough',
+  ground: MotionCheck['ground'],
   height: Ground,
   /** The torso's half-height as a share of its radius (`torsoDepth`). */
   depth = 1,
+  gait?: string,
+  water?: Water,
 ): MotionCheck {
   const c = new MotionController(compiled, { registry });
-  const speed = c.paceSpeed();
+  const input = water ? { ground: height, water } : { ground: height };
+  if (water) c.place(0, 0, 0, height, water);
+  if (gait) c.lockGait(gait);
+  const speed = gait ? c.gaitSpeed(gait) : c.paceSpeed();
   c.drive(speed, 0.4);
   const dt = 1 / 120;
-  for (let i = 0; i < 240; i++) c.update(dt, { ground: height });
+  for (let i = 0; i < 240; i++) c.update(dt, input);
   const rig = compiled.rig;
   const bones = compiled.bones;
   const legBones = rig.legs.map((l) => l.bones);
@@ -671,7 +816,7 @@ function runMotion(
   const e = new Vector3();
   const f = new Vector3();
   while (cycles < 2 && c.time - start < 8) {
-    c.update(dt, { ground: height });
+    c.update(dt, input);
     if (c.phase < last) cycles++;
     last = c.phase;
     frames++;
@@ -1141,11 +1286,19 @@ export function describeCreature(
       return module?.describe?.(layer.params) ?? layer.type;
     }),
   ];
-  const gaits = speed.gaits.map((g) => g.id);
+  const water = new Set(
+    spec.motion.gaits
+      .filter((g) => (registry.get('gait', g.type) as GaitModule | undefined)?.medium === 'water')
+      .map((g) => g.type),
+  );
+  const gaits = speed.gaits.map((g) => g.id).filter((g) => !water.has(g));
+  const swims = speed.swim !== undefined ? ` and swims up to ${speed.swim.toFixed(1)} m/s` : '';
   const moves =
-    legs === 0
-      ? `It slithers at about ${speed.walk.toFixed(1)} m/s`
-      : `It walks at about ${speed.walk.toFixed(1)} m/s${gaits.length > 1 ? ` and ${gaits.at(-1)}s up to ${speed.max.toFixed(1)} m/s` : ''}`;
+    gaits.length === 0 && speed.swim !== undefined
+      ? `It swims at about ${speed.walk.toFixed(1)} m/s, up to ${speed.swim.toFixed(1)} m/s`
+      : legs === 0
+        ? `It slithers at about ${speed.walk.toFixed(1)} m/s${swims}`
+        : `It walks at about ${speed.walk.toFixed(1)} m/s${gaits.length > 1 ? ` and ${gaits.at(-1)}s up to ${speed.max.toFixed(1)} m/s` : ''}${swims}`;
   // Ambient actions (breathing, blinks) run all the time; the description lists what it can do.
   const actions = spec.motion.actions
     .map((a) => a.type)

@@ -95,6 +95,8 @@ describe('format 0.2', () => {
     expect(check({ extends: 'quadruped' }).creature?.motion.gaits.map((g) => g.type)).toEqual([
       'walk',
       'trot',
+      'bound',
+      'gallop',
     ]);
   });
 
@@ -110,33 +112,32 @@ describe('format 0.2', () => {
       ],
       parts: [{ id: 'ruff', type: 'frill' }],
       skin: { fur: { length: 0.04 } },
-      motion: { actions: ['bite', 'jump'] },
+      motion: { gaits: ['walk', 'fly'], actions: ['bite', 'jump'] },
     });
     expect(dragon.ok).toBe(true);
     expect(dragon.warnings).toEqual([]);
-    // Fur (8.4), several heads (9.1), wings (9.3), tentacles (9.4) and frills (9.5) are built;
-    // jumping is not yet (10.2).
-    expect(dragon.notBuilt?.map((i) => i.path).sort()).toEqual(['motion.actions[type=jump]']);
+    // Fur (8.4), several heads (9.1), wings (9.3), tentacles (9.4), frills (9.5) and jumping
+    // (10.2) are built; flying is not yet (10.4).
+    expect(dragon.notBuilt?.map((i) => i.path).sort()).toEqual(['motion.gaits[type=fly]']);
     expect(dragon.notBuilt?.[0]?.fix).toMatch(/^keep it/);
   });
 
   it('leaves out what something else implies', () => {
-    // Wings imply flying, which is not built yet (10.4), and neither is jumping: the jump is
-    // listed, flying only when the blueprint writes it.
-    const implied = check({
-      extends: 'quadruped',
-      limbs: [{ id: 'wing', role: 'wing' }],
-      motion: { actions: ['jump'] },
-    });
-    expect(implied.notBuilt?.map((i) => i.path).sort()).toEqual(['motion.actions[type=jump]']);
-    // Stances are drawn (8.2); swimming is not yet.
+    // Wings imply flying, which is not built yet (10.4): it is listed only when the blueprint
+    // writes it.
+    const implied = check({ extends: 'quadruped', limbs: [{ id: 'wing', role: 'wing' }] });
+    expect(implied.notBuilt).toBeUndefined();
+    // Stances (8.2) and swimming (10.3) are built; flying is not yet.
     const written = check({
       extends: 'quadruped',
-      limbs: [{ id: 'foreleg', foot: 'foot.hoof', stance: 'unguligrade' }],
-      motion: { media: { water: true } },
+      limbs: [
+        { id: 'foreleg', foot: 'foot.hoof', stance: 'unguligrade' },
+        { id: 'wing', role: 'wing' },
+      ],
+      motion: { media: { water: true, air: true } },
     });
     expect(written.notBuilt?.map((i) => i.message)).toEqual([
-      'swimming is in the format but not built yet (plan milestone 10.3), so it is left out for now',
+      'flying is in the format but not built yet (plan milestone 10.4), so it is left out for now',
     ]);
     const stalks = check({
       extends: 'serpent',
@@ -228,15 +229,15 @@ describe('format 0.2', () => {
     const compiled = compileCreature(result.creature, registry, { quality: 'low' });
     expect(compiled.rig.legs).toHaveLength(4);
     expect(compiled.rig.arms).toHaveLength(0);
-    // Two heads (9.1), the wings with the part on them (9.3), the tentacle with its (9.4) and
-    // the frill (9.5) are built; the jump is reported.
+    // Two heads (9.1), the wings with the part on them (9.3), the tentacle with its (9.4), the
+    // frill (9.5) and the jump (10.2) are built.
     expect(compiled.rig.heads.map((h) => h.id)).toEqual(['head', 'head.R1']);
     expect(compiled.rig.wings.map((w) => w.id)).toEqual(['wing.L', 'wing.R']);
     expect(compiled.rig.tentacles.map((t) => t.id)).toEqual(['tail-arm.L', 'tail-arm.R']);
     expect(compiled.markers.map((m) => m.id)).toEqual(
       expect.arrayContaining(['barb.L', 'hook.L', 'hook.R', 'ruff']),
     );
-    expect(compiled.warnings.map((w) => w.path)).toEqual(['motion.actions[type=jump]']);
+    expect(compiled.warnings).toEqual([]);
   });
 
   // The recipes in docs/blueprint.md, "Recipes for the new bodies", written out.

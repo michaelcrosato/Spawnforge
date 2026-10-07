@@ -12,6 +12,8 @@ import {
   type ModuleByKind,
   type ModuleKind,
   MotionController,
+  motionData,
+  openSea,
   type Quality,
   resolveBlueprint,
   validateBlueprint,
@@ -123,28 +125,37 @@ describe('module harness: patterns', () => {
  * example that has it (a pinch needs pincers, which no body plan carries).
  */
 function bodyWith(kind: 'gaits' | 'actions', id: string): CompiledCreature {
-  for (const plan of registry.ids('bodyPlan')) {
-    const compiled = compile({ format: FORMAT, extends: plan });
-    if (compiled.motion[kind].some((m) => m.id === id)) return compiled;
-  }
   const dir = new URL('../../../examples/', import.meta.url);
-  for (const file of readdirSync(dir)
-    .filter((f) => f.endsWith('.json'))
-    .sort()) {
-    const compiled = compile(JSON.parse(readFileSync(new URL(file, dir), 'utf8')));
+  const candidates = [
+    ...registry.ids('bodyPlan').map((plan) => ({ format: FORMAT, extends: plan })),
+    ...readdirSync(dir)
+      .filter((f) => f.endsWith('.json'))
+      .sort()
+      .map((file) => JSON.parse(readFileSync(new URL(file, dir), 'utf8'))),
+  ];
+  for (const blueprint of candidates) {
+    // Only compile what can have it: the motion data before the skeleton leaves out only the
+    // gaits a hip height or posture rules out.
+    const spec = resolveBlueprint(blueprint, registry);
+    if (!motionData(spec, registry)[kind].some((m) => m.id === id)) continue;
+    const compiled = compileCreature(spec, registry, { quality: 'low' });
     if (compiled.motion[kind].some((m) => m.id === id)) return compiled;
   }
   throw new Error(`no body plan or example has ${id}`);
 }
 
 /** Runs a controller and returns its final pose and the worst milliseconds per frame. */
-function runFor(controller: MotionController, seconds: number) {
+function runFor(
+  controller: MotionController,
+  seconds: number,
+  input: Parameters<MotionController['update']>[1] = {},
+) {
   const events: string[] = [];
   let worst = 0;
   let total = 0;
   const frames = Math.round(seconds * 60);
   for (let i = 0; i < frames; i++) {
-    const [fired, ms] = timed(() => controller.update(1 / 60));
+    const [fired, ms] = timed(() => controller.update(1 / 60, input));
     total += ms;
     worst = Math.max(worst, ms);
     for (const e of fired) if (e.type !== 'footstep') events.push(e.type);
@@ -164,11 +175,15 @@ describe('module harness: gaits', () => {
     '%s moves its body within budget, the same twice',
     (id) => {
       const compiled = bodyWith('gaits', id);
+      // Swimming gaits run in open water.
+      const water = compiled.motion.gaits.find((g) => g.id === id)?.medium === 'water';
+      const sea = water ? openSea(compiled.scale) : undefined;
       const go = () => {
         const controller = new MotionController(compiled, { registry });
+        if (sea) controller.place(0, 0, 0, sea.ground, sea.water);
         controller.lockGait(id);
         controller.drive(controller.gaitSpeed(id), 0);
-        const run = runFor(controller, 3);
+        const run = runFor(controller, 3, sea);
         return { ...run, z: controller.position.z, gait: controller.gait?.id };
       };
       const a = go();
@@ -179,6 +194,8 @@ describe('module harness: gaits', () => {
       expect(warm(a, b), 'motion ms per frame').toBeLessThan(MOTION_MS);
       expect(b.pose).toEqual(a.pose);
     },
+    // Finding a body for a gait no body plan has compiles examples until one does.
+    20_000,
   );
 });
 

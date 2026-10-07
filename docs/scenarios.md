@@ -38,6 +38,7 @@ creature's size, hip height and the height of its head, which tell you where to 
 | --- | --- | --- |
 | `ground` | `"flat"`, or `"course"`: uneven ground with bumps up to 25 cm, flat within 1.5 m of the origin | `"flat"` |
 | `seed` | Seed of the course's bumps | `1` |
+| `water` | `"none"`; `"sea"`: deep water everywhere (the surface at height 0, the bed four body lengths and 2 m down); or a lake, `{ "x", "z", "radius", "depth" }` in metres, carved into the ground with its surface at 0 | `"none"` |
 | `duration` | Seconds to run, 0.5 to 60 | `6` |
 | `start` | `x` and `z` in metres, `heading` in degrees (0 faces +Z, 90 faces +X) | the origin, facing +Z |
 | `targets` | Named points, `[x, y, z]` in metres, that calls can aim at by name; renders mark them in amber | none |
@@ -48,7 +49,7 @@ Calls (a point is `[x, z]` on the ground or `[x, y, z]`, or a target's name):
 
 | `do` | Fields | What it does |
 | --- | --- | --- |
-| `moveTo` | `to` (a point), `speed` (m/s, default its walking pace) | Walks there and stops |
+| `moveTo` | `to` (a point), `speed` (m/s, default its pace on land or in water) | Walks or swims there and stops; with a height (`[x, y, z]` or a target) a diver dives or rises to it |
 | `follow` | `path` (up to 32 points), `speed` | Walks through the points in order, stopping at the last: a course |
 | `drive` | `speed` (m/s), `heading` (degrees) | Keeps moving with no destination |
 | `stop` | | Stops moving |
@@ -69,7 +70,7 @@ after the end.
 | --- | --- |
 | `end` | Where it ended: `x`, `z` (metres), `heading` (degrees), `speed` (m/s) |
 | `distance` | Metres walked along the ground |
-| `events` | Every event but footsteps, with `time` in seconds: `arrive` (at a `moveTo` point or each course point), `gait` (a change of gait), `action-start`, `action-end` and the action's own (`bite-contact`, `roar-peak`) |
+| `events` | Every event but footsteps, with `time` in seconds: `arrive` (at a `moveTo` point or each course point), `gait` (a change of gait), `medium` (into the water or out onto land, with `medium`), `action-start`, `action-end` and the action's own (`bite-contact`, `roar-peak`, `takeoff`, `land`) |
 | `footsteps` | How many steps it took |
 | `gaits` | Gaits in the order used, each with when it began |
 | `targets` | Per target, the `closest` any snout came (metres) and when |
@@ -80,8 +81,9 @@ after the end.
 So a bite that lands shows a `bite-contact` event and a small `closest` for its target, and a
 course walked to the end shows `reached` equal to its point count.
 
-The filmstrip shows the frames, the targets as amber balls, the course's ground, and the events
-on a timeline below. Uneven ground has no grid; its facets show where the bumps are.
+The filmstrip shows the frames, the targets as amber balls, the course's ground, any water as a
+translucent sheet, and the events on a timeline below. Uneven ground has no grid; its facets
+show where the bumps are.
 
 ## Examples
 
@@ -89,3 +91,5 @@ on a timeline below. Uneven ground has no grid; its facets show where the bumps 
   up to a point, keeping its eyes on the prey, and bites it.
 - [`course.json`](../examples/scenarios/course.json): it follows a winding route over the uneven
   course.
+- [`swim-across.json`](../examples/scenarios/swim-across.json): a lake across the way; the river
+  crocodile walks in, swims across and climbs out the far side.

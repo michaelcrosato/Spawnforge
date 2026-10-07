@@ -7,6 +7,7 @@ import {
   MotionController,
   mainHead,
   testCourse,
+  withLake,
 } from '@spawnforge/core';
 import { basicPack } from '@spawnforge/modules';
 import {
@@ -22,7 +23,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 import { createBreeder } from './breed.ts';
 import { createEditor } from './editor.ts';
-import { FootstepRings, terrainMesh } from './terrain.ts';
+import { FootstepRings, terrainMesh, waterMesh } from './terrain.ts';
 
 const registry = createRegistry([basicPack]);
 const examples = import.meta.glob('../../../examples/*.json', {
@@ -89,9 +90,26 @@ async function main(): Promise<void> {
   sun.shadow.mapSize.set(2048, 2048);
   scene.add(sun, sun.target);
 
-  const course = testCourse(Number(params.get('terrain') ?? 1), 0.35, 2.5);
-  const ground = terrainMesh(course.height);
-  scene.add(ground);
+  // The course, with a lake off to one side for swimmers (10.3).
+  const LAKE = { x: 10, z: -4, radius: 4.5, depth: 2 };
+  const { ground: course, water } = withLake(
+    testCourse(Number(params.get('terrain') ?? 1), 0.35, 2.5),
+    LAKE,
+  );
+  const heightAt = (x: number, z: number) => course(x, z).height;
+  const ground = terrainMesh(heightAt);
+  scene.add(ground, waterMesh(LAKE));
+  const world = { ground: course, water };
+  /** Whether a creature can go to (x, z): only swimmers into deep water, only into it if they cannot walk. */
+  const reachable = (w: Walker, x: number, z: number) => {
+    const gaits = w.compiled.motion.gaits;
+    const swims = gaits.some((g) => g.medium === 'water');
+    const walks = gaits.some((g) => (g.medium ?? 'land') === 'land');
+    const sample = water(x, z);
+    const deep =
+      sample !== null && sample.surface - heightAt(x, z) > 0.5 * w.compiled.rig.hipHeight;
+    return deep ? swims : walks;
+  };
   const rings = new FootstepRings();
   scene.add(rings.group);
 
@@ -121,9 +139,12 @@ async function main(): Promise<void> {
     const { compiled, ms } = await compiler.compile(byName.get(name), quality);
     const creature = createCreatureObject(compiled, registry);
     const controller = new MotionController(compiled, { registry });
-    controller.position.set(at.x, course.height(at.x, at.z), at.z);
-    controller.heading = at.heading;
-    controller.update(0, { ground: course });
+    // A body that only swims starts in the lake.
+    const fish = !compiled.motion.gaits.some((g) => (g.medium ?? 'land') === 'land');
+    const x = fish ? LAKE.x + at.x * 0.5 : at.x;
+    const z = fish ? LAKE.z + at.z * 0.5 : at.z;
+    controller.place(x, z, at.heading, course, water);
+    controller.update(0, world);
     applyPose(creature, controller.pose);
     return { name, compiled, creature, controller, ms, rest: 0.5 } satisfies Walker;
   };
@@ -423,13 +444,9 @@ async function main(): Promise<void> {
         if (w.rest <= 0) {
           const angle = rng.float(0, Math.PI * 2);
           const distance = rng.float(2, 7);
-          c.moveTo(
-            {
-              x: THREE.MathUtils.clamp(c.position.x + Math.sin(angle) * distance, -14, 14),
-              z: THREE.MathUtils.clamp(c.position.z + Math.cos(angle) * distance, -14, 14),
-            },
-            { speed: speedFor(w) },
-          );
+          const x = THREE.MathUtils.clamp(c.position.x + Math.sin(angle) * distance, -14, 14);
+          const z = THREE.MathUtils.clamp(c.position.z + Math.cos(angle) * distance, -14, 14);
+          if (reachable(w, x, z)) c.moveTo({ x, z }, { speed: speedFor(w) });
           w.rest = rng.float(1, 4);
         }
       }
@@ -437,7 +454,7 @@ async function main(): Promise<void> {
         previous.copy(c.position);
         c.lookAt(watch.checked ? camera.position : null);
       }
-      for (const event of c.update(dt, { ground: course })) {
+      for (const event of c.update(dt, world)) {
         if (event.type === 'footstep' && event.position)
           rings.spawn(event.position, w.compiled.scale * 0.12);
         else if (w === focus && event.type !== 'footstep')

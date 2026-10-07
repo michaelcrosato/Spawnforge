@@ -179,6 +179,39 @@ Work in progress toward 0.2, phase by phase (see the plan's status table).
     hooks get `on`).
   - Recipes and tips for armour bands, eyes on stalks, moths, tusks on flat heads, fish, fliers'
     sizes, layer order and near-black creatures.
+- **Gaits that change with speed (10.1):** `run` (bipeds), `gallop` (transverse or rotary, with
+  a lead foreleg, the back flexing each stride) and `bound` (small four-legged bodies) are built.
+  Gait modules may give each leg's footfall (`offsets`), duty as a profile over the gait's speed
+  range, a natural speed, a hip-height range, postures and spine flexion. Blueprints may give a
+  gait's `duty` and `stride` as `[slowest, fastest]`. Gaits with flight lift the body on a
+  ballistic arc while every foot is off the ground, run 12% lower for a longer stance, and go to
+  the top of their Froude range: a horse gallops at 12 m/s, a raptor runs at 8.5. A gait change
+  keeps the phase and eases each leg into the new footfalls over a stride or two (plan 1 snapped
+  them). `analyze` runs every gait at its natural speed, checking feet and ground there; limb
+  clearance stays judged at the walking pace. Plan 1's gaits keep their numbers.
+- **Examples:** a wild horse (transverse gallop) and a sand cheetah (rotary gallop); the rust
+  raptor and terror bird run instead of walking fast.
+- **Jump and pounce (10.2):** actions may carry the body through the air: a `leap` hook says
+  how long to crouch and recover, the launch angle, the reach and any height to clear, and the
+  controller plans a ballistic arc to the target over the game's ground (steepening it to clear
+  rough ground or a hurdle), flies it with the legs tucked and lands with every foot planted.
+  `jump` (`power`, `crouch`, `height`) and `pounce` (lands with its head at the target and bites
+  as it lands) are built and fire `takeoff` and `land`. Leaping clips keep their root track
+  (`rootMotion` in the clip and the export's extras); runtime.md says how to apply or strip it.
+  `testCourse` with no flat start no longer returns NaN at the origin.
+- **Swimming (10.3):** `update(dt, { ground, water })` takes the water (`water(x, z)` gives its
+  surface or `null`), and creatures with swimming gaits take to it where it is deeper than about
+  their hip height (a `medium` event each way, and a `gait` event). `swim.undulate`,
+  `swim.paddle` and `swim.flap` are built: a body wave into the tail at a Strouhal number of 0.3,
+  legs paddling under the hips, long fins beating as flippers. Walkers and paddlers float with
+  their heads out; divers hold a depth or go to a height `moveTo` gives, never into the bed; a
+  body that only swims stops at the shore. In water a creature's pace is its swimming pace.
+  `analyze` checks swimmers in the water (`head_underwater`, `hits_bed`), gives `speed.swim` and
+  says how it swims; `rpg` gains `swim`. Scenarios take `"water"` (`"sea"` or a lake),
+  filmstrips of swimming gaits are drawn in open water, swimming cycles are baked in it, and the
+  runtime takes `water` in `update` and `spawn`. `withLake` and `openSea` make water for tests,
+  and the sandbox's course has a lake. Swimming is no longer listed under `notBuilt`.
+- **Examples:** a river crocodile and a sea turtle; the reed viper and the kraken swim too.
 
 ## 0.1.0
 

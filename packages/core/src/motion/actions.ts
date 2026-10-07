@@ -30,6 +30,36 @@ export interface ActionContext {
   readonly busy: boolean;
   /** Seeded random stream for this creature and action. */
   readonly rng: Rng;
+  /**
+   * For actions that leap (10.2): the progress at which the feet leave the ground and land
+   * again, once the controller has planned the arc.
+   */
+  readonly leap?: LeapTiming;
+}
+
+/** When a leap leaves the ground and lands, as shares of the action's progress (0 to 1). */
+export interface LeapTiming {
+  readonly takeoff: number;
+  readonly land: number;
+}
+
+/**
+ * How an action carries the body through the air (docs/design/10.2-jumps.md): the controller
+ * plans a ballistic arc from these and runs it on the game's ground.
+ */
+export interface LeapPlan {
+  /** Seconds (for a creature with 1 m hips) crouching before takeoff and absorbing the landing. */
+  readonly crouch: number;
+  readonly recover: number;
+  /** Launch angle above horizontal, radians; raised when the ground or `height` needs it. */
+  readonly angle: number;
+  /** How far it leaps with no target, and at most, in hip heights. */
+  readonly reach: number;
+  readonly most: number;
+  /** Least height (m) the arc clears above the ground between takeoff and landing. */
+  readonly height?: number;
+  /** Lands so the head meets the target (a pounce) rather than the feet. */
+  readonly head?: boolean;
 }
 
 /**
@@ -96,8 +126,16 @@ export interface ActionHooks {
   readonly ambient?: boolean;
   /** Seconds for a creature with 1 m hips (scaled by `timeScale`); unused for ambient actions. */
   duration(params: Readonly<Record<string, unknown>>): number;
-  /** Events fired as progress passes each `at` (0 to 1), e.g. `bite-contact` at the snap. */
-  events?(params: Readonly<Record<string, unknown>>): readonly { at: number; type: string }[];
+  /**
+   * Events fired as progress passes each `at` (0 to 1), e.g. `bite-contact` at the snap. Leaping
+   * actions get their takeoff and landing, so an event can fall on either.
+   */
+  events?(
+    params: Readonly<Record<string, unknown>>,
+    leap?: LeapTiming,
+  ): readonly { at: number; type: string }[];
+  /** Actions that leave the ground: how to leap (10.2). `takeoff` and `land` events come free. */
+  leap?(params: Readonly<Record<string, unknown>>): LeapPlan;
   /** Writes the goals for this moment into `out`. */
   goals(ctx: ActionContext, out: ActionGoals): void;
 }

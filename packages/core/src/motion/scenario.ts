@@ -3,8 +3,8 @@ import { z } from 'zod';
 import { formatPath, fromZodIssues, type Issue } from '../blueprint/issues.ts';
 import type { CompiledCreature } from '../compile/compile.ts';
 import type { ActionModule, Registry } from '../registry.ts';
-import { type Ground, MotionController, type MotionEvent } from './controller.ts';
-import { testCourse } from './terrain.ts';
+import { type Ground, MotionController, type MotionEvent, type Water } from './controller.ts';
+import { openSea, testCourse, withLake } from './terrain.ts';
 
 /**
  * Scenarios script a creature's motion for `render` and `analyze`: the ground, named targets,
@@ -80,6 +80,22 @@ export const ScenarioSchema = z.strictObject({
       '"flat", or "course": uneven ground with bumps up to 25 cm, flat within 1.5 m of the origin',
     ),
   seed: z.number().int().min(0).max(2147483647).default(1).describe("Seed of the course's bumps"),
+  water: z
+    .union([
+      z.enum(['none', 'sea']),
+      z
+        .strictObject({
+          x: range(-1000, 1000).default(0).describe('Centre, metres'),
+          z: range(-1000, 1000).default(6).describe('Centre, metres'),
+          radius: range(0.5, 200).default(4).describe('Metres to the shore'),
+          depth: range(0.1, 50).default(1.5).describe('Metres of water at the middle'),
+        })
+        .describe('A round lake carved into the ground, its surface at height 0'),
+    ])
+    .default('none')
+    .describe(
+      '"none", "sea" (deep water everywhere: the bed 4 body lengths and 2 m down, the surface at 0), or a lake',
+    ),
   duration: range(0.5, 60).default(6).describe('Seconds to run'),
   start: z
     .strictObject({
@@ -218,6 +234,7 @@ export interface ScenarioResult {
     readonly time: number;
     readonly action?: string;
     readonly gait?: string;
+    readonly medium?: string;
     readonly position?: readonly [number, number, number];
   }[];
   readonly footsteps: number;
@@ -238,6 +255,7 @@ export interface ScenarioResult {
 }
 
 const STEP = 1 / 120;
+type Aim = { x: number; y?: number; z: number };
 const DEG = Math.PI / 180;
 
 /**
@@ -247,12 +265,14 @@ const DEG = Math.PI / 180;
 export class ScenarioRun {
   readonly controller: MotionController;
   readonly ground: Ground;
+  /** The water, when the scenario has some. */
+  readonly water: Water | undefined;
   readonly scenario: Scenario;
   time = 0;
   private readonly compiled: CompiledCreature;
   private readonly pending: { call: ScenarioCall; index: number }[];
   private readonly targets: Map<string, Vector3>;
-  private course: { index: number; points: Vector3[]; next: number; speed?: number } | null = null;
+  private course: { index: number; points: Aim[]; next: number; speed?: number } | null = null;
   private readonly courses: { call: number; reached: number; of: number }[] = [];
   private readonly events: ScenarioResult['events'][number][] = [];
   private readonly gaits: { gait: string; from: number }[] = [];
@@ -267,10 +287,24 @@ export class ScenarioRun {
   constructor(compiled: CompiledCreature, registry: Registry, scenario: Scenario) {
     this.compiled = compiled;
     this.scenario = scenario;
-    this.ground = scenario.ground === 'course' ? testCourse(scenario.seed) : () => ({ height: 0 });
+    const land: Ground =
+      scenario.ground === 'course' ? testCourse(scenario.seed) : () => ({ height: 0 });
+    const water = scenario.water;
+    if (water === 'sea') {
+      const sea = openSea(compiled.scale);
+      this.ground = sea.ground;
+      this.water = sea.water;
+    } else if (typeof water === 'object') {
+      const lake = withLake(land, water);
+      this.ground = lake.ground;
+      this.water = lake.water;
+    } else {
+      this.ground = land;
+      this.water = undefined;
+    }
     this.controller = new MotionController(compiled, { registry });
     const { x, z, heading } = scenario.start;
-    this.controller.place(x, z, heading * DEG, this.ground);
+    this.controller.place(x, z, heading * DEG, this.ground, this.water);
     this.last.copy(this.controller.position);
     this.targets = new Map(
       Object.entries(scenario.targets).map(([n, p]) => [n, new Vector3(p[0], p[1], p[2])]),
@@ -295,7 +329,10 @@ export class ScenarioRun {
   /** Advances one fixed step (1/120 s); returns the events it fired. */
   step(): MotionEvent[] {
     if (this.done) return [];
-    const events = this.controller.update(STEP, { ground: this.ground });
+    const events = this.controller.update(STEP, {
+      ground: this.ground,
+      ...(this.water ? { water: this.water } : {}),
+    });
     this.time = Math.round((this.time + STEP) * 1e6) / 1e6;
     for (const e of events) {
       if (e.type === 'footstep') {
@@ -307,6 +344,7 @@ export class ScenarioRun {
         time: round(this.time),
         ...(e.action ? { action: e.action } : {}),
         ...(e.gait ? { gait: e.gait } : {}),
+        ...(e.medium ? { medium: e.medium } : {}),
         ...(e.position ? { position: e.position.map(round) as [number, number, number] } : {}),
       });
       if (e.type === 'arrive' && this.course) this.nextPoint();
@@ -363,12 +401,11 @@ export class ScenarioRun {
     if (call.do === 'moveTo' || call.do === 'drive' || call.do === 'stop') this.course = null;
     switch (call.do) {
       case 'moveTo': {
-        const p = this.point(call.to);
-        c.moveTo({ x: p.x, z: p.z }, call.speed === undefined ? {} : { speed: call.speed });
+        c.moveTo(this.aim(call.to), call.speed === undefined ? {} : { speed: call.speed });
         return;
       }
       case 'follow': {
-        const points = call.path.map((p) => this.point(p));
+        const points = call.path.map((p) => this.aim(p));
         this.course = {
           index: this.courses.length,
           points,
@@ -411,10 +448,18 @@ export class ScenarioRun {
       this.course = null;
       return;
     }
-    this.controller.moveTo(
-      { x: p.x, z: p.z },
-      course.speed === undefined ? {} : { speed: course.speed },
-    );
+    this.controller.moveTo(p, course.speed === undefined ? {} : { speed: course.speed });
+  }
+
+  /**
+   * Where `moveTo` heads: a point on the ground, or with a height when the call gave one (a
+   * named target or [x, y, z]), which a swimmer dives or rises to.
+   */
+  private aim(where: string | readonly number[]): Aim {
+    const p = this.point(where);
+    return typeof where === 'string' || where.length === 3
+      ? { x: p.x, y: p.y, z: p.z }
+      : { x: p.x, z: p.z };
   }
 
   private point(where: string | readonly number[]): Vector3 {
