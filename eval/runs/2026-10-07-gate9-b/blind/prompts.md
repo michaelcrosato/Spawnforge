@@ -1,0 +1,22 @@
+# Prompts
+
+- `b01-dragon`: A four-legged red dragon with bat-like wings, horns swept back, scaly skin and a row of spikes down its tail.
+- `b02-wyvern`: A wyvern: it walks on two legs, its wings are its arms, and it has a stinger on the tip of its tail.
+- `b03-giant-bat`: A giant bat with dark brown fur, big pointed ears and leathery wings.
+- `b04-hydra`: A hydra: a heavy four-legged body with five long necks, each ending in a snapping head.
+- `b05-cerberus`: Cerberus: a three-headed hound with paws and a black coat.
+- `b06-kraken`: A kraken from the deep sea: a bulbous body, eight long tentacles and huge eyes. It swims.
+- `b07-reef-shark`: A reef shark with a tall dorsal fin, two pectoral fins, a tall tail fin and rows of teeth. It lives in the water.
+- `b08-cave-spider`: A cave spider with eight legs, venomous fangs and a bulbous abdomen.
+- `b09-scorpion-king`: A scorpion king: six legs, a pair of arms ending in pincers, and a stinger tail curled up over its armoured back.
+- `b10-centaur`: A centaur: a horse-like body on four hooved legs, an upright human-like torso with two arms, and a horned head.
+- `b11-sea-turtle`: A sea turtle with a domed shell and four flippers. It swims.
+- `b12-quillback-boar`: A quillback boar: quills down its back, old scars on its hide, tusks and hooves.
+- `b13-frilled-lizard`: A frilled lizard with a wide frill around its neck that it opens when threatened.
+- `b14-stegosaur`: A stegosaur with a row of tall alternating plates along its back and spikes on its tail.
+- `b15-sail-back`: A sail-backed reptile with a tall sail of skin stretched over spines along its back.
+- `b16-giant-moth`: A giant moth with feathery antennae, four broad patterned wings and a furry body.
+- `b17-two-tailed-fox`: A fox with soft orange fur, paws and two bushy tails.
+- `b18-griffin`: A griffin: an eagle's head with a hooked beak, feathered wings, talons on its front legs and a lion's body behind.
+- `b19-armoured-burrower`: An armadillo-like burrower covered in bands of armour, with big digging claws.
+- `b20-glow-slug`: A giant glowing slug with slimy skin, glowing spots and eyes on stalks.

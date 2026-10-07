@@ -1,0 +1,137 @@
+{
+  "count": 1000,
+  "quality": "medium",
+  "valid": 976,
+  "compiled": 976,
+  "failures": 0,
+  "compileMs": {
+    "median": 338.4,
+    "p95": 764.3,
+    "max": 1287.7
+  },
+  "maxSkinTriangles": 31780,
+  "seconds": 381.2,
+  "failed": [],
+  "invalid": [
+    {
+      "index": 12,
+      "errors": [
+        "parts[id=teeth].type: \"teeth.row\" sits along the mouth, but the head has no jaw — set body.head.jaw to true"
+      ]
+    },
+    {
+      "index": 105,
+      "errors": [
+        "parts[id=teeth].type: \"teeth.row\" sits along the mouth, but the head has no jaw — set body.head.jaw to true"
+      ]
+    },
+    {
+      "index": 106,
+      "errors": [
+        "parts[id=teeth].type: \"teeth.row\" sits along the mouth, but the head has no jaw — set body.head.jaw to true"
+      ]
+    },
+    {
+      "index": 120,
+      "errors": [
+        "parts[id=teeth].type: \"teeth.row\" sits along the mouth, but the head has no jaw — set body.head.jaw to true"
+      ]
+    },
+    {
+      "index": 177,
+      "errors": [
+        "parts[id=teeth].type: \"teeth.row\" sits along the mouth, but the head has no jaw — set body.head.jaw to true"
+      ]
+    },
+    {
+      "index": 182,
+      "errors": [
+        "parts[id=teeth].type: \"teeth.row\" sits along the mouth, but the head has no jaw — set body.head.jaw to true"
+      ]
+    },
+    {
+      "index": 192,
+      "errors": [
+        "parts[id=tailfin].attach.on: this creature has no tail (expected a body section, limb id or part id: \"torso\", \"head\", \"spine\", \"jaw\", \"pectoral\", \"pelvic\", \"extraleg\", \"eyes\", \"dorsal\", \"part0\", \"part1\") — give body.tail a length above 0"
+      ]
+    },
+    {
+      "index": 241,
+      "errors": [
+        "parts[id=teeth].type: \"teeth.row\" sits along the mouth, but the head has no jaw — set body.head.jaw to true"
+      ]
+    },
+    {
+      "index": 298,
+      "errors": [
+        "parts[id=teeth].type: \"teeth.row\" sits along the mouth, but the head has no jaw — set body.head.jaw to true"
+      ]
+    },
+    {
+      "index": 386,
+      "errors": [
+        "parts[id=teeth].type: \"teeth.row\" sits along the mouth, but the head has no jaw — set body.head.jaw to true"
+      ]
+    },
+    {
+      "index": 455,
+      "errors": [
+        "limbs[id=arm].attach.on: limbs attach to a body section, not \"neck\" (expected one of \"torso\", \"tail\") — use \"torso\""
+      ]
+    },
+    {
+      "index": 458,
+      "errors": [
+        "parts[id=teeth].type: \"teeth.row\" sits along the mouth, but the head has no jaw — set body.head.jaw to true"
+      ]
+    },
+    {
+      "index": 549,
+      "errors": [
+        "parts[id=teeth].type: \"teeth.row\" sits along the mouth, but the head has no jaw — set body.head.jaw to true"
+      ]
+    },
+    {
+      "index": 564,
+      "errors": [
+        "parts[id=teeth].type: \"teeth.row\" sits along the mouth, but the head has no jaw — set body.head.jaw to true"
+      ]
+    },
+    {
+      "index": 664,
+      "errors": [
+        "parts[id=teeth].type: \"teeth.row\" sits along the mouth, but the head has no jaw — set body.head.jaw to true"
+      ]
+    },
+    {
+      "index": 704,
+      "errors": [
+        "parts[id=teeth].type: \"teeth.row\" sits along the mouth, but the head has no jaw — set body.head.jaw to true"
+      ]
+    },
+    {
+      "index": 721,
+      "errors": [
+        "parts[id=teeth].type: \"teeth.row\" sits along the mouth, but the head has no jaw — set body.head.jaw to true"
+      ]
+    },
+    {
+      "index": 738,
+      "errors": [
+        "parts[id=teeth].type: \"teeth.row\" sits along the mouth, but the head has no jaw — set body.head.jaw to true"
+      ]
+    },
+    {
+      "index": 762,
+      "errors": [
+        "parts[id=teeth].type: \"teeth.row\" sits along the mouth, but the head has no jaw — set body.head.jaw to true"
+      ]
+    },
+    {
+      "index": 873,
+      "errors": [
+        "parts[id=teeth].type: \"teeth.row\" sits along the mouth, but the head has no jaw — set body.head.jaw to true"
+      ]
+    }
+  ]
+}

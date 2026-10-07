@@ -1,0 +1,107 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Horned Centaur",
+  "seed": 1010,
+  "extends": "centaur",
+  "scale": 1.1,
+  "body": {
+    "head": {
+      "shape": "round",
+      "length": 0.2,
+      "radius": 0.09,
+      "brow": 0.4
+    },
+    "tail": {
+      "length": 0.85,
+      "radius": [0.05, 0.065, 0.05, 0.02],
+      "pitch": -50
+    },
+    "torso": {
+      "radius": [0.16, 0.19, 0.19, 0.17]
+    },
+    "muscle": 0.85
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "foot": {
+        "type": "foot.hoof",
+        "size": 1.25
+      },
+      "length": 0.85,
+      "radius": [0.07, 0.03]
+    },
+    {
+      "id": "hindleg",
+      "foot": {
+        "type": "foot.hoof",
+        "size": 1.25
+      },
+      "length": 0.9,
+      "radius": [0.09, 0.032]
+    },
+    {
+      "id": "arm",
+      "foot": "hand.grasp",
+      "length": 0.68,
+      "lift": 12,
+      "splay": 8
+    }
+  ],
+  "parts": [
+    {
+      "id": "horns",
+      "type": "horn.curved",
+      "attach": {
+        "on": "head",
+        "at": 0.85,
+        "angle": 75,
+        "side": "both"
+      },
+      "params": {
+        "length": 0.3,
+        "width": 0.04,
+        "curve": -70,
+        "ridges": 6
+      }
+    },
+    {
+      "id": "ears",
+      "type": "ear.pointed",
+      "attach": {
+        "on": "head",
+        "at": 0.8,
+        "angle": 100,
+        "side": "both"
+      },
+      "params": {
+        "length": 0.08,
+        "curve": 30
+      }
+    }
+  ],
+  "skin": {
+    "material": "skin",
+    "palette": {
+      "base": "#7a4a2a",
+      "belly": "#d0a888",
+      "accent": "#2e1a10"
+    },
+    "layers": [
+      {
+        "type": "countershade",
+        "softness": 0.4
+      },
+      {
+        "type": "countershade",
+        "color": "accent",
+        "height": 1,
+        "softness": 0.2,
+        "region": "tail"
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "calm"
+  }
+}

@@ -80,7 +80,9 @@ drive, opened by `display`; `render --flare`; `docs/design/9.5-coverings.md`) an
 for the new vocabulary: mutation keeps head, tail and limb counts and swaps feet by role,
 crossbreeding takes heads, tails, wings, fins and tentacles by role and count from one parent;
 themes `dragon`, `aquatic`, `eldritch` and `beast`; `generate --requires air,water`; `rpg`
-attacks per head and armour; `docs/design/9.6-variation.md`).
+attacks per head and armour; `docs/design/9.6-variation.md`). Gate 9 passed: suites A and B
+20/20 valid and matched blind (suite B 20/20 meeting `expects`), variation 12/12, fuzz and budgets
+met (`eval/runs/2026-10-07-gate9/`). `analyze --summary` and `patch --out` came from its feedback.
 
 ## Repo map
 

@@ -116,12 +116,14 @@ export default definePart({
     const { lean: _lean, turn: _turn, ...rest } = params;
     return rest;
   },
-  describe(p, { count }) {
+  describe(p, { count, on }) {
     const curve = Math.abs(p.curve as number);
     const shape =
       curve > 300 ? 'coiled' : curve > 120 ? 'sweeping' : curve > 25 ? 'curved' : 'straight';
     const size = (p.length as number) > 0.4 ? 'long ' : (p.length as number) < 0.1 ? 'short ' : '';
-    return count === 1 ? `a ${size}${shape} horn` : `${size}${shape} horns`;
+    // A horn on the jaw is a tusk, and one on the tail a stinger.
+    const noun = on === 'jaw' ? 'tusk' : on === 'tail' ? 'stinger' : 'horn';
+    return count === 1 ? `a ${size}${shape} ${noun}` : `${size}${shape} ${noun}s`;
   },
   hooks: {
     build(ctx, raw) {

@@ -1,0 +1,326 @@
+{
+  "budgets": {
+    "compileMs": 500,
+    "skinTriangles": 30000,
+    "partTriangles": 20000,
+    "membraneTriangles": 12000,
+    "drawCalls": 3,
+    "furDrawCalls": 1,
+    "membraneDrawCalls": 1,
+    "motionMsPerCreature": 0.1,
+    "motionMsFor50": 5
+  },
+  "examples": [
+    {
+      "name": "ash-dragon",
+      "lines": 71,
+      "compileMs": 219,
+      "chromeCompileMs": 227,
+      "skinTriangles": 17018,
+      "partTriangles": 6828,
+      "membraneTriangles": 1288,
+      "drawCalls": 4,
+      "motionMsPerFrame": 0.097
+    },
+    {
+      "name": "bog-troll",
+      "lines": 94,
+      "compileMs": 242,
+      "chromeCompileMs": 271,
+      "skinTriangles": 24802,
+      "partTriangles": 3510,
+      "membraneTriangles": 0,
+      "drawCalls": 3,
+      "motionMsPerFrame": 0.027
+    },
+    {
+      "name": "cave-bat",
+      "lines": 56,
+      "compileMs": 235,
+      "chromeCompileMs": 242,
+      "skinTriangles": 22022,
+      "partTriangles": 3888,
+      "membraneTriangles": 1552,
+      "drawCalls": 5,
+      "motionMsPerFrame": 0.066
+    },
+    {
+      "name": "cerberus",
+      "lines": 65,
+      "compileMs": 394,
+      "chromeCompileMs": 366,
+      "skinTriangles": 28420,
+      "partTriangles": 13002,
+      "membraneTriangles": 0,
+      "drawCalls": 4,
+      "motionMsPerFrame": 0.061
+    },
+    {
+      "name": "dune-scorpion",
+      "lines": 42,
+      "compileMs": 268,
+      "chromeCompileMs": 287,
+      "skinTriangles": 22082,
+      "partTriangles": 2720,
+      "membraneTriangles": 0,
+      "drawCalls": 3,
+      "motionMsPerFrame": 0.068
+    },
+    {
+      "name": "ember-beetle",
+      "lines": 37,
+      "compileMs": 293,
+      "chromeCompileMs": 374,
+      "skinTriangles": 27340,
+      "partTriangles": 822,
+      "membraneTriangles": 0,
+      "drawCalls": 3,
+      "motionMsPerFrame": 0.069
+    },
+    {
+      "name": "frilled-lizard",
+      "lines": 35,
+      "compileMs": 165,
+      "chromeCompileMs": 167,
+      "skinTriangles": 14396,
+      "partTriangles": 1744,
+      "membraneTriangles": 960,
+      "drawCalls": 4,
+      "motionMsPerFrame": 0.045
+    },
+    {
+      "name": "grey-wolf",
+      "lines": 59,
+      "compileMs": 206,
+      "chromeCompileMs": 230,
+      "skinTriangles": 20718,
+      "partTriangles": 8616,
+      "membraneTriangles": 0,
+      "drawCalls": 4,
+      "motionMsPerFrame": 0.062
+    },
+    {
+      "name": "griffin",
+      "lines": 79,
+      "compileMs": 293,
+      "chromeCompileMs": 247,
+      "skinTriangles": 20104,
+      "partTriangles": 4440,
+      "membraneTriangles": 1920,
+      "drawCalls": 5,
+      "motionMsPerFrame": 0.085
+    },
+    {
+      "name": "grove-centaur",
+      "lines": 38,
+      "compileMs": 389,
+      "chromeCompileMs": 288,
+      "skinTriangles": 28836,
+      "partTriangles": 2200,
+      "membraneTriangles": 0,
+      "drawCalls": 3,
+      "motionMsPerFrame": 0.049
+    },
+    {
+      "name": "hooded-cobra",
+      "lines": 30,
+      "compileMs": 68,
+      "chromeCompileMs": 88,
+      "skinTriangles": 9086,
+      "partTriangles": 216,
+      "membraneTriangles": 696,
+      "drawCalls": 4,
+      "motionMsPerFrame": 0.028
+    },
+    {
+      "name": "hydra",
+      "lines": 60,
+      "compileMs": 375,
+      "chromeCompileMs": 356,
+      "skinTriangles": 26490,
+      "partTriangles": 14672,
+      "membraneTriangles": 0,
+      "drawCalls": 3,
+      "motionMsPerFrame": 0.057
+    },
+    {
+      "name": "kraken",
+      "lines": 90,
+      "compileMs": 187,
+      "chromeCompileMs": 173,
+      "skinTriangles": 15872,
+      "partTriangles": 0,
+      "membraneTriangles": 0,
+      "drawCalls": 2,
+      "motionMsPerFrame": 0.07
+    },
+    {
+      "name": "luna-moth",
+      "lines": 69,
+      "compileMs": 325,
+      "chromeCompileMs": 305,
+      "skinTriangles": 27184,
+      "partTriangles": 1400,
+      "membraneTriangles": 600,
+      "drawCalls": 5,
+      "motionMsPerFrame": 0.052
+    },
+    {
+      "name": "plated-stegosaur",
+      "lines": 46,
+      "compileMs": 148,
+      "chromeCompileMs": 170,
+      "skinTriangles": 15510,
+      "partTriangles": 3428,
+      "membraneTriangles": 0,
+      "drawCalls": 3,
+      "motionMsPerFrame": 0.028
+    },
+    {
+      "name": "porcupine",
+      "lines": 33,
+      "compileMs": 287,
+      "chromeCompileMs": 259,
+      "skinTriangles": 25754,
+      "partTriangles": 4912,
+      "membraneTriangles": 0,
+      "drawCalls": 4,
+      "motionMsPerFrame": 0.054
+    },
+    {
+      "name": "reed-viper",
+      "lines": 23,
+      "compileMs": 60,
+      "chromeCompileMs": 60,
+      "skinTriangles": 8448,
+      "partTriangles": 1512,
+      "membraneTriangles": 0,
+      "drawCalls": 3,
+      "motionMsPerFrame": 0.022
+    },
+    {
+      "name": "reef-shark",
+      "lines": 47,
+      "compileMs": 103,
+      "chromeCompileMs": 117,
+      "skinTriangles": 10384,
+      "partTriangles": 3024,
+      "membraneTriangles": 998,
+      "drawCalls": 4,
+      "motionMsPerFrame": 0.017
+    },
+    {
+      "name": "rhino-beetle",
+      "lines": 58,
+      "compileMs": 368,
+      "chromeCompileMs": 437,
+      "skinTriangles": 27620,
+      "partTriangles": 1886,
+      "membraneTriangles": 300,
+      "drawCalls": 4,
+      "motionMsPerFrame": 0.044
+    },
+    {
+      "name": "ridgeback-stalker",
+      "lines": 63,
+      "compileMs": 165,
+      "chromeCompileMs": 164,
+      "skinTriangles": 18182,
+      "partTriangles": 2388,
+      "membraneTriangles": 0,
+      "drawCalls": 3,
+      "motionMsPerFrame": 0.029
+    },
+    {
+      "name": "rust-raptor",
+      "lines": 62,
+      "compileMs": 159,
+      "chromeCompileMs": 152,
+      "skinTriangles": 17760,
+      "partTriangles": 5418,
+      "membraneTriangles": 0,
+      "drawCalls": 3,
+      "motionMsPerFrame": 0.037
+    },
+    {
+      "name": "sail-back",
+      "lines": 42,
+      "compileMs": 147,
+      "chromeCompileMs": 154,
+      "skinTriangles": 15652,
+      "partTriangles": 5236,
+      "membraneTriangles": 1088,
+      "drawCalls": 4,
+      "motionMsPerFrame": 0.045
+    },
+    {
+      "name": "stone-tortoise",
+      "lines": 38,
+      "compileMs": 302,
+      "chromeCompileMs": 266,
+      "skinTriangles": 28288,
+      "partTriangles": 9764,
+      "membraneTriangles": 0,
+      "drawCalls": 3,
+      "motionMsPerFrame": 0.039
+    },
+    {
+      "name": "storm-wyvern",
+      "lines": 51,
+      "compileMs": 138,
+      "chromeCompileMs": 152,
+      "skinTriangles": 16030,
+      "partTriangles": 6694,
+      "membraneTriangles": 1292,
+      "drawCalls": 4,
+      "motionMsPerFrame": 0.051
+    },
+    {
+      "name": "terror-bird",
+      "lines": 77,
+      "compileMs": 272,
+      "chromeCompileMs": 233,
+      "skinTriangles": 24816,
+      "partTriangles": 3028,
+      "membraneTriangles": 0,
+      "drawCalls": 3,
+      "motionMsPerFrame": 0.042
+    },
+    {
+      "name": "tomb-spider",
+      "lines": 36,
+      "compileMs": 230,
+      "chromeCompileMs": 243,
+      "skinTriangles": 21520,
+      "partTriangles": 1106,
+      "membraneTriangles": 0,
+      "drawCalls": 3,
+      "motionMsPerFrame": 0.053
+    },
+    {
+      "name": "tusk-boar",
+      "lines": 76,
+      "compileMs": 337,
+      "chromeCompileMs": 282,
+      "skinTriangles": 27186,
+      "partTriangles": 3052,
+      "membraneTriangles": 0,
+      "drawCalls": 3,
+      "motionMsPerFrame": 0.038
+    },
+    {
+      "name": "two-tailed-fox",
+      "lines": 54,
+      "compileMs": 225,
+      "chromeCompileMs": 232,
+      "skinTriangles": 21058,
+      "partTriangles": 8100,
+      "membraneTriangles": 0,
+      "drawCalls": 4,
+      "motionMsPerFrame": 0.046
+    }
+  ],
+  "herd50": {
+    "medianMsPerFrame": 3.27
+  }
+}

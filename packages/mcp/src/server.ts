@@ -1,6 +1,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { McpServer } from '@modelcontextprotocol/server';
 import {
+  analysisView,
   analyze,
   CommandError,
   crossbreed,
@@ -158,16 +159,23 @@ export function createServer(): McpServer {
           .optional()
           .describe('A stats module id (list_modules kind "stats"), to add that game\'s numbers'),
         scenario: z.record(z.string(), z.unknown()).optional().describe(SCENARIO_HELP),
+        summary: z
+          .boolean()
+          .optional()
+          .describe('Only the warnings, description, main sizes and speeds'),
       }),
       annotations: { readOnlyHint: true },
     },
     async (input) =>
       reply(() =>
-        analyze({
-          blueprint: readBlueprint(input),
-          ...(input.stats ? { stats: input.stats } : {}),
-          ...(input.scenario ? { scenario: input.scenario } : {}),
-        }),
+        analysisView(
+          analyze({
+            blueprint: readBlueprint(input),
+            ...(input.stats ? { stats: input.stats } : {}),
+            ...(input.scenario ? { scenario: input.scenario } : {}),
+          }),
+          input.summary === true,
+        ),
       ),
   );
 
@@ -176,7 +184,7 @@ export function createServer(): McpServer {
     {
       title: 'Edit a blueprint',
       description:
-        'Applies edit operations to a blueprint by id-based paths and validates the result: set (a value), add (an item to a list such as parts or skin.layers), remove (a key, back to the default, or a limb/part; inherited ones get "remove": true), mirror (make a limb or part a pair with side "both", or set a side) and scale (multiply a number or profile by "by"; path "" scales the whole creature). Paths look like error paths: "limbs[id=hindleg].length", "parts[id=horns].params.curve", "skin.layers[type=mottle].strength" (layers, gaits and actions by type) or "skin.layers[0].size". With "path", the file is rewritten only when the result is valid. Returns the diff, errors and warnings.',
+        'Applies edit operations to a blueprint by id-based paths and validates the result: set (a value), add (an item to a list such as parts or skin.layers), remove (a key, back to the default, or a limb/part; inherited ones get "remove": true), mirror (make a limb or part a pair with side "both", or set a side) and scale (multiply a number or profile by "by"; path "" scales the whole creature). Paths look like error paths: "limbs[id=hindleg].length", "parts[id=horns].params.curve", "skin.layers[type=mottle].strength" (layers, gaits and actions by type) or "skin.layers[0].size". With "path", the file is rewritten only when the result is valid (or "out" is written, leaving it as it was). Returns the diff, errors and warnings.',
       inputSchema: z.object({
         blueprint: z
           .record(z.string(), z.unknown())
@@ -187,17 +195,22 @@ export function createServer(): McpServer {
           .optional()
           .describe('Path to a blueprint JSON file to edit in place, instead of "blueprint"'),
         ops: patchOpsSchema,
+        out: z
+          .string()
+          .optional()
+          .describe('Write the result to this file instead (the input file is left as it was)'),
         dryRun: z.boolean().optional().describe('Check and diff without writing the file'),
       }),
     },
     async (input) =>
       reply(() => {
         const result = patch({ blueprint: readBlueprint(input), ops: input.ops });
-        const write = result.ok && input.path !== undefined && !input.dryRun;
+        const target = input.out ?? input.path;
+        const write = result.ok && target !== undefined && !input.dryRun;
         if (write)
-          writeFileSync(input.path as string, `${JSON.stringify(result.blueprint, null, 2)}\n`);
+          writeFileSync(target as string, `${JSON.stringify(result.blueprint, null, 2)}\n`);
         const { blueprint, ...rest } = result;
-        return { ...rest, written: write, ...(input.path === undefined ? { blueprint } : {}) };
+        return { ...rest, written: write, ...(target === undefined ? { blueprint } : {}) };
       }),
   );
 

@@ -1,0 +1,112 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Reef Shark",
+  "seed": 707,
+  "extends": "fish",
+  "scale": 0.9,
+  "body": {
+    "torso": {
+      "radius": [0.11, 0.17, 0.16, 0.1],
+      "crossSection": "round"
+    },
+    "head": {
+      "shape": "wedge",
+      "length": 0.32,
+      "radius": 0.105,
+      "jaw": true,
+      "crossSection": "wide"
+    },
+    "tail": {
+      "length": 0.75,
+      "radius": [0.095, 0.03],
+      "pitch": 4
+    }
+  },
+  "limbs": [
+    {
+      "id": "pectoral",
+      "attach": {
+        "on": "torso",
+        "at": 0.2,
+        "side": "both",
+        "angle": 100
+      },
+      "length": 0.38,
+      "membrane": {
+        "type": "membrane.fin",
+        "rays": 6,
+        "width": 0.7,
+        "translucency": 0.2
+      }
+    },
+    {
+      "id": "pelvic",
+      "attach": {
+        "on": "torso",
+        "at": 0.6,
+        "side": "both",
+        "angle": 110
+      },
+      "length": 0.14
+    }
+  ],
+  "parts": [
+    {
+      "id": "dorsal",
+      "params": {
+        "height": 0.46,
+        "length": 0.26,
+        "sweep": 38,
+        "shape": "triangle",
+        "color": "#46565f"
+      }
+    },
+    {
+      "id": "tailfin",
+      "params": {
+        "shape": "forked",
+        "size": 0.62,
+        "upper": 0.68,
+        "color": "#46565f"
+      }
+    },
+    {
+      "id": "teeth",
+      "type": "teeth.row",
+      "params": {
+        "count": 18,
+        "fangs": 0,
+        "scale": 1.4
+      }
+    },
+    {
+      "id": "eyes",
+      "params": {
+        "scale": 0.9,
+        "irisColor": "#101010"
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#5e6e78",
+      "belly": "#e8ece8",
+      "accent": "#202830"
+    },
+    "material": "skin",
+    "layers": [
+      {
+        "type": "countershade",
+        "height": 0.1,
+        "softness": 0.15
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "stalking",
+    "media": {
+      "water": true
+    },
+    "actions": ["bite"]
+  }
+}

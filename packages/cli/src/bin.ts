@@ -4,6 +4,7 @@ import { parseArgs } from 'node:util';
 import { type Medium, MODULE_KINDS, type ModuleKind } from '@spawnforge/core';
 import type { View } from '@spawnforge/render';
 import {
+  analysisView,
   analyze,
   blueprintJsonSchema,
   CommandError,
@@ -45,22 +46,25 @@ Commands:
                                         A scripted scene (ground, targets, timed calls: moveTo,
                                         follow, act, lookAt…) as frames with its events; prints
                                         what it measured (see docs/scenarios.md)
-  analyze <file|-> [--stats id] [--scenario s.json]
-                                        Measurements, mass, speeds, motion checks on flat and
-                                        rough ground, plausibility warnings and a description;
-                                        --stats adds a game's numbers (e.g. rpg); --scenario runs
-                                        a scripted scene (targets, a course, timed calls) and
-                                        reports its events, distances and foot slide
+  analyze <file|-> [--summary] [--stats id] [--scenario s.json]
+                                        Warnings and a description first, then measurements,
+                                        mass, speeds and motion checks on flat and rough ground;
+                                        --summary keeps the warnings, description, main sizes
+                                        and speeds; --stats adds a game's numbers (e.g. rpg);
+                                        --scenario runs a scripted scene (targets, a course,
+                                        timed calls) and reports its events, distances and slide
   migrate <file|-> [--out file] [--dry-run]
                                         Upgrades an older blueprint or species to the current
                                         format and writes it back (or to --out)
   diff <a> <b>                          The patch operations that turn blueprint a into b, by
                                         id-based paths, with one line per change
-  patch <file> <ops|ops-file|-> [--dry-run]
+  patch <file> <ops|ops-file|-> [--out file] [--dry-run]
                                         Edits a blueprint file by id-based paths and writes it
-                                        back if the result is valid; prints the diff. ops is a
-                                        JSON list, e.g. '[{"op":"set","path":"body.tail.length","value":1.2}]'
-                                        (ops: set, add, remove, mirror, scale)
+                                        back (or to --out) if the result is valid; prints the
+                                        diff. ops is a JSON list (or a file holding one), e.g.
+                                        '[{"op":"set","path":"body.tail.length","value":1.2}]'
+                                        ops: set, add, remove, mirror, scale; paths name list
+                                        items by id, e.g. parts[id=horn].params.length
   generate --theme <id> [--seed n] [--body-plan id] [--max-height m] [--min-height m]
            [--actions bite,roar] [--parts horn.curved] [--requires air,water] [--out file]
                                         A new creature from a theme (reptile, dragon, beast…);
@@ -82,7 +86,7 @@ Commands:
   schema                                The blueprint JSON Schema
 
 Options:
-  -h, --help       Show this help
+  -h, --help       Show this help (spawnforge <command> --help shows one command's)
 
 Every command prints JSON to stdout. validate exits 1 when the blueprint has errors.
 Kinds: ${MODULE_KINDS.join(', ')}`;
@@ -145,6 +149,7 @@ function parseOptions() {
       scenario: { type: 'string' },
       clips: { type: 'string' },
       fps: { type: 'string' },
+      summary: { type: 'boolean' },
     },
   });
 }
@@ -303,11 +308,17 @@ function patchCommand(): { output: unknown; exitCode?: number } {
     }
   } else ops = readInput(opsArg);
   const result = patch({ blueprint, ops: Array.isArray(ops) ? ops : [ops] });
-  const write = result.ok && !values['dry-run'] && arg !== '-';
-  if (write) writeFileSync(arg, `${JSON.stringify(result.blueprint, null, 2)}\n`);
+  // --out writes the result elsewhere, leaving the file as it was (a saved attempt, say).
+  const target = values.out ?? (arg === '-' ? undefined : arg);
+  const write = result.ok && !values['dry-run'] && target !== undefined;
+  if (write) writeFileSync(target as string, `${JSON.stringify(result.blueprint, null, 2)}\n`);
   const { blueprint: patched, ...rest } = result;
   return {
-    output: { ...rest, written: write, ...(arg === '-' ? { blueprint: patched } : {}) },
+    output: {
+      ...rest,
+      written: write ? target : false,
+      ...(target === undefined ? { blueprint: patched } : {}),
+    },
     exitCode: result.ok ? 0 : 1,
   };
 }
@@ -353,7 +364,7 @@ const commands: Record<
       ...(values.stats ? { stats: values.stats } : {}),
       ...(values.scenario ? { scenario: readInput(values.scenario) } : {}),
     });
-    return { output: result, exitCode: result.ok ? 0 : 1 };
+    return { output: analysisView(result, values.summary === true), exitCode: result.ok ? 0 : 1 };
   },
   patch: patchCommand,
   generate: () => {
@@ -508,9 +519,24 @@ const commands: Record<
   schema: () => ({ output: blueprintJsonSchema() }),
 };
 
+/** One command's lines of the help (render has several), or undefined for an unknown one. */
+function commandHelp(name: string): string | undefined {
+  const blocks: string[] = [];
+  let inside = false;
+  for (const line of HELP.split('\n')) {
+    // A command's entry starts two spaces in; its continuation lines are indented further.
+    if (/^ {2}[a-z]/.test(line)) inside = line.startsWith(`  ${name} `) || line === `  ${name}`;
+    else if (!line.startsWith('   ')) inside = false;
+    if (inside) blocks.push(line);
+  }
+  return blocks.length > 0
+    ? `Usage:\n${blocks.join('\n')}\n\nEvery command prints JSON to stdout.`
+    : undefined;
+}
+
 const run = command === undefined ? undefined : commands[command];
 if (values.help || command === undefined) {
-  console.log(HELP);
+  console.log((command !== undefined && commandHelp(command)) || HELP);
 } else if (run === undefined) {
   console.error(`Unknown command "${command}".\n\n${HELP}`);
   process.exitCode = 2;
@@ -522,7 +548,12 @@ if (values.help || command === undefined) {
   } catch (error) {
     if (!(error instanceof CommandError) && !(error instanceof Error && 'code' in error))
       throw error;
-    const fix = error instanceof CommandError ? error.fix : undefined;
+    const fix =
+      error instanceof CommandError
+        ? error.fix
+        : (error as { code?: string }).code === 'ENOENT'
+          ? `relative paths are read from ${process.cwd()} (pnpm runs commands from the repository root); give the path from there or an absolute one`
+          : undefined;
     console.log(JSON.stringify({ error: error.message, ...(fix ? { fix } : {}) }, null, 2));
     process.exitCode = 2;
   }

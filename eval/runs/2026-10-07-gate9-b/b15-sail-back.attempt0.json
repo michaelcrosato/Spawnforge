@@ -1,0 +1,41 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Sail-backed Reptile",
+  "seed": 1505,
+  "extends": "quadruped",
+  "scale": 1.2,
+  "body": {
+    "torso": { "radius": [0.13, 0.17, 0.18, 0.14] },
+    "neck": { "length": 0.14, "pitch": 15 },
+    "head": { "shape": "wedge", "length": 0.32, "radius": 0.09, "pitch": -5 },
+    "tail": { "length": 1.3, "radius": [0.1, 0.015], "pitch": 3 }
+  },
+  "limbs": [
+    { "id": "foreleg", "splay": 52, "length": 0.4, "radius": [0.06, 0.03] },
+    { "id": "hindleg", "splay": 52, "length": 0.44, "radius": [0.07, 0.03] }
+  ],
+  "parts": [
+    {
+      "id": "sail",
+      "type": "sail",
+      "attach": { "on": "spine", "from": 0.12, "to": 0.5 },
+      "params": {
+        "height": [0.1, 0.5, 0.58, 0.4, 0.08],
+        "spines": 20,
+        "color": "#c04a2a",
+        "spineColor": "#6a5038"
+      }
+    },
+    { "id": "teeth", "type": "teeth.row", "params": { "fangs": 1 } },
+    { "id": "eyes", "params": { "irisColor": "#d08020" } }
+  ],
+  "skin": {
+    "palette": { "base": "#7a6a42", "belly": "#cdbb8a", "accent": "#3a2a18" },
+    "material": "scales",
+    "layers": [
+      { "type": "countershade", "softness": 0.3 },
+      { "type": "stripes", "color": "accent", "count": 11, "width": 0.3, "region": "torso" }
+    ]
+  },
+  "motion": { "temperament": "stalking", "actions": ["display", "bite", "roar", "look", "idle"] }
+}

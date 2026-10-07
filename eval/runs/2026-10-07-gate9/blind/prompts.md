@@ -1,0 +1,22 @@
+# Prompts
+
+- `p01-wolf`: A wolf-like hunter with a long snout, grey fur, a paler belly and a bushy tail.
+- `p02-spiked-lizard`: A heavy armoured lizard with a row of spikes down its back and a thick, club-like tail.
+- `p03-horn-beetle`: A small, skittish six-legged beetle with one big horn on its head, glossy black with orange spots.
+- `p04-green-serpent`: A giant green serpent with yellow stripes and long fangs.
+- `p05-swamp-troll`: An upright swamp troll with long arms, a flat head, two tusks and mottled green skin.
+- `p06-ram-demon`: A demon that walks on two legs, red with black stripes, with big curled ram horns.
+- `p07-sprawl-lizard`: A tiny lizard with four sprawled legs, a very long tail and a spotted back.
+- `p08-boar`: A stocky boar-like beast with tusks, short legs, a big head and a tiny tail.
+- `p09-long-neck`: A tall grazer with a very long neck and long legs, like a giraffe crossed with a lizard, covered in spots.
+- `p10-scorpion`: A desert creature with six legs and a long tail curled up over its back, pale sandy chitin.
+- `p11-sea-serpent`: A sea serpent with spikes along its whole back, dark blue on top with a pale belly.
+- `p12-raptor`: A raptor that runs on two legs with a horizontal body, a long stiff tail and small arms.
+- `p13-cave-bear`: A bulky cave-bear monster with tiny eyes, huge claws and grimy brown hide.
+- `p14-leopard-stalker`: A cat-like stalker with leopard spots, slit-pupil eyes and a long tail curled at the end.
+- `p15-gecko`: A gecko-like wall crawler with a flat, wide body, splayed legs and five big toes on each foot.
+- `p16-ant-soldier`: An ant-like soldier with six legs, a big head with two mandible-like horns and red chitin.
+- `p17-goblin`: A small goblin standing upright, with a big round head, big yellow eyes and green skin.
+- `p18-cobra`: A cobra-like snake, brown with dark bands, that rears its neck up high.
+- `p19-rhino`: A rhino-like beast with a big horn on its nose, a smaller horn behind it, and grey scaly hide.
+- `p20-nightmare-hound`: A nightmare hound with jagged spines along its back, red eyes and black skin with grime.

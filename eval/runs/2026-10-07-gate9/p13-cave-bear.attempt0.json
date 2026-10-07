@@ -1,0 +1,78 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Cave Bear",
+  "seed": 1303,
+  "extends": "quadruped",
+  "scale": 1.3,
+  "body": {
+    "muscle": 0.8,
+    "torso": { "radius": [0.24, 0.32, 0.3, 0.25], "arch": 0.1 },
+    "neck": { "length": 0.14, "radius": [0.2, 0.28], "pitch": 8 },
+    "head": {
+      "shape": "snout",
+      "length": 0.36,
+      "radius": 0.17,
+      "pitch": -8,
+      "brow": 0.6,
+      "lips": 0.4
+    },
+    "tail": { "length": 0.12, "radius": [0.08, 0.03], "pitch": -15, "curl": 0 }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "attach": { "on": "torso", "at": 0.16, "angle": 100 },
+      "length": 0.5,
+      "radius": [0.14, 0.085],
+      "splay": 6,
+      "stance": "plantigrade",
+      "foot": {
+        "type": "foot.claw",
+        "toes": 5,
+        "toeLength": 0.1,
+        "clawLength": 0.13,
+        "clawCurve": 65,
+        "clawWidth": 1.4,
+        "clawColor": "#e0d8c0"
+      }
+    },
+    {
+      "id": "hindleg",
+      "attach": { "on": "torso", "at": 0.86, "angle": 100 },
+      "length": 0.5,
+      "radius": [0.15, 0.085],
+      "splay": 6,
+      "stance": "plantigrade",
+      "foot": {
+        "type": "foot.claw",
+        "toes": 5,
+        "toeLength": 0.1,
+        "clawLength": 0.11,
+        "clawCurve": 65,
+        "clawWidth": 1.4,
+        "clawColor": "#e0d8c0"
+      }
+    }
+  ],
+  "parts": [
+    { "id": "eyes", "params": { "scale": 0.35, "squint": 0.4, "irisColor": "#7a4a18" } },
+    {
+      "id": "ears",
+      "type": "ear.pointed",
+      "attach": { "on": "head", "at": 0.85, "angle": 50 },
+      "params": { "length": 0.07, "width": 0.06, "thickness": 0.8, "curve": 0 }
+    },
+    { "id": "teeth", "type": "teeth.row", "params": { "fangs": 1, "fangScale": 1.3 } }
+  ],
+  "skin": {
+    "palette": { "base": "#5a4028", "belly": "#7a5e44", "accent": "#2a1a0e" },
+    "material": "hide",
+    "layers": [
+      { "type": "countershade", "strength": 0.5 },
+      { "type": "mottle", "scale": 0.12, "contrast": 0.3, "coverage": 0.5, "strength": 0.7 },
+      { "type": "scars", "count": 8, "rake": 3, "length": 0.25, "region": "torso" },
+      { "type": "grime", "amount": 0.8, "creases": 0.8, "feet": 0.8 }
+    ]
+  },
+  "motion": { "temperament": "lumbering", "actions": ["bite", "roar", "look", "idle"] }
+}

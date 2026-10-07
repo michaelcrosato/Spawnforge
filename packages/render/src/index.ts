@@ -34,6 +34,25 @@ function executableCandidates(): (string | undefined)[] {
 }
 
 /**
+ * WebGL 2 through SwiftShader, and none of Chromium's background traffic (updates, sync, safe
+ * browsing, metrics): a render needs no network but the local page server.
+ */
+const CHROMIUM_ARGS = [
+  '--use-angle=swiftshader',
+  '--enable-unsafe-swiftshader',
+  '--ignore-gpu-blocklist',
+  '--disable-background-networking',
+  '--disable-component-update',
+  '--disable-sync',
+  '--disable-default-apps',
+  '--disable-domain-reliability',
+  '--disable-client-side-phishing-detection',
+  '--no-first-run',
+  '--no-pings',
+  '--metrics-recording-only',
+];
+
+/**
  * Headless Chromium with WebGL 2 through SwiftShader, so no GPU is needed: from
  * $SPAWNFORGE_CHROMIUM, Playwright's own, or the sandbox's pre-installed one. The smoke test
  * runs its game in it too.
@@ -44,7 +63,7 @@ export async function launchChromium(): Promise<Browser> {
     try {
       return await chromium.launch({
         ...(executablePath ? { executablePath } : {}),
-        args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'],
+        args: CHROMIUM_ARGS,
       });
     } catch (error) {
       lastError = error;
@@ -88,22 +107,23 @@ export class Renderer {
       await server.close();
       throw error;
     }
-    const page = await browser.newPage();
     const errors: string[] = [];
-    page.on('pageerror', (e) => errors.push(e.message));
-    await page.goto(url);
     try {
+      const page = await browser.newPage();
+      page.on('pageerror', (e) => errors.push(e.message));
+      await page.goto(url, { timeout: 90_000 });
       await page.waitForFunction(() => (globalThis as PageGlobals).spawnforgeReady === true, null, {
-        timeout: 60_000,
+        timeout: 90_000,
       });
+      return new Renderer(server, browser, page);
     } catch (error) {
+      // Close everything, or the server keeps the process alive after the failure.
       await browser.close();
       await server.close();
       throw new Error(
-        `render page failed to load: ${errors.join('; ') || (error as Error).message}`,
+        `render page failed to load: ${errors.join('; ') || (error as Error).message}. Renders started at the same time slow each other down: run them one after another`,
       );
     }
-    return new Renderer(server, browser, page);
   }
 
   /** Renders a blueprint to a PNG contact sheet. */

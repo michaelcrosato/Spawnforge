@@ -1,0 +1,43 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Frilled Lizard",
+  "seed": 1303,
+  "extends": "quadruped",
+  "scale": 0.45,
+  "body": {
+    "torso": { "radius": [0.1, 0.14, 0.13, 0.1] },
+    "neck": { "length": 0.3, "pitch": 30, "radius": [0.07, 0.09] },
+    "head": { "shape": "wedge", "length": 0.26, "radius": 0.08, "lips": 0, "tongue": "forked" },
+    "tail": { "length": 2.0, "radius": [0.07, 0.008], "pitch": 5 }
+  },
+  "limbs": [
+    { "id": "foreleg", "splay": 48, "length": 0.45, "radius": [0.045, 0.02] },
+    { "id": "hindleg", "splay": 48, "length": 0.55, "radius": [0.055, 0.022] }
+  ],
+  "parts": [
+    {
+      "id": "frill",
+      "type": "frill",
+      "attach": { "on": "neck", "at": 0.1 },
+      "params": {
+        "radius": 0.4,
+        "spines": 18,
+        "open": 0.15,
+        "color": "#e0702a",
+        "spineColor": "#5a4028"
+      }
+    },
+    { "id": "teeth", "type": "teeth.row", "params": { "fangs": 0 } },
+    { "id": "eyes", "params": { "irisColor": "#d0a020", "pupil": "round" } }
+  ],
+  "skin": {
+    "palette": { "base": "#7a6a48", "belly": "#d8cca0", "accent": "#3a2c1c" },
+    "material": "scales",
+    "layers": [
+      { "type": "countershade", "softness": 0.3 },
+      { "type": "mottle", "color": "accent", "scale": 0.08, "coverage": 0.4, "strength": 0.6 },
+      { "type": "bands", "color": "accent", "count": 14, "width": 0.25, "region": "tail" }
+    ]
+  },
+  "motion": { "temperament": "skittish", "actions": ["display", "bite", "look", "idle"] }
+}

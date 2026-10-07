@@ -1,0 +1,71 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Cave Spider",
+  "seed": 808,
+  "extends": "octopod",
+  "scale": 0.5,
+  "body": {
+    "torso": {
+      "radius": [0.11, 0.13, 0.1, 0.07, 0.27, 0.32, 0.24]
+    }
+  },
+  "parts": [
+    {
+      "id": "eyes",
+      "params": {
+        "irisColor": "#d8d0b0",
+        "scleraColor": "#201810"
+      }
+    },
+    {
+      "id": "side-eyes",
+      "params": {
+        "irisColor": "#d8d0b0",
+        "scleraColor": "#201810"
+      }
+    },
+    {
+      "id": "fangs",
+      "type": "mandible",
+      "params": {
+        "shape": "fang",
+        "length": 0.3,
+        "curve": 50,
+        "teeth": 0,
+        "color": "#3c5a1e",
+        "tipColor": "#c0f040"
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#b8ac92",
+      "belly": "#dcd0b4",
+      "accent": "#5a4838"
+    },
+    "layers": [
+      {
+        "type": "countershade",
+        "softness": 0.2
+      },
+      {
+        "type": "mottle",
+        "color": "accent",
+        "scale": 0.1,
+        "coverage": 0.35,
+        "region": "back"
+      },
+      {
+        "type": "bands",
+        "color": "accent",
+        "count": 10,
+        "width": 0.3,
+        "region": "limbs"
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "skittish",
+    "actions": ["bite"]
+  }
+}

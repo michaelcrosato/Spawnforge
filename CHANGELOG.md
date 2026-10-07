@@ -163,6 +163,22 @@ Work in progress toward 0.2, phase by phase (see the plan's status table).
   defaults, so a snake never sprouts a beak; `bodyHeight` leaves out wings and fins (it counted
   the spread wing bones); `analyze` reports `measurements.counts`; the insect theme's pincers are
   mandibles.
+- **Gate 9:** passed (suite A 20/20 valid and matched; suite B 20/20 valid, meeting `expects` and
+  matched; variation 12/12; budgets met). For the budgets, `teeth.row` builds coarser teeth on
+  creatures with several heads (`ctx.copies` tells a mouth part how many copies there are), and
+  eyelids find their eye's vertices through a sorted search; the hydra's and cerberus's meshes and
+  goldens change. From its feedback:
+  - `analyze` puts its warnings and description first, and `--summary` (MCP `summary`) keeps
+    only them with the main sizes and speeds.
+  - `unbalanced` says which way the body tips, and its fix follows from that.
+  - `patch --out` (MCP `out`) writes the result elsewhere; `<command> --help` prints one
+    command's usage; a missing file's error says where relative paths are read from.
+  - A render whose page fails to load closes its browser instead of hanging, and Chromium runs
+    without background network traffic.
+  - Descriptions call a horn on the jaw a tusk and one on the tail a stinger (part `describe`
+    hooks get `on`).
+  - Recipes and tips for armour bands, eyes on stalks, moths, tusks on flat heads, fish, fliers'
+    sizes, layer order and near-black creatures.
 
 ## 0.1.0
 

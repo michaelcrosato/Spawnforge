@@ -1,0 +1,89 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Griffin",
+  "seed": 1801,
+  "extends": "quadruped",
+  "scale": 1.1,
+  "body": {
+    "muscle": 0.7,
+    "torso": { "radius": [0.16, 0.21, 0.18, 0.13], "arch": 0.04 },
+    "neck": { "length": 0.38, "radius": [0.085, 0.14], "pitch": 55, "curve": 25 },
+    "head": {
+      "shape": "snout",
+      "length": 0.3,
+      "radius": 0.095,
+      "lips": 0,
+      "brow": 0.7,
+      "pitch": -5
+    },
+    "tail": {
+      "length": 0.9,
+      "radius": [0.05, 0.03, 0.025, 0.07, 0.04],
+      "pitch": -25,
+      "curl": 15,
+      "segments": 10
+    }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "length": 0.62,
+      "radius": [0.065, 0.03],
+      "splay": 14,
+      "stance": "digitigrade",
+      "foot": { "type": "foot.talon", "toeLength": 0.14, "talonLength": 0.06, "grip": 0.4 }
+    },
+    {
+      "id": "hindleg",
+      "length": 0.62,
+      "radius": [0.09, 0.04],
+      "splay": 10,
+      "stance": "digitigrade",
+      "foot": { "type": "foot.paw", "toes": 4, "claws": "short" }
+    },
+    {
+      "id": "wing",
+      "role": "wing",
+      "attach": { "on": "torso", "at": 0.14, "side": "both", "angle": 30 },
+      "length": 1.5,
+      "segments": 3,
+      "radius": [0.05, 0.02],
+      "membrane": {
+        "type": "membrane.feather",
+        "feathers": 24,
+        "length": 1.1,
+        "tips": "fingered",
+        "color": "#8a6a3a",
+        "tipColor": "#2e2014"
+      }
+    }
+  ],
+  "parts": [
+    {
+      "id": "beak",
+      "type": "beak",
+      "params": {
+        "shape": "hooked",
+        "length": 1,
+        "depth": 1,
+        "color": "#e8b838",
+        "tipColor": "#3a2a10"
+      }
+    },
+    {
+      "id": "eyes",
+      "attach": { "on": "head", "at": 0.55, "angle": 62 },
+      "params": { "irisColor": "#f0a820", "squint": 0.55, "lids": true }
+    }
+  ],
+  "skin": {
+    "palette": { "base": "#c0914a", "belly": "#ead7a8", "accent": "#5a3c1c", "plume": "#f2ede0" },
+    "material": "skin",
+    "fur": { "length": 0.03 },
+    "layers": [
+      { "type": "countershade", "strength": 0.7 },
+      { "type": "countershade", "color": "plume", "height": 1, "softness": 0.3, "region": "head" }
+    ]
+  },
+  "motion": { "temperament": "stalking", "actions": ["bite", "roar", "look", "idle"] }
+}

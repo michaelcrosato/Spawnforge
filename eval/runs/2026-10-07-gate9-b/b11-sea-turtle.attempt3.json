@@ -1,0 +1,133 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Sea Turtle",
+  "seed": 1101,
+  "extends": "quadruped",
+  "scale": 0.9,
+  "body": {
+    "torso": {
+      "radius": [0.14, 0.2, 0.2, 0.13],
+      "crossSection": "wide"
+    },
+    "neck": {
+      "length": 0.2,
+      "pitch": 10,
+      "radius": [0.06, 0.08]
+    },
+    "head": {
+      "shape": "snout",
+      "length": 0.24,
+      "radius": 0.08,
+      "lips": 0,
+      "pitch": 0,
+      "tongue": "none"
+    },
+    "tail": {
+      "length": 0.14,
+      "radius": [0.04, 0.01],
+      "pitch": -10
+    }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "remove": true
+    },
+    {
+      "id": "hindleg",
+      "remove": true
+    },
+    {
+      "id": "foreflipper",
+      "role": "fin",
+      "attach": {
+        "on": "torso",
+        "at": 0.15,
+        "angle": 100
+      },
+      "length": 0.8,
+      "segments": 2,
+      "radius": [0.075, 0.025],
+      "membrane": null
+    },
+    {
+      "id": "hindflipper",
+      "role": "fin",
+      "attach": {
+        "on": "torso",
+        "at": 0.85,
+        "angle": 110
+      },
+      "length": 0.34,
+      "segments": 2,
+      "radius": [0.055, 0.02],
+      "membrane": null
+    }
+  ],
+  "parts": [
+    {
+      "id": "shell",
+      "type": "shell",
+      "params": {
+        "dome": 0.9,
+        "overhang": 0.2,
+        "scutes": 13,
+        "thickness": 0.03,
+        "color": "#6e5a34",
+        "seamColor": "#2a2012"
+      }
+    },
+    {
+      "id": "beak",
+      "type": "beak",
+      "params": {
+        "shape": "hooked",
+        "length": 0.22,
+        "depth": 0.6,
+        "color": "#b09a60",
+        "tipColor": "#5a4a2a"
+      }
+    },
+    {
+      "id": "eyes",
+      "params": {
+        "scale": 1.1,
+        "irisColor": "#3a2a14"
+      },
+      "attach": {
+        "on": "head",
+        "at": 0.5,
+        "angle": 65
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#5a6a3a",
+      "belly": "#d8cc98",
+      "accent": "#2a2e18"
+    },
+    "material": "scales",
+    "layers": [
+      {
+        "type": "countershade",
+        "softness": 0.3
+      },
+      {
+        "type": "mottle",
+        "color": "accent",
+        "scale": 0.1,
+        "coverage": 0.4,
+        "strength": 0.6
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "calm",
+    "media": {
+      "water": true
+    },
+    "gaits": ["swim.flap"],
+    "actions": ["bite", "look", "idle"]
+  }
+}

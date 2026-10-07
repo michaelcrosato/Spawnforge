@@ -1,0 +1,78 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Jade Constrictor",
+  "seed": 404,
+  "extends": "serpent",
+  "scale": 2.0,
+  "body": {
+    "torso": {
+      "radius": [0.1, 0.13, 0.14, 0.13]
+    },
+    "neck": {
+      "length": 0.22,
+      "radius": [0.075, 0.11],
+      "pitch": 28
+    },
+    "head": {
+      "shape": "wedge",
+      "length": 0.28,
+      "radius": 0.115,
+      "crossSection": "wide",
+      "pitch": 5
+    },
+    "tail": {
+      "length": 2.0,
+      "radius": [0.13, 0.012]
+    }
+  },
+  "parts": [
+    {
+      "id": "fangs",
+      "type": "teeth.row",
+      "params": {
+        "incisors": 0,
+        "fangs": 1,
+        "fangScale": 1.7,
+        "lower": false
+      }
+    },
+    {
+      "id": "eyes",
+      "params": {
+        "pupil": "slit",
+        "lids": false,
+        "irisColor": "#e8c020"
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#2f7a34",
+      "belly": "#d8d890",
+      "accent": "#e8c828"
+    },
+    "material": "scales",
+    "layers": [
+      {
+        "type": "countershade"
+      },
+      {
+        "type": "stripes",
+        "color": "accent",
+        "count": 18,
+        "width": 0.32,
+        "jitter": 0.2,
+        "region": "back"
+      },
+      {
+        "type": "scales",
+        "size": 0.02,
+        "gapColor": "#1c4a22"
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "stalking",
+    "actions": ["bite", "look", "idle"]
+  }
+}

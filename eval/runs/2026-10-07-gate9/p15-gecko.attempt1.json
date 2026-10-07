@@ -1,0 +1,136 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Wall Gecko",
+  "seed": 1505,
+  "extends": "quadruped",
+  "scale": 0.3,
+  "body": {
+    "muscle": 0.3,
+    "torso": {
+      "radius": [0.11, 0.17, 0.16, 0.11],
+      "arch": 0,
+      "crossSection": "wide"
+    },
+    "neck": {
+      "length": 0.12,
+      "radius": [0.08, 0.1],
+      "pitch": 8,
+      "crossSection": "wide"
+    },
+    "head": {
+      "shape": "flat",
+      "length": 0.3,
+      "radius": 0.11,
+      "pitch": -5,
+      "crossSection": "wide",
+      "lips": 0.1,
+      "tongue": "flat"
+    },
+    "tail": {
+      "length": 1.1,
+      "radius": [0.09, 0.012],
+      "pitch": -5,
+      "curl": 20,
+      "crossSection": "wide",
+      "segments": 10
+    }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "attach": {
+        "on": "torso",
+        "at": 0.12,
+        "angle": 112
+      },
+      "length": 0.45,
+      "radius": [0.05, 0.045],
+      "splay": 58,
+      "foot": {
+        "type": "foot.claw",
+        "toes": 5,
+        "toeLength": 0.19,
+        "spread": 130,
+        "clawLength": 0.025,
+        "clawCurve": 50
+      }
+    },
+    {
+      "id": "hindleg",
+      "attach": {
+        "on": "torso",
+        "at": 0.86,
+        "angle": 112
+      },
+      "length": 0.5,
+      "radius": [0.05, 0.045],
+      "splay": 58,
+      "foot": {
+        "type": "foot.claw",
+        "toes": 5,
+        "toeLength": 0.2,
+        "spread": 130,
+        "clawLength": 0.025,
+        "clawCurve": 50
+      }
+    }
+  ],
+  "parts": [
+    {
+      "id": "eyes",
+      "attach": {
+        "on": "head",
+        "at": 0.35,
+        "angle": 58
+      },
+      "params": {
+        "scale": 2.2,
+        "pupil": "slit",
+        "lids": false,
+        "irisColor": "#d8b840"
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#8c8a62",
+      "belly": "#e0dcc0",
+      "accent": "#4a4a30"
+    },
+    "material": "scales",
+    "layers": [
+      {
+        "type": "countershade",
+        "height": -0.2,
+        "softness": 0.3
+      },
+      {
+        "type": "mottle",
+        "scale": 0.1,
+        "contrast": 0.4,
+        "coverage": 0.5,
+        "strength": 0.8
+      },
+      {
+        "type": "warts",
+        "color": "#6a6a48",
+        "size": 0.012,
+        "density": 0.5,
+        "height": 0.4,
+        "region": "back",
+        "strength": 0.7
+      },
+      {
+        "type": "bands",
+        "color": "accent",
+        "count": 16,
+        "width": 0.4,
+        "region": "tail"
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "skittish",
+    "actions": ["bite", "look", "idle"]
+  }
+}

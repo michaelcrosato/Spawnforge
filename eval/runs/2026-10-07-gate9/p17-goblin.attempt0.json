@@ -1,0 +1,35 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Goblin",
+  "seed": 1701,
+  "extends": "biped",
+  "scale": 0.4,
+  "body": {
+    "head": { "shape": "round", "length": 0.34, "radius": 0.3, "lips": 0.2 }
+  },
+  "limbs": [
+    {
+      "id": "arm",
+      "foot": { "type": "hand.grasp", "fingers": 4, "fingerLength": 0.12, "claws": 0.03 }
+    }
+  ],
+  "parts": [
+    {
+      "id": "eyes",
+      "attach": { "on": "head", "at": 0.22, "angle": 62 },
+      "params": { "scale": 2.6, "irisColor": "#f0d020", "pupil": "round", "squint": 0.2 }
+    },
+    {
+      "id": "ears",
+      "type": "ear.pointed",
+      "attach": { "on": "head", "at": 0.85, "angle": 80, "side": "both" },
+      "params": { "length": 0.2, "width": 0.07, "curve": 0, "lean": -30, "droop": 0.3 }
+    }
+  ],
+  "skin": {
+    "palette": { "base": "#5a9a3a", "belly": "#9ac070", "accent": "#2e5a1e" },
+    "material": "skin",
+    "layers": [{ "type": "countershade" }]
+  },
+  "motion": { "temperament": "skittish", "actions": ["bite", "idle", "look"] }
+}

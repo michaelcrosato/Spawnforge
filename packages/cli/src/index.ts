@@ -1,6 +1,7 @@
 export { renderCatalog } from './catalog.ts';
 export {
   type AnalyzeResult,
+  analysisView,
   analyze,
   blueprintJsonSchema,
   CommandError,

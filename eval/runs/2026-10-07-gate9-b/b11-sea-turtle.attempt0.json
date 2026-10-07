@@ -1,0 +1,54 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Sea Turtle",
+  "seed": 1101,
+  "extends": "quadruped",
+  "scale": 0.9,
+  "body": {
+    "torso": { "radius": [0.14, 0.2, 0.2, 0.13], "crossSection": "wide" },
+    "neck": { "length": 0.2, "pitch": 10, "radius": [0.055, 0.075] },
+    "head": { "shape": "round", "length": 0.2, "radius": 0.075, "lips": 0, "pitch": 0 },
+    "tail": { "length": 0.14, "radius": [0.04, 0.01], "pitch": -10 }
+  },
+  "limbs": [
+    { "id": "foreleg", "remove": true },
+    { "id": "hindleg", "remove": true },
+    {
+      "id": "foreflipper",
+      "role": "fin",
+      "attach": { "on": "torso", "at": 0.15, "angle": 100 },
+      "length": 0.7,
+      "segments": 2,
+      "radius": [0.05, 0.02],
+      "membrane": null
+    },
+    {
+      "id": "hindflipper",
+      "role": "fin",
+      "attach": { "on": "torso", "at": 0.85, "angle": 110 },
+      "length": 0.32,
+      "segments": 2,
+      "radius": [0.04, 0.015],
+      "membrane": null
+    }
+  ],
+  "parts": [
+    {
+      "id": "shell",
+      "type": "shell",
+      "params": { "dome": 0.7, "overhang": 0.15, "scutes": 13, "thickness": 0.03 }
+    },
+    { "id": "eyes", "params": { "scale": 0.9, "irisColor": "#3a2a14" } }
+  ],
+  "skin": {
+    "palette": { "base": "#5a6a3a", "belly": "#d8cc98", "accent": "#2a2e18" },
+    "material": "scales",
+    "layers": [{ "type": "countershade", "softness": 0.3 }]
+  },
+  "motion": {
+    "temperament": "calm",
+    "media": { "water": true },
+    "gaits": ["swim.flap"],
+    "actions": ["bite", "look", "idle"]
+  }
+}

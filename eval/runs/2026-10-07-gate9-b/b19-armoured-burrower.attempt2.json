@@ -1,0 +1,151 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Armoured Burrower",
+  "seed": 1901,
+  "extends": "quadruped",
+  "scale": 0.6,
+  "body": {
+    "muscle": 0.6,
+    "torso": {
+      "radius": [0.16, 0.24, 0.25, 0.2],
+      "arch": 0.12,
+      "crossSection": "round"
+    },
+    "neck": {
+      "length": 0.1,
+      "radius": [0.08, 0.12],
+      "pitch": 10
+    },
+    "head": {
+      "shape": "snout",
+      "length": 0.3,
+      "radius": 0.08,
+      "lips": 0.1,
+      "pitch": -15
+    },
+    "tail": {
+      "length": 0.55,
+      "radius": [0.08, 0.05, 0.02],
+      "pitch": -15,
+      "curl": 0
+    }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "length": 0.36,
+      "radius": [0.08, 0.05],
+      "splay": 34,
+      "foot": {
+        "type": "foot.claw",
+        "toes": 3,
+        "toeLength": 0.1,
+        "clawLength": 0.18,
+        "clawCurve": 50,
+        "clawWidth": 1.8
+      }
+    },
+    {
+      "id": "hindleg",
+      "length": 0.34,
+      "radius": [0.09, 0.05],
+      "splay": 26,
+      "foot": {
+        "type": "foot.claw",
+        "toes": 4,
+        "toeLength": 0.06,
+        "clawLength": 0.05
+      }
+    }
+  ],
+  "parts": [
+    {
+      "id": "armour",
+      "type": "armor.bands",
+      "attach": {
+        "on": "torso",
+        "area": "all",
+        "from": 0.1,
+        "to": 0.95
+      },
+      "params": {
+        "bands": 11,
+        "thickness": 0.03,
+        "overlap": 0.35,
+        "color": "plate"
+      }
+    },
+    {
+      "id": "tailarmour",
+      "type": "armor.bands",
+      "attach": {
+        "on": "tail",
+        "area": "all",
+        "from": 0,
+        "to": 1
+      },
+      "params": {
+        "bands": 8,
+        "thickness": 0.02,
+        "overlap": 0.3,
+        "color": "plate"
+      }
+    },
+    {
+      "id": "headshield",
+      "type": "armor.bands",
+      "attach": {
+        "on": "head",
+        "area": "back",
+        "from": 0.4,
+        "to": 1
+      },
+      "params": {
+        "bands": 3,
+        "thickness": 0.015,
+        "overlap": 0.25,
+        "color": "plate"
+      }
+    },
+    {
+      "id": "ears",
+      "type": "ear.pointed",
+      "attach": {
+        "on": "head",
+        "at": 0.85,
+        "angle": 50
+      },
+      "params": {
+        "length": 0.08,
+        "width": 0.045,
+        "droop": 0.3
+      }
+    },
+    {
+      "id": "eyes",
+      "params": {
+        "scale": 0.7,
+        "irisColor": "#2a1c10"
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#a08a70",
+      "belly": "#d8c4a8",
+      "accent": "#4a3a2c",
+      "plate": "#6f5c48"
+    },
+    "material": "hide",
+    "layers": [
+      {
+        "type": "countershade",
+        "softness": 0.4
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "calm",
+    "actions": ["bite", "look", "idle"]
+  }
+}

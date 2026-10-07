@@ -786,6 +786,12 @@ seeds (a contact sheet in the PR).
 Meet the gate 9 row of the [gate thresholds](#gate-thresholds): suite B's first full run, with
 renders, filmstrips, `analyze` and `patch`.
 
+**Passed (2026-10-07):** suite A 20/20 valid and 20/20 matched blind; suite B 20/20 valid,
+20/20 meeting `expects` and 20/20 matched blind; every one of the forty first attempts valid;
+variation 12/12 re-scored; fuzz 976 valid with no failures (median 338 ms); budgets met after
+coarser teeth for many-headed creatures and a faster eyelid search (the hydra's and cerberus's
+goldens change). See `eval/runs/2026-10-07-gate9/notes.md`.
+
 ## Phase 10: Motion for games
 
 Each milestone adds its scenario kinds (7.5) and checks, so agents can script and check the new
