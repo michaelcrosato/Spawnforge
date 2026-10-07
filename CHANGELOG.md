@@ -128,6 +128,20 @@ Work in progress toward 0.2, phase by phase (see the plan's status table).
   tomb spider fangs, so their goldens change.
 - **Tests:** the visual regression runs one test per example, so it no longer times out as
   examples are added.
+- **Coverings (9.5):** the area slot is drawn: area parts cover a band of skin on both flanks
+  (`ctx.surface`, `ctx.area`) and can scatter Poisson-disk points over it (`ctx.scatter`).
+  `shell` (a domed slab that follows the body, with scutes, marginals and a flared rim),
+  `armor.bands` (shingled bands, or staggered scales), `plates.row` (kite, round or spike plates,
+  alternating and leaning out), `quills` (scattered, lying back, tipped dark), `frill`, `hood`
+  (with eye marks) and `sail` are drawn. Frills, hoods, sails and groups of quills hang on bones
+  of their own on a new `flare` drive; the `flare` goal opens them, `display` (faces the target,
+  rears, hisses, opens everything and spreads wings; `display-peak`) is built, and
+  `render --flare` (MCP `pose.flare`) shows them open. Their skins are sheets in the membrane
+  mesh. A row's or area's `from` and `to` now default to its module's (they defaulted to 0 and
+  1). Descriptions say which area a covering is on ("quills on its back"). `Pose.solveSubtree`
+  skips bones without children. Creatures without these parts are unchanged.
+- **Examples:** a stone tortoise, a plated stegosaur, a porcupine, a frilled lizard, a hooded
+  cobra and a sail-back.
 
 ## 0.1.0
 

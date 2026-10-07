@@ -1103,8 +1103,8 @@ export function expandCreature(doc: ResolvedDoc, registry: Registry): CreatureSp
 
       const angle = part.attach.angle ?? module.attach.angle ?? 0;
       const at = part.attach.at ?? module.attach.at ?? 0.5;
-      const from = part.attach.from ?? 0;
-      const to = part.attach.to ?? 1;
+      const from = part.attach.from ?? module.attach.from ?? 0;
+      const to = part.attach.to ?? module.attach.to ?? 1;
       const targets = limbInstances.get(base) ?? partInstances.get(base);
       let made: PartSpec[];
       if (targets && !explicitSide && targets.length > 1) {

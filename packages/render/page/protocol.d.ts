@@ -23,6 +23,8 @@ export interface RenderRequest {
     readonly jaw?: number;
     readonly blink?: number;
     readonly spread?: number;
+    /** Frills and hoods open, quills and sails raised, 0 at rest to 1 (9.5). */
+    readonly flare?: number;
   };
   /** Debugging switches. */
   readonly debug?: {

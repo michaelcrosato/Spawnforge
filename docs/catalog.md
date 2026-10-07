@@ -13,10 +13,10 @@ until that milestone lands (`list-modules` gives the same as `planned`; `validat
 blueprint uses of it under `notBuilt`).
 
 - **Body plans:** `biped`, `centaur`, `fish`, `hexapod`, `octopod`, `quadruped`, `serpent`, `wyvern`
-- **Parts:** `antenna`, `armor.bands` (9.5), `beak`, `ear.pointed`, `eye.basic`, `fin.dorsal`, `fin.tail`, `foot.claw`, `foot.hoof`, `foot.pad`, `foot.paw`, `foot.talon`, `frill` (9.5), `hand.grasp`, `hand.pincer`, `hood` (9.5), `horn.curved`, `mandible`, `membrane.bat`, `membrane.case`, `membrane.feather`, `membrane.fin`, `membrane.insect`, `plates.row` (9.5), `quills` (9.5), `sail` (9.5), `shell` (9.5), `spikes.row`, `teeth.row`
+- **Parts:** `antenna`, `armor.bands`, `beak`, `ear.pointed`, `eye.basic`, `fin.dorsal`, `fin.tail`, `foot.claw`, `foot.hoof`, `foot.pad`, `foot.paw`, `foot.talon`, `frill`, `hand.grasp`, `hand.pincer`, `hood`, `horn.curved`, `mandible`, `membrane.bat`, `membrane.case`, `membrane.feather`, `membrane.fin`, `membrane.insect`, `plates.row`, `quills`, `sail`, `shell`, `spikes.row`, `teeth.row`
 - **Patterns:** `bands`, `bioluminescence`, `countershade`, `grime`, `mottle`, `rosettes`, `scales`, `scars`, `slime`, `spots`, `stripes`, `suckers`, `veins`, `warts`
 - **Gaits:** `bound` (10.1), `fly` (10.4), `gallop` (10.1), `glide` (10.4), `hover` (10.4), `run` (10.1), `slither`, `swim.flap` (10.3), `swim.paddle` (10.3), `swim.undulate` (10.3), `tripod`, `trot`, `walk`
-- **Actions:** `bite`, `display` (9.5), `idle`, `jump` (10.2), `lash`, `look`, `pinch`, `pounce` (10.2), `roar`
+- **Actions:** `bite`, `display`, `idle`, `jump` (10.2), `lash`, `look`, `pinch`, `pounce` (10.2), `roar`
 - **Themes:** `demon`, `insect`, `reptile`
 - **Stats:** `rpg`
 
@@ -826,8 +826,6 @@ Overlapping bands of armour across an area of the body, like an armadillo or a p
 
 Add to "parts" with "type": "armor.bands"; parameters go in "params".
 
-**Not built yet** (plan milestone 9.5): it validates, but compile skips it and warns `not_built`.
-
 slot: `"area"` · material: `"horn"` · defaultAttach: `{"on":"torso","area":"back","from":0,"to":1}`
 
 | Parameter | Type | Range | Default | Description |
@@ -1068,8 +1066,6 @@ A fan of spines with skin between them around the neck, folded at rest and opene
 
 Add to "parts" with "type": "frill"; parameters go in "params".
 
-**Not built yet** (plan milestone 9.5): it validates, but compile skips it and warns `not_built`.
-
 Provides `display`, which actions can need.
 
 slot: `"surface"` · material: `"skin"` · defaultAttach: `{"on":"neck","at":0.1,"angle":0}`
@@ -1135,11 +1131,9 @@ A cobra's hood: neck ribs that spread the skin into a flat shield in display.
 
 Add to "parts" with "type": "hood"; parameters go in "params".
 
-**Not built yet** (plan milestone 9.5): it validates, but compile skips it and warns `not_built`.
-
 Provides `display`, which actions can need.
 
-slot: `"surface"` · material: `"skin"` · defaultAttach: `{"on":"neck","at":0.3,"angle":0}`
+slot: `"surface"` · material: `"skin"` · defaultAttach: `{"on":"neck","at":0.08,"angle":0}`
 
 | Parameter | Type | Range | Default | Description |
 | --- | --- | --- | --- | --- |
@@ -1318,8 +1312,6 @@ Upright bony plates along the back, in one row or two alternating rows like a st
 
 Add to "parts" with "type": "plates.row"; parameters go in "params".
 
-**Not built yet** (plan milestone 9.5): it validates, but compile skips it and warns `not_built`.
-
 slot: `"row"` · material: `"bone"` · defaultAttach: `{"on":"spine","from":0.2,"to":0.8,"angle":0}`
 
 | Parameter | Type | Range | Default | Description |
@@ -1345,8 +1337,6 @@ slot: `"row"` · material: `"bone"` · defaultAttach: `{"on":"spine","from":0.2,
 Long sharp quills scattered over an area of the body, raised in display, like a porcupine.
 
 Add to "parts" with "type": "quills"; parameters go in "params".
-
-**Not built yet** (plan milestone 9.5): it validates, but compile skips it and warns `not_built`.
 
 Provides `display`, which actions can need.
 
@@ -1375,8 +1365,6 @@ A tall sail of skin stretched over long spines along the back, like a dimetrodon
 
 Add to "parts" with "type": "sail"; parameters go in "params".
 
-**Not built yet** (plan milestone 9.5): it validates, but compile skips it and warns `not_built`.
-
 Provides `display`, which actions can need.
 
 slot: `"row"` · material: `"skin"` · defaultAttach: `{"on":"spine","from":0.25,"to":0.6,"angle":0}`
@@ -1402,8 +1390,6 @@ slot: `"row"` · material: `"skin"` · defaultAttach: `{"on":"spine","from":0.25
 A domed shell over an area of the body, divided into scutes, like a turtle or a tortoise.
 
 Add to "parts" with "type": "shell"; parameters go in "params".
-
-**Not built yet** (plan milestone 9.5): it validates, but compile skips it and warns `not_built`.
 
 slot: `"area"` · material: `"horn"` · defaultAttach: `{"on":"torso","area":"back","from":0,"to":1}`
 
@@ -1994,8 +1980,6 @@ needs: `["jaw"]`
 Threat display: opens frills and hoods, raises quills and sails. Needs a part that provides `display`.
 
 List in motion.actions as "display", or { "type": "display", ...params }.
-
-**Not built yet** (plan milestone 9.5): it validates, but compile skips it and warns `not_built`.
 
 needs: `["display"]`
 

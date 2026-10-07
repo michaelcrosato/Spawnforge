@@ -23,6 +23,10 @@
     "ok": true,
     "errors": []
   },
+  "examples/frilled-lizard.json": {
+    "ok": true,
+    "errors": []
+  },
   "examples/grey-wolf.json": {
     "ok": true,
     "errors": []
@@ -35,6 +39,10 @@
     "ok": true,
     "errors": []
   },
+  "examples/hooded-cobra.json": {
+    "ok": true,
+    "errors": []
+  },
   "examples/hydra.json": {
     "ok": true,
     "errors": []
@@ -44,6 +52,14 @@
     "errors": []
   },
   "examples/luna-moth.json": {
+    "ok": true,
+    "errors": []
+  },
+  "examples/plated-stegosaur.json": {
+    "ok": true,
+    "errors": []
+  },
+  "examples/porcupine.json": {
     "ok": true,
     "errors": []
   },
@@ -64,6 +80,14 @@
     "errors": []
   },
   "examples/rust-raptor.json": {
+    "ok": true,
+    "errors": []
+  },
+  "examples/sail-back.json": {
+    "ok": true,
+    "errors": []
+  },
+  "examples/stone-tortoise.json": {
     "ok": true,
     "errors": []
   },

@@ -275,6 +275,7 @@ window.spawnforgeRender = async (request) => {
       jaw: request.pose?.jaw ?? 0,
       blink: request.pose?.blink ?? 0,
       spread,
+      flare: request.pose?.flare ?? 0,
     });
     applyPose(creature, pose);
   }

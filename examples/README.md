@@ -32,3 +32,9 @@ their wings open.
 | [griffin.json](griffin.json) | Quadruped | Feathered wings (fingered primaries) folded in rows along the body, a hooked beak, talons in front and paws behind, fur |
 | [kraken.json](kraken.json) | Serpent | Eight arms and two long clubbed feeding tentacles ringing the head, curling onto the ground; suckers beneath; big slit-pupilled eyes; `bite` reaches the tentacles, `lash` whips one |
 | [dune-scorpion.json](dune-scorpion.json) | Octopod | Pincers held forward on arms that `pinch` one claw at a time, a tail curled over the back with a stinger that `lash`es; banded chitin |
+| [stone-tortoise.json](stone-tortoise.json) | Quadruped | A high domed shell with scutes and a flared rim over a wide body, column feet |
+| [plated-stegosaur.json](plated-stegosaur.json) | Quadruped | Two staggered rows of kite plates edged in red, a spiked tail, high hips |
+| [porcupine.json](porcupine.json) | Quadruped | Quills scattered over the back, tipped dark, that rise in `display`; fur and paws |
+| [frilled-lizard.json](frilled-lizard.json) | Quadruped | A frill folded over the neck that opens into a disc in `display`; a banded tail |
+| [hooded-cobra.json](hooded-cobra.json) | Serpent | A rearing neck whose hood spreads in `display`, with eye marks on its back |
+| [sail-back.json](sail-back.json) | Quadruped | A tall sail on spines along the back that stands up in `display`; teeth, stripes |

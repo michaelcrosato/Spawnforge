@@ -129,7 +129,12 @@ each a pure function of the creature spec, seed and quality:
    pose of turns about each bone's X). Compile appends the bones (`<part>.<chain>.<k>`, section
    `part`, parented to the socket's bone or the chain's own `parent`) and their driven chains,
    and `build` gets them as `ctx.chains` to weight pieces to (`ctx.solid` takes weights per
-   vertex).
+   vertex). Area parts (shells, armour, quills) cover a band of skin: `ctx.surface(at, angle)`
+   finds the skin at a signed angle on either flank (given a neighbouring socket, it brackets
+   from that depth, much faster), `ctx.area` says which band (`back`, `sides`, `belly`, `all`
+   with `from` and `to`), and `ctx.scatter(spacing)` places Poisson-disk points over it by dart
+   throwing from the part's own stream, spaced along and round the body. Frills, hoods, sails and
+   quill groups are part chains on the `flare` drive.
 
 The output is plain data (`CompiledCreature`): four meshes (skin, hard parts, eyes, membranes)
 sharing one skeleton, the material spec, a rig description for motion, gameplay sockets, labelled markers
@@ -195,7 +200,8 @@ same code runs live in the browser, checks motion in Node and renders filmstrips
   look target reaches and grips), `grab` (bending the two tentacles nearest the target toward
   it by FABRIK, `bite` sets it) and `lash` with `lashArc` (swinging the tail or tentacle nearest
   the target about its root toward it, negative winding up away; near the end of the strike a
-  target in reach draws its tip on by FABRIK). Ambient actions (idle) run all the
+  target in reach draws its tip on by FABRIK) and `flare` (opening frills and hoods and raising
+  quills and sails, as `display` does). Ambient actions (idle) run all the
   time; main actions (`act(id, { target })`) run one at a time on top and override the goals
   they set. Durations scale by √(hip height / 1 m). The core never names an action: it only
   applies goals, and it needs the module registry (`new MotionController(compiled,
@@ -213,13 +219,14 @@ same code runs live in the browser, checks motion in Node and renders filmstrips
   other solve skips.
 - **Events**, returned by `update`: `footstep` (leg id and position), `gait` changes,
   `action-start` and `action-end`, and the moments actions declare (`bite-contact`,
-  `roar-peak`, `pinch-contact`, `lash-contact`) with the head's position (and, with several
-  heads, which one in `head`).
+  `roar-peak`, `pinch-contact`, `lash-contact`, `display-peak`) with the head's position (and,
+  with several heads, which one in `head`).
 - **Jaws and blinks** are bone turns (`applyFace`, shared with the render page's `--jaw` and
   `--blink`): every jaw about its hinge, every blink-driven chain toward its `closed` pose (turns
   about each bone's local X), and parts' jaw-driven chains (mandibles) and grip-driven chains (a
   pincer's finger, per side) by their `full` pose times the jaw or the grip, which the
-  controller damps toward its goal in about 0.03 s. **Breathing** travels with the pose as a number that `applyPose`
+  controller damps toward its goal in about 0.03 s; flare-driven chains (frills, hoods, sails,
+  quill groups) by it times the flare, damped in about 0.15 s. **Breathing** travels with the pose as a number that `applyPose`
   feeds to the skin shader (the torso swells along its normals), and so does the clock
   (`Pose.time`) for pulsing patterns.
 

@@ -1,0 +1,29 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Hooded Cobra",
+  "seed": 9101,
+  "extends": "serpent",
+  "scale": 0.75,
+  "body": {
+    "neck": { "length": 0.45, "pitch": 80, "segments": 4, "radius": [0.06, 0.07] },
+    "head": { "length": 0.2, "radius": 0.07 }
+  },
+  "parts": [
+    {
+      "id": "hood",
+      "type": "hood",
+      "params": { "width": 0.38, "length": 0.55, "markColor": "#e8dcb0" }
+    },
+    { "id": "eyes", "params": { "irisColor": "#201810" } }
+  ],
+  "skin": {
+    "palette": { "base": "#3a3422", "belly": "#c8b888", "accent": "#1a160e" },
+    "material": "scales",
+    "layers": [
+      { "type": "countershade", "softness": 0.3 },
+      { "type": "bands", "color": "accent", "count": 30, "width": 0.2, "region": "tail" },
+      { "type": "scales", "size": 0.02 }
+    ]
+  },
+  "motion": { "temperament": "stalking", "actions": ["display", "bite", "look"] }
+}

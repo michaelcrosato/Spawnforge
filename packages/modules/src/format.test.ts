@@ -110,24 +110,25 @@ describe('format 0.2', () => {
       ],
       parts: [{ id: 'ruff', type: 'frill' }],
       skin: { fur: { length: 0.04 } },
+      motion: { actions: ['bite', 'jump'] },
     });
     expect(dragon.ok).toBe(true);
     expect(dragon.warnings).toEqual([]);
-    // Fur (8.4), several heads (9.1), wings (9.3) and tentacles (9.4) are built; frills are not
-    // yet (9.5).
-    expect(dragon.notBuilt?.map((i) => i.path).sort()).toEqual(['parts[id=ruff].type']);
+    // Fur (8.4), several heads (9.1), wings (9.3), tentacles (9.4) and frills (9.5) are built;
+    // jumping is not yet (10.2).
+    expect(dragon.notBuilt?.map((i) => i.path).sort()).toEqual(['motion.actions[type=jump]']);
     expect(dragon.notBuilt?.[0]?.fix).toMatch(/^keep it/);
   });
 
   it('leaves out what something else implies', () => {
-    // Wings imply flying, which is not built yet (10.4), and neither is a frill: the frill is
+    // Wings imply flying, which is not built yet (10.4), and neither is jumping: the jump is
     // listed, flying only when the blueprint writes it.
     const implied = check({
       extends: 'quadruped',
       limbs: [{ id: 'wing', role: 'wing' }],
-      parts: [{ id: 'ruff', type: 'frill' }],
+      motion: { actions: ['jump'] },
     });
-    expect(implied.notBuilt?.map((i) => i.path).sort()).toEqual(['parts[id=ruff].type']);
+    expect(implied.notBuilt?.map((i) => i.path).sort()).toEqual(['motion.actions[type=jump]']);
     // Stances are drawn (8.2); swimming is not yet.
     const written = check({
       extends: 'quadruped',
@@ -220,21 +221,22 @@ describe('format 0.2', () => {
         { id: 'ruff', type: 'frill' },
       ],
       body: { neck: { count: 2, length: 0.6 } },
+      motion: { actions: ['bite', 'jump'] },
     });
     expect(result.errors).toEqual([]);
     if (!result.creature) throw new Error('invalid');
     const compiled = compileCreature(result.creature, registry, { quality: 'low' });
     expect(compiled.rig.legs).toHaveLength(4);
     expect(compiled.rig.arms).toHaveLength(0);
-    // Two heads (9.1), the wings with the part on them (9.3) and the tentacle with its (9.4)
-    // are built; the frill is reported.
+    // Two heads (9.1), the wings with the part on them (9.3), the tentacle with its (9.4) and
+    // the frill (9.5) are built; the jump is reported.
     expect(compiled.rig.heads.map((h) => h.id)).toEqual(['head', 'head.R1']);
     expect(compiled.rig.wings.map((w) => w.id)).toEqual(['wing.L', 'wing.R']);
     expect(compiled.rig.tentacles.map((t) => t.id)).toEqual(['tail-arm.L', 'tail-arm.R']);
     expect(compiled.markers.map((m) => m.id)).toEqual(
-      expect.arrayContaining(['barb.L', 'hook.L', 'hook.R']),
+      expect.arrayContaining(['barb.L', 'hook.L', 'hook.R', 'ruff']),
     );
-    expect(compiled.warnings.map((w) => w.path)).toEqual(['parts[id=ruff].type']);
+    expect(compiled.warnings.map((w) => w.path)).toEqual(['motion.actions[type=jump]']);
   });
 
   // The recipes in docs/blueprint.md, "Recipes for the new bodies", written out.
