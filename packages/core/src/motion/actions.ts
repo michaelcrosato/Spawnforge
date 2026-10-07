@@ -66,6 +66,19 @@ export interface ActionGoals {
   arms?: number;
   /** Spreads the wings: 0 folded at rest, 1 spread wide (docs/design/9.3-wings-fins.md). */
   wings?: number;
+  /** Closes grip-driven parts (a pincer's finger): 0 at rest, 1 shut, negative opens wide (9.4). */
+  grip?: number;
+  /** `arms` and `grip` move only the side nearest `look`: one claw pinches (9.4). */
+  nearest?: boolean;
+  /** Reaches the tentacles nearest the look target toward it, 0 to 1 (9.4). */
+  grab?: number;
+  /**
+   * Whips the tail or tentacle nearest the look target: 0 to 1 along the strike, negative
+   * winding up away from it (9.4).
+   */
+  lash?: number;
+  /** The most a lash sweeps toward its target, in radians (default π/2). */
+  lashArc?: number;
   /** Stand still while the action runs. */
   stop?: boolean;
 }

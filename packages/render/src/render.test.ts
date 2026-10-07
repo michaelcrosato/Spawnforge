@@ -93,14 +93,15 @@ describe('headless renders', () => {
     }
   }, 120_000);
 
-  it('renders the examples like their approved images (visual regression)', async () => {
-    // Every example, with the same settings as `pnpm render:examples`, which writes the approved
-    // images.
-    const names = readdirSync(new URL('../../../examples/', import.meta.url))
-      .filter((f) => f.endsWith('.json'))
-      .map((f) => f.replace(/\.json$/, ''));
-    expect(names.length).toBeGreaterThanOrEqual(4);
-    for (const name of names) {
+  // Every example, with the same settings as `pnpm render:examples`, which writes the approved
+  // images; one test each, so the suite's time grows with the examples.
+  const examples = readdirSync(new URL('../../../examples/', import.meta.url))
+    .filter((f) => f.endsWith('.json'))
+    .map((f) => f.replace(/\.json$/, ''));
+  it('has examples to compare', () => expect(examples.length).toBeGreaterThanOrEqual(4));
+  it.each(examples)(
+    'renders %s like its approved image (visual regression)',
+    async (name) => {
       const blueprint = JSON.parse(
         readFileSync(new URL(`../../../examples/${name}.json`, import.meta.url), 'utf8'),
       );
@@ -109,8 +110,9 @@ describe('headless renders', () => {
       const { differing } = await renderer.diff(png, approved);
       // Rasterizers differ a little between Chromium builds; a real change moves far more.
       expect(differing, name).toBeLessThan(0.03);
-    }
-  }, 120_000);
+    },
+    60_000,
+  );
 
   it('exports a .glb with skinned meshes, vertex colours, clips, sockets and extras', async () => {
     const blueprint = JSON.parse(

@@ -806,7 +806,7 @@ export function compileCreature(
     })),
     main: skeleton.rig.main,
     tails: skeleton.rig.tails,
-    chains: [...skeleton.rig.chains, ...sink.lids.chains],
+    chains: [...skeleton.rig.chains, ...sink.lids.chains, ...sink.partChains],
     legs: skeleton.rig.legs.map((l) => ({ ...l, restFoot: v3(l.restFoot), pole: v3(l.pole) })),
     arms: skeleton.rig.arms.map((a) => ({ ...a, pole: v3(a.pole) })),
     wings,
@@ -1310,6 +1310,15 @@ function bodyCoordinates(
     axis[i * 2] = axis[i * 2 + 1] = value;
   });
 
+  const tentacles = new Set(spec.limbs.filter((l) => l.role === 'tentacle').map((l) => l.id));
+  /** Around a bone: 1 on its `up` side, -1 opposite, 0 across. */
+  const aroundBone = (b: BoneDef, p: Vector3, t: number) => {
+    const off = p.clone().sub(b.head.clone().lerp(b.tail, t));
+    const dir = new Vector3().subVectors(b.tail, b.head).normalize();
+    off.addScaledVector(dir, -off.dot(dir));
+    const len = off.length();
+    return len > 1e-9 ? off.dot(b.up) / len : 0;
+  };
   const sectionOf = (b: BoneDef): BoneDef['section'] => {
     if (b.section !== 'helper') return b.section;
     const owner = bones.find((x) => x.owner === b.owner && x.section !== 'helper');
@@ -1341,19 +1350,20 @@ function bodyCoordinates(
         ((axis[id * 2] as number) + ((axis[id * 2 + 1] as number) - (axis[id * 2] as number)) * t);
       const section = sectionOf(b);
       if (section === 'limb' || section === 'toe' || section === 'digit') {
-        const outward = new Vector3(Math.sign(p.x) || 1, 0, 0);
-        // Limbs read like the flank outside and the belly inside.
-        height += w * (nrm.dot(outward) * 0.45 + nrm.y * 0.35 + 0.1);
+        if (tentacles.has(b.owner)) {
+          // A tentacle's belly is the inside of its curl, where suckers go (bone `up` points
+          // out of the curl; docs/design/9.4-tentacles-parts.md).
+          height += w * aroundBone(b, p, t);
+        } else {
+          const outward = new Vector3(Math.sign(p.x) || 1, 0, 0);
+          // Limbs read like the flank outside and the belly inside.
+          height += w * (nrm.dot(outward) * 0.45 + nrm.y * 0.35 + 0.1);
+        }
         limb += w * (section === 'limb' ? b.t0 + (b.t1 - b.t0) * t : 1);
         reg[2] = (reg[2] as number) + w;
         if (b.tube) wing += w;
       } else {
-        const closest = b.head.clone().lerp(b.tail, t);
-        const off = p.clone().sub(closest);
-        const dir = new Vector3().subVectors(b.tail, b.head).normalize();
-        off.addScaledVector(dir, -off.dot(dir));
-        const len = off.length();
-        height += w * (len > 1e-9 ? off.dot(b.up) / len : 0);
+        height += w * aroundBone(b, p, t);
         const k = section === 'head' || section === 'jaw' ? 0 : section === 'tail' ? 3 : 1;
         reg[k] = (reg[k] as number) + w;
       }

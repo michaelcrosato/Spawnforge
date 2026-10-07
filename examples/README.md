@@ -21,12 +21,14 @@ their wings open.
 | [hydra.json](hydra.json) | Quadruped | Five heads on long S-curved necks, each with its own mouth, slit-pupilled eyes and teeth; a spine crest; scales |
 | [cerberus.json](cerberus.json) | Quadruped | Three wolf-sized heads fanned wide, ears and long fangs copied onto each, fur |
 | [two-tailed-fox.json](two-tailed-fox.json) | Quadruped | Two raised tails, each its own spring; paws, fur and a pale belly |
-| [tomb-spider.json](tomb-spider.json) | Octopod | Eight arched legs (longest in front) that walk in a wave and run in alternating fours; stripes and spots on chitin |
+| [tomb-spider.json](tomb-spider.json) | Octopod | Eight arched legs (longest in front) that walk in a wave and run in alternating fours; fangs that open with the bite; stripes and spots on chitin |
 | [grove-centaur.json](grove-centaur.json) | Centaur | An upright human torso with shoulders, a chest and hands; hooves, horns and pointed ears; hide |
 | [ash-dragon.json](ash-dragon.json) | Quadruped | Leathery four-fingered wings on the shoulders, folded along the flanks at rest; veins on the wings, horns, a spine crest |
 | [cave-bat.json](cave-bat.json) | Wyvern | Five-fingered wings whose membrane trails to the legs, a thumb claw, big ears and fur |
 | [storm-wyvern.json](storm-wyvern.json) | Wyvern | Wings for forelimbs trailing to the body, a band across the wings, pale horns, a spined tail |
 | [rhino-beetle.json](rhino-beetle.json) | Hexapod | Hard wing cases over the abdomen, with the hind wings folded away beneath them; a nose horn; chitin |
-| [luna-moth.json](luna-moth.json) | Hexapod | Broad fore and round hind wings, see-through and veined, with ringed eye spots (a `wings` layer); fur |
+| [luna-moth.json](luna-moth.json) | Hexapod | Broad fore and round hind wings, see-through and veined, with ringed eye spots (a `wings` layer); feathery antennae on springs; fur |
 | [reef-shark.json](reef-shark.json) | Fish | Rayed pectoral fins, flat pelvic fins, a falcate dorsal fin and a forked tail fin; teeth |
 | [griffin.json](griffin.json) | Quadruped | Feathered wings (fingered primaries) folded in rows along the body, a hooked beak, talons in front and paws behind, fur |
+| [kraken.json](kraken.json) | Serpent | Eight arms and two long clubbed feeding tentacles ringing the head, curling onto the ground; suckers beneath; big slit-pupilled eyes; `bite` reaches the tentacles, `lash` whips one |
+| [dune-scorpion.json](dune-scorpion.json) | Octopod | Pincers held forward on arms that `pinch` one claw at a time, a tail curled over the back with a stinger that `lash`es; banded chitin |

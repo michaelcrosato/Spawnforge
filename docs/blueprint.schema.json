@@ -1529,6 +1529,7 @@
                   "slime",
                   "spots",
                   "stripes",
+                  "suckers",
                   "veins",
                   "warts"
                 ],
@@ -3505,6 +3506,53 @@
         "fade": {
           "default": 0.6,
           "description": "How much stripes fade toward the belly",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "pattern:suckers": {
+      "description": "A row of pale suckers down the underside of tentacles (and any limb), each a raised rim round a dark cup.",
+      "type": "object",
+      "properties": {
+        "color": {
+          "default": "belly",
+          "description": "Rim colour: a palette name or a colour",
+          "type": "string",
+          "minLength": 1
+        },
+        "centerColor": {
+          "default": "#6a3a44",
+          "description": "Colour in the cup: a palette name or a colour",
+          "type": "string",
+          "minLength": 1
+        },
+        "count": {
+          "default": 22,
+          "description": "Suckers along each limb",
+          "type": "integer",
+          "minimum": 4,
+          "maximum": 64
+        },
+        "size": {
+          "default": 0.8,
+          "description": "Sucker length as a share of the spacing",
+          "type": "number",
+          "minimum": 0.2,
+          "maximum": 1
+        },
+        "width": {
+          "default": 0.7,
+          "description": "How far round the underside they reach, in radians either side",
+          "type": "number",
+          "minimum": 0.2,
+          "maximum": 1.2
+        },
+        "bump": {
+          "default": 0.5,
+          "description": "How raised the rims are",
           "type": "number",
           "minimum": 0,
           "maximum": 1

@@ -71,6 +71,7 @@ export type {
   EyeOptions,
   PanelLook,
   PartBuildContext,
+  PartChain,
   PartHooks,
   Socket,
   WingContext,

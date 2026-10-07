@@ -13,10 +13,10 @@ until that milestone lands (`list-modules` gives the same as `planned`; `validat
 blueprint uses of it under `notBuilt`).
 
 - **Body plans:** `biped`, `centaur`, `fish`, `hexapod`, `octopod`, `quadruped`, `serpent`, `wyvern`
-- **Parts:** `antenna` (9.4), `armor.bands` (9.5), `beak`, `ear.pointed`, `eye.basic`, `fin.dorsal`, `fin.tail`, `foot.claw`, `foot.hoof`, `foot.pad`, `foot.paw`, `foot.talon`, `frill` (9.5), `hand.grasp`, `hand.pincer` (9.4), `hood` (9.5), `horn.curved`, `mandible` (9.4), `membrane.bat`, `membrane.case`, `membrane.feather`, `membrane.fin`, `membrane.insect`, `plates.row` (9.5), `quills` (9.5), `sail` (9.5), `shell` (9.5), `spikes.row`, `teeth.row`
-- **Patterns:** `bands`, `bioluminescence`, `countershade`, `grime`, `mottle`, `rosettes`, `scales`, `scars`, `slime`, `spots`, `stripes`, `veins`, `warts`
+- **Parts:** `antenna`, `armor.bands` (9.5), `beak`, `ear.pointed`, `eye.basic`, `fin.dorsal`, `fin.tail`, `foot.claw`, `foot.hoof`, `foot.pad`, `foot.paw`, `foot.talon`, `frill` (9.5), `hand.grasp`, `hand.pincer`, `hood` (9.5), `horn.curved`, `mandible`, `membrane.bat`, `membrane.case`, `membrane.feather`, `membrane.fin`, `membrane.insect`, `plates.row` (9.5), `quills` (9.5), `sail` (9.5), `shell` (9.5), `spikes.row`, `teeth.row`
+- **Patterns:** `bands`, `bioluminescence`, `countershade`, `grime`, `mottle`, `rosettes`, `scales`, `scars`, `slime`, `spots`, `stripes`, `suckers`, `veins`, `warts`
 - **Gaits:** `bound` (10.1), `fly` (10.4), `gallop` (10.1), `glide` (10.4), `hover` (10.4), `run` (10.1), `slither`, `swim.flap` (10.3), `swim.paddle` (10.3), `swim.undulate` (10.3), `tripod`, `trot`, `walk`
-- **Actions:** `bite`, `display` (9.5), `idle`, `jump` (10.2), `lash` (9.4), `look`, `pinch` (9.4), `pounce` (10.2), `roar`
+- **Actions:** `bite`, `display` (9.5), `idle`, `jump` (10.2), `lash`, `look`, `pinch`, `pounce` (10.2), `roar`
 - **Themes:** `demon`, `insect`, `reptile`
 - **Stats:** `rpg`
 
@@ -251,7 +251,7 @@ One pattern layer; its parameters sit beside `type`
 
 | Field | Type | Range | Default | Description |
 | --- | --- | --- | --- | --- |
-| `type` | "bands" \| "bioluminescence" \| "countershade" \| "grime" \| "mottle" \| "rosettes" \| "scales" \| "scars" \| "slime" \| "spots" \| "stripes" \| "veins" \| "warts" |  |  | Pattern module id |
+| `type` | "bands" \| "bioluminescence" \| "countershade" \| "grime" \| "mottle" \| "rosettes" \| "scales" \| "scars" \| "slime" \| "spots" \| "stripes" \| "suckers" \| "veins" \| "warts" |  |  | Pattern module id |
 | `id` | string |  |  | Optional id; keys the layer random stream |
 | `region` | "all" \| "back" \| "belly" \| "head" \| "torso" \| "limbs" \| "tail" \| "wings" |  | `"all"` | Where the layer shows |
 | `strength` | number | 0–1 | `1` | Layer opacity |
@@ -800,8 +800,6 @@ A jointed antenna that sways on springs: thread-like, clubbed or feathery; side 
 
 Add to "parts" with "type": "antenna"; parameters go in "params".
 
-**Not built yet** (plan milestone 9.4): it validates, but compile skips it and warns `not_built`.
-
 slot: `"surface"` · material: `"chitin"` · defaultAttach: `{"on":"head","at":0.3,"angle":30}`
 
 | Parameter | Type | Range | Default | Description |
@@ -1115,8 +1113,6 @@ A crab or scorpion pincer: a heavy claw with one hinged finger that snaps shut.
 
 Set as a limb's foot: { "foot": { "type": "hand.pincer", ...params } }.
 
-**Not built yet** (plan milestone 9.4): it validates, but compile skips it and warns `not_built`.
-
 Provides `pincer`, which actions can need.
 
 slot: `"foot"` · material: `"chitin"` · defaultAttach: `{"on":"limb"}`
@@ -1191,8 +1187,6 @@ slot: `"surface"` · material: `"horn"` · defaultAttach: `{"on":"head","at":0.7
 A pair of hinged mandibles or fangs at the mouth corners that close with the bite.
 
 Add to "parts" with "type": "mandible"; parameters go in "params".
-
-**Not built yet** (plan milestone 9.4): it validates, but compile skips it and warns `not_built`.
 
 Provides `mandibles`, which actions can need.
 
@@ -1680,6 +1674,25 @@ Add to skin.layers as { "type": "stripes", ...params }; every layer also takes "
 { "type": "stripes", "color": "accent", "count": 12, "region": "back", "jitter": 0.4 }
 ```
 
+### `suckers`
+
+A row of pale suckers down the underside of tentacles (and any limb), each a raised rim round a dark cup.
+
+Add to skin.layers as { "type": "suckers", ...params }; every layer also takes "region" and "strength".
+
+| Parameter | Type | Range | Default | Description |
+| --- | --- | --- | --- | --- |
+| `color` | string |  | `"belly"` | Rim colour: a palette name or a colour |
+| `centerColor` | string |  | `"#6a3a44"` | Colour in the cup: a palette name or a colour |
+| `count` | integer | 4–64 | `22` | Suckers along each limb |
+| `size` | number | 0.2–1 | `0.8` | Sucker length as a share of the spacing |
+| `width` | number | 0.2–1.2 | `0.7` | How far round the underside they reach, in radians either side |
+| `bump` | number | 0–1 | `0.5` | How raised the rims are |
+
+```json
+{ "type": "suckers", "count": 24, "region": "limbs" }
+```
+
 ### `veins`
 
 Branching veins under thin skin, darker or glowing.
@@ -2037,8 +2050,6 @@ Whips the tail or a tentacle at a target; fires a lash-contact event.
 
 List in motion.actions as "lash", or { "type": "lash", ...params }.
 
-**Not built yet** (plan milestone 9.4): it validates, but compile skips it and warns `not_built`.
-
 needs: `[["tail","tentacle"]]`
 
 | Parameter | Type | Range | Default | Description |
@@ -2072,8 +2083,6 @@ needs: `["head"]`
 Snaps a pincer shut on a target; fires a pinch-contact event.
 
 List in motion.actions as "pinch", or { "type": "pinch", ...params }.
-
-**Not built yet** (plan milestone 9.4): it validates, but compile skips it and warns `not_built`.
 
 needs: `["pincer"]`
 

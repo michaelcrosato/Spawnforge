@@ -39,7 +39,15 @@
       }
     }
   ],
-  "parts": [{ "id": "eyes", "params": { "irisColor": "#20301a", "scale": 1.1 } }],
+  "parts": [
+    { "id": "eyes", "params": { "irisColor": "#20301a", "scale": 1.1 } },
+    {
+      "id": "antennae",
+      "type": "antenna",
+      "attach": { "on": "head", "at": 0.35, "angle": 25, "side": "both" },
+      "params": { "length": 0.45, "shape": "feather", "curve": 50, "color": "#c8a870" }
+    }
+  ],
   "skin": {
     "palette": { "base": "#e8eedc", "belly": "#f4f4ea", "accent": "#7a3a3a" },
     "material": "skin",

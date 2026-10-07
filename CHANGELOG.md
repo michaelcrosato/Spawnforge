@@ -104,6 +104,30 @@ Work in progress toward 0.2, phase by phase (see the plan's status table).
     a tail-only colour and a rearing cobra's belly. `patch set` replacing whole objects is
     documented.
   - Masses under 100 g read in grams.
+- **Tentacles, antennae, mandibles and pincers (9.4):** tentacle limbs are drawn: a chain of
+  even bones leaving the skin toward the section's far end (back on the torso, forward round the
+  mouth on the head), straight for `curlStart` and curling toward the belly, lying on the ground
+  and curling on across it where they reach it. They sway on soft springs, and tentacles and
+  antennae lie on the ground as the creature moves instead of sinking. Part modules may declare
+  bones of their own through a `bones` hook (`PartChain`: points placed with `ctx.toModel`,
+  radii, a `spring`, `jaw` or `grip` drive), which `build` gets as `ctx.chains`; `antenna`
+  (`thread`, `club`, `feather`), `mandible` (`mandible` or `fang`, opening with the jaw) and
+  `hand.pincer` (a hinged finger that the grip shuts) are drawn. New action goals: `grip`
+  (negative opens wide), `nearest` (one side reaches and grips), `grab` (the two tentacles
+  nearest the target bend toward it by FABRIK; `bite` sets it) and `lash` with `lashArc`. The
+  `pinch` and `lash` actions are built (`pinch-contact`, `lash-contact`); `lash` joins the
+  default actions of every body with a tail. Arms already held forward lift only a little when
+  they reach. `suckers` is a pattern: rimmed cups in a row under each limb, on the inside of a
+  tentacle's curl. `analyze` warns `tentacle_intersection`, gives `measurements.tentacleReach`,
+  names tentacles, pincers, antennae and mandibles, calls a legless body with tentacles a
+  tentacled creature, and measures a torso's ground contact by its half-height (a wide or
+  legless torso no longer reads as sinking). Action filmstrips frame the whole creature for
+  actions of the body. Creatures without these parts look and move as before, a little faster:
+  springs and the pose solve do less work each step.
+- **Examples:** a kraken and a dune scorpion; the luna moth gains feathery antennae and the
+  tomb spider fangs, so their goldens change.
+- **Tests:** the visual regression runs one test per example, so it no longer times out as
+  examples are added.
 
 ## 0.1.0
 

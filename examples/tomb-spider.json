@@ -9,7 +9,12 @@
   },
   "parts": [
     { "id": "eyes", "params": { "irisColor": "#c02a18" } },
-    { "id": "side-eyes", "params": { "irisColor": "#c02a18" } }
+    { "id": "side-eyes", "params": { "irisColor": "#c02a18" } },
+    {
+      "id": "fangs",
+      "type": "mandible",
+      "params": { "shape": "fang", "length": 0.18, "curve": 60, "teeth": 0 }
+    }
   ],
   "skin": {
     "palette": { "base": "#2c2420", "belly": "#5e4c40", "accent": "#b89a6a" },

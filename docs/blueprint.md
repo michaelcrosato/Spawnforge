@@ -204,7 +204,7 @@ own defaults, so `{ "id": "wing", "role": "wing" }` is already a usable wing. Ev
 | `arm` | Hangs free for grabbing and striking | `splay`, `lift`, `foot` | as a leg |
 | `wing` | Rests folded, spreads when asked; flies from 10.4 | `membrane`, `foot` (a thumb at the wrist) | `at` 0.2, `angle` 40, `length` 1.2, `membrane.bat` |
 | `fin` | Holds out flat; swims from 10.3 | `membrane` | `at` 0.25, `angle` 115, `length` 0.35, 2 segments, `membrane.fin` |
-| `tentacle` | A long spring chain that curls and reaches (_9.4_) | `curl`, `curlStart`, up to 16 `segments` | `at` 0.9, `angle` 150, `length` 1.5, 10 segments |
+| `tentacle` | A long spring chain that curls, sways and reaches | `curl`, `curlStart`, up to 16 `segments` | `at` 0.9, `angle` 150, `length` 1.5, 10 segments |
 
 - **Legs come in mirrored pairs** (`side: "both"`), up to 6 pairs. Legs are ordered from the back;
   where they attach (`at`) decides the order. Only legs carry the body.
@@ -218,7 +218,10 @@ own defaults, so `{ "id": "wing", "role": "wing" }` is already a usable wing. Ev
   `foot.talon` (bird-like), `foot.pad` (column feet); hands: `hand.grasp`, `hand.pincer`.
   `"foot": null` ends the limb in a stump. Each foot stands the leg at its own height: a paw on
   its toes, a hoof on its tip, a column foot low. `hand.grasp` on an arm has four fingers and an
-  opposed thumb (`fingers`, `fingerLength`, and `claws` 0 for nails). _(Pincers arrive in 9.4.)_
+  opposed thumb (`fingers`, `fingerLength`, and `claws` 0 for nails). `hand.pincer` is a crab's
+  or scorpion's claw: a swollen palm and two fingers, the upper one hinged on a bone of its own,
+  which `pinch` snaps shut (`size` in torso lengths, `width`, `teeth`). Hold the arms forward
+  with `lift` 70–85 for a scorpion.
 - **`stance`** (legs): `plantigrade` (on the whole sole, like a bear), `digitigrade` (on the toes,
   like a dog) or `unguligrade` (on hoof tips, like a horse). Left out, the foot suggests one
   (`foot.paw` and `foot.talon` digitigrade, `foot.hoof` unguligrade, `foot.pad` plantigrade;
@@ -244,9 +247,15 @@ own defaults, so `{ "id": "wing", "role": "wing" }` is already a usable wing. Ev
 - **Tentacles** take `curl` (degrees of rest curl, toward the belly; negative curls toward the
   back) and `curlStart` (the straight share before it). For eight tentacles write four entries
   with `side: "both"` at different `angle`s. On the torso at its default `at` 0.9 they trail
-  behind, like a squid's; `"attach": { "on": "head" }` rings the mouth. Fins or tentacles on the
-  torso make a legless body a swimmer (see `media`); on the head they do not, so a tentacle pair
-  on the head with an `eye.basic` at `at` 1 makes eyes on stalks for a slug that stays on land.
+  behind, like a squid's; `"attach": { "on": "head" }` rings the mouth, pointing forward (see
+  `examples/kraken.json`). A tentacle that curls down to the ground lies on it and curls on
+  across it. A `radius` profile with a bulge near the tip (`[0.04, 0.02, 0.018, 0.035, 0.008]`)
+  makes a squid's club. Tentacles sway on soft springs and lie on the ground as the creature
+  moves; `bite` reaches the nearest two for its target, and `lash` whips one at it. Fins or
+  tentacles on the torso make a legless body a swimmer (see `media`); on the head they do not,
+  so a tentacle pair on the head with an `eye.basic` at `at` 1 makes eyes on stalks for a slug
+  that stays on land. `analyze` warns `tentacle_intersection` when one passes into the body or a
+  leg, and gives `measurements.tentacleReach`.
 - Typical lengths: a dog-like quadruped's legs are 0.5–0.6 torso lengths, an upright biped's legs
   1–1.6, insect legs 0.6–0.8 with `splay` 55, spider legs 0.85–1.1, a dragon's wings 1.2–1.8.
   A sprawled leg (`splay` 55 or more) longer than 0.7 torso lengths holds the body as low as a
@@ -287,8 +296,15 @@ runs on past the snout) and `depth`; use `"lips": 0` and leave out teeth for a b
 
 A row's `count` is per row: a `spikes.row` with `side` "both" makes two rows of `count` spikes,
 while `plates.row` is one centred part whose `count` plates alternate left and right
-(`alternate`). A part on something that is not drawn yet (a tentacle) is not drawn
-either; `validate` lists it under `notBuilt` with its host.
+(`alternate`). Parts sit on tentacles, wings and fins as on any limb.
+
+**Parts with bones.** `antenna`, `mandible` and `hand.pincer` move on bones of their own, which
+exports carry. An `antenna` (surface slot, on the head; `side` "both" for a pair) is a jointed
+chain that sways on a spring and never sinks into the ground: `length`, `segments`, `shape`
+(`thread`, `club` for a butterfly, `feather` for a moth's comb), `curve` (degrees it curves back)
+and `stiffness`. A `mandible` (mouth slot) is a pair hinged at the mouth corners that opens with
+the jaw: `shape` `mandible` (an ant's, curving in toward each other) or `fang` (a spider's
+chelicerae, hanging down), `length`, `curve` and `teeth`.
 
 ### Recipes
 
@@ -308,7 +324,7 @@ All lengths are in torso lengths.
 | Bull horns, out then forward | `horn.curved` on `head`, `at` 0.85, `angle` 75; `length` 0.3, `width` 0.04, `curve` -70 |
 | Rhino nose horn | `horn.curved` on `head`, `at` 0.12, `angle` 0; `length` 0.22, `width` 0.05, `curve` 25 (add a smaller one at `at` 0.4) |
 | Tusks from the lower jaw | `horn.curved` on `jaw`, `at` 0.25, `angle` 60; `length` 0.16, `width` 0.025, `curve` -60, pale `color` and `tipColor` |
-| Insect mandibles | `horn.curved` on `head`, `at` 0.06, `angle` 110, `side` "both"; `length` 0.25, `width` 0.03, `curve` 60, `aim` "forward", dark colours. They point forward and curve in toward each other, on any head size |
+| Insect mandibles | `{ "id": "jaws", "type": "mandible", "params": { "length": 0.2 } }`: a pair that opens with the bite (fixed horns, `horn.curved` with `aim` "forward" and `side` "both", do not move) |
 | Horns swept back along the head | `horn.curved` on `head`, `at` 0.8, `angle` 50; `length` 0.4, `curve` 50, `aim` "back" |
 | Spikes down the whole back | `spikes.row` on `spine`, `from` 0.1, `to` 0.95, `angle` 0; a `height` profile such as `[0.06, 0.12, 0.05]` |
 | A stinger on the tail tip | `horn.curved` on `tail`, `at` 0.97, `angle` 0; `length` 0.14, `width` 0.025, `curve` 60, a dark `color` |
@@ -356,7 +372,8 @@ length on the coil, so they need a `length` of 0.5–0.75 to read from a distanc
   shaggy. `.glb` exports leave it out for now (the skin under it is exported).
 - **`layers`** is the pattern stack, bottom first: `countershade`, `stripes`, `spots`, `mottle`,
   `scales`, `grime`, `scars` (pale healed streaks; `rake` 3–4 for claw marks), `bioluminescence`
-  (glowing spots or dotted lines that pulse), `slime` (a wet gloss with drips), `warts` (raised
+  (glowing spots or dotted lines that pulse), `suckers` (pale rimmed cups in a row under each
+  limb, for tentacles; `count` per limb), `slime` (a wet gloss with drips), `warts` (raised
   bumps), `veins` (branching lines), `rosettes` (broken rings around a tinted centre) and `bands`
   (even rings round the body and tail). A layer's parameters sit beside its `type`. Every layer also takes
   **`region`** (`all`, `back`, `belly`, `head`, `torso` (which includes the neck), `limbs` (legs
@@ -420,8 +437,10 @@ when the creature moves.
   - `stepHeight` lifts the feet higher (a share of hip height); `slither` takes `amplitude` and
     `waves` for the shape of its S-curve.
 - **`actions`**: what the creature can do when asked. `bite` and `roar` need a jaw, `look`
-  needs a head, `idle` needs nothing; later milestones add `jump` and `pounce` (_10.2_), `pinch`
-  (a pincer) and `lash` (a tail or tentacle, _9.4_), and `display` (opens frills and hoods, raises
+  needs a head, `idle` needs nothing. `pinch` needs a pincer: the claw nearer the target rises,
+  opens wide and snaps shut (`both` snaps both). `lash` needs a tail or a tentacle: the one
+  nearest the target winds up and whips toward it (`arc`, the most it sweeps in degrees). Later
+  milestones add `jump` and `pounce` (_10.2_) and `display` (opens frills and hoods, raises
   quills and sails, _9.5_). Some actions need what a module provides rather than a section:
   `display` needs a part that provides `display` (`frill`, `hood`, `quills` or `sail`; wings do
   not), `pinch` a `hand.pincer`; `describe-module` and the catalogue list what each module
@@ -597,16 +616,17 @@ name the section to change.
 ## Not drawn yet
 
 Everything format 0.1 had is drawn today: legs and arms, `foot.claw`, horns, ears, eyes, teeth,
-mouths with lips, gums and tongues, eyelids, brows, beaks, spike rows, every material, fur, every pattern layer, several heads and tails, wings, fins and their membranes, walking,
-trotting, the tripod gait, slithering, and the bite, roar, look and idle actions. Everything in
+mouths with lips, gums and tongues, eyelids, brows, beaks, spike rows, every material, fur, every
+pattern layer, several heads and tails, wings, fins and their membranes, tentacles, antennae,
+mandibles, pincers, walking, trotting, the tripod gait, slithering, and the bite, roar, look,
+idle, pinch and lash actions. Everything in
 this table validates but is **not drawn yet**: compile skips it, and `validate` lists it under
 `notBuilt`. Each row goes when its milestone lands. Until then, approximate with what exists if
-you need to see it: horns for mandibles and stingers, a spike row for a frill or plates, a wide
+you need to see it: a spike row for a frill or plates, a wide
 neck for a cobra's hood (see the recipes).
 
 | Not drawn yet | Milestone that draws it |
 | --- | --- |
-| Tentacles, `antenna`, `mandible`, `hand.pincer`, `pinch`, `lash` | 9.4 |
 | `shell`, `armor.bands`, `quills`, `plates.row`, `frill`, `hood`, `sail`, `display` | 9.5 |
 | `run`, `gallop`, `bound` | 10.1 |
 | `jump`, `pounce` | 10.2 |
@@ -624,14 +644,14 @@ milestones land.
 | Wyvern | `wyvern` (its wings are its forelimbs); a stinger as in the recipe above |
 | Bat | `wyvern` with bat proportions: a short neck and tail, a big `snout` head, legs under the middle (`at` 0.45), wings `length` 1.9 with `"membrane": { "type": "membrane.bat", "fingers": 5, "trailing": "leg" }`, big `ear.pointed` and fur on the head and torso (see `examples/cave-bat.json`) |
 | Hydra or cerberus | `quadruped` with `"neck": { "count": 5, "length": 0.75 }` and a small head (examples/hydra.json), or 3 with `length` 0.45 and `spread` 90 for a cerberus (examples/cerberus.json); parts on `head` appear on every head |
-| Kraken | No `extends`; a round torso, `"tail": { "length": 0 }`, four `tentacle` entries with `side` "both" at `at` 0.9 and `angle`s 60, 100, 130 and 160 (they trail like a squid's; on the `head` they ring the mouth) |
+| Kraken | `serpent` with a short, thick torso (the mantle), no tail, a big `round` head and four `tentacle` entries on the `head` with `side` "both" at `angle`s 25 to 155, plus two long feeding tentacles with a club in their `radius`; `suckers` on the limbs (see `examples/kraken.json`). Tentacles on the torso trail behind instead, like a squid's |
 | Shark or fish | `fish`, whose preset already has the fins: override its parts `dorsal` (`fin.dorsal`) and `tailfin` (`fin.tail`, `"shape": "forked"`) and its limbs `pectoral` and `pelvic` by id, and add `teeth.row` (see `examples/reef-shark.json`) |
-| Spider or scorpion | `octopod`; `mandible` (`"shape": "fang"`) for a spider; for a scorpion arms with `"foot": "hand.pincer"` and a tail with `curl` 200 |
+| Spider or scorpion | `octopod`; `mandible` (`"shape": "fang"`) for a spider (see `examples/tomb-spider.json`); for a scorpion a slimmer even torso, `arm`s at `at` 0 with `lift` 80 and `"foot": "hand.pincer"`, a tail with `pitch` 60 and `curl` 160, a `horn.curved` stinger on its tip, and `pinch` and `lash` (see `examples/dune-scorpion.json`) |
 | Centaur | `centaur`; give its legs `foreleg` and `hindleg` `"foot": "foot.hoof"`, its `arm`s `"foot": "hand.grasp"`, and the head horns |
 | Turtle | `quadruped` with `{ "id": "shell", "type": "shell" }`, its `foreleg` and `hindleg` removed (`"remove": true`) and fin limbs with `"membrane": null` (flippers) instead; fins and no legs make it a swimmer |
 | Two-tailed fox | `quadruped` with `"tail": { "count": 2, "spread": 22, "pitch": 12, "curl": 35 }` (raised, like a kitsune's), `"foot": "foot.paw"` on both leg pairs and `"skin": { "fur": {} }` (examples/two-tailed-fox.json) |
 | Griffin | `quadruped`; `beak`, `{ "role": "wing", "membrane": "membrane.feather" }`, `foot.talon` on the forelegs and `foot.paw` on the hindlegs, fur (see `examples/griffin.json`) |
-| Moth | `hexapod`; two wing pairs with their own ids, `forewing` at `at` 0.15 and `hindwing` at 0.3, each with `membrane.insect` (`"shape": "broad"` and `"round"`), `spots` with `ring` and `"region": "wings"` for eye spots (see `examples/luna-moth.json`); `antenna` with `"shape": "feather"` (9.4), fur on the torso |
+| Moth | `hexapod`; two wing pairs with their own ids, `forewing` at `at` 0.15 and `hindwing` at 0.3, each with `membrane.insect` (`"shape": "broad"` and `"round"`), `spots` with `ring` and `"region": "wings"` for eye spots (see `examples/luna-moth.json`); `antenna` with `"shape": "feather"`, fur on the torso |
 | Beetle with wing cases | `hexapod` with a deep abdomen (more torso `radius` points); `{ "id": "case", "role": "wing", "attach": { "on": "torso", "at": 0.5, "angle": 6 }, "length": 0.5, "segments": 2, "membrane": "membrane.case" }` and a `wing` just behind it (`at` 0.53) with `membrane.insect` (`"shape": "round"`), which folds away under the case (see `examples/rhino-beetle.json`) |
 | Slug or snail | `serpent` with a short tail and `"material": "skin"`; eyes on stalks: a tentacle pair on the `head` (`length` 0.3, 4 segments) with `eye.basic` on it at `at` 1; `slime` |
 | Stegosaur, sail-back, porcupine | `plates.row`, `sail` or `quills` along the `spine` |

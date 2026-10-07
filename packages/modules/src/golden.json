@@ -15,6 +15,10 @@
     "low": "02e60a4c",
     "medium": "bd10cb5d"
   },
+  "dune-scorpion": {
+    "low": "9d743aeb",
+    "medium": "cffaa508"
+  },
   "ember-beetle": {
     "low": "13506973",
     "medium": "45a024bd"
@@ -35,9 +39,13 @@
     "low": "e3e98595",
     "medium": "69e910d7"
   },
+  "kraken": {
+    "low": "6583ccae",
+    "medium": "0cde9a6a"
+  },
   "luna-moth": {
-    "low": "7b52a6c5",
-    "medium": "654888db"
+    "low": "2fb3298b",
+    "medium": "d2069db8"
   },
   "reed-viper": {
     "low": "f80424e4",
@@ -68,8 +76,8 @@
     "medium": "74f3cc98"
   },
   "tomb-spider": {
-    "low": "0860aa3e",
-    "medium": "0a79a1a2"
+    "low": "a659591a",
+    "medium": "c44cd200"
   },
   "tusk-boar": {
     "low": "20b4fa6d",

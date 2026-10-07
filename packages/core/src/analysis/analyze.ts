@@ -2,8 +2,9 @@ import { Quaternion, Vector3 } from 'three';
 import { colorName } from '../blueprint/colors.ts';
 import type { CreatureSpec } from '../blueprint/creature.ts';
 import type { Issue } from '../blueprint/issues.ts';
+import { strength } from '../compile/anatomy.ts';
 import { type CompiledCreature, compileCreature, type Quality } from '../compile/compile.ts';
-import { isUprightFront } from '../compile/skeleton.ts';
+import { CROSS_SCALE, isUprightFront } from '../compile/skeleton.ts';
 import { allEyes, mainHead } from '../compile/types.ts';
 import { type Ground, MotionController } from '../motion/controller.ts';
 import { applyRest } from '../motion/face.ts';
@@ -51,6 +52,19 @@ export interface MotionCheck {
    * ground (m), and what it met (docs/design/9.3-wings-fins.md).
    */
   readonly wings: WingHit;
+  /**
+   * Deepest a tentacle (past its first quarter) passes into the body, a leg or an arm (m), and
+   * what it met (docs/design/9.4-tentacles-parts.md). Tentacles touching each other are fine.
+   */
+  readonly tentacles: TentacleHit;
+}
+
+/** A tentacle passing into something. */
+export interface TentacleHit {
+  readonly worst: number;
+  readonly tentacle?: string;
+  readonly against?: string;
+  readonly time?: number;
 }
 
 /** A wing or fin passing into something. */
@@ -84,6 +98,8 @@ export interface Analysis {
     readonly bones: number;
     /** Tip to tip with the wings spread (m); only with wings. */
     readonly wingspan?: number;
+    /** The longest tentacle, root to tip (m); only with tentacles. */
+    readonly tentacleReach?: number;
   };
   /** m/s: the temperament's walking pace, and the top speed its gaits allow. */
   readonly speed: {
@@ -174,6 +190,15 @@ export function analyzeCreature(
     bones: compiled.bones.names.length,
     ...(compiled.rig.wings.length > 0 && compiled.spreadBounds
       ? { wingspan: compiled.spreadBounds.max[0] - compiled.spreadBounds.min[0] }
+      : {}),
+    ...(compiled.rig.tentacles.length > 0
+      ? {
+          tentacleReach: Math.max(
+            ...compiled.rig.tentacles.map((t) =>
+              t.bones.reduce((sum, b) => sum + (compiled.bones.lengths[b] ?? 0), 0),
+            ),
+          ),
+        }
       : {}),
   };
 
@@ -275,7 +300,7 @@ export function analyzeCreature(
       ['flat', () => ({ height: 0 })],
       ['rough', rough],
     ] as const) {
-      motion.push(runMotion(compiled, registry, name, ground));
+      motion.push(runMotion(compiled, registry, name, ground, torsoDepth(spec)));
     }
     for (const check of motion) {
       const where = check.ground === 'flat' ? 'on flat ground' : 'on rough ground';
@@ -374,6 +399,30 @@ export function analyzeCreature(
         'wing_intersection',
         `${hit.wing} passes ${(hit.worst * 100).toFixed(1)} cm into the ${hit.against ?? 'body'} ${when}`,
         `attach it higher (a lower attach.angle) or further forward (attach.at), or make it shorter (length${span})${trailing}`,
+      );
+    }
+  }
+
+  // --- Tentacles through the body while walking (docs/design/9.4-tentacles-parts.md) --------
+  if (compiled.rig.tentacles.length > 0) {
+    const checks: [TentacleHit, string][] = [
+      ...motion.map(
+        (m) =>
+          [m.tentacles, m.ground === 'flat' ? 'walking' : 'walking on rough ground'] as [
+            TentacleHit,
+            string,
+          ],
+      ),
+      [tentacleHits(compiled, standing(compiled, 0)), 'standing'],
+    ];
+    const [hit, when] = checks.reduce((a, b) => (b[0].worst > a[0].worst ? b : a));
+    if (hit.worst > Math.max(0.01, 0.01 * L) && hit.tentacle) {
+      const id = hit.tentacle.replace(/\.[LR]$/, '');
+      warn(
+        `limbs[id=${id}]`,
+        'tentacle_intersection',
+        `${hit.tentacle} passes ${(hit.worst * 100).toFixed(1)} cm into the ${hit.against ?? 'body'} ${when}`,
+        'attach it further round or further back (attach.angle, attach.at), make it shorter, curl it more (curl), or use fewer',
       );
     }
   }
@@ -525,12 +574,24 @@ function segmentDistance(a: Vector3, b: Vector3, c: Vector3, d: Vector3): number
   return a.clone().addScaledVector(u, s).distanceTo(c.clone().addScaledVector(v, t));
 }
 
+/**
+ * The torso's half-height as a share of its radius: its cross-section, flattened further on a
+ * legless body resting on its belly, as the skeleton builds it.
+ */
+function torsoDepth(spec: CreatureSpec): number {
+  const legless = !spec.limbs.some((l) => l.role === 'leg');
+  const s = strength(spec.body.muscle);
+  return CROSS_SCALE[spec.body.torso.crossSection][1] * (legless && s > 0 ? 1 - 0.1 * s : 1);
+}
+
 /** Walks the creature at its pace for two gait cycles after a warm-up, watching for problems. */
 function runMotion(
   compiled: CompiledCreature,
   registry: Registry,
   ground: 'flat' | 'rough',
   height: Ground,
+  /** The torso's half-height as a share of its radius (`torsoDepth`). */
+  depth = 1,
 ): MotionCheck {
   const c = new MotionController(compiled, { registry });
   const speed = c.paceSpeed();
@@ -563,6 +624,7 @@ function runMotion(
   ]);
   const crowd = { worst: 0 } as { worst: number; between?: [string, string]; time?: number };
   let wingHit: WingHit = { worst: 0 };
+  let tentacleHit: TentacleHit = { worst: 0 };
   let frames = 0;
   let cycles = 0;
   let last = c.phase;
@@ -592,7 +654,7 @@ function runMotion(
       if ((c.legMiss[k] ?? 0) > 0.02 * compiled.scale) stretched[k] = (stretched[k] ?? 0) + 1;
     }
     for (const i of sections) {
-      const r = bones.radii[i] ?? 0;
+      const r = (bones.radii[i] ?? 0) * (bones.sections[i] === 'torso' ? depth : 1);
       const head = pose.worldPos[i] as Vector3;
       const tail = pose.tail(i, a);
       for (const p of [head, tail]) {
@@ -605,6 +667,10 @@ function runMotion(
     if (rig.wings.length + rig.fins.length > 0) {
       const w = wingHits(compiled, pose, height);
       if (w.worst > wingHit.worst) wingHit = { ...w, time };
+    }
+    if (rig.tentacles.length > 0) {
+      const t = tentacleHits(compiled, pose);
+      if (t.worst > tentacleHit.worst) tentacleHit = { ...t, time };
     }
     for (let i = 0; i < headBones.length; i++)
       for (let j = i + 1; j < headBones.length; j++)
@@ -680,7 +746,42 @@ function runMotion(
     intersection: hit,
     heads: crowd,
     wings: wingHit,
+    tentacles: tentacleHit,
   };
+}
+
+/**
+ * How deep any tentacle passes into the body, the legs or the arms in a pose: its bones past the
+ * first quarter (which leaves the skin), as capsules.
+ */
+function tentacleHits(compiled: CompiledCreature, pose: Pose): TentacleHit {
+  const rig = compiled.rig;
+  const bones = compiled.bones;
+  const sections = new Set(['torso', 'neck', 'head', 'jaw', 'tail']);
+  const others = [
+    ...bones.names.map((_, i) => i).filter((i) => sections.has(bones.sections[i] as string)),
+    ...rig.legs.flatMap((l) => l.bones.slice(1)),
+    ...rig.arms.flatMap((a) => a.bones),
+  ];
+  let worst: TentacleHit = { worst: 0 };
+  const a = new Vector3();
+  const b = new Vector3();
+  const e = new Vector3();
+  const f = new Vector3();
+  for (const t of rig.tentacles)
+    for (const id of t.bones.slice(Math.ceil(t.bones.length / 4))) {
+      a.copy(pose.worldPos[id] as Vector3);
+      pose.tail(id, b);
+      const r = bones.radii[id] ?? 0;
+      for (const s of others) {
+        e.copy(pose.worldPos[s] as Vector3);
+        pose.tail(s, f);
+        const depth = (bones.radii[s] ?? 0) * 0.8 + r * 0.8 - segmentDistance(a, b, e, f);
+        if (depth > worst.worst)
+          worst = { worst: depth, tentacle: t.id, against: bones.owners[s] ?? 'body' };
+      }
+    }
+  return worst;
 }
 
 /** The rest pose with the wings spread by `spread`, standing still. */
@@ -834,11 +935,14 @@ export function describeCreature(
   const arms = spec.limbs.filter((l) => l.role === 'arm').length;
   const front = isUprightFront(spec);
   const finned = spec.limbs.some((l) => l.role === 'fin');
+  const tentacles = spec.limbs.filter((l) => l.role === 'tentacle').length;
   const plan =
     legs === 0
       ? finned
         ? 'finned swimmer'
-        : 'legless serpent'
+        : tentacles > 0
+          ? 'tentacled creature'
+          : 'legless serpent'
       : legs === 2
         ? 'biped'
         : legs === 4
@@ -867,6 +971,22 @@ export function describeCreature(
   // An upright front is a torso, not a neck (docs/design/9.2-legs-centaurs.md).
   if (front) body.push('an upright torso');
   if (arms > 0) body.push(`${arms === 2 ? 'two' : arms} arms`);
+  // Tentacles (docs/design/9.4-tentacles-parts.md).
+  const counts = [
+    '',
+    'one',
+    'two',
+    'three',
+    'four',
+    'five',
+    'six',
+    'seven',
+    'eight',
+    'nine',
+    'ten',
+  ];
+  if (tentacles > 0)
+    body.push(tentacles === 1 ? 'a tentacle' : `${counts[tentacles] ?? tentacles} tentacles`);
   // Wings and fins, as their membranes describe them (docs/design/9.3-wings-fins.md).
   const spans = new Map<string, CreatureSpec['limbs'][number][]>();
   for (const l of spec.limbs)
@@ -964,6 +1084,12 @@ export function describeCreature(
   if (foot) {
     const module = registry.get('part', foot.type) as PartModule | undefined;
     if (module?.describe) body.push(module.describe(foot.params, { count: legs }));
+  }
+  // Hands (a scorpion's pincers) as their module says.
+  const hand = spec.limbs.find((l) => l.role === 'arm' && l.foot)?.foot;
+  if (hand) {
+    const module = registry.get('part', hand.type) as PartModule | undefined;
+    if (module?.describe) body.push(module.describe(hand.params, { count: arms }));
   }
   const skin = [
     `${colorName(spec.skin.palette.base ?? '#808080')} ${spec.skin.material}`,

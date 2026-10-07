@@ -18,19 +18,15 @@ export function notBuilt(
 ): Issue[] {
   const issues: Issue[] = [];
   const seen = new Set<string>();
-  const add = (path: string, what: string, milestone: string, host?: string) => {
+  const add = (path: string, what: string, milestone: string) => {
     if (seen.has(path)) return;
     seen.add(path);
     issues.push({
       severity: 'warning',
       path,
       code: 'not_built',
-      message: host
-        ? `${what} sits on "${host}", which is not built yet (plan milestone ${milestone}), so it is left out for now`
-        : `${what} is in the format but not built yet (plan milestone ${milestone}), so it is left out for now`,
-      fix: host
-        ? 'keep it: it appears with its host once that milestone lands'
-        : 'keep it: it validates, and it appears once that milestone lands',
+      message: `${what} is in the format but not built yet (plan milestone ${milestone}), so it is left out for now`,
+      fix: 'keep it: it validates, and it appears once that milestone lands',
     });
   };
   const planned = (kind: ModuleKind, type: string) => registry.get(kind, type)?.planned;
@@ -62,26 +58,7 @@ export function notBuilt(
     }
   }
 
-  // The core's own new fields.
-  const roles: Record<string, [string, string]> = {
-    tentacle: ['a tentacle', '9.4'],
-  };
-  for (const limb of spec.limbs) {
-    const role = roles[limb.role];
-    if (role) add(`limbs[id=${limb.baseId}].role`, role[0], role[1]);
-  }
-  // Parts on something skipped (a wing, a tentacle, a part on one) are skipped with it.
-  const kept = new Set(buildable(spec).parts.map((p) => p.id));
-  const hostMilestone = (on: string, depth = 0): string | undefined => {
-    const limb = spec.limbs.find((l) => l.id === on);
-    if (limb) return roles[limb.role]?.[1];
-    const part = spec.parts.find((p) => p.id === on);
-    return part && depth < 16 ? hostMilestone(part.on, depth + 1) : undefined;
-  };
-  for (const part of spec.parts) {
-    const milestone = !kept.has(part.id) && hostMilestone(part.on);
-    if (milestone) add(`parts[id=${part.baseId}].attach.on`, `"${part.type}"`, milestone, part.on);
-  }
+  // Every limb role is built since 9.4, and so is what sits on each.
 
   // Fields whose defaults have a value: only when the blueprint writes them.
   if (written) {
@@ -99,8 +76,8 @@ export function notBuilt(
   return issues;
 }
 
-/** Limb roles the pipeline builds; the others arrive in phase 9. */
-const BUILT_ROLES: readonly LimbRole[] = ['leg', 'arm', 'wing', 'fin'];
+/** Limb roles the pipeline builds: all of format 0.2's since 9.4. */
+const BUILT_ROLES: readonly LimbRole[] = ['leg', 'arm', 'wing', 'fin', 'tentacle'];
 
 /**
  * The part of a creature the pipeline can build today: limbs of the roles it knows, and the
