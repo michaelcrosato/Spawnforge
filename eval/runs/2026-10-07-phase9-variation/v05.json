@@ -1,0 +1,89 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Kitzid",
+  "seed": 1778702251,
+  "extends": "hexapod",
+  "body": {
+    "torso": {
+      "radius": [0.0997, 0.135, 0.0835, 0.152, 0.161, 0.0748]
+    },
+    "head": {
+      "length": 0.266,
+      "radius": 0.0993
+    }
+  },
+  "limbs": [
+    {
+      "id": "frontleg",
+      "length": 0.614
+    },
+    {
+      "id": "midleg",
+      "length": 0.705
+    },
+    {
+      "id": "hindleg",
+      "length": 0.679
+    }
+  ],
+  "parts": [
+    {
+      "id": "eyes",
+      "params": {
+        "scale": 1.96
+      }
+    },
+    {
+      "id": "horn",
+      "type": "horn.curved",
+      "attach": {
+        "on": "head",
+        "at": 0.2,
+        "angle": 0,
+        "side": "center"
+      },
+      "params": {
+        "length": 0.5,
+        "width": 0.0415,
+        "curve": -65,
+        "ridges": 4
+      }
+    },
+    {
+      "id": "pincers",
+      "type": "horn.curved",
+      "attach": {
+        "on": "jaw",
+        "at": 0.1,
+        "angle": 90
+      },
+      "params": {
+        "width": 0.031,
+        "curve": 60,
+        "turn": 90
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#0a0a0c",
+      "belly": "#1c1c22",
+      "accent": "#070410"
+    },
+    "layers": [
+      {
+        "type": "countershade",
+        "softness": 0.2
+      },
+      {
+        "type": "stripes",
+        "region": "back",
+        "count": 8,
+        "width": 0.3
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "calm"
+  }
+}

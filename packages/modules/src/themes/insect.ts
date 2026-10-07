@@ -1,11 +1,11 @@
 import { defineTheme } from '@spawnforge/core';
 import { z } from 'zod';
 
-/** Beetles and ants: six legs, chitin, wasp waists, horns and pincers. */
+/** Beetles and ants: six legs, chitin, wasp waists, horns and mandibles. */
 export default defineTheme({
   id: 'insect',
   summary:
-    'Six-legged beetles and ants: glossy chitin, a thorax and abdomen with a narrow waist, thin legs, horns or pincers, dark or warning colours.',
+    'Six-legged beetles and ants: glossy chitin, a thorax and abdomen with a narrow waist, thin legs, horns or mandibles, dark or warning colours.',
   tags: ['chitin', 'six-legged'],
   params: z.strictObject({}),
   bias: {
@@ -50,15 +50,9 @@ export default defineTheme({
       {
         chance: 0.35,
         part: {
-          id: 'pincers',
-          type: 'horn.curved',
-          attach: { on: 'jaw', at: 0.1, angle: 90 },
-          params: {
-            length: { min: 0.12, max: 0.25 },
-            width: { min: 0.02, max: 0.035 },
-            curve: { min: 60, max: 110 },
-            turn: 90,
-          },
+          id: 'mandibles',
+          type: 'mandible',
+          params: { length: { min: 0.12, max: 0.25 }, teeth: { min: 0, max: 4 } },
         },
       },
     ],

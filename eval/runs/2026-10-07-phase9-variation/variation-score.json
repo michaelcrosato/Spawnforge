@@ -1,0 +1,66 @@
+{
+  "passed": 12,
+  "total": 12,
+  "rows": [
+    {
+      "id": "v01-wolf-species",
+      "pass": true,
+      "note": "6 ranges, 3 individuals"
+    },
+    {
+      "id": "v02-small-demon",
+      "pass": true,
+      "note": "body height 0.80 m"
+    },
+    {
+      "id": "v03-locked-mutant",
+      "pass": true,
+      "note": "horns 0.25 → 0.4"
+    },
+    {
+      "id": "v04-troll-beetle",
+      "pass": true,
+      "note": "upright biped, torso pitch 70"
+    },
+    {
+      "id": "v05-horned-insect",
+      "pass": true,
+      "note": "horn 0.5, base #0a0a0c"
+    },
+    {
+      "id": "v06-serpent-species",
+      "pass": true,
+      "note": "ranges: scale, body.tail.length"
+    },
+    {
+      "id": "v07-viper-litter",
+      "pass": true,
+      "note": "3 striped mutants"
+    },
+    {
+      "id": "v08-tall-raptor",
+      "pass": true,
+      "note": "body height 1.70 m"
+    },
+    {
+      "id": "v09-flying-dragon",
+      "pass": true,
+      "note": "wings, flies, body height 0.63 m"
+    },
+    {
+      "id": "v10-winged-wolf",
+      "pass": true,
+      "note": "4 legs on paws, 2 wings"
+    },
+    {
+      "id": "v11-hydra-litter",
+      "pass": true,
+      "note": "3 five-headed mutants"
+    },
+    {
+      "id": "v12-armoured-horror",
+      "pass": true,
+      "note": "3 heads, shell, defence 22"
+    }
+  ]
+}

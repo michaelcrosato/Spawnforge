@@ -30,7 +30,8 @@ export default defineStats({
     attack:
       'Damage per hit: one head’s teeth and horns, plus claws and other weapons, scaled by size',
     attacks: 'Attacks per turn: one per head',
-    defence: 'Damage reduction: shells, plates and bands of armour, skin material, spikes and size',
+    defence:
+      'Damage reduction, added up: each shell, plate row or armour band 10 × its cover (its size over the torso length, at most 1) + 0.15 a piece; skin chitin 6, scales 3, hide 2; 0.25 a spike; plus the cube root of mass; times level',
     perception: 'How far it notices things, in metres: eye size and ears',
     threat: 'A one-number summary for encounter tables',
   },

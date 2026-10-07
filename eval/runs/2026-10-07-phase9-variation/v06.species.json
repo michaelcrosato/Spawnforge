@@ -1,0 +1,19 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Reed Serpent Species",
+  "seed": 77,
+  "extends": "serpent",
+  "scale": { "min": 0.6, "max": 1.2 },
+  "body": {
+    "tail": { "length": { "min": 2, "max": 3 } }
+  },
+  "skin": {
+    "palette": { "base": "#4f6b3a", "belly": "#d8d0a0", "accent": "#24301a" },
+    "layers": [
+      { "type": "countershade" },
+      { "type": "bands", "color": "accent", "count": 18, "width": 0.4 },
+      { "type": "scales", "size": 0.025 }
+    ]
+  },
+  "motion": { "temperament": "stalking" }
+}

@@ -360,6 +360,34 @@ describe('variation of format 0.2 bodies (9.6)', () => {
     expect(swapped).toBeGreaterThan(0);
   });
 
+  it('keeps lineage parts to their lineage and never flips switches or the material', () => {
+    const lineage = ['beak', 'mandible', 'hood', 'antenna'];
+    for (const name of ['reed-viper', 'hydra', 'grey-wolf'])
+      for (let seed = 1; seed <= 30; seed++) {
+        const child = mutate(example(name), { seed, amount: 1 }, registry);
+        const parent = docOf(example(name));
+        const added = docOf(child.blueprint)
+          .parts.map((p) => p.type)
+          .filter((t) => lineage.includes(t) && !parent.parts.some((p) => p.type === t));
+        // A hooded cobra may gain a hood again; a viper is a snake but wears none yet.
+        expect(added, `${name} #${seed}`).toEqual([]);
+        expect(
+          child.diff.filter((d) => d.path === 'body.head.jaw' || d.path === 'skin.material'),
+        ).toEqual([]);
+        expect(child.diff.filter((d) => typeof d.from === 'boolean')).toEqual([]);
+      }
+  });
+
+  it('measures body height without the wings, which rest folded', () => {
+    const dragon = validateBlueprint(example('ash-dragon'), registry).creature;
+    if (!dragon) throw new Error('dragon');
+    const analysis = analyzeCreature(dragon, registry);
+    expect(analysis.measurements.bodyHeight).toBeLessThanOrEqual(
+      analysis.measurements.height + 1e-6,
+    );
+    expect(analysis.measurements.counts).toMatchObject({ heads: 1, legs: 4, wings: 2 });
+  });
+
   it('adds fins only to swimmers', () => {
     for (const name of ['ridgeback-stalker', 'plated-stegosaur', 'sail-back'])
       for (let seed = 1; seed <= 30; seed++) {

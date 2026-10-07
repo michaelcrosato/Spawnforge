@@ -505,8 +505,8 @@ export function generate(options: GenerateOptions, registry: Registry): Generate
 }
 
 /**
- * Height and length of the body (metres) from its skeleton: skin bones and their radii, not horns
- * or spikes. Cheap: no meshing.
+ * Height and length of the body (metres) from its skeleton: skin bones and their radii, not horns,
+ * spikes, wings or fins. Cheap: no meshing.
  */
 export function measureBody(
   spec: NonNullable<ReturnType<typeof validateBlueprint>['creature']>,
@@ -517,7 +517,8 @@ export function measureBody(
   let front = Number.NEGATIVE_INFINITY;
   let back = Number.POSITIVE_INFINITY;
   for (const b of bones) {
-    if (!b.skin) continue;
+    // Wing and fin bones are built spread (the bind pose) and rest folded: not the body.
+    if (!b.skin || b.tube) continue;
     top = Math.max(top, b.head.y + b.r0 * b.cross[1], b.tail.y + b.r1 * b.cross[1]);
     front = Math.max(front, b.head.z + b.r0, b.tail.z + b.r1);
     back = Math.min(back, b.head.z - b.r0, b.tail.z - b.r1);

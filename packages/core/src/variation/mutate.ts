@@ -40,8 +40,11 @@ const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v
 function mutateGene(gene: Gene, rng: Rng, amount: number): unknown {
   const { min = Number.NEGATIVE_INFINITY, max = Number.POSITIVE_INFINITY } = gene;
   switch (gene.kind) {
+    // Switches turn features on and off (a row's upper teeth, eyelids, cloven hooves): mutation
+    // drifts what a creature has and never switches it off or on. Crossbreeding still takes
+    // them from either parent.
     case 'boolean':
-      return rng.chance(0.2) ? !gene.value : undefined;
+      return undefined;
     case 'enum': {
       if (!rng.chance(0.3)) return undefined;
       const others = (gene.options ?? []).filter((o) => o !== gene.value);
@@ -79,9 +82,6 @@ function placeable(registry: Registry): PartModule[] {
 
 /** Sense organs are never added, removed, swapped out or swapped in. */
 const isSense = (module: PartModule | undefined) => module?.tags.includes('sense') ?? false;
-
-/** Tags that tie a part to a medium: fins are for swimmers. */
-const HABITAT: Readonly<Record<string, Medium>> = { aquatic: 'water' };
 
 /** Where an expanded creature moves: its body's media, then its own `motion.media` switches. */
 function mediaOf(doc: Json): Record<Medium, boolean> {
@@ -121,18 +121,34 @@ function footOf(module: PartModule): Json {
 }
 
 /**
- * One structural change: adds a part whose tags match the creature's existing parts (fins only
- * on swimmers), removes one, swaps one for another module with the same slot and a shared tag,
+ * One structural change: adds a part whose tags match the creature's existing parts (a beak
+ * only on a bird, fins only on a swimmer), removes one, swaps one for another module with the same slot and a shared tag,
  * or changes the feet of every limb of one role that wears one foot type. Limbs, heads and tails
  * are never added: those come from themes, edits and crossbreeding.
  */
 function changeStructure(child: Json, rng: Rng, registry: Registry, locked: readonly string[]) {
   const parts = (child.parts as Json[] | undefined) ?? [];
   child.parts = parts;
-  const media = mediaOf(child);
-  const fits = (m: PartModule) =>
-    m.tags.every((t) => HABITAT[t] === undefined || media[HABITAT[t]]);
   const moduleOf = (p: Json) => registry.get('part', p.type as string);
+  // A part of a lineage (a beak, mandibles) joins only a creature of that lineage, one that
+  // already wears such a part, foot or membrane; a part of a medium (fins) only one that moves
+  // in it.
+  const { lineage = [], habitat = {} } = registry.defaults();
+  const media = mediaOf(child);
+  const worn = new Set(
+    [
+      ...parts.map((p) => p.type),
+      ...((child.limbs as unknown[] | undefined) ?? [])
+        .filter(isRecord)
+        .flatMap((l) => [l.foot, l.membrane].map((m) => (isRecord(m) ? m.type : undefined))),
+    ].flatMap((type) => (typeof type === 'string' ? (registry.get('part', type)?.tags ?? []) : [])),
+  );
+  const fits = (m: PartModule) =>
+    m.tags.every((t) => {
+      const medium = habitat[t];
+      if (medium !== undefined && media[medium]) return true;
+      return !(lineage.includes(t) || medium !== undefined) || worn.has(t);
+    });
   const free = parts.filter((p) => !isLocked(`parts[id=${p.id}]`, locked) && !isSense(moduleOf(p)));
   const tags = new Set(parts.flatMap((p) => moduleOf(p)?.tags ?? []));
   const present = new Set(parts.map((p) => p.type));
@@ -265,7 +281,8 @@ export function mutate(
   for (const list of ['motion.gaits', 'motion.actions'])
     if (getAt(blueprint, list) === undefined) fixed.push(list);
   for (const gene of genesOf(doc, registry)) {
-    if (isLocked(gene.path, fixed)) continue;
+    // The skin's material is what the creature is made of: scales never drift into chitin.
+    if (isLocked(gene.path, fixed) || gene.path === 'skin.material') continue;
     const rng = root.stream(`gene:${gene.path}`);
     if (!rng.chance(amount)) continue;
     const value = mutateGene(gene, rng, amount);

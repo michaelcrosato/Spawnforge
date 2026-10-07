@@ -157,7 +157,12 @@ Work in progress toward 0.2, phase by phase (see the plan's status table).
   water from a swimmer or by turning swimming on. `rpg` gains `attacks` (one per head; `attack`
   is one head's hit) and defence from shells, plates and bands of armour (and `hide`), and stats
   inputs say which head each part sits on. `scripts/theme-sheet.ts` draws a theme across seeds.
-  The variation eval gains four tasks (v09–v12).
+  The variation eval gains four tasks (v09–v12) and passed 12/12. From its feedback: mutation
+  never flips a switch (`head.jaw` is no longer a gene at all) or drifts the skin's material;
+  packs name lineage tags (`bird`, `insect`, `snake`) and habitat tags (`aquatic`) in their
+  defaults, so a snake never sprouts a beak; `bodyHeight` leaves out wings and fins (it counted
+  the spread wing bones); `analyze` reports `measurements.counts`; the insect theme's pincers are
+  mandibles.
 
 ## 0.1.0
 

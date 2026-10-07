@@ -143,7 +143,7 @@ export function createServer(): McpServer {
     {
       title: 'Analyze a blueprint',
       description:
-        'Builds the creature and checks it: measurements (length, height, width, mass, centre of mass, hip height), speeds per gait, bite reach, balance over its feet, and motion run for two gait cycles on flat and rough ground (foot slide, ground penetration, legs stretched past their reach, limbs passing through each other or the body, each with the limb and time). Returns plausibility warnings with id-based paths and fixes, and a plain-text description of the creature. With a scenario it also runs that scripted scene and reports its events, distance walked, how close a snout came to each target, courses reached and foot slide. Use it after validate and before render to catch problems you cannot see in a still image.',
+        'Builds the creature and checks it: measurements (length, height, bodyHeight, width, mass, centre of mass, hip height, and counts of heads, tails and limbs by role), speeds per gait, bite reach, balance over its feet, and motion run for two gait cycles on flat and rough ground (foot slide, ground penetration, legs stretched past their reach, limbs passing through each other or the body, each with the limb and time). Returns plausibility warnings with id-based paths and fixes, and a plain-text description of the creature. With a scenario it also runs that scripted scene and reports its events, distance walked, how close a snout came to each target, courses reached and foot slide. Use it after validate and before render to catch problems you cannot see in a still image.',
       inputSchema: z.object({
         blueprint: z
           .record(z.string(), z.unknown())

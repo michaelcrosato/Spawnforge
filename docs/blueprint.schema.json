@@ -4133,7 +4133,7 @@
       "additionalProperties": false
     },
     "theme:insect": {
-      "description": "Six-legged beetles and ants: glossy chitin, a thorax and abdomen with a narrow waist, thin legs, horns or pincers, dark or warning colours.",
+      "description": "Six-legged beetles and ants: glossy chitin, a thorax and abdomen with a narrow waist, thin legs, horns or mandibles, dark or warning colours.",
       "type": "object",
       "properties": {},
       "additionalProperties": false

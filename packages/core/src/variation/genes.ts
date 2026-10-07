@@ -66,6 +66,8 @@ const FIXED = new Set([
   // Media follow the body (wings fly, fins swim); `area` places a covering, as `on` does.
   'media',
   'area',
+  // A jaw carries the teeth, the mouth parts and the bite: structure, not a trait to drift.
+  'jaw',
 ]);
 
 /**

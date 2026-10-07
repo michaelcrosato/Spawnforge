@@ -2159,11 +2159,11 @@ bodyPlans: `{"serpent":3,"quadruped":3,"octopod":2}` · parts: `[{"chance":1,"id
 
 ### `insect`
 
-Six-legged beetles and ants: glossy chitin, a thorax and abdomen with a narrow waist, thin legs, horns or pincers, dark or warning colours.
+Six-legged beetles and ants: glossy chitin, a thorax and abdomen with a narrow waist, thin legs, horns or mandibles, dark or warning colours.
 
 Generate creatures with it: spawnforge generate --theme insect --seed 1 (MCP: generate { "theme": "insect", "seed": 1 }).
 
-bodyPlans: `{"hexapod":1}` · parts: `[{"chance":1,"id":"eyes"},{"chance":0.4,"id":"horn","type":"horn.curved"},{"chance":0.35,"id":"pincers","type":"horn.curved"}]` · materials: `{"chitin":1}` · temperaments: `{"skittish":3,"aggressive":2,"calm":1}`
+bodyPlans: `{"hexapod":1}` · parts: `[{"chance":1,"id":"eyes"},{"chance":0.4,"id":"horn","type":"horn.curved"},{"chance":0.35,"id":"mandibles","type":"mandible"}]` · materials: `{"chitin":1}` · temperaments: `{"skittish":3,"aggressive":2,"calm":1}`
 
 ### `reptile`
 
@@ -2181,7 +2181,7 @@ Generic action-RPG numbers: health from mass, speed from legs and gaits, attack 
 
 Game numbers from a creature's body: spawnforge analyze creature.json --stats rpg (MCP: analyze with "stats": "rpg").
 
-outputs: `{"health":"Hit points: grows with the cube root of mass, so a creature twice as long is about twice as tough","speed":"Top speed in m/s, from the fastest gait the legs allow","attack":"Damage per hit: one head’s teeth and horns, plus claws and other weapons, scaled by size","attacks":"Attacks per turn: one per head","defence":"Damage reduction: shells, plates and bands of armour, skin material, spikes and size","perception":"How far it notices things, in metres: eye size and ears","threat":"A one-number summary for encounter tables"}`
+outputs: `{"health":"Hit points: grows with the cube root of mass, so a creature twice as long is about twice as tough","speed":"Top speed in m/s, from the fastest gait the legs allow","attack":"Damage per hit: one head’s teeth and horns, plus claws and other weapons, scaled by size","attacks":"Attacks per turn: one per head","defence":"Damage reduction, added up: each shell, plate row or armour band 10 × its cover (its size over the torso length, at most 1) + 0.15 a piece; skin chitin 6, scales 3, hide 2; 0.25 a spike; plus the cube root of mass; times level","perception":"How far it notices things, in metres: eye size and ears","threat":"A one-number summary for encounter tables"}`
 
 | Parameter | Type | Range | Default | Description |
 | --- | --- | --- | --- | --- |
