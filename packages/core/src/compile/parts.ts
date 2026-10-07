@@ -795,7 +795,11 @@ export function buildParts(
         hexToRgb,
       );
     },
-    sheet: (positions, normals, indices, weights, along, across, look) =>
+    sheet: (positions, normals, indices, weights, along, across, look) => {
+      if (!sink.markers.has(id) && positions.length > 0) {
+        const mid = positions[Math.floor(positions.length / 2)] as Vector3;
+        sink.markers.set(id, [mid.x, mid.y, mid.z]);
+      }
       rigidSheet(
         positions,
         normals,
@@ -811,7 +815,8 @@ export function buildParts(
         },
         hexToRgb,
         place.on,
-      ),
+      );
+    },
     toRest: (point, bone) => {
       const r = input.rest.get(bone);
       const b = input.bones[bone] as BoneDef;

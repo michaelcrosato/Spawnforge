@@ -1068,8 +1068,14 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
       const dir = out.clone().multiplyScalar(Math.cos(a)).addScaledVector(lead, Math.sin(a));
       points.push((points[k] as Vector3).clone().addScaledVector(dir, (shares[k] as number) * R));
     }
-    // A fin is flat across its plane; a wing's arm is round.
-    const cross: readonly [number, number] = fin && !limb.membrane ? [1.6, 0.3] : [1, 1];
+    // A fin is flat across its plane (a flipper alone, or a thin leading ray before its
+    // membrane); a wing's arm is round.
+    const cross: readonly [number, number] = fin
+      ? limb.membrane
+        ? [1.3, 0.35]
+        : [1.6, 0.3]
+      : [1, 1];
+    const thin = fin && limb.membrane ? 0.5 : 1;
     const limbBones: number[] = [];
     for (let k = 0; k < n; k++) {
       limbBones.push(
@@ -1081,8 +1087,8 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
           head: (points[k] as Vector3).clone(),
           tail: (points[k + 1] as Vector3).clone(),
           up: normal.clone(),
-          r0: sampleProfile(limb.radius, k / n) * L,
-          r1: sampleProfile(limb.radius, (k + 1) / n) * L,
+          r0: sampleProfile(limb.radius, k / n) * L * thin,
+          r1: sampleProfile(limb.radius, (k + 1) / n) * L * thin,
           cross,
           t0: k / n,
           t1: (k + 1) / n,
@@ -1142,15 +1148,16 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
     if (host) {
       const sLimb = strength(limb.muscle);
       const masses: MassDef[] = [
+        // From inside the skin out to the joint, tapering, blended wide: a shoulder, not a ball.
         {
           bone: frame.bone,
-          a: rootPos.clone(),
+          a: rootPos.clone().addScaledVector(normalOut, -(fin ? 0.3 : 1.6) * rootRadius),
           b: rootPos.clone(),
-          ra: rootRadius * 1.3,
-          rb: rootRadius * 1.3,
+          ra: rootRadius * 1.2,
+          rb: rootRadius * 0.95,
           up: Y.clone(),
           cross: [1, 1],
-          blend: 0.5 * rootRadius,
+          blend: rootRadius,
         },
       ];
       if (!fin && sLimb > 0) {

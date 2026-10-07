@@ -257,23 +257,23 @@ export function compileCreature(
   const bones = skeleton.bones;
   // Wings fold against the body as a field at any radius, the arms and the ground, so the fold
   // is the same at every quality (docs/design/9.3-wings-fins.md).
-  const fold =
+  const field =
     skeleton.wingFrames.length > 0
       ? (() => {
           const body = new SdfEvaluator(buildSdf(bones, skeleton.chains, 0));
+          return (p: Vector3) => body.eval(p.x, p.y, p.z);
+        })()
+      : undefined;
+  const fold =
+    field !== undefined
+      ? (() => {
           const armCapsules = skeleton.rig.arms.flatMap((arm) =>
             [...arm.bones, ...arm.toes.flat()].map((id) => {
               const bone = bones[id] as BoneDef;
               return { a: bone.head, b: bone.tail, radius: Math.max(bone.r0, bone.r1) };
             }),
           );
-          return foldWings(
-            bones,
-            skeleton.wingFrames,
-            (p) => body.eval(p.x, p.y, p.z),
-            armCapsules,
-            L,
-          );
+          return foldWings(bones, skeleton.wingFrames, field, armCapsules, L);
         })()
       : undefined;
   for (const id of fold?.blocked ?? [])
@@ -784,7 +784,9 @@ export function compileCreature(
     };
   });
   const restPose =
-    unfolded.length > 0 ? restOf(bindData, unfolded, stations, sideOf(unfolded)) : undefined;
+    unfolded.length > 0
+      ? restOf(bindData, unfolded, stations, sideOf(unfolded), field, L)
+      : undefined;
   const wings = restPose?.wings ?? unfolded;
   const bonesData: BonesData = restPose ? { ...bindData, rest: restPose.rest } : bindData;
   const headOf = (bone: number): number => {
@@ -969,6 +971,8 @@ function restOf(
   wings: readonly WingRig[],
   stations: readonly StationPanel[],
   sides: readonly number[],
+  field: ((p: Vector3) => number) | undefined,
+  scale: number,
 ): { rest: Float32Array; pose: Pose; wings: WingRig[] } {
   const pose = new Pose(data);
   for (const wing of wings) {
@@ -978,22 +982,39 @@ function restOf(
     });
   }
   pose.solve();
-  // Feathers fold back along the body, flat in their folded wing's plane, carried by their
-  // bones and turned to point back (docs/design/9.3-wings-fins.md).
+  // Feathers fold back along the body (docs/design/9.3-wings-fins.md): each group lies against
+  // the body where it rests, its upper face out and its shafts pointing back, like shingles.
+  const h = 0.01 * scale;
+  const outward = (p: Vector3, fallback: Vector3): Vector3 => {
+    if (!field) return fallback.clone();
+    const g = new Vector3(
+      field(new Vector3(p.x + h, p.y, p.z)) - field(new Vector3(p.x - h, p.y, p.z)),
+      field(new Vector3(p.x, p.y + h, p.z)) - field(new Vector3(p.x, p.y - h, p.z)),
+      field(new Vector3(p.x, p.y, p.z + h)) - field(new Vector3(p.x, p.y, p.z - h)),
+    );
+    return g.lengthSq() > 1e-12 ? g.normalize() : fallback.clone();
+  };
   const done = wings.map((wing, w) => {
     if (wing.feathers.length === 0) return wing;
     const humerus = wing.bones[0] as number;
     const plane = new Vector3(0, 0, 1).applyQuaternion(pose.worldRot[humerus] as Quaternion);
     const extra: number[] = [];
+    const want0 = new Vector3(0.1 * (sides[w] ?? 0), -0.25, -0.95);
+    const tangent = (normal: Vector3) =>
+      want0.clone().addScaledVector(normal, -want0.dot(normal)).normalize();
     for (const bone of wing.feathers) {
       const parent = pose.parents[bone] as number;
-      const carried = (pose.worldRot[parent] as Quaternion)
-        .clone()
-        .multiply(pose.bindRot[bone] as Quaternion);
-      const from = new Vector3(0, 1, 0).applyQuaternion(carried);
-      const want = new Vector3(0.1 * (sides[w] ?? 0), -0.25, -0.95);
-      want.addScaledVector(plane, -want.dot(plane)).normalize();
-      const world = new Quaternion().setFromUnitVectors(from, want).multiply(carried);
+      pose.solveBone(bone);
+      const at = pose.worldPos[bone] as Vector3;
+      const length = data.lengths[bone] ?? 0;
+      // The body's normal where the group roots and halfway along it.
+      let normal = outward(at, plane);
+      const half = at.clone().addScaledVector(tangent(normal), 0.5 * Math.min(length, scale));
+      normal = normal.add(outward(half, normal)).normalize();
+      const want = tangent(normal);
+      const world = new Quaternion().setFromRotationMatrix(
+        new Matrix4().makeBasis(new Vector3().crossVectors(want, normal), want, normal),
+      );
       const local = (pose.worldRot[parent] as Quaternion).clone().invert().multiply(world);
       (pose.rot[bone] as Quaternion).copy(local);
       pose.solveBone(bone);

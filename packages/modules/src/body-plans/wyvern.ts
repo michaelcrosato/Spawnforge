@@ -30,7 +30,7 @@ export default defineBodyPlan({
         length: 1.6,
         segments: 3,
         radius: [0.05, 0.015],
-        membrane: { type: 'membrane.bat', fingers: 4 },
+        membrane: { type: 'membrane.bat', fingers: 4, trailing: 'body' },
       },
     ],
     parts: [

@@ -22,7 +22,8 @@ export interface WingStyle {
     /**
      * The folded wing's plane: 0 tangent to the body at the root (lying on the flank or back,
      * its leading edge facing down, so the forearm folds forward below the humerus), 90 flat over
-     * the back (its leading edge outward); in between, a roof.
+     * the back (its leading edge outward); in between, a roof. Negative turns it toward the
+     * flank instead, so a wing rooted high on the back folds down the side.
      */
     readonly lie: number;
     /** In-plane turns at each joint after the first (elbow, wrist, …), toward the leading edge. */
@@ -272,7 +273,7 @@ export function foldWings(
       : f.rootNormal
           .clone()
           .multiplyScalar(Math.cos(lie))
-          .addScaledVector(U, Math.sin(lie))
+          .addScaledVector(lie < 0 ? S : U, Math.abs(Math.sin(lie)))
           .normalize();
     const sweep = f.covered ? 90 * DEG : style.fold.sweep * DEG;
     const droop = f.covered ? 8 * DEG : style.fold.droop * DEG;
