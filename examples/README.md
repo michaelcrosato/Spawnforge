@@ -19,3 +19,5 @@ Regenerate the renders with `pnpm render:examples` after changing a blueprint or
 | [hydra.json](hydra.json) | Quadruped | Five heads on long S-curved necks, each with its own mouth, slit-pupilled eyes and teeth; a spine crest; scales |
 | [cerberus.json](cerberus.json) | Quadruped | Three wolf-sized heads fanned wide, ears and long fangs copied onto each, fur |
 | [two-tailed-fox.json](two-tailed-fox.json) | Quadruped | Two raised tails, each its own spring; paws, fur and a pale belly |
+| [tomb-spider.json](tomb-spider.json) | Octopod | Eight arched legs (longest in front) that walk in a wave and run in alternating fours; stripes and spots on chitin |
+| [grove-centaur.json](grove-centaur.json) | Centaur | An upright human torso with shoulders, a chest and hands; hooves, horns and pointed ears; hide |

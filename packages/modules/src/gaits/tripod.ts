@@ -5,7 +5,7 @@ export default defineGait({
   id: 'tripod',
   summary: 'Six-legged insect gait: two alternating tripods of feet.',
   tags: ['legs', 'insect', 'fast'],
-  legPairs: [3],
+  legPairs: [3, 4],
   wave: () => 0.5,
   duty: 0.5,
   froude: [0.1, 3],

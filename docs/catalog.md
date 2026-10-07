@@ -347,15 +347,24 @@ Ids you can override: limb `foreleg`, limb `hindleg`, limb `arm`, part `eyes`.
 {
   "scale": 1,
   "body": {
+    "muscle": 0.6,
     "torso": { "radius": [0.15, 0.17, 0.16, 0.13], "arch": 0.04, "pitch": 0, "segments": 6 },
     "neck": {
-      "length": 0.7,
-      "radius": [0.055, 0.12, 0.13, 0.1, 0.12],
-      "pitch": 84,
-      "segments": 4,
+      "length": 0.72,
+      "radius": [0.042, 0.045, 0.07, 0.135, 0.14, 0.125, 0.105, 0.1, 0.11, 0.125],
+      "pitch": 86,
+      "segments": 5,
       "crossSection": "wide"
     },
-    "head": { "shape": "round", "length": 0.26, "radius": 0.11, "jaw": true, "pitch": 0 },
+    "head": {
+      "shape": "round",
+      "length": 0.2,
+      "radius": 0.08,
+      "jaw": true,
+      "pitch": 0,
+      "lips": 0.5,
+      "brow": 0.5
+    },
     "tail": { "length": 0.6, "radius": [0.05, 0.02], "pitch": -40, "segments": 8 }
   },
   "limbs": [
@@ -366,7 +375,7 @@ Ids you can override: limb `foreleg`, limb `hindleg`, limb `arm`, part `eyes`.
       "length": 0.8,
       "segments": 3,
       "radius": [0.06, 0.028],
-      "foot": { "type": "foot.claw", "toes": 2 }
+      "foot": "foot.hoof"
     },
     {
       "id": "hindleg",
@@ -375,17 +384,16 @@ Ids you can override: limb `foreleg`, limb `hindleg`, limb `arm`, part `eyes`.
       "length": 0.85,
       "segments": 3,
       "radius": [0.07, 0.028],
-      "foot": { "type": "foot.claw", "toes": 2 }
+      "foot": "foot.hoof"
     },
     {
       "id": "arm",
       "role": "arm",
-      "attach": { "on": "neck", "at": 0.22, "side": "both", "angle": 90 },
-      "length": 0.6,
-      "segments": 2,
-      "radius": [0.05, 0.03],
-      "lift": 25,
-      "foot": { "type": "foot.claw", "toes": 4 }
+      "attach": { "on": "neck", "at": 0.3, "side": "both", "angle": 90 },
+      "length": 0.62,
+      "segments": 3,
+      "radius": [0.055, 0.04, 0.03],
+      "foot": "hand.grasp"
     }
   ],
   "parts": [{ "id": "eyes", "type": "eye.basic", "attach": { "on": "head", "at": 0.3, "angle": 62 } }],
@@ -557,8 +565,8 @@ Ids you can override: limb `leg1`, limb `leg2`, limb `leg3`, limb `leg4`, part `
     {
       "id": "leg1",
       "role": "leg",
-      "attach": { "on": "torso", "at": 0.06, "side": "both", "angle": 115 },
-      "length": 0.95,
+      "attach": { "on": "torso", "at": 0.04, "side": "both", "angle": 115 },
+      "length": 1.1,
       "segments": 3,
       "radius": [0.03, 0.012],
       "splay": 60,
@@ -567,8 +575,8 @@ Ids you can override: limb `leg1`, limb `leg2`, limb `leg3`, limb `leg4`, part `
     {
       "id": "leg2",
       "role": "leg",
-      "attach": { "on": "torso", "at": 0.14, "side": "both", "angle": 115 },
-      "length": 0.9,
+      "attach": { "on": "torso", "at": 0.13, "side": "both", "angle": 115 },
+      "length": 0.95,
       "segments": 3,
       "radius": [0.03, 0.012],
       "splay": 65,
@@ -578,7 +586,7 @@ Ids you can override: limb `leg1`, limb `leg2`, limb `leg3`, limb `leg4`, part `
       "id": "leg3",
       "role": "leg",
       "attach": { "on": "torso", "at": 0.22, "side": "both", "angle": 115 },
-      "length": 0.9,
+      "length": 0.85,
       "segments": 3,
       "radius": [0.03, 0.012],
       "splay": 65,
@@ -587,7 +595,7 @@ Ids you can override: limb `leg1`, limb `leg2`, limb `leg3`, limb `leg4`, part `
     {
       "id": "leg4",
       "role": "leg",
-      "attach": { "on": "torso", "at": 0.3, "side": "both", "angle": 115 },
+      "attach": { "on": "torso", "at": 0.31, "side": "both", "angle": 115 },
       "length": 1,
       "segments": 3,
       "radius": [0.03, 0.012],
@@ -1905,7 +1913,7 @@ Six-legged insect gait: two alternating tripods of feet.
 
 List in motion.gaits as "tripod", or { "type": "tripod", ...params }.
 
-legPairs: `[3]` · duty: `0.5` · froude: `[0.1,3]` · wave: `0.5`
+legPairs: `[3,4]` · duty: `0.5` · froude: `[0.1,3]` · wave: `0.5`
 
 | Parameter | Type | Range | Default | Description |
 | --- | --- | --- | --- | --- |

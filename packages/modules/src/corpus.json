@@ -15,6 +15,10 @@
     "ok": true,
     "errors": []
   },
+  "examples/grove-centaur.json": {
+    "ok": true,
+    "errors": []
+  },
   "examples/hydra.json": {
     "ok": true,
     "errors": []
@@ -32,6 +36,10 @@
     "errors": []
   },
   "examples/terror-bird.json": {
+    "ok": true,
+    "errors": []
+  },
+  "examples/tomb-spider.json": {
     "ok": true,
     "errors": []
   },

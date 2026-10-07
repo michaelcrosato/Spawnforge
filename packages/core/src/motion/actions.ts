@@ -62,6 +62,8 @@ export interface ActionGoals {
   blink?: number;
   /** Tail swing sideways. */
   swish?: number;
+  /** Raises the arms forward to reach for what the head looks at, 0 to 1 (arms only). */
+  arms?: number;
   /** Stand still while the action runs. */
   stop?: boolean;
 }

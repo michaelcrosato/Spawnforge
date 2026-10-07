@@ -65,6 +65,32 @@ const BENDS = {
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
+/** A neck carrying arms is an upright front: a centaur's human torso. */
+export function isUprightFront(spec: CreatureSpec): boolean {
+  return spec.body.neck.length > 0 && spec.limbs.some((l) => l.role === 'arm' && l.on === 'neck');
+}
+
+/** A curve reparametrized by arc length (0 to 1), from 64 samples. */
+function byLength(curve: (s: number) => Vector3): (s: number) => Vector3 {
+  const n = 64;
+  const pts = Array.from({ length: n + 1 }, (_, i) => curve(i / n));
+  const acc = [0];
+  for (let i = 1; i <= n; i++)
+    acc.push((acc[i - 1] as number) + (pts[i] as Vector3).distanceTo(pts[i - 1] as Vector3));
+  const total = acc[n] as number;
+  return (s) => {
+    const want = Math.min(1, Math.max(0, s)) * total;
+    let i = 1;
+    while (i < n && (acc[i] as number) < want) i++;
+    const a = acc[i - 1] as number;
+    const f = (want - a) / Math.max(1e-12, (acc[i] as number) - a);
+    return curve((i - 1 + f) / n);
+  };
+}
+
+/** Torso lengths beyond which a sprawled leg no longer raises the body: it arches and spreads. */
+const ARCH_REACH = 0.7;
+
 /** Radii at a few points along a bone from a section profile, when it varies within the bone. */
 function boneProfile(
   values: readonly number[],
@@ -298,8 +324,13 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
     // flexed; sprawlers low.
     const biped = lastPair === 0;
     const upright = biped ? 0.91 : limb.segments === 2 ? 0.9 : 0.87;
+    // A sprawled leg (splay 35° and more, fully from 55°) holds its hip no higher than a leg of
+    // ARCH_REACH torso lengths would: any length beyond that spreads the foot and raises the knee
+    // above the hip, as a spider's legs arch (docs/design/9.2-legs-centaurs.md). Shorter legs,
+    // and upright ones, are unchanged.
+    const reach = lerp(R, Math.min(R, ARCH_REACH * L), clamp01((limb.splay - 35) / 20));
     const frac = lerp(upright, 0.45, sw);
-    let v = frac * R;
+    let v = frac * reach;
     let h = R * Math.sin(limb.splay * 0.9 * DEG) * 0.85;
     // Sprawled legs fan out along the body, front feet forward and hind feet back (further, to
     // carry the abdomen), as insects and lizards stand.
@@ -327,6 +358,12 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
     },
   ) => {
     const dir = aroundDirection(frame, limb.angle, limb.mirror);
+    // Arms on an upright front hang from shoulders at the chest's edge (its profile there),
+    // clear of the ribs.
+    if (limb.role === 'arm' && limb.on === 'neck') {
+      const r = sampleProfile(spec.body.neck.radius, limb.at) * L;
+      return frame.point.clone().addScaledVector(dir, radiusAt(r, frame.cross, limb.angle) * 0.85);
+    }
     return frame.point
       .clone()
       .addScaledVector(dir, radiusAt(frame.radius, frame.cross, limb.angle) * 0.55);
@@ -513,6 +550,7 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
   const neckSpec = spec.body.neck;
   const neckLen = neckSpec.length * L;
   const front = sampleTorso(0);
+  const uprightFront = isUprightFront(spec);
   const buildHead = (suffix: string, yaw: number, shift: number) => {
     const neckId = `neck${suffix}`;
     const headId = `head${suffix}`;
@@ -525,7 +563,8 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
     /** The muscle running from the neck into the shoulders, on bodies with limbs on the torso. */
     const neckMuscle = (): MassDef[] => {
       const first = neck[0];
-      if (first === undefined || sBody <= 0 || chitin || plan.pelvis === undefined) return [];
+      if (first === undefined || sBody <= 0 || chitin || plan.pelvis === undefined || uprightFront)
+        return [];
       const bone = b.bones[first] as BoneDef;
       const r = (bone.r0 + bone.r1) / 2;
       const o = 0.15 * sBody * r;
@@ -544,11 +583,49 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
         },
       ];
     };
+    /**
+     * An upright front's chest (docs/design/9.2-legs-centaurs.md): a bar across the shoulders
+     * where the arms join, and pectorals below it on the front, both growing with muscle.
+     */
+    const frontChest = (): MassDef[] => {
+      if (!uprightFront || sBody <= 0 || neck.length === 0) return [];
+      const path = neck.map((id) => {
+        const bone = b.bones[id] as BoneDef;
+        return { bone: id, t0: bone.t0, t1: bone.t1 };
+      });
+      const arms = spec.limbs.filter((l) => l.role === 'arm' && l.on === 'neck');
+      const at = Math.min(...arms.map((l) => l.at));
+      const k = Math.min(1, sBody);
+      // A bar across the front at `t`, sized from the profile there.
+      const across = (t: number, width: number, lift: number, radius: number, blend: number) => {
+        const frame = samplePath(b.bones, path, t);
+        const r = sampleProfile(neckSpec.radius, t) * L;
+        const side = new Vector3().crossVectors(frame.up, frame.forward).normalize();
+        const half = r * frame.cross[0] * width;
+        const centre = frame.point.clone().addScaledVector(frame.up, lift * r * frame.cross[1]);
+        return {
+          bone: frame.bone,
+          a: centre.clone().addScaledVector(side, half),
+          b: centre.clone().addScaledVector(side, -half),
+          ra: radius * r,
+          rb: radius * r,
+          up: frame.forward.clone(),
+          cross: [1, 1] as const,
+          blend: blend * r * k,
+        };
+      };
+      return [
+        across(at, 0.85, 0.1, 0.42 + 0.08 * sBody, 0.5),
+        across(Math.min(1, at + 0.12), 0.38, -0.42, 0.32 + 0.08 * sBody, 0.45),
+      ];
+    };
     if (neckLen > 1e-6) {
       const np = neckSpec.pitch * DEG;
       const ndir = new Vector3(0, Math.sin(np), Math.cos(np));
       const p0 = front.point.clone().addScaledVector(front.forward, -0.02 * L);
-      const p1 = p0.clone().addScaledVector(front.forward, neckLen * 0.4);
+      // An upright front (arms on the neck: a centaur's human torso) rises nearly straight from
+      // the torso's front instead of leaving along it (docs/design/9.2-legs-centaurs.md).
+      const p1 = p0.clone().addScaledVector(front.forward, neckLen * (uprightFront ? 0.08 : 0.4));
       const p2 = p0.clone().addScaledVector(ndir, neckLen);
       // `curve` makes an S: today's curve raised to a cubic, its base pushed forward and down and
       // its head end back and up (a swan's neck).
@@ -580,11 +657,14 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
                 .addScaledVector(c2, 3 * s * s * (1 - s))
                 .addScaledVector(p2, s ** 3);
       const neckCross = CROSS_SCALE[neckSpec.crossSection];
+      // An upright front's bones are spaced evenly along its length, so `at` and the radius
+      // profile fall where they say; other necks keep the curve's own spacing.
+      const along = uprightFront ? byLength(bez) : (s: number) => bez(s);
       for (let k = 0; k < neckSpec.segments; k++) {
         const sa = k / neckSpec.segments;
         const sb = (k + 1) / neckSpec.segments;
-        const a = bez(sa);
-        const c = bez(sb);
+        const a = along(sa);
+        const c = along(sb);
         const forward = new Vector3().subVectors(c, a).normalize();
         neck.push(
           b.bone({
@@ -617,7 +697,7 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
           owner: neckId,
           parentBone: chest,
           blend: 0.5 * Math.min(sampleProfile(neckSpec.radius, 1) * L, front.radius),
-          masses: neckMuscle(),
+          masses: [...neckMuscle(), ...frontChest()],
         },
         neck,
       );

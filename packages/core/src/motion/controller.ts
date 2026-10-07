@@ -13,6 +13,9 @@ import { type FootRoll, footRoll, heelAt, plantToes, poseToes } from './roll.ts'
 const G = 9.81;
 const STEP = 1 / 120;
 const UP = new Vector3(0, 1, 0);
+const X_AXIS = new Vector3(1, 0, 0);
+const Y_AXIS = new Vector3(0, 1, 0);
+const Z_AXIS = new Vector3(0, 0, 1);
 
 /** Gait timing resolved for one creature (from the gait modules at compile time). */
 export interface GaitInfo {
@@ -164,6 +167,8 @@ export class MotionController {
   private readonly halfStride: number;
   /** A legless body whose neck rises well above it in the rest pose. */
   private readonly rearing: boolean;
+  /** Arms on the neck: an upright front (a centaur's human torso) that stays upright. */
+  private readonly uprightFront: boolean;
   /** Per leg (in `compiled.rig.legs` order): how far the foot was out of reach last frame (m). */
   readonly legMiss: number[] = [];
   /** √(hip height / 1 m): actions and springs run slower on big creatures. */
@@ -248,6 +253,11 @@ export class MotionController {
       (this.pose.restWorldPos[main.head] as Vector3).y -
         (this.pose.restWorldPos[neckRoot] as Vector3).y >
         3 * (compiled.bones.radii[neckRoot] ?? 0);
+    this.uprightFront = compiled.rig.arms.some(
+      (arm) =>
+        compiled.bones.sections[compiled.bones.parents[arm.bones[0] as number] as number] ===
+        'neck',
+    );
     this.timeScale = Math.sqrt(this.hipHeight / 1);
     const rng = createRng(compiled.seed);
     for (const action of motion.actions) {
@@ -985,14 +995,21 @@ export class MotionController {
     );
     (pose.rot[spine0] as Quaternion).premultiply(tilt);
     const sprawl = rig.posture === 'sprawl';
-    const bendBones = [...rig.spine.slice(1), ...mainHead(rig).neck];
+    const mainNeck = mainHead(rig).neck;
+    // An upright front leans back against most of the body's pitch and rearing, so it stays
+    // upright on slopes as a rider would (docs/design/9.2-legs-centaurs.md).
+    if (this.uprightFront && mainNeck[0] !== undefined)
+      (pose.rot[mainNeck[0]] as Quaternion).premultiply(
+        scratchQ.setFromAxisAngle(X_AXIS, -0.8 * (this.pitch + (g.rear ?? 0))),
+      );
+    const bendBones = [...rig.spine.slice(1), ...mainNeck];
     const bendAt = (k: number) =>
       this.bend / Math.max(1, bendBones.length) +
       (sprawl ? Math.sin(this.phase * Math.PI * 2 - k * 0.6) * 0.06 * moving : 0);
     bendBones.forEach((b, k) => {
-      (pose.rot[b] as Quaternion).multiply(
-        scratchQ.setFromAxisAngle(new Vector3(0, 0, 1), -bendAt(k)),
-      );
+      // Bends turn about the dorsal axis, which on an upright front is its own long axis.
+      const axis = this.uprightFront && k >= rig.spine.length - 1 ? Y_AXIS : Z_AXIS;
+      (pose.rot[b] as Quaternion).multiply(scratchQ.setFromAxisAngle(axis, -bendAt(k)));
     });
     // Other necks bend with the main one, bone for bone, so the heads turn together.
     rig.heads.forEach((h, i) => {
@@ -1036,19 +1053,44 @@ export class MotionController {
       }
     }
 
-    // Arms swing against the legs on bipeds.
-    rig.arms.forEach((arm, i) => {
+    // Arms swing against the legs: on bipeds by the gait's phase; above four or more legs (a
+    // centaur) with the foreleg on the other side, as a walking person's arms follow their legs.
+    // An action's `arms` raises them forward to reach for what it looks at.
+    const reachArms = g.arms ?? 0;
+    for (const arm of rig.arms) {
       const first = arm.bones[0] as number;
-      const swing =
-        Math.sin(this.phase * Math.PI * 2 + (arm.side === 'left' ? Math.PI : 0)) * 0.25 * moving;
+      let swing: number;
+      const fore = this.legs.length > 2 ? this.foreleg(arm.side === 'left' ? 'right' : 'left') : -1;
+      if (fore >= 0) {
+        const leg = this.legs[fore] as LegState;
+        const hip = leg.points[0] as Vector3;
+        const foot = leg.points.at(-1) as Vector3;
+        const along =
+          (foot.x - hip.x) * Math.sin(this.heading) + (foot.z - hip.z) * Math.cos(this.heading);
+        const rest = leg.neutral.z - (pose.restWorldPos[leg.rig.bones[0] as number] as Vector3).z;
+        swing = Math.max(-1, Math.min(1, (along - rest) / this.halfStride)) * 0.3 * moving;
+      } else {
+        swing =
+          Math.sin(this.phase * Math.PI * 2 + (arm.side === 'left' ? Math.PI : 0)) * 0.25 * moving;
+      }
       (pose.rot[first] as Quaternion).premultiply(
-        scratchQ.setFromAxisAngle(new Vector3(1, 0, 0), swing * (i % 2 ? 1 : 1)),
+        scratchQ.setFromAxisAngle(X_AXIS, swing * (1 - reachArms) + 1.3 * reachArms),
       );
-    });
+    }
 
     this.applySprings();
     this.applyHelpers();
     pose.solve();
+  }
+
+  /** Index (in `legs`) of the frontmost leg on a side, or -1. */
+  private foreleg(side: 'left' | 'right'): number {
+    let best = -1;
+    this.legs.forEach((leg, i) => {
+      if (leg.rig.side !== side) return;
+      if (best < 0 || leg.rig.pair > (this.legs[best] as LegState).rig.pair) best = i;
+    });
+    return best;
   }
 
   /** Index of the head nearest a point (the main head without one). */

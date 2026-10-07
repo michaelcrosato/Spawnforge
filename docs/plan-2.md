@@ -69,7 +69,7 @@ This table is plan 2's contract, as plan 1's scope table was. New ideas go to th
 
 | Area | Plan 2 | Later |
 | --- | --- | --- |
-| Body plans | `octopod` (eight legs), `centaur`, `wyvern` (wings as forelimbs) and `fish` | Different heads on one body, segmented bodies (caterpillars), colonies; a `bat` preset; necks of different lengths on one body |
+| Body plans | `octopod` (eight legs), `centaur`, `wyvern` (wings as forelimbs) and `fish` | Different heads on one body, segmented bodies (caterpillars), colonies; a `bat` preset; necks of different lengths on one body; human faces; a balance check stride by stride (dynamic balance) |
 | Body sections | Muscle masses, joints and body shape; an S-curved neck; several identical necks and heads; several or split tails | General body graphs |
 | Limbs | Stance (plantigrade, digitigrade, unguligrade); wings (membrane, feathered, and insect wings with wing cases); fins and flippers; tentacles | Walking on tentacles, prehensile tails as limbs |
 | Parts | Hooves, paws, pads, talons, hands, beaks, mandibles, pincers, antennae, shells, armour plates and bands, quills, frills, hoods, sails, dorsal and tail fins | Body feathers, manes and hair, worn gear; a stinger that continues the tail (with a venom bulb); several rows of teeth; a ring frill; stalked eyes as one part; fin tip colours; glowing eyes |
@@ -118,7 +118,7 @@ since anatomy comes before the new vocabulary.
 | [8.3 Heads](#83-heads-mouths-teeth-eyes-and-beaks) | xhigh (confirmed), one max step | Mouth and eye code with renders as the oracle; how lids and lips are built is a max step | 7.4 | Done ([#18](https://github.com/michaelcrosato/Spawnforge/pull/18)) |
 | [8.4 Materials and patterns](#84-materials-and-new-pattern-layers) | xhigh (confirmed) | Shader work with a new CPU–GPU parity test; fur is the risk | 7.3, 7.5 | Done ([#19](https://github.com/michaelcrosato/Spawnforge/pull/19)) |
 | [9.1 Heads and tails](#91-several-heads-and-split-tails) | xhigh (confirmed) | Builds on 7.4's lists; per-head mouths and targeting are the work | Gate 8 | Done ([#21](https://github.com/michaelcrosato/Spawnforge/pull/21)); extra heads glance after the main one |
-| [9.2 Eight legs, centaurs](#92-eight-legs-and-centaurs) | xhigh (confirmed) | Upright fronts and four leg pairs reach into posture and balance | Gate 8 | Not started |
+| [9.2 Eight legs, centaurs](#92-eight-legs-and-centaurs) | xhigh (confirmed) | Upright fronts and four leg pairs reach into posture and balance | Gate 8 | Done ([#23](https://github.com/michaelcrosato/Spawnforge/pull/23)) |
 | [9.3 Wings and fins](#93-wings-fins-and-membranes) | **max (raised)** | New geometry and skinning across several bone chains, which flight depends on | Gate 8 | Not started |
 | [9.4 Tentacles to pincers](#94-tentacles-antennae-mandibles-and-pincers) | xhigh (confirmed) | Parts with bones (designed in 7.3) are a new capability; tests are the oracle | 9.3 | Not started |
 | [9.5 Coverings](#95-coverings-shells-plates-quills-frills-hoods-and-sails) | xhigh (confirmed) | A new placement slot and conforming geometry; the harness and budgets check it | 9.4 | Not started |
