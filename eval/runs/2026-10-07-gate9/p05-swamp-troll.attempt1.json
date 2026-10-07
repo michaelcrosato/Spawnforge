@@ -1,0 +1,120 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Swamp Troll",
+  "seed": 505,
+  "extends": "biped",
+  "scale": 0.9,
+  "body": {
+    "muscle": 0.7,
+    "torso": {
+      "radius": [0.2, 0.25, 0.23, 0.2],
+      "arch": 0.1,
+      "pitch": 76
+    },
+    "neck": {
+      "length": 0.14,
+      "radius": [0.13, 0.17],
+      "pitch": 76
+    },
+    "head": {
+      "shape": "flat",
+      "length": 0.32,
+      "radius": 0.17,
+      "crossSection": "wide",
+      "pitch": -5,
+      "lips": 0.4,
+      "brow": 0.8
+    }
+  },
+  "limbs": [
+    {
+      "id": "leg",
+      "length": 0.95,
+      "radius": [0.12, 0.07],
+      "foot": {
+        "type": "foot.pad",
+        "width": 1.5,
+        "nails": 3
+      },
+      "attach": {
+        "angle": 115
+      }
+    },
+    {
+      "id": "arm",
+      "length": 1.55,
+      "radius": [0.1, 0.065],
+      "foot": {
+        "type": "hand.grasp",
+        "fingers": 4,
+        "fingerLength": 0.18,
+        "claws": 0.04
+      }
+    }
+  ],
+  "parts": [
+    {
+      "id": "tusks",
+      "type": "horn.curved",
+      "attach": {
+        "on": "jaw",
+        "at": 0.25,
+        "angle": 100
+      },
+      "params": {
+        "length": 0.16,
+        "width": 0.03,
+        "color": "#e8dcc0",
+        "tipColor": "#b8a888",
+        "aim": "up"
+      }
+    },
+    {
+      "id": "eyes",
+      "params": {
+        "squint": 0.5,
+        "irisColor": "#d8c020",
+        "scale": 1.2
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#5d7a3c",
+      "belly": "#a2a874",
+      "accent": "#2e4220"
+    },
+    "material": "hide",
+    "layers": [
+      {
+        "type": "countershade",
+        "height": -0.2
+      },
+      {
+        "type": "mottle",
+        "scale": 0.2,
+        "coverage": 0.55,
+        "contrast": 0.35
+      },
+      {
+        "type": "mottle",
+        "color": "#8a9a4a",
+        "scale": 0.07,
+        "coverage": 0.4,
+        "contrast": 0.4,
+        "strength": 0.7
+      },
+      {
+        "type": "warts",
+        "color": "#6e8448",
+        "size": 0.02,
+        "density": 0.5,
+        "region": "back"
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "lumbering",
+    "actions": ["roar", "bite", "look", "idle"]
+  }
+}

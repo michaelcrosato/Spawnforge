@@ -283,17 +283,35 @@ export function analyzeCreature(
     feet.length === 0
       ? { supported: true, margin: Math.max(0, measurements.width / 2), feet: 0 }
       : supportMargin(feet, footRadius, [centre.x, centre.z]);
-  if (feet.length > 0 && !stability.supported)
+  if (feet.length > 0 && !stability.supported) {
+    // Which way it tips: ahead of the front feet, behind the hind feet, or out to a side.
+    const front = Math.max(...feet.map((f) => f[1]));
+    const back = Math.min(...feet.map((f) => f[1]));
+    const ahead = centre.z > front;
+    const behind = centre.z < back;
+    const where = ahead
+      ? 'ahead of the front feet'
+      : behind
+        ? 'behind the hind feet'
+        : 'beside the feet';
+    const biped = feet.length <= 2;
     warn(
       'limbs',
       'unbalanced',
-      `the centre of mass is ${(-stability.margin * 100).toFixed(1)} cm outside the feet`,
-      feet.length <= 2
-        ? 'move the legs under the body (attach.at), lean the torso less (pitch), or lighten the front or back (head, tail, arms)'
-        : isUprightFront(spec) && centre.z > Math.max(...feet.map((f) => f[1]))
-          ? 'the upright front tips it forward: stand it straighter (neck.pitch nearer 90), slim it (neck.radius) or shorten its arms, or move the forelegs forward (attach.at)'
-          : 'move the legs toward the heavy end (attach.at), shorten or lighten that end, or add legs',
+      `the centre of mass is ${(-stability.margin * 100).toFixed(1)} cm ${where}, so it would tip ${ahead ? 'forward' : behind ? 'backward' : 'over'}`,
+      ahead && isUprightFront(spec)
+        ? 'the upright front tips it forward: stand it straighter (neck.pitch nearer 90), slim it (neck.radius) or shorten its arms, or move the forelegs forward (a lower attach.at)'
+        : ahead
+          ? biped
+            ? 'the front is too heavy: move the legs forward (a lower attach.at), stand the torso more upright (a higher torso pitch), shorten or slim the head and neck, or lengthen the tail as a counterweight'
+            : 'the front is too heavy: move the forelegs forward (a lower attach.at), or shorten or slim the head and neck'
+          : behind
+            ? biped
+              ? 'the back is too heavy: move the legs back (a higher attach.at), lean the torso forward (a lower torso pitch), or shorten or slim the tail'
+              : 'the back is too heavy: move the hindlegs back (a higher attach.at), or shorten or slim the tail'
+            : 'spread the legs wider (more splay) or slim the body',
     );
+  }
 
   // --- Eyes facing backwards ---------------------------------------------------------------
   const eyeParts = spec.parts.filter((p) => registry.get('part', p.type)?.material === 'eye');
@@ -1090,7 +1108,7 @@ export function describeCreature(
     seen.add(part.baseId);
     const module = registry.get('part', part.type) as PartModule | undefined;
     const count = spec.parts.filter((p) => p.baseId === part.baseId).length;
-    const phrase = module?.describe?.(part.params, { count }) ?? part.baseId;
+    const phrase = module?.describe?.(part.params, { count, on: part.on }) ?? part.baseId;
     // Area parts say which area of the body they cover (docs/design/9.5-coverings.md).
     const area =
       module?.slot === 'area' && part.area && (part.on === 'torso' || part.on === 'spine')

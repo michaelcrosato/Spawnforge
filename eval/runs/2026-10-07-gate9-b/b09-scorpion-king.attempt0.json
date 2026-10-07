@@ -1,0 +1,59 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Scorpion King",
+  "seed": 909,
+  "extends": "hexapod",
+  "scale": 0.9,
+  "body": {
+    "torso": { "radius": [0.1, 0.13, 0.14, 0.13, 0.11, 0.09], "segments": 8 },
+    "head": { "shape": "round", "length": 0.2, "radius": 0.085, "pitch": -10 },
+    "tail": {
+      "length": 2.4,
+      "radius": [0.08, 0.062, 0.055, 0.05, 0.05, 0.045, 0.068, 0.03],
+      "pitch": 40,
+      "curl": 200,
+      "segments": 12
+    }
+  },
+  "limbs": [
+    {
+      "id": "arm",
+      "role": "arm",
+      "attach": { "on": "torso", "at": 0, "side": "both", "angle": 100 },
+      "length": 0.65,
+      "segments": 3,
+      "radius": [0.045, 0.05],
+      "lift": 80,
+      "foot": { "type": "hand.pincer", "size": 0.35, "width": 0.9 }
+    }
+  ],
+  "parts": [
+    {
+      "id": "armor",
+      "type": "armor.bands",
+      "params": { "bands": 9, "thickness": 0.03, "overlap": 0.35 }
+    },
+    {
+      "id": "stinger",
+      "type": "horn.curved",
+      "attach": { "on": "tail", "at": 0.97, "angle": 0 },
+      "params": {
+        "length": 0.14,
+        "width": 0.025,
+        "curve": 60,
+        "color": "#d8a030",
+        "tipColor": "#1a1210"
+      }
+    },
+    { "id": "eyes", "params": { "scale": 1, "irisColor": "#d03020" } }
+  ],
+  "skin": {
+    "palette": { "base": "#2c2420", "belly": "#5a4638", "accent": "#c88a28" },
+    "material": "chitin",
+    "layers": [
+      { "type": "countershade", "softness": 0.2 },
+      { "type": "bands", "color": "accent", "count": 12, "width": 0.12, "region": "tail" }
+    ]
+  },
+  "motion": { "temperament": "aggressive", "actions": ["pinch", "lash"] }
+}

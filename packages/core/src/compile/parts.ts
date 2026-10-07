@@ -122,6 +122,11 @@ export interface PartBuildContext {
   readonly id: string;
   readonly baseId: string;
   readonly type: string;
+  /**
+   * How many copies of this part the creature has, one per head it is copied to (1 for most):
+   * a part on five heads may build each copy coarser to stay within the part budget.
+   */
+  readonly copies: number;
   /** Metres per torso length. */
   readonly scale: number;
   readonly mirror: 1 | -1 | 0;
@@ -438,6 +443,11 @@ export function buildParts(
       weights: readonly (readonly [number, number])[];
     }
   >();
+
+  // Copies of a part, one per head (a mirrored pair counts once).
+  const copies = new Map<string, number>();
+  for (const part of parts)
+    if (part.mirror !== -1) copies.set(part.baseId, (copies.get(part.baseId) ?? 0) + 1);
 
   const resolveColor = (value: unknown, fallback: string) => {
     if (typeof value === 'string') return input.palette[value] ?? toHex(value) ?? fallback;
@@ -902,6 +912,7 @@ export function buildParts(
     id,
     baseId,
     type,
+    copies: copies.get(baseId) ?? 1,
     scale: input.scale,
     mirror,
     at: place.at,

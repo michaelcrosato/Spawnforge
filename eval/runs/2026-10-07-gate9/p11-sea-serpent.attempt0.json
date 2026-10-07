@@ -1,0 +1,45 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Sea Serpent",
+  "seed": 1101,
+  "extends": "serpent",
+  "scale": 1.2,
+  "body": {
+    "torso": { "radius": [0.08, 0.1, 0.11, 0.1] },
+    "neck": { "length": 0.2, "radius": [0.075, 0.085], "pitch": 15 },
+    "head": { "shape": "wedge", "length": 0.2, "radius": 0.08 },
+    "tail": { "length": 2.2, "radius": [0.1, 0.012], "segments": 16 }
+  },
+  "parts": [
+    {
+      "id": "spikes",
+      "type": "spikes.row",
+      "attach": { "on": "spine", "from": 0.03, "to": 0.97, "angle": 0 },
+      "params": {
+        "count": 40,
+        "height": [0.05, 0.09, 0.08, 0.05, 0.02],
+        "width": 0.02,
+        "color": "#c8d4dc",
+        "tipColor": "#1a2a44"
+      }
+    },
+    {
+      "id": "tailfin",
+      "type": "fin.tail",
+      "params": { "shape": "rounded", "size": 0.2, "color": "base" }
+    }
+  ],
+  "skin": {
+    "palette": { "base": "#12284c", "belly": "#d8e2e4", "accent": "#0a1630" },
+    "material": "scales",
+    "layers": [
+      { "type": "countershade", "height": -0.1, "softness": 0.3 },
+      { "type": "scales", "size": 0.025 }
+    ]
+  },
+  "motion": {
+    "temperament": "stalking",
+    "media": { "water": true },
+    "actions": ["bite", "roar", "look", "idle"]
+  }
+}

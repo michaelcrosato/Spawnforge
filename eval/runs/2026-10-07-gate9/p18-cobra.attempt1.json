@@ -1,0 +1,27 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Brown Cobra",
+  "seed": 1801,
+  "extends": "serpent",
+  "scale": 0.75,
+  "body": {
+    "torso": { "pitch": 0 },
+    "neck": { "length": 1.1, "pitch": 80, "segments": 6, "radius": [0.06, 0.08], "curve": 25 },
+    "head": { "length": 0.2, "radius": 0.07 },
+    "tail": { "pitch": 0 }
+  },
+  "parts": [
+    { "id": "hood", "type": "hood", "params": { "width": 0.4, "length": 0.5, "open": 0.65 } },
+    { "id": "eyes", "params": { "irisColor": "#201810" } }
+  ],
+  "skin": {
+    "palette": { "base": "#7a5230", "belly": "#d8c08a", "accent": "#2a1a10" },
+    "material": "scales",
+    "layers": [
+      { "type": "countershade", "height": -0.6, "softness": 0.3 },
+      { "type": "bands", "color": "accent", "count": 30, "width": 0.3 },
+      { "type": "scales", "size": 0.02 }
+    ]
+  },
+  "motion": { "temperament": "stalking", "actions": ["display", "bite", "look"] }
+}

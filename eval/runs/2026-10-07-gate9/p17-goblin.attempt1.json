@@ -1,0 +1,54 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Goblin",
+  "seed": 1701,
+  "extends": "biped",
+  "scale": 0.34,
+  "body": {
+    "torso": { "radius": [0.13, 0.21, 0.22, 0.18] },
+    "head": { "shape": "round", "length": 0.34, "radius": 0.3, "lips": 0.2, "brow": 0.4 }
+  },
+  "limbs": [
+    { "id": "leg", "attach": { "angle": 112 }, "radius": [0.1, 0.045] },
+    {
+      "id": "arm",
+      "length": 1.15,
+      "foot": { "type": "hand.grasp", "fingers": 4, "fingerLength": 0.14, "claws": 0.04 }
+    }
+  ],
+  "parts": [
+    {
+      "id": "eyes",
+      "attach": { "on": "head", "at": 0.22, "angle": 62 },
+      "params": { "scale": 2.4, "irisColor": "#f4d818", "pupil": "round", "squint": 0.3 }
+    },
+    {
+      "id": "ears",
+      "type": "ear.pointed",
+      "attach": { "on": "head", "at": 0.85, "angle": 80, "side": "both" },
+      "params": { "length": 0.3, "width": 0.09, "curve": 5, "lean": -20, "droop": 0.45 }
+    },
+    {
+      "id": "nose",
+      "type": "horn.curved",
+      "attach": { "on": "head", "at": 0.1, "angle": 0 },
+      "params": {
+        "length": 0.07,
+        "width": 0.045,
+        "curve": -20,
+        "color": "#5a9a3a",
+        "tipColor": "#4a8030"
+      }
+    },
+    { "id": "teeth", "type": "teeth.row", "params": { "fangs": 1, "scale": 0.9 } }
+  ],
+  "skin": {
+    "palette": { "base": "#62a038", "belly": "#9cc468", "accent": "#2e5a1e" },
+    "material": "skin",
+    "layers": [
+      { "type": "countershade", "strength": 0.4, "height": -0.5 },
+      { "type": "warts", "color": "#4a8030", "size": 0.02, "density": 0.4, "region": "head" }
+    ]
+  },
+  "motion": { "temperament": "skittish", "actions": ["bite", "idle", "look"] }
+}

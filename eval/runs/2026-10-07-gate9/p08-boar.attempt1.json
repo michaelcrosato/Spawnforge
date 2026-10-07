@@ -1,0 +1,86 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Boar Beast",
+  "seed": 88,
+  "extends": "quadruped",
+  "scale": 0.9,
+  "body": {
+    "muscle": 0.7,
+    "torso": { "radius": [0.2, 0.27, 0.25, 0.19], "arch": 0.12 },
+    "neck": { "length": 0.2, "radius": [0.16, 0.23], "pitch": 12 },
+    "head": {
+      "shape": "snout",
+      "length": 0.55,
+      "radius": 0.2,
+      "pitch": -12,
+      "lips": 0.4,
+      "brow": 0.5
+    },
+    "tail": { "length": 0.18, "radius": [0.05, 0.015], "pitch": 45, "curl": 80, "segments": 4 }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "attach": { "on": "torso", "at": 0.15, "angle": 96 },
+      "length": 0.48,
+      "radius": [0.11, 0.055],
+      "splay": 28,
+      "foot": { "type": "foot.hoof", "cloven": true }
+    },
+    {
+      "id": "hindleg",
+      "attach": { "on": "torso", "at": 0.86, "angle": 98 },
+      "length": 0.5,
+      "radius": [0.12, 0.055],
+      "splay": 24,
+      "foot": { "type": "foot.hoof", "cloven": true }
+    }
+  ],
+  "parts": [
+    {
+      "id": "tusks",
+      "type": "horn.curved",
+      "attach": { "on": "jaw", "at": 0.25, "angle": 60 },
+      "params": {
+        "length": 0.28,
+        "width": 0.042,
+        "curve": -60,
+        "color": "#efe6cc",
+        "tipColor": "#d8ccaa"
+      }
+    },
+    {
+      "id": "ears",
+      "type": "ear.pointed",
+      "attach": { "on": "head", "at": 0.85, "angle": 50 },
+      "params": { "length": 0.14, "width": 0.07, "droop": 0.3 }
+    },
+    {
+      "id": "bristles",
+      "type": "spikes.row",
+      "attach": { "on": "spine", "from": 0.08, "to": 0.7, "angle": 0 },
+      "params": {
+        "count": 14,
+        "height": 0.05,
+        "width": 0.02,
+        "color": "#2a1e18",
+        "tipColor": "#2a1e18"
+      }
+    },
+    {
+      "id": "eyes",
+      "attach": { "on": "head", "at": 0.4, "angle": 55 },
+      "params": { "scale": 1.0, "squint": 0.4 }
+    }
+  ],
+  "skin": {
+    "palette": { "base": "#5e4a3a", "belly": "#9a8470", "accent": "#2c2018" },
+    "material": "hide",
+    "layers": [
+      { "type": "countershade", "strength": 0.6 },
+      { "type": "mottle", "scale": 0.12, "coverage": 0.5, "contrast": 0.25, "strength": 0.6 },
+      { "type": "grime", "amount": 0.4 }
+    ]
+  },
+  "motion": { "temperament": "lumbering", "actions": ["bite", "roar", "look", "idle"] }
+}

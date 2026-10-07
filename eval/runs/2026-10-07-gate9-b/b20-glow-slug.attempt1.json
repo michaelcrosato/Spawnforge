@@ -1,0 +1,131 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Glow Slug",
+  "seed": 2001,
+  "extends": "serpent",
+  "scale": 1.4,
+  "body": {
+    "torso": {
+      "radius": [0.12, 0.2, 0.24, 0.22, 0.13],
+      "pitch": 0,
+      "segments": 8
+    },
+    "neck": {
+      "length": 0.12,
+      "radius": [0.1, 0.13],
+      "pitch": 15,
+      "segments": 2
+    },
+    "head": {
+      "shape": "round",
+      "length": 0.22,
+      "radius": 0.11,
+      "jaw": false,
+      "pitch": -5,
+      "lips": 0,
+      "tongue": "none"
+    },
+    "tail": {
+      "length": 0.55,
+      "radius": [0.11, 0.06, 0.01],
+      "pitch": 0,
+      "segments": 8
+    }
+  },
+  "limbs": [
+    {
+      "id": "stalk",
+      "role": "tentacle",
+      "attach": {
+        "on": "head",
+        "at": 0.55,
+        "side": "both",
+        "angle": 35
+      },
+      "length": 0.45,
+      "segments": 4,
+      "radius": [0.04, 0.024],
+      "curl": -30,
+      "curlStart": 0.3
+    }
+  ],
+  "parts": [
+    {
+      "id": "eyes",
+      "remove": true
+    },
+    {
+      "id": "stalk-eyes",
+      "type": "eye.basic",
+      "attach": {
+        "on": "stalk",
+        "at": 1,
+        "angle": 90
+      },
+      "params": {
+        "size": 0.045,
+        "lids": false,
+        "irisColor": "#ffd040",
+        "pupil": "round",
+        "iris": 0.8,
+        "bulge": 0.8
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#4a4a7a",
+      "belly": "#9aa0c8",
+      "accent": "#20203a",
+      "glow": "#60ffc8"
+    },
+    "material": "skin",
+    "layers": [
+      {
+        "type": "countershade",
+        "softness": 0.4
+      },
+      {
+        "type": "mottle",
+        "color": "accent",
+        "scale": 0.18,
+        "coverage": 0.4
+      },
+      {
+        "type": "slime",
+        "color": "#a8e0d0",
+        "wetness": 0.95,
+        "drips": 0.5
+      },
+      {
+        "type": "bioluminescence",
+        "color": "glow",
+        "shape": "spots",
+        "size": 0.035,
+        "density": 0.5,
+        "brightness": 2,
+        "pulse": 0.3
+      },
+      {
+        "type": "bioluminescence",
+        "color": "glow",
+        "shape": "spots",
+        "size": 0.012,
+        "density": 0.9,
+        "brightness": 1.5,
+        "pulse": 0.5
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "lumbering",
+    "gaits": [
+      {
+        "type": "slither",
+        "amplitude": 0.06,
+        "waves": 1
+      }
+    ],
+    "actions": ["look", "idle"]
+  }
+}

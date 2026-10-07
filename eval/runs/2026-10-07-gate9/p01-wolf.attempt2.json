@@ -1,0 +1,135 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Timber Wolf",
+  "seed": 21,
+  "extends": "quadruped",
+  "scale": 0.9,
+  "body": {
+    "torso": {
+      "radius": [0.15, 0.19, 0.16, 0.12],
+      "arch": 0.05
+    },
+    "neck": {
+      "length": 0.3,
+      "radius": [0.09, 0.13],
+      "pitch": 35
+    },
+    "head": {
+      "shape": "snout",
+      "length": 0.46,
+      "radius": 0.085,
+      "jaw": true,
+      "pitch": -6
+    },
+    "tail": {
+      "length": 0.75,
+      "radius": [0.09, 0.18, 0.17, 0.07],
+      "pitch": -25,
+      "curl": 15,
+      "segments": 10
+    }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "length": 0.62,
+      "radius": [0.06, 0.03],
+      "attach": {
+        "angle": 122
+      },
+      "splay": 14,
+      "foot": {
+        "type": "foot.paw",
+        "toes": 4,
+        "claws": "short"
+      }
+    },
+    {
+      "id": "hindleg",
+      "length": 0.64,
+      "radius": [0.075, 0.03],
+      "attach": {
+        "angle": 120
+      },
+      "foot": {
+        "type": "foot.paw",
+        "toes": 4,
+        "claws": "short"
+      }
+    }
+  ],
+  "parts": [
+    {
+      "id": "ears",
+      "type": "ear.pointed",
+      "attach": {
+        "on": "head",
+        "at": 0.85,
+        "angle": 45
+      },
+      "params": {
+        "length": 0.12,
+        "width": 0.045
+      }
+    },
+    {
+      "id": "teeth",
+      "type": "teeth.row",
+      "params": {
+        "fangs": 1
+      }
+    },
+    {
+      "id": "eyes",
+      "params": {
+        "irisColor": "#d9a030",
+        "squint": 0.3
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#6f7276",
+      "belly": "#e4e1d8",
+      "accent": "#3c3f43"
+    },
+    "fur": {
+      "length": 0.03
+    },
+    "layers": [
+      {
+        "type": "countershade",
+        "height": 0.5,
+        "softness": 0.2
+      },
+      {
+        "type": "mottle",
+        "scale": 0.1,
+        "contrast": 0.25,
+        "coverage": 0.5,
+        "strength": 0.5
+      },
+      {
+        "type": "mottle",
+        "scale": 0.25,
+        "contrast": 0.2,
+        "coverage": 0.4,
+        "region": "back",
+        "strength": 0.6
+      },
+      {
+        "type": "mottle",
+        "color": "accent",
+        "scale": 0.12,
+        "contrast": 0.3,
+        "coverage": 0.6,
+        "region": "tail",
+        "strength": 0.7
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "stalking",
+    "actions": ["bite", "roar", "look", "idle"]
+  }
+}

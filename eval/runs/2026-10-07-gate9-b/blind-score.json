@@ -1,0 +1,128 @@
+{
+  "correct": 20,
+  "total": 20,
+  "threshold": 16,
+  "gate": true,
+  "rows": [
+    {
+      "render": "r01",
+      "truth": "b07-reef-shark",
+      "answer": "b07-reef-shark",
+      "correct": true
+    },
+    {
+      "render": "r02",
+      "truth": "b19-armoured-burrower",
+      "answer": "b19-armoured-burrower",
+      "correct": true
+    },
+    {
+      "render": "r03",
+      "truth": "b08-cave-spider",
+      "answer": "b08-cave-spider",
+      "correct": true
+    },
+    {
+      "render": "r04",
+      "truth": "b10-centaur",
+      "answer": "b10-centaur",
+      "correct": true
+    },
+    {
+      "render": "r05",
+      "truth": "b03-giant-bat",
+      "answer": "b03-giant-bat",
+      "correct": true
+    },
+    {
+      "render": "r06",
+      "truth": "b04-hydra",
+      "answer": "b04-hydra",
+      "correct": true
+    },
+    {
+      "render": "r07",
+      "truth": "b16-giant-moth",
+      "answer": "b16-giant-moth",
+      "correct": true
+    },
+    {
+      "render": "r08",
+      "truth": "b20-glow-slug",
+      "answer": "b20-glow-slug",
+      "correct": true
+    },
+    {
+      "render": "r09",
+      "truth": "b18-griffin",
+      "answer": "b18-griffin",
+      "correct": true
+    },
+    {
+      "render": "r10",
+      "truth": "b15-sail-back",
+      "answer": "b15-sail-back",
+      "correct": true
+    },
+    {
+      "render": "r11",
+      "truth": "b05-cerberus",
+      "answer": "b05-cerberus",
+      "correct": true
+    },
+    {
+      "render": "r12",
+      "truth": "b14-stegosaur",
+      "answer": "b14-stegosaur",
+      "correct": true
+    },
+    {
+      "render": "r13",
+      "truth": "b11-sea-turtle",
+      "answer": "b11-sea-turtle",
+      "correct": true
+    },
+    {
+      "render": "r14",
+      "truth": "b12-quillback-boar",
+      "answer": "b12-quillback-boar",
+      "correct": true
+    },
+    {
+      "render": "r15",
+      "truth": "b13-frilled-lizard",
+      "answer": "b13-frilled-lizard",
+      "correct": true
+    },
+    {
+      "render": "r16",
+      "truth": "b02-wyvern",
+      "answer": "b02-wyvern",
+      "correct": true
+    },
+    {
+      "render": "r17",
+      "truth": "b06-kraken",
+      "answer": "b06-kraken",
+      "correct": true
+    },
+    {
+      "render": "r18",
+      "truth": "b01-dragon",
+      "answer": "b01-dragon",
+      "correct": true
+    },
+    {
+      "render": "r19",
+      "truth": "b17-two-tailed-fox",
+      "answer": "b17-two-tailed-fox",
+      "correct": true
+    },
+    {
+      "render": "r20",
+      "truth": "b09-scorpion-king",
+      "answer": "b09-scorpion-king",
+      "correct": true
+    }
+  ]
+}

@@ -1,0 +1,78 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Spiked Ankylizard",
+  "seed": 42,
+  "extends": "quadruped",
+  "scale": 1.0,
+  "body": {
+    "muscle": 0.7,
+    "torso": { "radius": [0.17, 0.24, 0.24, 0.19], "arch": 0.04 },
+    "neck": { "length": 0.18, "radius": [0.12, 0.17], "pitch": 8 },
+    "head": {
+      "shape": "wedge",
+      "length": 0.3,
+      "radius": 0.11,
+      "jaw": true,
+      "pitch": -8,
+      "crossSection": "wide",
+      "lips": 0.1,
+      "brow": 0.6
+    },
+    "tail": {
+      "length": 1.0,
+      "radius": [0.15, 0.12, 0.1, 0.1, 0.14, 0.24, 0.25, 0.08],
+      "pitch": 0,
+      "curl": 0,
+      "segments": 12
+    }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "length": 0.4,
+      "radius": [0.09, 0.05],
+      "splay": 38,
+      "attach": { "angle": 112 },
+      "foot": { "type": "foot.claw", "toes": 4, "clawLength": 0.045 }
+    },
+    {
+      "id": "hindleg",
+      "length": 0.45,
+      "radius": [0.11, 0.055],
+      "splay": 35,
+      "attach": { "angle": 112 },
+      "foot": { "type": "foot.claw", "toes": 4, "clawLength": 0.045 }
+    }
+  ],
+  "parts": [
+    {
+      "id": "spikes",
+      "type": "spikes.row",
+      "attach": { "on": "spine", "from": 0.08, "to": 0.82, "angle": 0 },
+      "params": {
+        "count": 14,
+        "height": [0.08, 0.17, 0.12, 0.07],
+        "width": 0.04,
+        "curve": 15,
+        "color": "#d8caa0",
+        "tipColor": "#4a3a28"
+      }
+    },
+    {
+      "id": "eyes",
+      "params": { "pupil": "slit", "squint": 0.5, "irisColor": "#c88a20" }
+    },
+    { "id": "teeth", "type": "teeth.row", "params": { "fangs": 0, "scale": 0.9 } }
+  ],
+  "skin": {
+    "palette": { "base": "#5a5a3a", "belly": "#b0a478", "accent": "#2c2a1c" },
+    "material": "scales",
+    "layers": [
+      { "type": "countershade", "height": -0.3, "softness": 0.25 },
+      { "type": "scales", "size": 0.035, "bump": 0.6 },
+      { "type": "mottle", "scale": 0.2, "contrast": 0.3, "coverage": 0.45, "strength": 0.6 },
+      { "type": "grime", "amount": 0.3 }
+    ]
+  },
+  "motion": { "temperament": "lumbering", "actions": ["bite", "roar", "look", "idle"] }
+}

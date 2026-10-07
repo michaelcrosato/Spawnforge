@@ -1,0 +1,33 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Ant Soldier",
+  "seed": 1601,
+  "extends": "hexapod",
+  "scale": 0.5,
+  "body": {
+    "torso": { "radius": [0.09, 0.13, 0.04, 0.2, 0.18, 0.08] },
+    "neck": { "length": 0.05 },
+    "head": { "length": 0.32, "radius": 0.17 }
+  },
+  "limbs": [
+    { "id": "frontleg", "length": 0.8, "radius": [0.03, 0.012] },
+    { "id": "midleg", "length": 0.85, "radius": [0.03, 0.012] },
+    { "id": "hindleg", "length": 0.9, "radius": [0.03, 0.012] }
+  ],
+  "parts": [
+    { "id": "jaws", "type": "mandible", "params": { "length": 0.25, "curve": 70, "teeth": 3 } },
+    {
+      "id": "antennae",
+      "type": "antenna",
+      "attach": { "on": "head", "at": 0.3, "angle": 30, "side": "both" },
+      "params": { "length": 0.4, "curve": 50 }
+    },
+    { "id": "eyes", "params": { "scale": 1.2 } }
+  ],
+  "skin": {
+    "palette": { "base": "#a81c14", "belly": "#c8442c", "accent": "#4a0c08" },
+    "material": "chitin",
+    "layers": [{ "type": "countershade", "softness": 0.2 }]
+  },
+  "motion": { "temperament": "aggressive", "actions": ["bite", "idle"] }
+}

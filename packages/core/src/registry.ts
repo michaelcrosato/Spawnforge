@@ -100,11 +100,12 @@ export interface PartModule<P extends z.ZodType = z.ZodType> extends ModuleBase<
   readonly hooks?: PartHooks;
   /**
    * A short phrase for the creature's description, e.g. "coiled horns". `count` is how many
-   * there are (2 for a mirrored pair), so a single horn can say "a curved horn".
+   * there are (2 for a mirrored pair), so a single horn can say "a curved horn"; `on` is what it
+   * sits on (`head`, `jaw`, `tail`, a limb's id…), so a horn on the jaw can say "tusks".
    */
   readonly describe?: (
     params: Readonly<Record<string, unknown>>,
-    info: { readonly count: number },
+    info: { readonly count: number; readonly on?: string },
   ) => string;
 }
 

@@ -79,6 +79,22 @@ describe('analyze', () => {
     expect(hit?.fix).toMatch(/attach both higher/);
   });
 
+  it('says which way an unbalanced body tips, and the fix it names clears it (gate 9)', () => {
+    const tip = (blueprint: Record<string, unknown>) =>
+      analyze(blueprint).warnings.find((w) => w.code === 'unbalanced');
+    // A biped leaning too far forward: stand it more upright, as the fix says.
+    const leaning = tip({ extends: 'biped', body: { torso: { pitch: 55 } } });
+    expect(leaning?.message).toMatch(/ahead of the front feet, so it would tip forward/);
+    expect(leaning?.fix).toMatch(/a higher torso pitch/);
+    expect(tip({ extends: 'biped', body: { torso: { pitch: 80 } } })).toBeUndefined();
+    // A heavy tail behind a quadruped's hindlegs: lighten it.
+    const tail = { length: 2, radius: [0.25, 0.2] };
+    const heavy = tip({ extends: 'quadruped', body: { tail } });
+    expect(heavy?.message).toMatch(/behind the hind feet, so it would tip backward/);
+    expect(heavy?.fix).toMatch(/shorten or slim the tail/);
+    expect(tip({ extends: 'quadruped', body: { tail: { ...tail, length: 0.5 } } })).toBeUndefined();
+  });
+
   it('warns about a part buried in the body', () => {
     // Leaning flat against the side, the spike runs inside the torso.
     const a = analyze({
@@ -115,5 +131,17 @@ describe('analyze', () => {
     const a = analyze({ extends: 'quadruped', motion: { actions: ['idle', 'bite'] } });
     expect(a.description).toContain('it can bite.');
     expect(a.description).not.toContain('idle');
+  });
+
+  it('calls a horn on the jaw a tusk and one on the tail a stinger (gate 9)', () => {
+    // A pair at the sides; one on the midline (angle 0).
+    const description = (on: string, angle = 60) =>
+      analyze({
+        extends: 'quadruped',
+        parts: [{ id: 'h', type: 'horn.curved', attach: { on, at: 0.9, angle } }],
+      }).description;
+    expect(description('jaw')).toContain('curved tusks on its jaw');
+    expect(description('tail', 0)).toContain('a curved stinger on its tail');
+    expect(description('head')).toContain('curved horns on its head');
   });
 });

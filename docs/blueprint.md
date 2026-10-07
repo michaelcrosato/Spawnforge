@@ -50,7 +50,10 @@ a module that is not drawn yet.
 - **Sizing.** With the presets' proportions, an upright biped stands about 2.5 × `scale` tall (a
   2 m giant is `scale` 0.8), a quadruped is about 2.2 × `scale` from snout to tail tip and 0.75 ×
   `scale` tall (a wolf is about 0.7), a hexapod is about 1.3 × `scale` long, and a serpent about
-  3.5 × `scale`. A fish is about 2 × `scale` long (a 1.8 m reef shark is `scale` 0.9), a centaur
+  3.5 × `scale`. Wings span far more than the body: about 6–7 × `scale` for a bat or a dragon
+  with wings of `length` 1.5–1.9 (a 4.8 m bat is `scale` 0.7), so size a flier by its span
+  (`analyze` gives `measurements.wingspan`). A fish is about 2 × `scale` long (a 1.8 m reef
+  shark is `scale` 0.9), a centaur
   1.7 × `scale` long and 1.6 × `scale` tall to the top of its head, a wyvern 3.2 × `scale` from
   snout to tail tip, and an octopod 1.5 × `scale` long and 1.75 × `scale` across its legs. Longer
   legs, necks and tails change these, so check the size line on a render or with `analyze`.
@@ -291,7 +294,10 @@ everything, between `from` and `to` along what they sit on.
   tortoise give the torso a `wide` cross-section and keep its radius modest: the shell adds the
   height (see `examples/stone-tortoise.json`).
 - `armor.bands` lays `bands` overlapping strips (`overlap`) from front to back; `scales: true`
-  breaks them into staggered scales, as on a pangolin or an armadillo's tail.
+  breaks them into staggered scales, as on a pangolin or an armadillo's tail. Start them at
+  `from` 0.1 or later on the torso: at 0 the first band sits where the neck narrows and flares
+  into a fan. For an armadillo, use `area` "back" (the top and upper flanks) on a `round` torso,
+  and a second set on the `tail`.
 - `plates.row` stands flat plates along the midline, `kite` (a stegosaur's), `round` or `spike`,
   edged in `edgeColor`.
 - `quills` scatter over their area, spaced by `density`, lying back by `lie`, tipped in
@@ -345,7 +351,7 @@ All lengths are in torso lengths.
 | A colour only on the tail | a layer with `"region": "tail"`, e.g. `countershade` with `color` "base" and `height` 1 to keep a curled tail's underside dark |
 | Bull horns, out then forward | `horn.curved` on `head`, `at` 0.85, `angle` 75; `length` 0.3, `width` 0.04, `curve` -70 |
 | Rhino nose horn | `horn.curved` on `head`, `at` 0.12, `angle` 0; `length` 0.22, `width` 0.05, `curve` 25 (add a smaller one at `at` 0.4) |
-| Tusks from the lower jaw | `horn.curved` on `jaw`, `at` 0.25, `angle` 60; `length` 0.16, `width` 0.025, `curve` -60, pale `color` and `tipColor` |
+| Tusks from the lower jaw | `horn.curved` on `jaw`, `at` 0.25, `angle` 60; `length` 0.16, `width` 0.025, `curve` -60, pale `color` and `tipColor`. On a flat or wide head they sit beside the eyes: use `aim` "up" with `angle` about 90 and a longer `length` (0.22), so they clear the lip |
 | Insect mandibles | `{ "id": "jaws", "type": "mandible", "params": { "length": 0.2 } }`: a pair that opens with the bite (fixed horns, `horn.curved` with `aim` "forward" and `side` "both", do not move) |
 | Horns swept back along the head | `horn.curved` on `head`, `at` 0.8, `angle` 50; `length` 0.4, `curve` 50, `aim` "back" |
 | Spikes down the whole back | `spikes.row` on `spine`, `from` 0.1, `to` 0.95, `angle` 0; a `height` profile such as `[0.06, 0.12, 0.05]` |
@@ -420,6 +426,12 @@ length on the coil, so they need a `length` of 0.5–0.75 to read from a distanc
   and `veins` at their default sizes read as plain skin; use a larger `size` (0.08–0.15) or
   `width` there. Glow shows live and in renders; `.glb` exports leave it out until texture maps
   (milestone 11.1).
+- **Order matters.** Each layer paints over the ones before it, so a full-strength layer late in
+  the list (a `countershade` on the tail, say) hides the spots or bands under it. Put broad
+  layers first and markings after them, or lower the late layer's `strength`.
+- **Very dark creatures.** A base near black (`#000`–`#111`) loses its shape in renders: shading
+  has nothing to darken. Use a dark grey or brown such as `#1c1a1e`, and give `grime` or `mottle`
+  on it a colour well above the base so they show.
 - On a creature with no legs, `countershade` at its default height gives the pale belly of a
   snake; raise `height` toward 0 to pale the flanks too.
 
@@ -496,7 +508,8 @@ when the creature moves.
   timed calls (`moveTo`, `follow` a course, `act` at a target, `lookAt`, `stop`, `drive`,
   `gait`). `analyze` reports the events, the distance walked, how close a snout came to each
   target and foot slide; `render` draws it. See [scenarios](scenarios.md).
-- **Check everything else with `analyze`**: it measures the creature (size, mass, centre of mass,
+- **Check everything else with `analyze`**: its warnings and description come first, and
+  `--summary` (MCP `summary`) leaves out the detailed motion numbers. It measures the creature (size, mass, centre of mass,
   hip height, speeds per gait, bite reach, balance over the feet), runs two gait cycles on flat
   and rough ground, and warns, with a path and a fix, about sliding feet, a body or tail in the
   ground, legs stretched past their reach, limbs passing through each other or the body, parts
@@ -519,7 +532,8 @@ also works, and wins when written.
 ## Editing with patch
 
 `patch` changes a blueprint file in place by id-based paths and prints a short diff; the file is
-only written when the result is valid. Operations: `set` (a value), `add` (an item to a list
+only written when the result is valid, and `--out new.json` writes the result there instead,
+leaving the file as it was. Operations: `set` (a value), `add` (an item to a list
 such as `parts` or `skin.layers`), `remove` (a key, back to its default, or a limb or part;
 inherited ones get `"remove": true`), `mirror` (make a limb or part a pair, or set its `side`)
 and `scale` (multiply a number or a profile by `by`; path `""` scales the whole creature). `set`
@@ -638,7 +652,8 @@ with `patch`, or `mutate` and `crossbreed` them. In the sandbox, the breed tab d
 
 `validate` returns `ok`, `errors`, `warnings` and the **minimal blueprint**: the same creature
 with every value that equals the preset or a default removed. Validation never changes your file;
-the minimal blueprint is there to show what actually differs from the preset. Each issue has:
+the minimal blueprint is there to show what actually differs from the preset (`validate --quiet`
+leaves it out, for just the verdict). Each issue has:
 
 - `path`, id-based, e.g. `limbs[id=hindleg].attach.at`
 - `message`, e.g. `1.4 is outside 0–1`
@@ -692,15 +707,15 @@ milestones land.
 | Bat | `wyvern` with bat proportions: a short neck and tail, a big `snout` head, legs under the middle (`at` 0.45), wings `length` 1.9 with `"membrane": { "type": "membrane.bat", "fingers": 5, "trailing": "leg" }`, big `ear.pointed` and fur on the head and torso (see `examples/cave-bat.json`) |
 | Hydra or cerberus | `quadruped` with `"neck": { "count": 5, "length": 0.75 }` and a small head (examples/hydra.json), or 3 with `length` 0.45 and `spread` 90 for a cerberus (examples/cerberus.json); parts on `head` appear on every head |
 | Kraken | `serpent` with a short, thick torso (the mantle), no tail, a big `round` head and four `tentacle` entries on the `head` with `side` "both" at `angle`s 25 to 155, plus two long feeding tentacles with a club in their `radius`; `suckers` on the limbs (see `examples/kraken.json`). Tentacles on the torso trail behind instead, like a squid's |
-| Shark or fish | `fish`, whose preset already has the fins: override its parts `dorsal` (`fin.dorsal`) and `tailfin` (`fin.tail`, `"shape": "forked"`) and its limbs `pectoral` and `pelvic` by id, and add `teeth.row` (see `examples/reef-shark.json`) |
+| Shark or fish | `fish`, whose preset already has the fins: override its parts `dorsal` (`fin.dorsal`) and `tailfin` (`fin.tail`, `"shape": "forked"`) and its limbs `pectoral` and `pelvic` by id (`"remove": true` drops the pelvic pair), and add `teeth.row` (see `examples/reef-shark.json`). Its fins already make it a swimmer, so it needs no `media`. Paired fins hold out flat, so check them in the `top` and `front` views |
 | Spider or scorpion | `octopod`; `mandible` (`"shape": "fang"`) for a spider (see `examples/tomb-spider.json`); for a scorpion a slimmer even torso, `arm`s at `at` 0 with `lift` 80 and `"foot": "hand.pincer"`, a tail with `pitch` 60 and `curl` 160, a `horn.curved` stinger on its tip, and `pinch` and `lash` (see `examples/dune-scorpion.json`) |
 | Centaur | `centaur`; give its legs `foreleg` and `hindleg` `"foot": "foot.hoof"`, its `arm`s `"foot": "hand.grasp"`, and the head horns |
 | Turtle or tortoise | `quadruped` with a `wide` torso and `{ "id": "shell", "type": "shell", "params": { "dome": 0.95, "overhang": 0.28 } }`, short legs with `foot.pad` (see `examples/stone-tortoise.json`); for a sea turtle remove `foreleg` and `hindleg` (`"remove": true`) and add fin limbs with `"membrane": null` (flippers), which make it a swimmer |
 | Two-tailed fox | `quadruped` with `"tail": { "count": 2, "spread": 22, "pitch": 12, "curl": 35 }` (raised, like a kitsune's), `"foot": "foot.paw"` on both leg pairs and `"skin": { "fur": {} }` (examples/two-tailed-fox.json) |
 | Griffin | `quadruped`; `beak`, `{ "role": "wing", "membrane": "membrane.feather" }`, `foot.talon` on the forelegs and `foot.paw` on the hindlegs, fur (see `examples/griffin.json`) |
-| Moth | `hexapod`; two wing pairs with their own ids, `forewing` at `at` 0.15 and `hindwing` at 0.3, each with `membrane.insect` (`"shape": "broad"` and `"round"`), `spots` with `ring` and `"region": "wings"` for eye spots (see `examples/luna-moth.json`); `antenna` with `"shape": "feather"`, fur on the torso |
+| Moth | `hexapod`; two wing pairs with their own ids, `forewing` at `at` 0.15 and `hindwing` at 0.3, each with `membrane.insect` (`"shape": "broad"` and `"round"`), `spots` with `ring` and `"region": "wings"` for eye spots (see `examples/luna-moth.json`); `antenna` with `"shape": "feather"`, fur on the torso. A moth cannot bite: `"head": { "jaw": false }` drops the jaw, and with it `bite` and `roar` |
 | Beetle with wing cases | `hexapod` with a deep abdomen (more torso `radius` points); `{ "id": "case", "role": "wing", "attach": { "on": "torso", "at": 0.5, "angle": 6 }, "length": 0.5, "segments": 2, "membrane": "membrane.case" }` and a `wing` just behind it (`at` 0.53) with `membrane.insect` (`"shape": "round"`), which folds away under the case (see `examples/rhino-beetle.json`) |
-| Slug or snail | `serpent` with a short tail and `"material": "skin"`; eyes on stalks: a tentacle pair on the `head` (`length` 0.3, 4 segments) with `eye.basic` on it at `at` 1; `slime` |
+| Slug or snail | `serpent` with a short tail, a thicker torso (the preset is a thin snake) and `"material": "skin"`; eyes on stalks: a tentacle pair on the `head` (`length` 0.3, 4 segments, `radius` 0.025 or more) with `eye.basic` on it at `at` 1 and a `size` of about 0.05 (`scale` is relative to what it sits on, so on a thin stalk the eyes come out as dots); `slime` |
 | Stegosaur, sail-back, porcupine | `plates.row`, `sail` or `quills` along the `spine` (see `examples/plated-stegosaur.json`, `sail-back.json`, `porcupine.json`) |
 | Frilled lizard or cobra | `frill` or `hood` on the `neck`, and `display` in `motion.actions` (it needs one of them; see `examples/frilled-lizard.json`, `hooded-cobra.json`) |
 

@@ -1,0 +1,63 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Sprawl Lizard",
+  "seed": 71,
+  "extends": "quadruped",
+  "scale": 0.12,
+  "body": {
+    "muscle": 0.3,
+    "torso": { "radius": [0.11, 0.15, 0.14, 0.11], "arch": 0.02 },
+    "neck": { "length": 0.12, "radius": [0.075, 0.1], "pitch": 10 },
+    "head": {
+      "shape": "wedge",
+      "length": 0.3,
+      "radius": 0.09,
+      "pitch": -5,
+      "lips": 0.1,
+      "tongue": "forked",
+      "brow": 0.3
+    },
+    "tail": { "length": 2.4, "radius": [0.085, 0.008], "pitch": -3, "segments": 14 }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "attach": { "on": "torso", "at": 0.12, "angle": 118 },
+      "length": 0.62,
+      "radius": [0.05, 0.02],
+      "splay": 58,
+      "foot": { "type": "foot.claw", "toes": 5, "toeLength": 0.1, "clawLength": 0.03 }
+    },
+    {
+      "id": "hindleg",
+      "attach": { "on": "torso", "at": 0.86, "angle": 118 },
+      "length": 0.68,
+      "radius": [0.055, 0.02],
+      "splay": 58,
+      "foot": { "type": "foot.claw", "toes": 5, "toeLength": 0.11, "clawLength": 0.03 }
+    }
+  ],
+  "parts": [
+    {
+      "id": "eyes",
+      "attach": { "on": "head", "at": 0.35, "angle": 60 },
+      "params": { "scale": 1.5, "pupil": "round", "irisColor": "#d8a020" }
+    }
+  ],
+  "skin": {
+    "palette": { "base": "#5a6b34", "belly": "#d6d09a", "accent": "#e2dc9a" },
+    "material": "scales",
+    "layers": [
+      { "type": "countershade", "softness": 0.3 },
+      {
+        "type": "spots",
+        "color": "accent",
+        "size": 0.05,
+        "density": 0.8,
+        "jitter": 0.6,
+        "region": "back"
+      }
+    ]
+  },
+  "motion": { "temperament": "skittish", "actions": ["look", "idle"] }
+}

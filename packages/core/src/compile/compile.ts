@@ -748,17 +748,42 @@ export function compileCreature(
       skinIndex: grow(skinPack.skinIndex, added * 4, (n) => new Uint16Array(n)),
       skinWeight: grow(skinPack.skinWeight, added * 4, (n) => new Float32Array(n)),
     };
+    // The nearest candidate for each lid vertex, the lowest index on a tie: candidates sorted
+    // along x, searched outward from the vertex's x until x alone is further than the best, so
+    // several heads' lids (a cerberus's) do not compare every pair (gate 9).
     const q = new Vector3();
+    const byX = [...near].sort(
+      (a, b) => (positions[a * 3] as number) - (positions[b * 3] as number) || a - b,
+    );
+    const xs = byX.map((s) => positions[s * 3] as number);
     for (let v = 0; v < added; v++) {
       p.fromArray(lid.positions, v * 3);
       let best = -1;
       let bestD = Infinity;
-      for (const s of near) {
+      let lo = 0;
+      let hi = xs.length;
+      while (lo < hi) {
+        const m = (lo + hi) >> 1;
+        if ((xs[m] as number) < p.x) lo = m + 1;
+        else hi = m;
+      }
+      const consider = (k: number) => {
+        const s = byX[k] as number;
         const d = q.fromArray(positions, s * 3).distanceToSquared(p);
-        if (d < bestD) {
+        if (d < bestD || (d === bestD && s < best)) {
           bestD = d;
           best = s;
         }
+      };
+      for (let k = lo; k < xs.length; k++) {
+        const dx = (xs[k] as number) - p.x;
+        if (dx * dx > bestD) break;
+        consider(k);
+      }
+      for (let k = lo - 1; k >= 0; k--) {
+        const dx = p.x - (xs[k] as number);
+        if (dx * dx > bestD) break;
+        consider(k);
       }
       const w = n0 + v;
       if (best >= 0) {

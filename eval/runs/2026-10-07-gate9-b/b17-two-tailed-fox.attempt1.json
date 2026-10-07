@@ -1,0 +1,109 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Two-Tailed Fox",
+  "seed": 1701,
+  "extends": "quadruped",
+  "scale": 0.6,
+  "body": {
+    "torso": {
+      "radius": [0.12, 0.16, 0.15, 0.11]
+    },
+    "neck": {
+      "length": 0.28,
+      "radius": [0.075, 0.11],
+      "pitch": 30
+    },
+    "head": {
+      "shape": "snout",
+      "length": 0.4,
+      "radius": 0.095,
+      "pitch": -10
+    },
+    "tail": {
+      "count": 2,
+      "spread": 26,
+      "length": 0.9,
+      "radius": [0.05, 0.11, 0.12, 0.075, 0.02],
+      "pitch": 10,
+      "curl": 30,
+      "segments": 10
+    }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "length": 0.7,
+      "radius": [0.045, 0.022],
+      "splay": 8,
+      "foot": {
+        "type": "foot.paw",
+        "toes": 4,
+        "claws": "short"
+      }
+    },
+    {
+      "id": "hindleg",
+      "length": 0.74,
+      "radius": [0.06, 0.022],
+      "foot": {
+        "type": "foot.paw",
+        "toes": 4,
+        "claws": "short"
+      }
+    }
+  ],
+  "parts": [
+    {
+      "id": "ears",
+      "type": "ear.pointed",
+      "attach": {
+        "on": "head",
+        "at": 0.85,
+        "angle": 40
+      },
+      "params": {
+        "length": 0.17,
+        "width": 0.06,
+        "tipColor": "accent"
+      }
+    },
+    {
+      "id": "eyes",
+      "params": {
+        "irisColor": "#d89020",
+        "pupil": "slit",
+        "squint": 0.3
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#e0782c",
+      "belly": "#f6ecdc",
+      "accent": "#2c1a10"
+    },
+    "fur": {
+      "length": 0.04,
+      "density": 0.9
+    },
+    "layers": [
+      {
+        "type": "countershade",
+        "height": 0.1,
+        "softness": 0.3
+      },
+      {
+        "type": "grime",
+        "color": "accent",
+        "amount": 1,
+        "creases": 0,
+        "feet": 1,
+        "region": "limbs"
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "skittish",
+    "actions": ["bite", "look", "idle"]
+  }
+}

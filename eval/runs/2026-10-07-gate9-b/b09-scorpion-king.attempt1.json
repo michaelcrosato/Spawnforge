@@ -1,0 +1,126 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Scorpion King",
+  "seed": 909,
+  "extends": "hexapod",
+  "scale": 0.9,
+  "body": {
+    "torso": {
+      "radius": [0.1, 0.13, 0.14, 0.13, 0.11, 0.09],
+      "segments": 8
+    },
+    "head": {
+      "shape": "round",
+      "length": 0.2,
+      "radius": 0.085,
+      "pitch": -10
+    },
+    "tail": {
+      "length": 2.4,
+      "radius": [0.08, 0.062, 0.055, 0.05, 0.05, 0.045, 0.068, 0.03],
+      "pitch": 40,
+      "curl": 200,
+      "segments": 12
+    }
+  },
+  "limbs": [
+    {
+      "id": "arm",
+      "role": "arm",
+      "attach": {
+        "on": "torso",
+        "at": 0,
+        "side": "both",
+        "angle": 100
+      },
+      "length": 0.65,
+      "segments": 3,
+      "radius": [0.045, 0.05],
+      "lift": 80,
+      "foot": {
+        "type": "hand.pincer",
+        "size": 0.42,
+        "width": 0.95
+      }
+    }
+  ],
+  "parts": [
+    {
+      "id": "armor",
+      "type": "armor.bands",
+      "params": {
+        "bands": 9,
+        "thickness": 0.035,
+        "overlap": 0.35,
+        "color": "#8a6a38"
+      }
+    },
+    {
+      "id": "stinger",
+      "type": "horn.curved",
+      "attach": {
+        "on": "tail",
+        "at": 0.97,
+        "angle": 0
+      },
+      "params": {
+        "length": 0.2,
+        "width": 0.035,
+        "curve": 60,
+        "color": "#d6a030",
+        "tipColor": "#1a1210"
+      }
+    },
+    {
+      "id": "eyes",
+      "params": {
+        "scale": 1,
+        "irisColor": "#e03020",
+        "scleraColor": "#1a1010"
+      }
+    },
+    {
+      "id": "crown",
+      "type": "spikes.row",
+      "attach": {
+        "on": "head",
+        "from": 0.45,
+        "to": 0.95,
+        "angle": 0
+      },
+      "params": {
+        "count": 5,
+        "height": [0.04, 0.08, 0.04],
+        "width": 0.015,
+        "curve": 10,
+        "color": "#e0b040",
+        "tipColor": "#f0d070"
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#4c3828",
+      "belly": "#7a6048",
+      "accent": "#d6a030"
+    },
+    "material": "chitin",
+    "layers": [
+      {
+        "type": "countershade",
+        "softness": 0.2
+      },
+      {
+        "type": "bands",
+        "color": "accent",
+        "count": 12,
+        "width": 0.12,
+        "region": "tail"
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "aggressive",
+    "actions": ["pinch", "lash"]
+  }
+}
