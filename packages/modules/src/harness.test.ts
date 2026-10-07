@@ -66,10 +66,23 @@ describe('module harness: parts', () => {
               extends: 'quadruped',
               limbs: [{ id: 'foreleg', foot: { ...module.example, type: id } }],
             }
-          : { format: FORMAT, extends: 'quadruped', parts: [{ ...module.example, type: id }] };
+          : module.slot === 'membrane'
+            ? {
+                format: FORMAT,
+                extends: 'quadruped',
+                limbs: [
+                  {
+                    id: 'wing',
+                    role: module.tags.includes('fin') ? 'fin' : 'wing',
+                    membrane: { ...module.example, type: id },
+                  },
+                ],
+              }
+            : { format: FORMAT, extends: 'quadruped', parts: [{ ...module.example, type: id }] };
       const [a, ms] = timed(() => compile(blueprint));
       expect(ms, 'compile ms with the part').toBeLessThan(2000);
-      const mesh = (c: CompiledCreature) => (module.material === 'eye' ? c.eyes : c.parts);
+      const mesh = (c: CompiledCreature) =>
+        module.material === 'eye' ? c.eyes : c.membranes.indices.length > 0 ? c.membranes : c.parts;
       // What the part adds, beyond the preset's own parts (a foot replaces the default one).
       const added = mesh(a).indices.length / 3 - mesh(plain).indices.length / 3;
       expect(added, 'triangles the part adds').toBeLessThan(20000);
@@ -219,5 +232,7 @@ describe('module harness: stats', () => {
         expect(computeStats(spec, analysis, registry, id)).toEqual(values);
       }
     },
+    // It analyses every example, which takes a few seconds.
+    60_000,
   );
 });

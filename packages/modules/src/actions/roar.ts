@@ -38,6 +38,8 @@ export default defineAction({
       out.jaw = p.intensity * ramp(t, 0.18, 0.32) * (1 - ramp(t, 0.78, 0.95));
       out.shake = 0.06 * p.intensity * envelope(t, 0.35, 0.42, 0.65, 0.75);
       out.swish = 0.3 * p.intensity * Math.sin(ctx.elapsed * 9) * hold;
+      // Wings, where there are any, flare out with it.
+      out.wings = 0.8 * envelope(t, 0.15, 0.35, 0.75, 0.95);
     },
   },
 });

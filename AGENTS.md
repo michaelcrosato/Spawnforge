@@ -65,7 +65,11 @@ own mouth, eyes and parts, the nearest one biting; tails apart or forked, each a
 `head_intersection`, `docs/design/9.1-heads-tails.md`) and 9.2 (`tripod` on four pairs,
 spiders' arched legs, and the centaur's upright front with shoulders, arms that swing with the
 forelegs and reach to bite, and a balance check that names it,
-`docs/design/9.2-legs-centaurs.md`).
+`docs/design/9.2-legs-centaurs.md`) and 9.3 (wings built spread and resting folded, with
+`BonesData.rest` apart from the bind pose everywhere a creature is shown or exported; leathery,
+insect, feathered and cased wings and rayed fins as one double-sided membrane mesh, carried by
+station bones; `fin.dorsal` and `fin.tail`; the `wings` goal, `render --pose spread`,
+`wing_intersection`; `docs/design/9.3-wings-fins.md`).
 
 ## Repo map
 
@@ -102,6 +106,7 @@ pnpm spawnforge generate --theme reptile --seed 4 --out creatures/lizard.json   
 pnpm spawnforge export examples/bog-troll.json --stats rpg   # a .glb with baked clips, for any engine
 pnpm spawnforge render examples/ridgeback-stalker.json --labels   # PNG contact sheet next to the file
 pnpm spawnforge render examples/grey-wolf.json --views head --jaw 0.8   # the head, mouth open (--blink 1 shuts the eyes)
+pnpm spawnforge render examples/ash-dragon.json --pose spread   # wings open (they rest folded)
 pnpm spawnforge analyze examples/ridgeback-stalker.json --scenario examples/scenarios/stalk-and-bite.json
                               # scripted motion (targets, a course, timed calls); render takes it too
 pnpm render:examples          # re-render examples/*.png after changing a blueprint or the pipeline
@@ -179,11 +184,13 @@ From the plan. Follow them unless the plan changes.
 
 **Compiling and rendering**
 
-- The compile pipeline (`packages/core/src/compile`) is pure: skeleton → SDF → surface nets →
-  skin weights → mouth cut → swept tubes for thin bones → body coordinates → helper bones →
-  parts and eyes. Its output is plain typed arrays (`CompiledCreature`).
+- The compile pipeline (`packages/core/src/compile`) is pure: skeleton (wings built spread, then
+  folded) → SDF → surface nets → skin weights → mouth cut → swept tubes for thin bones → body
+  coordinates → helper bones → parts, eyes and membranes. Its output is plain typed arrays
+  (`CompiledCreature`). A creature with wings has a rest pose apart from its bind pose
+  (`BonesData.rest`): show and animate it from rest.
 - Part modules build in socket space with `ctx.geo` (sweep, arc, lathe, …) and place pieces with
-  `ctx.emit`; pattern modules write their shader once against `Kit<F>`, which runs as TSL on the
+  `ctx.emit` (membrane modules span spars with `ctx.panel` and place sheets with `ctx.sheet`); pattern modules write their shader once against `Kit<F>`, which runs as TSL on the
   GPU and as numbers on the CPU. Neither may import `three/webgpu` or `three/tsl`.
 - Look at what you change: `pnpm spawnforge render <file> --labels` (or the MCP `render` tool)
   draws six views with every part labelled, `--filmstrip` a gait cycle and `--filmstrip --action

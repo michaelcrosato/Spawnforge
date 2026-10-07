@@ -17,7 +17,7 @@ export default defineBodyPlan({
       {
         id: 'leg',
         role: 'leg',
-        attach: { on: 'torso', at: 0.62, side: 'both', angle: 125 },
+        attach: { on: 'torso', at: 0.56, side: 'both', angle: 125 },
         length: 0.75,
         segments: 3,
         radius: [0.08, 0.035],
@@ -30,7 +30,7 @@ export default defineBodyPlan({
         length: 1.6,
         segments: 3,
         radius: [0.05, 0.015],
-        membrane: { type: 'membrane.bat', fingers: 4 },
+        membrane: { type: 'membrane.bat', fingers: 4, trailing: 'body' },
       },
     ],
     parts: [

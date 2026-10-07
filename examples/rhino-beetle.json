@@ -1,0 +1,57 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Rhino Beetle",
+  "seed": 9304,
+  "extends": "hexapod",
+  "scale": 0.6,
+  "body": {
+    "torso": { "radius": [0.12, 0.15, 0.13, 0.17, 0.17, 0.14, 0.08] },
+    "head": { "length": 0.18 }
+  },
+  "limbs": [
+    {
+      "id": "case",
+      "role": "wing",
+      "attach": { "on": "torso", "at": 0.5, "side": "both", "angle": 6 },
+      "length": 0.5,
+      "segments": 2,
+      "radius": [0.02, 0.012],
+      "membrane": {
+        "type": "membrane.case",
+        "dome": 0.7,
+        "ridges": 4,
+        "color": "#3a2014",
+        "sheen": 0.8
+      }
+    },
+    {
+      "id": "wing",
+      "role": "wing",
+      "attach": { "on": "torso", "at": 0.53, "side": "both", "angle": 12 },
+      "length": 0.7,
+      "segments": 2,
+      "radius": [0.012, 0.006],
+      "membrane": {
+        "type": "membrane.insect",
+        "shape": "round",
+        "width": 0.36,
+        "color": "#b8a890",
+        "translucency": 0.6
+      }
+    }
+  ],
+  "parts": [
+    {
+      "id": "horn",
+      "type": "horn.curved",
+      "attach": { "on": "head", "at": 0.2, "angle": 0 },
+      "params": { "length": 0.4, "curve": -60, "width": 0.05, "ridges": 6, "color": "#2a160e" }
+    },
+    { "id": "eyes", "params": { "irisColor": "#1a1008", "scale": 0.8 } }
+  ],
+  "skin": {
+    "palette": { "base": "#4a2818", "belly": "#2a160e", "accent": "#8a5a30" },
+    "material": "chitin",
+    "layers": [{ "type": "countershade", "softness": 0.3 }]
+  }
+}

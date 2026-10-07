@@ -3,8 +3,8 @@ import { defineBodyPlan } from '@spawnforge/core';
 export default defineBodyPlan({
   id: 'fish',
   summary:
-    'A legless, deep-bodied swimmer with pectoral fins, a dorsal fin and a tail fin; lives in water.',
-  tags: ['legs:0', 'fins:2', 'aquatic'],
+    'A legless, deep-bodied swimmer with pectoral and pelvic fins, a dorsal fin and a tail fin; lives in water.',
+  tags: ['legs:0', 'fins:4', 'aquatic'],
   preset: {
     scale: 0.8,
     body: {
@@ -24,8 +24,16 @@ export default defineBodyPlan({
       {
         id: 'pectoral',
         role: 'fin',
-        attach: { on: 'torso', at: 0.15, side: 'both', angle: 120 },
+        attach: { on: 'torso', at: 0.2, side: 'both', angle: 120 },
         length: 0.3,
+        membrane: { type: 'membrane.fin', rays: 7 },
+      },
+      {
+        id: 'pelvic',
+        role: 'fin',
+        attach: { on: 'torso', at: 0.55, side: 'both', angle: 125 },
+        length: 0.18,
+        membrane: { type: 'membrane.fin', rays: 5 },
       },
     ],
     parts: [

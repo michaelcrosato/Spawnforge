@@ -1,6 +1,7 @@
 import { Quaternion, Vector3 } from 'three';
 import type { RigData } from '../compile/compile.ts';
 import type { Pose } from './pose.ts';
+import { applyStations, applyWings } from './wings.ts';
 
 const X_AXIS = new Vector3(1, 0, 0);
 const turn = new Quaternion();
@@ -34,4 +35,21 @@ export function applyFace(pose: Pose, rig: RigData, jaw: number, blink: number):
       pose.solveSubtree(bone);
     });
   }
+}
+
+/**
+ * The rest pose a still shows (docs/design/9.3-wings-fins.md): wings folded unless `spread`
+ * (0 to 1) opens them, the jaw open by `jaw` and the eyes shut by `blink`, membranes carried by
+ * their stations. Starts from `pose.reset()`.
+ */
+export function applyRest(
+  pose: Pose,
+  rig: RigData,
+  options: { readonly jaw?: number; readonly blink?: number; readonly spread?: number } = {},
+): void {
+  pose.reset();
+  applyWings(pose, rig.wings, options.spread ?? 0);
+  pose.solve();
+  applyFace(pose, rig, options.jaw ?? 0, options.blink ?? 0);
+  applyStations(pose, rig.stations);
 }

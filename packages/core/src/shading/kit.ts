@@ -55,6 +55,8 @@ export interface Surface<F> {
   readonly torso: F;
   readonly limbs: F;
   readonly tail: F;
+  /** 1 on wing and fin membranes and the tubes that carry them, 0 elsewhere (9.3). */
+  readonly wings: F;
   /** Height above the ground in the rest pose, in torso lengths. */
   readonly ground: F;
   /**

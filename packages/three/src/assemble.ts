@@ -18,6 +18,7 @@ import {
   FUR_SHELLS,
   type FurEye,
   furMaterial,
+  membraneMaterial,
   partsMaterial,
   skinMaterial,
 } from './materials.ts';
@@ -37,6 +38,8 @@ export interface CreatureObject {
      * fur or at low quality.
      */
     readonly fur?: SkinnedMesh;
+    /** Wing and fin membranes, feathers and fins: absent without (docs/design/9.3-wings-fins.md). */
+    readonly membranes?: SkinnedMesh;
   };
   /** Shader inputs the pose drives (`applyPose` sets them): breathing, and seconds for pulses. */
   readonly signals: { readonly breath: { value: number }; readonly time: { value: number } };
@@ -68,7 +71,10 @@ export function geometryOf(
   return g;
 }
 
-/** The compiled skeleton as Three.js bones in their rest pose, bound into a `Skeleton`. */
+/**
+ * The compiled skeleton as Three.js bones, bound into a `Skeleton` in the bind pose and left
+ * standing in the rest pose (which differs only where wings fold).
+ */
 export function buildBones(compiled: CompiledCreature): {
   bones: Bone[];
   skeleton: Skeleton;
@@ -110,6 +116,15 @@ export function buildBones(compiled: CompiledCreature): {
   (bones[0] as Bone).updateMatrixWorld(true);
   const skeleton = new Skeleton(bones);
   skeleton.calculateInverses();
+  // Bound in the bind pose; standing in the rest pose (folded wings, docs/design/9.3-wings-fins.md).
+  const rest = data.rest;
+  if (rest) {
+    bones.forEach((bone, i) => {
+      bone.quaternion.fromArray(rest, i * 4);
+      (rotations[i] as Quaternion).copy(bone.quaternion);
+    });
+    (bones[0] as Bone).updateMatrixWorld(true);
+  }
   return { bones, skeleton, rest: { positions, rotations } };
 }
 
@@ -191,6 +206,31 @@ export function createCreatureObject(
     }),
     eyeMaterial(),
   );
+  const m = compiled.membranes;
+  const membranes =
+    m.indices.length > 0
+      ? new SkinnedMesh(
+          geometryOf(m, { color: [m.color, 3], info: [m.info, 4], vein: [m.vein, 2] }),
+          membraneMaterial(
+            m.info.some((v, i) => i % 4 === 0 && v < 0.999),
+            {
+              spec: compiled.material,
+              scale: compiled.scale,
+              registry,
+              front: compiled.bounds.max[2],
+              back: compiled.bounds.min[2],
+              time,
+            },
+          ),
+        )
+      : undefined;
+  if (membranes) {
+    membranes.name = 'membranes';
+    membranes.bind(skeleton, new Matrix4());
+    membranes.castShadow = true;
+    membranes.receiveShadow = true;
+    membranes.frustumCulled = false;
+  }
   skin.name = 'skin';
   parts.name = 'parts';
   eyes.name = 'eyes';
@@ -202,6 +242,7 @@ export function createCreatureObject(
     if (mesh.geometry.index && mesh.geometry.index.count === 0) mesh.visible = false;
     object.add(mesh);
   }
+  if (membranes) object.add(membranes);
   if (fur) {
     fur.bind(skeleton, new Matrix4());
     // The skin under it already casts the shadow.
@@ -214,12 +255,12 @@ export function createCreatureObject(
     object,
     skeleton,
     bones,
-    meshes: fur ? { skin, parts, eyes, fur } : { skin, parts, eyes },
+    meshes: { skin, parts, eyes, ...(fur ? { fur } : {}), ...(membranes ? { membranes } : {}) },
     signals: { breath, time },
     eyeBones: allEyes(compiled.rig),
     rest: { positions: restPositions, rotations: restRotations },
     dispose() {
-      for (const mesh of [skin, parts, eyes]) {
+      for (const mesh of [skin, parts, eyes, ...(membranes ? [membranes] : [])]) {
         mesh.geometry.dispose();
         (mesh.material as { dispose(): void }).dispose();
       }

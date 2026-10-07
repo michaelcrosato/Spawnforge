@@ -126,7 +126,7 @@ export function buildSdf(
     for (const id of chain.bones) {
       const bone = bones[id] as BoneDef;
       if (!bone.skin) continue;
-      if (thinnessOf(bone) < minRadius) {
+      if (bone.tube || thinnessOf(bone) < minRadius) {
         thinBones.push(id);
         continue;
       }

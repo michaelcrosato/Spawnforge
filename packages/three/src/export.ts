@@ -10,14 +10,17 @@ import {
 import {
   AnimationClip,
   BufferAttribute,
+  DoubleSide,
   Group,
   type KeyframeTrack,
   Matrix4,
   MeshPhysicalMaterial,
   MeshStandardMaterial,
   Object3D,
+  type Quaternion,
   QuaternionKeyframeTrack,
   SkinnedMesh,
+  type Vector3,
   VectorKeyframeTrack,
 } from 'three';
 import { buildBones, geometryOf } from './assemble.ts';
@@ -39,7 +42,11 @@ const average = (values: Float32Array) => {
 };
 
 function bakedMesh(
-  data: CompiledCreature['skin'] | CompiledCreature['parts'] | CompiledCreature['eyes'],
+  data:
+    | CompiledCreature['skin']
+    | CompiledCreature['parts']
+    | CompiledCreature['eyes']
+    | CompiledCreature['membranes'],
   colors: BakedColors,
   name: string,
   look?: MaterialLook,
@@ -63,8 +70,40 @@ function bakedMesh(
   return mesh;
 }
 
-/** Animation tracks for one baked clip: rotations for every bone that moves, root position. */
-function clipOf(clip: BakedClip, compiled: CompiledCreature): AnimationClip {
+/**
+ * Wing and fin membranes (docs/design/9.3-wings-fins.md): double-sided, and blended with each
+ * vertex's opacity in its colour's alpha when some of it is see-through.
+ */
+function membraneMesh(compiled: CompiledCreature, colors: BakedColors): SkinnedMesh {
+  const m = compiled.membranes;
+  const mesh = bakedMesh(m, colors, 'membranes');
+  const material = mesh.material as MeshStandardMaterial;
+  material.side = DoubleSide;
+  const n = colors.color.length / 3;
+  let seeThrough = false;
+  for (let i = 0; i < n; i++) if ((m.info[i * 4] as number) < 0.999) seeThrough = true;
+  if (seeThrough) {
+    const rgba = new Float32Array(n * 4);
+    for (let i = 0; i < n; i++) {
+      rgba.set(colors.color.subarray(i * 3, i * 3 + 3), i * 4);
+      rgba[i * 4 + 3] = m.info[i * 4] as number;
+    }
+    mesh.geometry.setAttribute('color', new BufferAttribute(rgba, 4));
+    material.transparent = true;
+  }
+  return mesh;
+}
+
+/**
+ * Animation tracks for one baked clip: rotations for every bone that moves or stands away from
+ * its node default (the rest pose: a folded wing that holds still still needs its track,
+ * docs/design/9.3-wings-fins.md), and the root's position.
+ */
+function clipOf(
+  clip: BakedClip,
+  compiled: CompiledCreature,
+  rest: { readonly positions: readonly Vector3[]; readonly rotations: readonly Quaternion[] },
+): AnimationClip {
   const names = compiled.bones.names.map(exportName);
   const n = names.length;
   const times = new Float32Array(clip.frames);
@@ -75,14 +114,23 @@ function clipOf(clip: BakedClip, compiled: CompiledCreature): AnimationClip {
     const pos = new Float32Array(clip.frames * 3);
     let turns = false;
     let moves = false;
+    const q = rest.rotations[b] as Quaternion;
+    const p = rest.positions[b] as Vector3;
+    const restRot = [q.x, q.y, q.z, q.w];
+    const restPos = [p.x, p.y, p.z];
     for (let f = 0; f < clip.frames; f++) {
+      // q and -q are the same turn.
+      let dot = 0;
       for (let j = 0; j < 4; j++) {
         rot[f * 4 + j] = clip.rotations[(f * n + b) * 4 + j] as number;
+        dot += (rot[f * 4 + j] as number) * (restRot[j] as number);
         if (Math.abs((rot[f * 4 + j] as number) - (rot[j] as number)) > 1e-5) turns = true;
       }
+      if (Math.abs(dot) < 1 - 1e-6) turns = true;
       for (let j = 0; j < 3; j++) {
         pos[f * 3 + j] = clip.positions[(f * n + b) * 3 + j] as number;
         if (Math.abs((pos[f * 3 + j] as number) - (pos[j] as number)) > 1e-5) moves = true;
+        if (Math.abs((pos[f * 3 + j] as number) - (restPos[j] as number)) > 1e-5) moves = true;
       }
     }
     // Every animated bone gets a rotation track, so clips never inherit another clip's pose.
@@ -106,7 +154,7 @@ export function buildExportScene(
   registry: Registry,
   options: ExportSceneOptions = {},
 ): { scene: Group; animations: AnimationClip[]; notes: string[] } {
-  const { bones, skeleton } = buildBones(compiled);
+  const { bones, skeleton, rest } = buildBones(compiled);
   for (const bone of bones) bone.name = exportName(bone.name);
   const scene = new Group();
   scene.name = exportName(compiled.name || 'creature');
@@ -116,6 +164,7 @@ export function buildExportScene(
     bakedMesh(compiled.skin, colors.skin, 'skin', MATERIAL_LOOK[compiled.material.material]),
     bakedMesh(compiled.parts, colors.parts, 'parts'),
     bakedMesh(compiled.eyes, colors.eyes, 'eyes'),
+    membraneMesh(compiled, colors.membranes),
   ];
   for (const mesh of meshes) {
     if ((mesh.geometry.index?.count ?? 0) === 0) continue;
@@ -128,7 +177,7 @@ export function buildExportScene(
     node.position.set(...socket.offset);
     bones[socket.bone]?.add(node);
   }
-  const animations = (options.clips ?? []).map((clip) => clipOf(clip, compiled));
+  const animations = (options.clips ?? []).map((clip) => clipOf(clip, compiled, rest));
   scene.userData = {
     spawnforge: {
       name: compiled.name,
@@ -172,5 +221,9 @@ function exportNotes(compiled: CompiledCreature, glow: number): string[] {
     notes.push('fur is left out: its shells need the live shader; the skin under it is exported');
   if (glow > 0)
     notes.push('glowing layers are left out: glow needs an emissive texture (plan milestone 11.1)');
+  if (compiled.membranes.indices.length > 0)
+    notes.push(
+      'membranes are double-sided, with their veins and the light through them approximated in vertex colours (veins alias on small wings)',
+    );
   return notes;
 }

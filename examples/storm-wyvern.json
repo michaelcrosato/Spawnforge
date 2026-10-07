@@ -1,0 +1,50 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Storm Wyvern",
+  "seed": 9303,
+  "extends": "wyvern",
+  "scale": 1.3,
+  "body": {
+    "neck": { "length": 0.55, "radius": [0.06, 0.09], "pitch": 35, "curve": 15 },
+    "head": { "shape": "wedge", "length": 0.34, "radius": 0.085, "jaw": true, "brow": 0.4 }
+  },
+  "limbs": [
+    {
+      "id": "wing",
+      "length": 1.7,
+      "membrane": {
+        "type": "membrane.bat",
+        "fingers": 4,
+        "span": 1.15,
+        "trailing": "body",
+        "scallop": 0.55,
+        "color": "#2e3a48",
+        "translucency": 0.45
+      }
+    }
+  ],
+  "parts": [
+    {
+      "id": "horns",
+      "type": "horn.curved",
+      "attach": { "on": "head", "at": 0.9, "angle": 25, "side": "both" },
+      "params": { "length": 0.35, "curve": 30, "color": "#d8d4c8" }
+    },
+    {
+      "id": "spines",
+      "type": "spikes.row",
+      "attach": { "on": "tail", "from": 0, "to": 0.7, "angle": 0 },
+      "params": { "count": 10, "height": [0.05, 0.03] }
+    }
+  ],
+  "skin": {
+    "palette": { "base": "#4a5866", "belly": "#b8c0c4", "accent": "#e8e070" },
+    "material": "scales",
+    "layers": [
+      { "type": "countershade" },
+      { "type": "stripes", "color": "#22303c", "count": 10, "region": "back", "jitter": 0.5 },
+      { "type": "bands", "color": "accent", "region": "wings", "count": 3, "strength": 0.5 }
+    ]
+  },
+  "motion": { "temperament": "aggressive", "actions": ["bite", "roar"] }
+}

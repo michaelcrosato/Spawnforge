@@ -1,5 +1,13 @@
 {
+  "examples/ash-dragon.json": {
+    "ok": true,
+    "errors": []
+  },
   "examples/bog-troll.json": {
+    "ok": true,
+    "errors": []
+  },
+  "examples/cave-bat.json": {
     "ok": true,
     "errors": []
   },
@@ -15,6 +23,10 @@
     "ok": true,
     "errors": []
   },
+  "examples/griffin.json": {
+    "ok": true,
+    "errors": []
+  },
   "examples/grove-centaur.json": {
     "ok": true,
     "errors": []
@@ -23,7 +35,19 @@
     "ok": true,
     "errors": []
   },
+  "examples/luna-moth.json": {
+    "ok": true,
+    "errors": []
+  },
   "examples/reed-viper.json": {
+    "ok": true,
+    "errors": []
+  },
+  "examples/reef-shark.json": {
+    "ok": true,
+    "errors": []
+  },
+  "examples/rhino-beetle.json": {
     "ok": true,
     "errors": []
   },
@@ -32,6 +56,10 @@
     "errors": []
   },
   "examples/rust-raptor.json": {
+    "ok": true,
+    "errors": []
+  },
+  "examples/storm-wyvern.json": {
     "ok": true,
     "errors": []
   },

@@ -93,6 +93,7 @@ and the way to use the runtime in Node or tests.
 | `lookAt(point)` | `{ x, y, z }` or `null` | The head tracks the point; `null` looks ahead again |
 | `act(id, { target })` | an action id, a point or an `Object3D` | Starts it now, replacing a running action; throws, naming the creature's actions, if it has no such action |
 | `actions()` | | The action ids it can start (`bite`, `roar`, `look`…) |
+| `setWings(spread)` | 0 folded to 1 spread | Spreads or folds the wings over about 0.4 s when no action asks otherwise (`roar` flares them); `wingSpread` reads where they are |
 | `update(dt, { ground })` | seconds | One creature; `bestiary.update(dt, { ground, camera })` does all |
 
 Read `creature.position` (a `Vector3` on the ground), `heading` (radians) and `speed` (m/s).
@@ -119,7 +120,8 @@ whatever the target is doing, so test hits yourself, with sockets or hit capsule
 ### Sockets, hit volumes and stats
 
 - **Sockets.** `creature.sockets` holds nodes that follow the body: `head`, `mouth`, each eye
-  (`eye.eyes.L`), each claw tip (`claw.foreleg.L.0`) and `centerOfMass`. Parent effects to them,
+  (`eye.eyes.L`), each claw tip (`claw.foreleg.L.0`), each wing's tip (`tip.wing.L`) and
+  `centerOfMass`. Parent effects to them,
   or read a world position with `creature.socket('mouth')`. With several heads, `head` and
   `mouth` are the main (middle) head's, and the others add their instance: `head.L1`,
   `mouth.L1`. An action aimed at a target uses the nearest head.
@@ -136,8 +138,8 @@ whatever the target is doing, so test hits yourself, with sockets or hit capsule
   moving, and it switches back when the camera comes near. A creature busy with an action
   finishes it first. Baked creatures hide their fur.
 - Mesh detail is per creature (`quality`). Each creature is three draw calls: the skin (with the
-  mouth's inside and the eyelids), the hard parts and the eyes. Fur adds a fourth at medium and
-  high quality: the skin's geometry drawn as 12 or 16 instanced shells in one call, which costs
+  mouth's inside and the eyelids), the hard parts and the eyes. Wings and fins add one for their
+  membranes (double-sided). Fur adds another at medium and high quality: the skin's geometry drawn as 12 or 16 instanced shells in one call, which costs
   fill rate more than vertices. Spawn at `quality: 'low'` for none.
 - Glowing patterns (`bioluminescence`) pulse on the creature's own clock, which `update`
   advances; `applyPose` passes it to the shader with the pose (`Pose.time`).
@@ -161,6 +163,13 @@ A `.glb` holds:
   baked into vertex colours (`COLOR_0`, linear, albedo only); each material has one roughness,
   the mesh's average, and no textures. Chitin keeps its lacquer as a clearcoat
   (`KHR_materials_clearcoat`); the live skin's soft wrap lighting has no glTF form.
+- **A fourth, `membranes`,** with wings or fins: double-sided, its colours under the `wings`
+  layers, its veins and the light through it approximated in the vertex colours (veins alias on
+  small wings), and blended by the vertex colour's alpha where it is see-through (insect
+  wings).
+- **Wings rest folded.** The skeleton is bound with the wings spread and every node defaults to
+  the rest pose, so a winged creature stands folded with no clip playing; a clip carries a track
+  for every bone that leaves its rest.
 - **The skeleton.** Bone names have `.` replaced by `_` (`foreleg_L_1`), since animation tracks
   address nodes as `name.property`.
 - **Baked clips:** `idle` (glances, weight shifts and blinks as eyelid bone turns, `eye_eyes_L_upper`

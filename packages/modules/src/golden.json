@@ -1,7 +1,15 @@
 {
+  "ash-dragon": {
+    "low": "d1f8a400",
+    "medium": "431e8d15"
+  },
   "bog-troll": {
-    "low": "882ff59a",
-    "medium": "24aa94d6"
+    "low": "9b0841b9",
+    "medium": "ab897c75"
+  },
+  "cave-bat": {
+    "low": "256c92e8",
+    "medium": "28e381f6"
   },
   "cerberus": {
     "low": "02e60a4c",
@@ -15,6 +23,10 @@
     "low": "8dcb330d",
     "medium": "88b262eb"
   },
+  "griffin": {
+    "low": "b280c6be",
+    "medium": "977a3417"
+  },
   "grove-centaur": {
     "low": "adb4df71",
     "medium": "df2ae06d"
@@ -23,9 +35,21 @@
     "low": "e3e98595",
     "medium": "69e910d7"
   },
+  "luna-moth": {
+    "low": "7b52a6c5",
+    "medium": "654888db"
+  },
   "reed-viper": {
     "low": "f80424e4",
     "medium": "22c5363f"
+  },
+  "reef-shark": {
+    "low": "da3534fd",
+    "medium": "f33ad90b"
+  },
+  "rhino-beetle": {
+    "low": "543a59dd",
+    "medium": "e13def3e"
   },
   "ridgeback-stalker": {
     "low": "a3d74dba",
@@ -34,6 +58,10 @@
   "rust-raptor": {
     "low": "21d7ec06",
     "medium": "0d5b3563"
+  },
+  "storm-wyvern": {
+    "low": "ed0b6fd2",
+    "medium": "91e28d69"
   },
   "terror-bird": {
     "low": "bc7211cd",

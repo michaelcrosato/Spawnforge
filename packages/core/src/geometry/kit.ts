@@ -41,6 +41,11 @@ export interface TubeOptions {
   readonly ridgeDepth?: number;
   /** Cross-section scale [side, up] relative to the path frame. */
   readonly cross?: readonly [number, number];
+  /**
+   * Where the path frame's first axis points (projected off the first tangent); `cross[0]`
+   * scales along it. Without it the frame starts anywhere, which only round tubes can afford.
+   */
+  readonly up?: Vector3;
 }
 
 /**
@@ -67,9 +72,14 @@ export function sweep(
     const b = path[Math.min(n - 1, i + 1)] as Vector3;
     return new Vector3().subVectors(b, a).normalize();
   });
-  // Initial normal: any vector not parallel to the first tangent.
+  // Initial normal: `up` if given, else any vector not parallel to the first tangent.
   const t0 = tangents[0] as Vector3;
-  let normal = Math.abs(t0.z) < 0.9 ? new Vector3(0, 0, 1) : new Vector3(1, 0, 0);
+  let normal =
+    options.up && Math.abs(options.up.clone().normalize().dot(t0)) < 0.99
+      ? options.up.clone()
+      : Math.abs(t0.z) < 0.9
+        ? new Vector3(0, 0, 1)
+        : new Vector3(1, 0, 0);
   normal.addScaledVector(t0, -normal.dot(t0)).normalize();
   const ridges = options.ridges ?? 0;
   const ridgeDepth = options.ridgeDepth ?? 0.12;

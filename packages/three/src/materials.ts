@@ -6,7 +6,14 @@ import type {
   SkinMaterialSpec,
   Surface,
 } from '@spawnforge/core';
-import { EYE_ROUGHNESS, MATERIAL_LOOK, shadeMouth, shadeSkin } from '@spawnforge/core';
+import {
+  EYE_ROUGHNESS,
+  hasWingLayers,
+  MATERIAL_LOOK,
+  shadeMembrane,
+  shadeMouth,
+  shadeSkin,
+} from '@spawnforge/core';
 import {
   abs,
   attribute,
@@ -20,6 +27,7 @@ import {
   faceDirection,
   float,
   floor,
+  fract,
   fwidth,
   instanceIndex,
   length,
@@ -42,6 +50,7 @@ import {
   vertexStage,
 } from 'three/tsl';
 import {
+  DoubleSide,
   type LightingModelDirectInput,
   MeshBasicNodeMaterial,
   MeshPhysicalNodeMaterial,
@@ -129,6 +138,8 @@ export function skinSurface(scale: N, inputs: SurfaceInputs): Surface<N> {
   const p = (inputs.position as N).div(scale);
   const n = inputs.normal as N;
   const { body, region } = inputs;
+  // Wing and fin tubes carry `limb + 2` and count as wings (docs/design/9.3-wings-fins.md).
+  const wing = step(float(1.5), body.z);
   return {
     x: p.x,
     y: p.y,
@@ -138,12 +149,13 @@ export function skinSurface(scale: N, inputs: SurfaceInputs): Surface<N> {
     nz: n.z,
     spine: body.x,
     height: body.y,
-    limb: max(body.z, float(0)),
+    limb: max(body.z.sub(wing.mul(2)), float(0)),
     crease: body.w,
     head: region.x,
     torso: region.y,
-    limbs: region.z,
+    limbs: region.z.mul(float(1).sub(wing)),
     tail: region.w,
+    wings: region.z.mul(wing),
     ground: p.y,
     pixel: inputs.pixel ?? length(fwidth(p)),
     time: inputs.time ?? float(0),
@@ -255,13 +267,15 @@ function furReach(fur: FurSpec, body: N, region: N, eyes: readonly FurEye[] = []
   let where: N = float(0);
   for (const r of fur.region) where = max(where, furRegion(r, body, region));
   const inMouth = float(1).sub(step(float(-0.5), body.z));
-  // Short on the toes, as on a paw.
-  const toes = float(1).sub(smoothstep(float(0.8), float(1), body.z).mul(0.7));
+  // Short on the toes, as on a paw; none on wing and fin tubes (`limb + 2`).
+  const wing = step(float(1.5), body.z);
+  const toes = float(1).sub(smoothstep(float(0.8), float(1), body.z.sub(wing.mul(2))).mul(0.7));
   let reach: N = where
     .mul(float(1).sub(body.w.clamp(0, 1).mul(0.8)))
     .mul(float(1).sub(region.x.mul(0.4)))
     .mul(float(1).sub(inMouth))
-    .mul(toes);
+    .mul(toes)
+    .mul(float(1).sub(wing));
   // Clear round each eye, so the lids and the eye show.
   for (const eye of eyes) {
     const d = length((positionGeometry as N).sub(vec3(eye.x, eye.y, eye.z)));
@@ -396,6 +410,97 @@ export function partsMaterial(): MeshStandardNodeMaterial {
   material.colorNode = linear(c);
   material.roughnessNode = info.y;
   material.metalnessNode = float(0);
+  return material;
+}
+
+/** What membranes need to run the skin's `wings` layers (docs/design/9.3-wings-fins.md). */
+export interface MembranePatterns {
+  readonly spec: SkinMaterialSpec;
+  readonly scale: number;
+  readonly registry: Registry;
+  /** The creature's rest bounds along z (metres), front and back, for `spine`. */
+  readonly front: number;
+  readonly back: number;
+  readonly time?: N;
+}
+
+/**
+ * Wing and fin membranes, feathers and fins (docs/design/9.3-wings-fins.md): double-sided, each
+ * vertex's own colour under the skin's `wings` layers, veins drawn as anti-aliased lines, and
+ * light showing through by translucency. See-through only when some vertex is.
+ */
+export function membraneMaterial(
+  seeThrough: boolean,
+  patterns?: MembranePatterns,
+): MeshStandardNodeMaterial {
+  const material = new MeshStandardNodeMaterial();
+  const c = attribute('color', 'vec3') as N;
+  const info = attribute('info', 'vec4') as N;
+  const vein = attribute('vein', 'vec2') as N;
+  let srgb: N = c;
+  let roughness: N = info.z;
+  let glow: N = vec3(0, 0, 0);
+  if (patterns && hasWingLayers(patterns.spec)) {
+    const s = uniform(patterns.scale);
+    const p = (positionGeometry as N).div(s);
+    const n = normalGeometry as N;
+    const surface: Surface<N> = {
+      x: p.x,
+      y: p.y,
+      z: p.z,
+      nx: n.x,
+      ny: n.y,
+      nz: n.z,
+      spine: float(patterns.front)
+        .sub((positionGeometry as N).z)
+        .div(Math.max(1e-6, patterns.front - patterns.back))
+        .clamp(0, 1),
+      height: n.y,
+      limb: vein.x.clamp(0, 1),
+      crease: float(0),
+      head: float(0),
+      torso: float(0),
+      limbs: float(0),
+      tail: float(0),
+      wings: float(1),
+      ground: p.y,
+      pixel: length(fwidth(p)),
+      time: patterns.time ?? float(0),
+    };
+    const shade = shadeMembrane(
+      tslKit,
+      surface,
+      [c.x, c.y, c.z],
+      info.z,
+      patterns.spec,
+      patterns.registry,
+    );
+    srgb = vec3(shade.r, shade.g, shade.b) as N;
+    roughness = shade.roughness as N;
+    glow = vec3(shade.er, shade.eg, shade.eb) as N;
+  }
+  // Veins: thin lines along the membrane and a few across it, anti-aliased by their width on
+  // screen, strongest near the root.
+  const lineAt = (x: N, count: number) => {
+    const f = abs(fract(x.mul(count)).sub(0.5)).mul(2);
+    const w = fwidth(x.mul(count)).mul(1.5).add(0.04);
+    return float(1).sub(smoothstep(float(0), w, float(1).sub(f)));
+  };
+  const lines = max(lineAt(vein.y, 6), lineAt(vein.x, 3).mul(0.6));
+  const veins = info.w.mul(lines).mul(float(1).sub(vein.x.mul(0.5)));
+  const base = linear(srgb.clamp(0, 1)).mul(float(1).sub(veins.mul(0.55)));
+  material.colorNode = base;
+  material.roughnessNode = roughness.clamp(0.04, 1);
+  material.metalnessNode = float(0);
+  // Light coming through: a soft glow of the membrane's own colour, as backlit skin shows.
+  material.emissiveNode = base.mul(info.y.mul(0.22)).add(glow);
+  material.side = DoubleSide;
+  if (seeThrough) {
+    material.transparent = true;
+    material.depthWrite = true;
+    material.forceSinglePass = true;
+    material.opacityNode = info.x;
+  }
   return material;
 }
 

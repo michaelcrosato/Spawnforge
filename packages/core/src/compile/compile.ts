@@ -5,11 +5,13 @@ import { buildable, notBuilt } from '../blueprint/planned.ts';
 import { sweep } from '../geometry/kit.ts';
 import type { MotionData } from '../motion/controller.ts';
 import { motionData } from '../motion/gaits.ts';
+import { Pose } from '../motion/pose.ts';
+import { applyStations } from '../motion/wings.ts';
 import type { Registry } from '../registry.ts';
 import { type SkinMaterialSpec, skinMaterialSpec } from '../shading/compose.ts';
 import { type MouthShape, refineHeads } from './head.ts';
 import { type CutResult, cutMouth, lineY, type MouthLine, mouthInside } from './mouth.ts';
-import { buildParts, PartSink } from './parts.ts';
+import { buildParts, PartSink, type SpanLimb } from './parts.ts';
 import { buildSdf, primBone, SdfEvaluator } from './sdf.ts';
 import { buildSkeleton } from './skeleton.ts';
 import {
@@ -28,8 +30,11 @@ import {
   type DrivenChain,
   type HeadRig,
   type LimbChainRig,
+  type StationPanel,
   type TailRig,
+  type WingRig,
 } from './types.ts';
+import { foldWings } from './wings.ts';
 
 declare const performance: { now(): number };
 
@@ -81,17 +86,32 @@ export interface EyeMeshData extends MeshData {
   readonly sclera: Float32Array;
 }
 
+export interface MembraneMeshData extends MeshData {
+  /** sRGB colour per vertex. */
+  readonly color: Float32Array;
+  /** Per vertex: opacity, translucency, roughness, vein strength. */
+  readonly info: Float32Array;
+  /** Per vertex: along (root 0 → tip 1) and across (0 → 1) the membrane. */
+  readonly vein: Float32Array;
+}
+
 export interface BonesData {
   readonly names: readonly string[];
   readonly parents: Int16Array;
   readonly sections: readonly string[];
   readonly owners: readonly string[];
-  /** Rest pose, model space: head position per bone. */
+  /** Bind pose, model space: head position per bone. */
   readonly positions: Float32Array;
-  /** Rest pose, model space: orientation per bone (+Y along the bone, +Z its `up`). */
+  /** Bind pose, model space: orientation per bone (+Y along the bone, +Z its `up`). */
   readonly rotations: Float32Array;
   readonly lengths: Float32Array;
   readonly radii: Float32Array;
+  /**
+   * The rest pose, where it differs from the bind pose: a local rotation (x, y, z, w) per bone,
+   * relative to its parent. Folded wings are built spread and rest folded
+   * (docs/design/9.3-wings-fins.md); without wings it is absent and rest is bind.
+   */
+  readonly rest?: Float32Array;
 }
 
 export interface LegRigData {
@@ -124,9 +144,10 @@ export interface RigData {
   readonly chains: readonly DrivenChain[];
   readonly legs: readonly LegRigData[];
   readonly arms: readonly ArmRigData[];
-  readonly wings: readonly LimbChainRig[];
+  readonly wings: readonly WingRig[];
   readonly fins: readonly LimbChainRig[];
   readonly tentacles: readonly LimbChainRig[];
+  readonly stations: readonly StationPanel[];
   readonly helpers: readonly (readonly [number, number, number])[];
   readonly hipHeight: number;
   readonly posture: 'upright' | 'sprawl' | 'legless';
@@ -149,18 +170,26 @@ export interface CompiledCreature {
   readonly skin: SkinMeshData;
   readonly parts: PartMeshData;
   readonly eyes: EyeMeshData;
+  /** Wing and fin membranes, feathers and fins: one double-sided mesh (9.3); empty without. */
+  readonly membranes: MembraneMeshData;
   readonly material: SkinMaterialSpec;
   readonly rig: RigData;
   /** Gait timing and temperament for the motion controller. */
   readonly motion: MotionData;
   readonly sockets: readonly GameSocket[];
   readonly bounds: { readonly min: Vec3; readonly max: Vec3 };
-  /** Labelled points for debug renders: every part and limb by id, and the body sections. */
+  /**
+   * Labelled points for debug renders: every part and limb by id, and the body sections, in the
+   * bind pose; `bone`, when known, carries a marker into any pose (folded wings).
+   */
   readonly markers: readonly {
     readonly id: string;
     readonly kind: 'part' | 'limb' | 'section';
     readonly position: Vec3;
+    readonly bone?: number;
   }[];
+  /** The bind pose's bounds, where they differ from the rest pose's (spread wings). */
+  readonly spreadBounds?: { readonly min: Vec3; readonly max: Vec3 };
   /** Body chains as capsules (bone, radius), free hit volumes for games. */
   readonly hitCapsules: readonly { readonly bone: number; readonly radius: number }[];
   /**
@@ -169,7 +198,12 @@ export interface CompiledCreature {
    */
   readonly partSizes: Readonly<Record<string, { readonly size: number; readonly count: number }>>;
   readonly stats: {
-    readonly triangles: { readonly skin: number; readonly parts: number; readonly eyes: number };
+    readonly triangles: {
+      readonly skin: number;
+      readonly parts: number;
+      readonly eyes: number;
+      readonly membranes: number;
+    };
     readonly vertices: number;
     readonly bones: number;
     readonly cell: number;
@@ -221,6 +255,35 @@ export function compileCreature(
   // 1. Skeleton.
   const skeleton = buildSkeleton(spec, registry);
   const bones = skeleton.bones;
+  // Wings fold against the body as a field at any radius, the arms and the ground, so the fold
+  // is the same at every quality (docs/design/9.3-wings-fins.md).
+  const field =
+    skeleton.wingFrames.length > 0
+      ? (() => {
+          const body = new SdfEvaluator(buildSdf(bones, skeleton.chains, 0));
+          return (p: Vector3) => body.eval(p.x, p.y, p.z);
+        })()
+      : undefined;
+  const fold =
+    field !== undefined
+      ? (() => {
+          const armCapsules = skeleton.rig.arms.flatMap((arm) =>
+            [...arm.bones, ...arm.toes.flat()].map((id) => {
+              const bone = bones[id] as BoneDef;
+              return { a: bone.head, b: bone.tail, radius: Math.max(bone.r0, bone.r1) };
+            }),
+          );
+          return foldWings(bones, skeleton.wingFrames, field, armCapsules, L);
+        })()
+      : undefined;
+  for (const id of fold?.blocked ?? [])
+    warnings.push({
+      severity: 'warning',
+      path: `limbs[id=${id.replace(/\.[LR]$/, '')}]`,
+      code: 'wing_clearance',
+      message: 'the folded wing cannot clear the body, the arms or the ground',
+      fix: "attach it higher (a lower attach.angle) or further forward, or make it shorter (length, or the membrane's span)",
+    });
   for (const note of skeleton.notes)
     warnings.push({ severity: 'warning', path: note.path, code: note.code, message: note.message });
   lap('skeleton');
@@ -231,7 +294,8 @@ export function compileCreature(
     const min = new Vector3(Infinity, Infinity, Infinity);
     const max = new Vector3(-Infinity, -Infinity, -Infinity);
     for (const b of bones) {
-      if (!b.skin) continue;
+      // Wing and fin tubes stay out of the grid's extent, so a wingspan never coarsens the body.
+      if (!b.skin || b.tube) continue;
       const r = Math.max(b.r0, b.r1);
       min.min(b.head.clone().subScalar(r)).min(b.tail.clone().subScalar(r));
       max.max(b.head.clone().addScalar(r)).max(b.tail.clone().addScalar(r));
@@ -408,7 +472,19 @@ export function compileCreature(
           ((radii[i + 1] as number) - (radii[i] as number)) * Math.min(1, Math.max(0, f))
         );
       };
-      const piece = sweep(points, radius, { sides: 7, tip: 'round', capRoot: true });
+      // Thin bones get 7 sides, as always; thick tubes (wings, fins) as many as their size shows,
+      // and a flat bone's cross-section lies across its plane.
+      const widest = Math.max(...radii);
+      const sides = first.tube
+        ? Math.max(7, Math.min(16, Math.round((2 * Math.PI * widest) / (1.2 * surface.grid.cell))))
+        : 7;
+      const flat = first.tube === true && first.cross[0] !== first.cross[1];
+      const piece = sweep(points, radius, {
+        sides,
+        tip: 'round',
+        capRoot: true,
+        ...(flat ? { cross: [first.cross[1], first.cross[0]] as const, up: first.up } : {}),
+      });
       const base = (positions.length + extraPos.length) / 3;
       const runOptions: WeightOptions = { bones, children, nearbyBones: () => run };
       const p = new Vector3();
@@ -533,15 +609,48 @@ export function compileCreature(
   const limbMirror = new Map<string, number>();
   for (const leg of skeleton.rig.legs) toeMap.set(leg.id, leg.toes);
   for (const arm of skeleton.rig.arms) toeMap.set(arm.id, arm.toes);
+  for (const [id, toes] of skeleton.spanToes) toeMap.set(id, toes);
   for (const limb of spec.limbs) limbMirror.set(limb.id, limb.mirror);
-  const feet = spec.limbs
-    .filter((l) => l.foot !== null)
-    .map((l) => ({
-      limbId: l.id,
-      mirror: l.mirror,
-      type: (l.foot as NonNullable<typeof l.foot>).type,
-      params: (l.foot as NonNullable<typeof l.foot>).params,
-    }));
+  const feet = [
+    ...spec.limbs
+      .filter((l) => l.foot !== null)
+      .map((l) => ({
+        limbId: l.id,
+        mirror: l.mirror,
+        type: (l.foot as NonNullable<typeof l.foot>).type,
+        params: (l.foot as NonNullable<typeof l.foot>).params,
+      })),
+    // Membranes after feet, so a wing's thumb is built before its membrane.
+    ...spec.limbs
+      .filter((l) => l.membrane !== null && skeleton.spans.has(l.id))
+      .map((l) => ({
+        limbId: l.id,
+        mirror: l.mirror,
+        type: (l.membrane as NonNullable<typeof l.membrane>).type,
+        params: (l.membrane as NonNullable<typeof l.membrane>).params,
+        membrane: true,
+      })),
+  ];
+  // Each wing's nearest leg behind on its side, which a membrane may run to.
+  const spans = new Map<string, SpanLimb>();
+  for (const [id, span] of skeleton.spans) {
+    const limb = spec.limbs.find((l) => l.id === id);
+    const behind = spec.limbs
+      .filter(
+        (l) =>
+          l.role === 'leg' &&
+          l.on === span.on &&
+          l.mirror === span.mirror &&
+          l.at > span.at &&
+          limb !== undefined,
+      )
+      .sort((a, b) => a.at - b.at)[0];
+    const leg = behind ? skeleton.rig.legs.find((l) => l.id === behind.id) : undefined;
+    spans.set(id, {
+      ...span,
+      legBehind: behind && leg ? { at: behind.at, bones: leg.bones } : undefined,
+    });
+  }
   const builtParts = buildParts(
     spec.parts,
     feet,
@@ -564,6 +673,9 @@ export function compileCreature(
       registry,
       toes: toeMap,
       limbMirror,
+      wings: spans,
+      rest: fold?.rest ?? new Map(),
+      detail: quality === 'low' ? 0.5 : quality === 'high' ? 1.4 : 1,
     },
     sink,
   );
@@ -586,6 +698,7 @@ export function compileCreature(
   };
   const partsPack = packWeights(sink.parts.weights);
   const eyesPack = packWeights(sink.eyes.weights);
+  const membranesPack = packWeights(sink.membranes.weights);
 
   // Eyelids join the skin, each vertex on its lid's bone, coloured like the nearest skin of the
   // head (docs/design/8.3-heads.md).
@@ -657,8 +770,25 @@ export function compileCreature(
     }
   }
 
-  // 10. Bones as plain data.
-  const bonesData = bonesToData(bones);
+  // 10. Bones as plain data; folded wings make a rest pose apart from the bind pose.
+  const bindData = bonesToData(bones);
+  const stations = sink.membranes.stations;
+  const unfolded: WingRig[] = skeleton.rig.wings.map((wing, i) => {
+    const frame = skeleton.wingFrames.findIndex((f) => f.wing === i);
+    const locals = frame >= 0 ? (fold?.locals[frame] ?? []) : [];
+    return {
+      ...wing,
+      feathers: sink.feathers.get(wing.id) ?? [],
+      area: sink.membranes.area.get(wing.id) ?? 0,
+      poses: { folded: locals.flatMap((q) => [q.x, q.y, q.z, q.w]) },
+    };
+  });
+  const restPose =
+    unfolded.length > 0
+      ? restOf(bindData, unfolded, stations, sideOf(unfolded), field, L)
+      : undefined;
+  const wings = restPose?.wings ?? unfolded;
+  const bonesData: BonesData = restPose ? { ...bindData, rest: restPose.rest } : bindData;
   const headOf = (bone: number): number => {
     for (let b = bone, n = 0; b >= 0 && n < bones.length; b = bones[b]?.parent ?? -1, n++) {
       const i = skeleton.rig.heads.findIndex((h) => h.head === b || h.jaw === b);
@@ -679,9 +809,10 @@ export function compileCreature(
     chains: [...skeleton.rig.chains, ...sink.lids.chains],
     legs: skeleton.rig.legs.map((l) => ({ ...l, restFoot: v3(l.restFoot), pole: v3(l.pole) })),
     arms: skeleton.rig.arms.map((a) => ({ ...a, pole: v3(a.pole) })),
-    wings: skeleton.rig.wings,
+    wings,
     fins: skeleton.rig.fins,
     tentacles: skeleton.rig.tentacles,
+    stations,
     helpers: skeleton.helpers,
     hipHeight: skeleton.rig.hipHeight,
     posture: skeleton.rig.posture,
@@ -692,38 +823,55 @@ export function compileCreature(
   const mid = (id: number) =>
     v3((bones[id] as BoneDef).head.clone().lerp((bones[id] as BoneDef).tail, 0.5));
   for (const h of skeleton.rig.heads)
-    markers.push({ id: h.id, kind: 'section', position: v3((bones[h.head] as BoneDef).tail) });
-  markers.push({
-    id: 'torso',
-    kind: 'section',
-    position: mid(skeleton.rig.spine[Math.floor(skeleton.rig.spine.length / 2)] as number),
-  });
+    markers.push({
+      id: h.id,
+      kind: 'section',
+      position: v3((bones[h.head] as BoneDef).tail),
+      bone: h.head,
+    });
+  const torsoBone = skeleton.rig.spine[Math.floor(skeleton.rig.spine.length / 2)] as number;
+  markers.push({ id: 'torso', kind: 'section', position: mid(torsoBone), bone: torsoBone });
   for (const tail of skeleton.rig.tails)
     markers.push({
       id: tail.id,
       kind: 'section',
       position: v3((bones[tail.bones.at(-1) as number] as BoneDef).tail),
+      bone: tail.bones.at(-1) as number,
     });
-  for (const limb of [...skeleton.rig.legs, ...skeleton.rig.arms]) {
-    markers.push({
-      id: limb.id,
-      kind: 'limb',
-      position: mid(limb.bones[Math.floor(limb.bones.length / 2)] as number),
-    });
+  for (const limb of [
+    ...skeleton.rig.legs,
+    ...skeleton.rig.arms,
+    ...skeleton.rig.wings,
+    ...skeleton.rig.fins,
+  ]) {
+    const bone = limb.bones[Math.floor(limb.bones.length / 2)] as number;
+    markers.push({ id: limb.id, kind: 'limb', position: mid(bone), bone });
   }
-  for (const [id, position] of sink.markers)
-    if (!id.endsWith('.foot')) markers.push({ id, kind: 'part', position });
+  for (const [id, position] of sink.markers) {
+    const bone = sink.markerBones.get(id);
+    if (!id.endsWith('.foot'))
+      markers.push({ id, kind: 'part', position, ...(bone !== undefined ? { bone } : {}) });
+  }
   const min = new Vector3(Infinity, Infinity, Infinity);
   const max = new Vector3(-Infinity, -Infinity, -Infinity);
-  for (const list of [
-    positions,
-    sink.parts.positions,
-    sink.eyes.positions,
-  ] as ArrayLike<number>[]) {
+  const meshes: [ArrayLike<number>, ArrayLike<number>, ArrayLike<number>][] = [
+    [positions, skinPack.skinIndex, skinPack.skinWeight],
+    [sink.parts.positions, partsPack.skinIndex, partsPack.skinWeight],
+    [sink.eyes.positions, eyesPack.skinIndex, eyesPack.skinWeight],
+    [sink.membranes.positions, membranesPack.skinIndex, membranesPack.skinWeight],
+  ];
+  for (const [list] of meshes) {
     for (let i = 0; i < list.length; i += 3) {
       min.min(new Vector3(list[i], list[i + 1], list[i + 2]));
       max.max(new Vector3(list[i], list[i + 1], list[i + 2]));
     }
+  }
+  // With folded wings, what stands there is the rest pose: its bounds frame renders and checks.
+  const spreadBounds = restPose ? { min: v3(min), max: v3(max) } : undefined;
+  if (restPose) {
+    const rest = posedBounds(meshes, bindData, restPose.pose);
+    min.copy(rest.min);
+    max.copy(rest.max);
   }
   if (min.y < -0.05 * L)
     warnings.push(belowGround(bones, min.y, L, skeleton.rig.posture === 'legless'));
@@ -733,6 +881,7 @@ export function compileCreature(
     skin: indices.length / 3,
     parts: sink.parts.indices.length / 3,
     eyes: sink.eyes.indices.length / 3,
+    membranes: sink.membranes.indices.length / 3,
   };
   if (quality === 'medium' && triangles.skin > 30_000) {
     warnings.push({
@@ -776,6 +925,16 @@ export function compileCreature(
       iris: new Float32Array(sink.eyes.iris),
       sclera: new Float32Array(sink.eyes.sclera),
     },
+    membranes: {
+      positions: new Float32Array(sink.membranes.positions),
+      normals: new Float32Array(sink.membranes.normals),
+      indices: new Uint32Array(sink.membranes.indices),
+      skinIndex: membranesPack.skinIndex,
+      skinWeight: membranesPack.skinWeight,
+      color: new Float32Array(sink.membranes.color),
+      info: new Float32Array(sink.membranes.info),
+      vein: new Float32Array(sink.membranes.vein),
+    },
     partSizes: Object.fromEntries(sink.sizes),
     material: skinMaterialSpec(
       spec.skin.palette.base as string,
@@ -789,6 +948,7 @@ export function compileCreature(
     sockets,
     markers,
     bounds: { min: v3(min), max: v3(max) },
+    ...(spreadBounds ? { spreadBounds } : {}),
     hitCapsules: bones
       .map((b, i) => ({ bone: i, radius: Math.max(b.r0, b.r1), skin: b.skin, section: b.section }))
       .filter((b) => b.skin && b.section !== 'toe')
@@ -802,6 +962,128 @@ export function compileCreature(
     },
     warnings,
   };
+}
+
+/**
+ * The rest pose of a creature with wings (docs/design/9.3-wings-fins.md): each wing at its
+ * folded pose, then the membrane stations aimed across their panels. Local rotations for
+ * `BonesData.rest`, and the posed `Pose` itself.
+ */
+function restOf(
+  data: BonesData,
+  wings: readonly WingRig[],
+  stations: readonly StationPanel[],
+  sides: readonly number[],
+  field: ((p: Vector3) => number) | undefined,
+  scale: number,
+): { rest: Float32Array; pose: Pose; wings: WingRig[] } {
+  const pose = new Pose(data);
+  for (const wing of wings) {
+    const folded = wing.poses.folded ?? [];
+    [...wing.bones, ...wing.digits.flat()].forEach((bone, i) => {
+      if (folded.length >= (i + 1) * 4) (pose.rot[bone] as Quaternion).fromArray(folded, i * 4);
+    });
+  }
+  pose.solve();
+  // Feathers fold back along the body (docs/design/9.3-wings-fins.md): each group lies against
+  // the body where it rests, its upper face out and its shafts pointing back, like shingles.
+  const h = 0.01 * scale;
+  const outward = (p: Vector3, fallback: Vector3): Vector3 => {
+    if (!field) return fallback.clone();
+    const g = new Vector3(
+      field(new Vector3(p.x + h, p.y, p.z)) - field(new Vector3(p.x - h, p.y, p.z)),
+      field(new Vector3(p.x, p.y + h, p.z)) - field(new Vector3(p.x, p.y - h, p.z)),
+      field(new Vector3(p.x, p.y, p.z + h)) - field(new Vector3(p.x, p.y, p.z - h)),
+    );
+    return g.lengthSq() > 1e-12 ? g.normalize() : fallback.clone();
+  };
+  const done = wings.map((wing, w) => {
+    if (wing.feathers.length === 0) return wing;
+    const humerus = wing.bones[0] as number;
+    const plane = new Vector3(0, 0, 1).applyQuaternion(pose.worldRot[humerus] as Quaternion);
+    const extra: number[] = [];
+    const want0 = new Vector3(0.1 * (sides[w] ?? 0), -0.25, -0.95);
+    const tangent = (normal: Vector3) =>
+      want0.clone().addScaledVector(normal, -want0.dot(normal)).normalize();
+    for (const bone of wing.feathers) {
+      const parent = pose.parents[bone] as number;
+      pose.solveBone(bone);
+      const at = pose.worldPos[bone] as Vector3;
+      const length = data.lengths[bone] ?? 0;
+      // The body's normal where the group roots and halfway along it.
+      let normal = outward(at, plane);
+      const half = at.clone().addScaledVector(tangent(normal), 0.5 * Math.min(length, scale));
+      normal = normal.add(outward(half, normal)).normalize();
+      const want = tangent(normal);
+      const world = new Quaternion().setFromRotationMatrix(
+        new Matrix4().makeBasis(new Vector3().crossVectors(want, normal), want, normal),
+      );
+      const local = (pose.worldRot[parent] as Quaternion).clone().invert().multiply(world);
+      (pose.rot[bone] as Quaternion).copy(local);
+      pose.solveBone(bone);
+      extra.push(local.x, local.y, local.z, local.w);
+    }
+    return { ...wing, poses: { ...wing.poses, folded: [...(wing.poses.folded ?? []), ...extra] } };
+  });
+  pose.solve();
+  applyStations(pose, stations);
+  const rest = new Float32Array(pose.count * 4);
+  pose.rot.forEach((q, i) => {
+    rest.set([q.x, q.y, q.z, q.w], i * 4);
+  });
+  return { rest, pose, wings: done };
+}
+
+/** +1 for a left wing, -1 for a right one, 0 for one in the middle. */
+function sideOf(wings: readonly WingRig[]): number[] {
+  return wings.map((w) => (w.side === 'left' ? 1 : w.side === 'right' ? -1 : 0));
+}
+
+/** Bounds of skinned meshes in a pose (linear blend skinning on the CPU). */
+function posedBounds(
+  meshes: readonly (readonly [ArrayLike<number>, ArrayLike<number>, ArrayLike<number>])[],
+  bind: BonesData,
+  pose: Pose,
+): { min: Vector3; max: Vector3 } {
+  const n = pose.count;
+  const matrices = Array.from({ length: n }, (_, i) => {
+    const bindM = new Matrix4().compose(
+      new Vector3().fromArray(bind.positions, i * 3),
+      new Quaternion().fromArray(bind.rotations, i * 4),
+      new Vector3(1, 1, 1),
+    );
+    return new Matrix4()
+      .compose(pose.worldPos[i] as Vector3, pose.worldRot[i] as Quaternion, new Vector3(1, 1, 1))
+      .multiply(bindM.invert());
+  });
+  const min = new Vector3(Infinity, Infinity, Infinity);
+  const max = new Vector3(-Infinity, -Infinity, -Infinity);
+  const p = new Vector3();
+  const q = new Vector3();
+  const sum = new Vector3();
+  for (const [positions, index, weight] of meshes) {
+    for (let v = 0; v * 3 < positions.length; v++) {
+      p.set(
+        positions[v * 3] as number,
+        positions[v * 3 + 1] as number,
+        positions[v * 3 + 2] as number,
+      );
+      sum.set(0, 0, 0);
+      let total = 0;
+      for (let k = 0; k < 4; k++) {
+        const w = weight[v * 4 + k] as number;
+        if (w <= 0) continue;
+        q.copy(p).applyMatrix4(matrices[index[v * 4 + k] as number] as Matrix4);
+        sum.addScaledVector(q, w);
+        total += w;
+      }
+      if (total > 0) sum.divideScalar(total);
+      else sum.copy(p);
+      min.min(sum);
+      max.max(sum);
+    }
+  }
+  return { min, max };
 }
 
 function bonesToData(bones: readonly BoneDef[]): BonesData {
@@ -900,6 +1182,16 @@ function gameSockets(
         offset: local(last, (bones[last] as BoneDef).tail),
       });
     }
+  }
+  // A wing's tip, at the end of its hand (docs/design/9.3-wings-fins.md).
+  for (const wing of rig.wings) {
+    const last = wing.bones.at(-1);
+    if (last === undefined) continue;
+    sockets.push({
+      name: `tip.${wing.id}`,
+      bone: last,
+      offset: local(last, (bones[last] as BoneDef).tail),
+    });
   }
   const mid = rig.spine[Math.floor(rig.spine.length / 2)] as number;
   sockets.push({ name: 'centerOfMass', bone: mid, offset: [0, 0, 0] });
@@ -1037,6 +1329,7 @@ function bodyCoordinates(
     let spineCoord = 0;
     let height = 0;
     let limb = 0;
+    let wing = 0;
     const reg = [0, 0, 0, 0];
     const entries = table.entries(v);
     let sum = 0;
@@ -1047,12 +1340,13 @@ function bodyCoordinates(
         w *
         ((axis[id * 2] as number) + ((axis[id * 2 + 1] as number) - (axis[id * 2] as number)) * t);
       const section = sectionOf(b);
-      if (section === 'limb' || section === 'toe') {
+      if (section === 'limb' || section === 'toe' || section === 'digit') {
         const outward = new Vector3(Math.sign(p.x) || 1, 0, 0);
         // Limbs read like the flank outside and the belly inside.
         height += w * (nrm.dot(outward) * 0.45 + nrm.y * 0.35 + 0.1);
-        limb += w * (section === 'toe' ? 1 : b.t0 + (b.t1 - b.t0) * t);
+        limb += w * (section === 'limb' ? b.t0 + (b.t1 - b.t0) * t : 1);
         reg[2] = (reg[2] as number) + w;
+        if (b.tube) wing += w;
       } else {
         const closest = b.head.clone().lerp(b.tail, t);
         const off = p.clone().sub(closest);
@@ -1069,8 +1363,12 @@ function bodyCoordinates(
       spineCoord /= sum;
       height /= sum;
       limb /= sum;
+      wing /= sum;
       for (let k = 0; k < 4; k++) reg[k] = (reg[k] as number) / sum;
     }
+    // Wing and fin tubes carry `limb + 2`, so the `wings` region finds them and fur skips them
+    // (docs/design/9.3-wings-fins.md).
+    if (wing >= 0.5) limb += 2;
     // Inside a mouth, `limb` holds -1 - depth and `crease` the kind (docs/design/8.3-heads.md).
     const depth = mouthDepth[v] as number;
     let crease = 0;
@@ -1099,7 +1397,7 @@ export function compiledTransferables(c: CompiledCreature): ArrayBuffer[] {
   const add = (v: ArrayBufferView) => {
     if (v.buffer instanceof ArrayBuffer) out.add(v.buffer);
   };
-  for (const mesh of [c.skin, c.parts, c.eyes] as const) {
+  for (const mesh of [c.skin, c.parts, c.eyes, c.membranes] as const) {
     for (const value of Object.values(mesh)) if (ArrayBuffer.isView(value)) add(value);
   }
   for (const value of Object.values(c.bones)) if (ArrayBuffer.isView(value)) add(value);
@@ -1162,5 +1460,9 @@ export function fingerprint(c: CompiledCreature): string {
   feed(c.eyes.positions, 1e-4);
   feed(c.bones.positions, 1e-4);
   feed(c.bones.rotations, 1e-4);
+  // Only creatures with membranes or a rest pose of their own hash these, so others keep their
+  // fingerprints (docs/design/9.3-wings-fins.md).
+  feed(c.membranes.positions, 1e-4);
+  if (c.bones.rest) feed(c.bones.rest, 1e-4);
   return h.toString(16).padStart(8, '0');
 }

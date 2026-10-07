@@ -61,11 +61,14 @@ function regionMask<F>(k: Kit<F>, s: Surface<F>, region: Region): F {
     case 'all':
       return k.num(1);
     case 'back':
-      return k.mul(k.smoothstep(k.num(-0.15), k.num(0.35), s.height), k.sub(k.num(1), s.limbs));
+      return k.mul(
+        k.smoothstep(k.num(-0.15), k.num(0.35), s.height),
+        k.sub(k.num(1), k.add(s.limbs, s.wings)),
+      );
     case 'belly':
       return k.mul(
         k.sub(k.num(1), k.smoothstep(k.num(-0.35), k.num(0.15), s.height)),
-        k.sub(k.num(1), s.limbs),
+        k.sub(k.num(1), k.add(s.limbs, s.wings)),
       );
     case 'head':
       return s.head;
@@ -76,8 +79,8 @@ function regionMask<F>(k: Kit<F>, s: Surface<F>, region: Region): F {
     case 'tail':
       return s.tail;
     case 'wings':
-      // Wing and fin membranes are separate meshes (from milestone 9.3); the skin has none.
-      return k.num(0);
+      // Wing and fin membranes, and the tubes that carry them (docs/design/9.3-wings-fins.md).
+      return s.wings;
   }
 }
 
@@ -300,31 +303,31 @@ function materialSurface<F>(
   }
 }
 
-/** Base surface plus every layer, bottom first. */
-export function shadeSkin<F>(
+/** Colour, roughness and relief before or after a stack of layers, and the glow they add. */
+interface Layered<F> {
+  readonly r: F;
+  readonly g: F;
+  readonly b: F;
+  readonly roughness: F;
+  readonly height: F;
+  readonly er: F;
+  readonly eg: F;
+  readonly eb: F;
+}
+
+/** Every layer over a surface, bottom first, each masked by its region. */
+function layerStack<F>(
   k: Kit<F>,
   s: Surface<F>,
-  spec: SkinMaterialSpec,
+  layers: readonly (LayerSpec & { readonly seed: number })[],
   registry: Registry,
-): SkinShade<F> {
-  const [br, bg, bb] = hexToRgb(spec.base);
-  // A little low-frequency variation keeps large areas from looking flat.
-  const variation = k.sub(
-    fbm(k, k.mul(s.x, k.num(6)), k.mul(s.y, k.num(6)), k.mul(s.z, k.num(6)), 2, 401),
-    k.num(0.5),
-  );
-  const base = materialSurface(k, s, spec.material);
-  const tone = k.mul(k.add(k.num(1), k.mul(variation, k.num(0.16))), k.sub(k.num(1), base.dark));
-  let r = k.mul(k.param(br), tone);
-  let g = k.mul(k.param(bg), tone);
-  let b = k.mul(k.param(bb), tone);
-  let roughness = k.add(k.num(MATERIAL_LOOK[spec.material].roughness), base.roughness);
-  let height = base.height;
+  start: Omit<Layered<F>, 'er' | 'eg' | 'eb'>,
+): Layered<F> {
+  let { r, g, b, roughness, height } = start;
   let er = k.num(0);
   let eg = k.num(0);
   let eb = k.num(0);
-
-  for (const layer of spec.layers) {
+  for (const layer of layers) {
     const module = registry.get('pattern', layer.type) as PatternModule | undefined;
     const hooks = module?.hooks as PatternHooks | undefined;
     if (!hooks) continue;
@@ -361,6 +364,58 @@ export function shadeSkin<F>(
       );
     if (out.height !== undefined) height = k.add(height, k.mul(out.height, where));
   }
+
+  return { r, g, b, roughness, height, er, eg, eb };
+}
+
+/**
+ * A membrane's colour (docs/design/9.3-wings-fins.md): its module's own colour (sRGB, 0 to 1)
+ * under the layers whose region is `wings`. Other layers belong to the skin.
+ */
+export function shadeMembrane<F>(
+  k: Kit<F>,
+  s: Surface<F>,
+  base: readonly [F, F, F],
+  roughness: F,
+  spec: SkinMaterialSpec,
+  registry: Registry,
+): Layered<F> {
+  return layerStack(
+    k,
+    s,
+    spec.layers.filter((l) => l.region === 'wings'),
+    registry,
+    { r: base[0], g: base[1], b: base[2], roughness, height: k.num(0) },
+  );
+}
+
+/** Whether any layer draws on wings, so membranes need the pattern stack at all. */
+export function hasWingLayers(spec: SkinMaterialSpec): boolean {
+  return spec.layers.some((l) => l.region === 'wings');
+}
+
+/** Base surface plus every layer, bottom first. */
+export function shadeSkin<F>(
+  k: Kit<F>,
+  s: Surface<F>,
+  spec: SkinMaterialSpec,
+  registry: Registry,
+): SkinShade<F> {
+  const [br, bg, bb] = hexToRgb(spec.base);
+  // A little low-frequency variation keeps large areas from looking flat.
+  const variation = k.sub(
+    fbm(k, k.mul(s.x, k.num(6)), k.mul(s.y, k.num(6)), k.mul(s.z, k.num(6)), 2, 401),
+    k.num(0.5),
+  );
+  const base = materialSurface(k, s, spec.material);
+  const tone = k.mul(k.add(k.num(1), k.mul(variation, k.num(0.16))), k.sub(k.num(1), base.dark));
+  const { r, g, b, roughness, height, er, eg, eb } = layerStack(k, s, spec.layers, registry, {
+    r: k.mul(k.param(br), tone),
+    g: k.mul(k.param(bg), tone),
+    b: k.mul(k.param(bb), tone),
+    roughness: k.add(k.num(MATERIAL_LOOK[spec.material].roughness), base.roughness),
+    height: base.height,
+  });
 
   // Creases where sections join read a little darker, like ambient occlusion.
   const shade = k.sub(k.num(1), k.mul(s.crease, k.num(0.25)));

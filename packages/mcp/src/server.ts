@@ -507,6 +507,19 @@ export function createServer(): McpServer {
           })
           .optional()
           .describe('Render one gait cycle instead of the contact sheet'),
+        pose: z
+          .object({
+            jaw: z.number().min(0).max(1).optional().describe('Open the jaw, 0 shut to 1 wide'),
+            blink: z.number().min(0).max(1).optional().describe('Shut the eyes, 0 open to 1 shut'),
+            spread: z
+              .number()
+              .min(0)
+              .max(1)
+              .optional()
+              .describe('Spread the wings, 0 folded (as they rest) to 1 spread'),
+          })
+          .optional()
+          .describe('Pose the still: jaw, eyes and wings (wings rest folded)'),
       }),
       annotations: { readOnlyHint: true },
     },
@@ -537,6 +550,7 @@ export function createServer(): McpServer {
           ...(input.size ? { size: input.size } : {}),
           ...(input.views ? { views: input.views } : {}),
           ...(input.filmstrip ? { filmstrip: stripUndefined(input.filmstrip) } : {}),
+          ...(input.pose ? { pose: stripUndefined(input.pose) } : {}),
         });
         return {
           content: [

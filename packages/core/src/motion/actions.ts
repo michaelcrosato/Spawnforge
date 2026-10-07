@@ -64,6 +64,8 @@ export interface ActionGoals {
   swish?: number;
   /** Raises the arms forward to reach for what the head looks at, 0 to 1 (arms only). */
   arms?: number;
+  /** Spreads the wings: 0 folded at rest, 1 spread wide (docs/design/9.3-wings-fins.md). */
+  wings?: number;
   /** Stand still while the action runs. */
   stop?: boolean;
 }

@@ -1,4 +1,4 @@
-import { Vector3 } from 'three';
+import { type Quaternion, Vector3 } from 'three';
 import { hexToRgb, toHex } from '../blueprint/colors.ts';
 import type { PartSpec } from '../blueprint/creature.ts';
 import { type GeometryKit, geometryKit, type MeshPiece, mirrorX } from '../geometry/kit.ts';
@@ -6,10 +6,18 @@ import type { PartMaterial, PartModule, Registry } from '../registry.ts';
 import { createRng, type Rng } from '../rng.ts';
 import { gumPoint, type MouthShape, outlineAt } from './head.ts';
 import { lidAngles, lidMesh } from './lids.ts';
+import {
+  type MembraneLook,
+  MembraneSink,
+  rigidSheet,
+  type Spar,
+  stationPanel,
+} from './membranes.ts';
 import { type Sdf, SdfEvaluator } from './sdf.ts';
 import { aroundDirection, type PathSegment, samplePath } from './skeleton.ts';
 import { type WeightOptions, weightsAt } from './skin.ts';
 import type { BoneDef, DrivenChain } from './types.ts';
+import { bindRotation as bindRotationOf, type WingHooks } from './wings.ts';
 
 /** A place on the creature where a part sits, with its frame and skin weights. */
 export interface Socket {
@@ -53,6 +61,60 @@ export interface EmitOptions {
   readonly eye?: EyeOptions;
   /** Register this piece's centreline (local points and radii) so other parts can attach to it. */
   readonly path?: { readonly points: readonly Vector3[]; readonly radii: readonly number[] };
+  /**
+   * Emit into the membrane mesh instead (double-sided, lit through from behind): fins, frills,
+   * insect wings (docs/design/9.3-wings-fins.md). `color` and `tipColor` still apply.
+   */
+  readonly membrane?: Omit<MembraneLook, 'color' | 'tipColor'>;
+}
+
+/** What a membrane module sees of its wing or fin (docs/design/9.3-wings-fins.md), bind pose. */
+export interface WingContext {
+  readonly role: 'wing' | 'fin';
+  /** The arm: root, elbow, wrist, the hand's tip, on the arm bones. */
+  readonly arm: Spar;
+  /**
+   * Each digit from its root to its tip: from the wrist, or (digit 0) the hand and its
+   * phalanges from the wrist on.
+   */
+  readonly digits: readonly Spar[];
+  /** The body's side from the root back, then down the nearest leg behind to the knee. */
+  readonly flank: Spar | undefined;
+  /** The same without the leg. */
+  readonly body: Spar | undefined;
+  /** The wing's plane: straight out, toward the leading edge, its normal. */
+  readonly out: Vector3;
+  readonly lead: Vector3;
+  readonly normal: Vector3;
+  readonly armLength: number;
+  readonly tipRadius: number;
+}
+
+/** A wing or fin as the skeleton built it (bind pose), for its membrane's context. */
+export interface SpanLimb {
+  readonly role: 'wing' | 'fin';
+  readonly on: string;
+  readonly at: number;
+  readonly angle: number;
+  readonly mirror: 1 | -1 | 0;
+  readonly out: Vector3;
+  readonly lead: Vector3;
+  readonly normal: Vector3;
+  readonly bones: readonly number[];
+  readonly digits: readonly { readonly bones: readonly number[]; readonly root: 'wrist' | 'tip' }[];
+  readonly armLength: number;
+  readonly tipRadius: number;
+  /** The nearest leg behind on the same side: its `at` on the torso and its bones. */
+  readonly legBehind: { readonly at: number; readonly bones: readonly number[] } | undefined;
+}
+
+/** Options for a membrane panel between two spars. */
+export interface PanelLook extends MembraneLook {
+  /** Vertices along and across (scaled down at low quality). */
+  readonly rows?: number;
+  readonly cols?: number;
+  /** How far the free edge dips between the spars, 0 to 1. */
+  readonly scallop?: number;
 }
 
 /** What a part module's `build` hook gets. */
@@ -116,10 +178,50 @@ export interface PartBuildContext {
    * read these rather than the parameters.
    */
   measure(size: number, count: number): void;
+  /** Membrane modules: the wing or fin they cover. */
+  readonly wing?: WingContext;
+  /** Membrane modules: a sheet between two spars, carried by stations so it folds exactly. */
+  panel(a: Spar, b: Spar, look: PanelLook): void;
+  /**
+   * Membrane modules: a rigid sheet in model space (bind pose) with weights per vertex, for
+   * insect wings and feather cards. `along` and `across` (0 to 1) place veins and colour.
+   */
+  sheet(
+    positions: readonly Vector3[],
+    normals: readonly Vector3[],
+    indices: readonly number[],
+    weights: readonly (readonly [number, number][])[],
+    along: readonly number[],
+    across: readonly number[],
+    look: MembraneLook,
+  ): void;
+  /**
+   * Hard geometry in model space (bind pose) with weights per vertex, into the parts mesh: a
+   * beetle's wing case, which rides its wing's bones.
+   */
+  solid(
+    positions: readonly Vector3[],
+    normals: readonly Vector3[],
+    indices: readonly number[],
+    weights: readonly (readonly [number, number][])[],
+    look: { readonly color: string; readonly roughness: number },
+  ): void;
+  /**
+   * Where a bind-pose point riding `bone` sits when the wings rest folded, and back: for parts
+   * shaped to fit the folded pose (a wing case lying on the abdomen). Identity off wings.
+   */
+  toRest(point: Vector3, bone: number): Vector3;
+  fromRest(point: Vector3, bone: number): Vector3;
+  /** The skin first met from `from` along `dir` (unit), or undefined within `reach` metres. */
+  skinAlong(from: Vector3, dir: Vector3, reach: number): Vector3 | undefined;
+  /** Membrane modules: a bone for a group of feathers, folding with the wing. */
+  featherBone(parent: number, head: Vector3, tail: Vector3, up: Vector3): number;
+  /** Rows and columns a membrane may use at this quality (scale counts by it). */
+  readonly detail: number;
 }
 
-/** Hooks a part module provides. */
-export interface PartHooks {
+/** Hooks a part module provides (membrane modules add `WingHooks`). */
+export interface PartHooks extends WingHooks {
   /**
    * A foot's height: how far above the ground it holds the leg's tip (metres). Without it the
    * stance decides (docs/design/8.2-feet.md).
@@ -163,6 +265,8 @@ export interface PartNote {
 export class PartSink {
   /** Where each part instance sits, for labels on debug renders. */
   readonly markers = new Map<string, [number, number, number]>();
+  /** The bone a part's marker rides, when it should follow a pose (a wing's membrane). */
+  readonly markerBones = new Map<string, number>();
   readonly parts = {
     positions: [] as number[],
     normals: [] as number[],
@@ -182,6 +286,10 @@ export class PartSink {
   };
   /** What each part reported building, by its id in the blueprint (largest over its copies). */
   readonly sizes = new Map<string, { size: number; count: number }>();
+  /** Membranes, feathers and their stations (docs/design/9.3-wings-fins.md). */
+  readonly membranes = new MembraneSink();
+  /** Feather group bones by the wing they fold with. */
+  readonly feathers = new Map<string, number[]>();
   /** Eyelids, which join the skin: their geometry, the bone of each vertex, and their chains. */
   readonly lids = {
     positions: [] as number[],
@@ -215,6 +323,12 @@ export interface PartsInput {
   readonly toes: ReadonlyMap<string, readonly (readonly number[])[]>;
   /** Mirror sign per limb instance id. */
   readonly limbMirror: ReadonlyMap<string, number>;
+  /** Wings and fins, by limb instance id, for their membranes. */
+  readonly wings: ReadonlyMap<string, SpanLimb>;
+  /** Membrane rows and columns scale (1 at medium). */
+  readonly detail: number;
+  /** World transforms of folded wing bones at rest: bind to rest, by bone (9.3). */
+  readonly rest: ReadonlyMap<number, { readonly rotation: Quaternion; readonly position: Vector3 }>;
 }
 
 const Y = new Vector3(0, 1, 0);
@@ -227,6 +341,8 @@ export function buildParts(
     readonly mirror: 1 | -1 | 0;
     readonly type: string;
     readonly params: Readonly<Record<string, unknown>>;
+    /** A wing's or fin's membrane rather than a foot. */
+    readonly membrane?: boolean;
   }[],
   input: PartsInput,
   sink: PartSink,
@@ -349,9 +465,23 @@ export function buildParts(
     id: string,
     inMouth = false,
   ) => {
-    if (!sink.markers.has(id))
-      sink.markers.set(id, [socket.position.x, socket.position.y, socket.position.z]);
     const local = mirror < 0 ? mirrorX(clonePiece(piece)) : piece;
+    if (!sink.markers.has(id)) {
+      // A piece built in model space (a socket at the origin, like a beak's) marks its middle.
+      const atOrigin = socket.position.lengthSq() === 0 && local.positions.length >= 3;
+      const n = local.positions.length / 3;
+      const middle = (axis: number) => {
+        let sum = 0;
+        for (let v = 0; v < n; v++) sum += local.positions[v * 3 + axis] as number;
+        return sum / n;
+      };
+      sink.markers.set(
+        id,
+        atOrigin
+          ? [middle(0), middle(1), middle(2)]
+          : [socket.position.x, socket.position.y, socket.position.z],
+      );
+    }
     const sinkBy = options.sink ?? 0;
     const origin = socket.position.clone().addScaledVector(socket.normal, -sinkBy);
     const toWorld = (x: number, y: number, z: number, out: Vector3) =>
@@ -496,6 +626,48 @@ export function buildParts(
       for (const i of local.indices) sink.eyes.indices.push(base + i);
       return;
     }
+    if (options.membrane) {
+      const world: Vector3[] = [];
+      const normals: Vector3[] = [];
+      const along: number[] = [];
+      for (let v = 0; v < local.positions.length; v += 3) {
+        world.push(
+          toWorld(
+            local.positions[v] as number,
+            local.positions[v + 1] as number,
+            local.positions[v + 2] as number,
+            new Vector3(),
+          ),
+        );
+        normals.push(
+          dirWorld(
+            local.normals[v] as number,
+            local.normals[v + 1] as number,
+            local.normals[v + 2] as number,
+            new Vector3(),
+          ),
+        );
+        along.push(local.t[v / 3] ?? 0);
+      }
+      const weights: [number, number][] =
+        options.bone !== undefined ? [[options.bone, 1]] : socket.weights.map(([b, w]) => [b, w]);
+      rigidSheet(
+        world,
+        normals,
+        local.indices,
+        world.map(() => weights),
+        along,
+        world.map(() => 0),
+        sink.membranes,
+        {
+          ...options.membrane,
+          color: options.color ?? DEFAULT_COLOR[material],
+          ...(options.tipColor ? { tipColor: options.tipColor } : {}),
+        },
+        hexToRgb,
+      );
+      return;
+    }
     const base = sink.parts.positions.length / 3;
     const c0 = hexToRgb(options.color ?? DEFAULT_COLOR[material]);
     const c1 = hexToRgb(options.tipColor ?? options.color ?? DEFAULT_COLOR[material]);
@@ -559,6 +731,7 @@ export function buildParts(
     mirror: 1 | -1 | 0,
     place: { on: string; at: number; from: number; to: number; angle: number },
     toes: PartBuildContext['toes'],
+    wing?: WingContext,
   ): PartBuildContext => ({
     id,
     baseId,
@@ -616,7 +789,193 @@ export function buildParts(
         count: Math.max(count, seen?.count ?? 0),
       });
     },
+    ...(wing ? { wing } : {}),
+    detail: input.detail,
+    panel: (a, b, look) => {
+      const panels = sink.membranes.stations.length;
+      stationPanel(
+        a,
+        b,
+        {
+          name: `${place.on}.p${panels}`,
+          owner: place.on,
+          scale: input.scale,
+          rows: Math.max(3, Math.round((look.rows ?? 16) * input.detail)),
+          cols: Math.max(2, Math.round((look.cols ?? 8) * input.detail)),
+          ...(look.scallop !== undefined ? { scallop: look.scallop } : {}),
+          spacing: 0.15 * input.scale,
+        },
+        input.bones,
+        sink.membranes,
+        { ...look, color: resolveColor(look.color, '#7a6a50') },
+        hexToRgb,
+      );
+    },
+    sheet: (positions, normals, indices, weights, along, across, look) => {
+      if (!sink.markers.has(id) && positions.length > 0) {
+        const at = Math.floor(positions.length / 2);
+        const mid = positions[at] as Vector3;
+        sink.markers.set(id, [mid.x, mid.y, mid.z]);
+        const bone = (weights[at] ?? [])[0]?.[0];
+        if (bone !== undefined) sink.markerBones.set(id, bone);
+      }
+      rigidSheet(
+        positions,
+        normals,
+        indices,
+        weights,
+        along,
+        across,
+        sink.membranes,
+        {
+          ...look,
+          color: resolveColor(look.color, '#7a6a50'),
+          ...(look.tipColor ? { tipColor: resolveColor(look.tipColor, look.color) } : {}),
+        },
+        hexToRgb,
+        place.on,
+      );
+    },
+    toRest: (point, bone) => {
+      const r = input.rest.get(bone);
+      const b = input.bones[bone] as BoneDef;
+      if (!r) return point.clone();
+      const bind = bindRotationOf(b);
+      return point
+        .clone()
+        .sub(b.head)
+        .applyQuaternion(bind.clone().invert())
+        .applyQuaternion(r.rotation)
+        .add(r.position);
+    },
+    fromRest: (point, bone) => {
+      const r = input.rest.get(bone);
+      const b = input.bones[bone] as BoneDef;
+      if (!r) return point.clone();
+      const bind = bindRotationOf(b);
+      return point
+        .clone()
+        .sub(r.position)
+        .applyQuaternion(r.rotation.clone().invert())
+        .applyQuaternion(bind)
+        .add(b.head);
+    },
+    skinAlong: (from, dir, reach) => {
+      const steps = 32;
+      let prev = evaluator.eval(from.x, from.y, from.z);
+      if (prev < 0) return from.clone();
+      for (let i = 1; i <= steps; i++) {
+        const t = (reach * i) / steps;
+        const v = evaluator.eval(from.x + dir.x * t, from.y + dir.y * t, from.z + dir.z * t);
+        if (v < 0) {
+          let lo = (reach * (i - 1)) / steps;
+          let hi = t;
+          for (let k = 0; k < 14; k++) {
+            const mid = (lo + hi) / 2;
+            if (
+              evaluator.eval(from.x + dir.x * mid, from.y + dir.y * mid, from.z + dir.z * mid) < 0
+            )
+              hi = mid;
+            else lo = mid;
+          }
+          return from.clone().addScaledVector(dir, (lo + hi) / 2);
+        }
+        prev = v;
+      }
+      return undefined;
+    },
+    solid: (positions, normals, indices, weights, look) => {
+      if (!sink.markers.has(id)) {
+        const p0 = positions[0];
+        if (p0) sink.markers.set(id, [p0.x, p0.y, p0.z]);
+        const bone = (weights[0] ?? [])[0]?.[0];
+        if (bone !== undefined) sink.markerBones.set(id, bone);
+      }
+      const base = sink.parts.positions.length / 3;
+      const c = hexToRgb(look.color);
+      positions.forEach((p, v) => {
+        const n = normals[v] as Vector3;
+        sink.parts.positions.push(p.x, p.y, p.z);
+        sink.parts.normals.push(n.x, n.y, n.z);
+        sink.parts.color.push(c[0], c[1], c[2]);
+        sink.parts.info.push(0, look.roughness);
+        sink.parts.weights.push([...(weights[v] ?? [])]);
+      });
+      for (const i of indices) sink.parts.indices.push(base + i);
+    },
+    featherBone: (parent, head, tail, up) => {
+      const list = sink.feathers.get(place.on) ?? [];
+      input.bones.push({
+        name: `${place.on}.f${list.length}`,
+        parent,
+        section: 'feather',
+        owner: place.on,
+        head: head.clone(),
+        tail: tail.clone(),
+        up: up.clone(),
+        r0: 0.005 * input.scale,
+        r1: 0.005 * input.scale,
+        cross: [1, 1],
+        t0: 0,
+        t1: 1,
+        skin: false,
+        chain: -1,
+      });
+      list.push(input.bones.length - 1);
+      sink.feathers.set(place.on, list);
+      return input.bones.length - 1;
+    },
   });
+
+  /** A wing's spars in the bind pose: its arm, digits, and the body's side and leg behind it. */
+  const wingContext = (span: SpanLimb): WingContext => {
+    const bone = (id: number) => input.bones[id] as BoneDef;
+    const chainSpar = (ids: readonly number[]): Spar => ({
+      points: [bone(ids[0] as number).head.clone(), ...ids.map((id) => bone(id).tail.clone())],
+      bones: [...ids],
+    });
+    const arm = chainSpar(span.bones);
+    const hand = span.bones.at(-1) as number;
+    const digits = span.digits.map((d) =>
+      d.root === 'tip' ? chainSpar([hand, ...d.bones]) : chainSpar(d.bones),
+    );
+    // Along the skin at the wing's height, from its root back to the hip of the leg behind (or
+    // 0.6 of the body), then down that leg to the knee.
+    let body: Spar | undefined;
+    let flank: Spar | undefined;
+    if (input.paths.has(span.on)) {
+      const end = span.legBehind ? span.legBehind.at : Math.min(1, span.at + 0.6);
+      const points: Vector3[] = [];
+      const bones: number[] = [];
+      const steps = 6;
+      for (let k = 0; k <= steps; k++) {
+        const at = span.at + ((end - span.at) * k) / steps;
+        const s = socketOn(span.on, at, span.angle, span.mirror);
+        points.push(s.position.clone());
+        if (k > 0) {
+          const top = [...s.weights].sort((x, y) => y[1] - x[1])[0];
+          bones.push(top?.[0] ?? (bone(span.bones[0] as number).parent as number));
+        }
+      }
+      body = { points, bones };
+      if (span.legBehind) {
+        const thigh = span.legBehind.bones[0] as number;
+        flank = { points: [...points, bone(thigh).tail.clone()], bones: [...bones, thigh] };
+      } else flank = body;
+    }
+    return {
+      role: span.role,
+      arm,
+      digits,
+      flank,
+      body,
+      out: span.out.clone(),
+      lead: span.lead.clone(),
+      normal: span.normal.clone(),
+      armLength: span.armLength,
+      tipRadius: span.tipRadius,
+    };
+  };
 
   for (const part of parts) {
     const module = input.registry.get('part', part.type) as PartModule | undefined;
@@ -662,6 +1021,32 @@ export function buildParts(
     const module = input.registry.get('part', foot.type) as PartModule | undefined;
     const hooks = module?.hooks as PartHooks | undefined;
     if (!module || !hooks?.build) continue;
+    if (foot.membrane) {
+      const span = input.wings.get(foot.limbId);
+      if (!span) continue;
+      const wing = wingContext(span);
+      try {
+        hooks.build(
+          contextFor(
+            `${foot.limbId}.membrane`,
+            `${foot.limbId}.membrane`,
+            foot.type,
+            module,
+            foot.mirror,
+            { on: foot.limbId, at: 1, from: 0, to: 1, angle: 0 },
+            [],
+            wing,
+          ),
+          foot.params as Record<string, unknown>,
+        );
+      } catch (error) {
+        notes.push({
+          path: `limbs[id=${foot.limbId.replace(/\.[LR]$/, '')}].membrane`,
+          message: `could not be built: ${(error as Error).message}`,
+        });
+      }
+      continue;
+    }
     const chains = input.toes.get(foot.limbId) ?? [];
     const toeSockets = chains.map((chain) => {
       const last = input.bones[chain.at(-1) as number] as BoneDef;

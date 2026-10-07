@@ -1,6 +1,6 @@
 import type { CompiledCreature } from '../compile/compile.ts';
 import type { Registry } from '../registry.ts';
-import { shadeMouth, shadeSkin } from '../shading/compose.ts';
+import { hasWingLayers, shadeMembrane, shadeMouth, shadeSkin } from '../shading/compose.ts';
 import { cpuKit } from '../shading/cpu.ts';
 import type { Surface } from '../shading/kit.ts';
 
@@ -72,16 +72,103 @@ export function surfaceAt(compiled: CompiledCreature, i: number): Surface<number
     nz: normals[i * 3 + 2] as number,
     spine: body[i * 4] as number,
     height: body[i * 4 + 1] as number,
-    limb: Math.max(body[i * 4 + 2] as number, 0),
+    ...limbAndWings(body[i * 4 + 2] as number, region[i * 4 + 2] as number),
     crease: body[i * 4 + 3] as number,
     head: region[i * 4] as number,
     torso: region[i * 4 + 1] as number,
-    limbs: region[i * 4 + 2] as number,
     tail: region[i * 4 + 3] as number,
     ground: y,
     pixel: 0,
     time: 0,
   };
+}
+
+/**
+ * The skin's limb coordinate and its limbs and wings regions: wing and fin tubes carry `limb +
+ * 2` (docs/design/9.3-wings-fins.md), and count as wings rather than limbs.
+ */
+export function limbAndWings(
+  limb: number,
+  limbs: number,
+): { limb: number; limbs: number; wings: number } {
+  const wings = limb >= 1.5 ? 1 : 0;
+  return { limb: Math.max(limb - 2 * wings, 0), limbs: limbs * (1 - wings), wings: limbs * wings };
+}
+
+/**
+ * The pattern stack's view of membrane vertex `i` (docs/design/9.3-wings-fins.md): its bind
+ * position, `spine` from front to back of the creature's rest bounds, `height` from its normal,
+ * `limb` along its spar, and the `wings` region alone.
+ */
+export function membraneSurfaceAt(compiled: CompiledCreature, i: number): Surface<number> {
+  const { positions, normals, vein } = compiled.membranes;
+  const inv = 1 / compiled.scale;
+  const { min, max } = compiled.bounds;
+  const y = (positions[i * 3 + 1] as number) * inv;
+  const z = positions[i * 3 + 2] as number;
+  return {
+    x: (positions[i * 3] as number) * inv,
+    y,
+    z: z * inv,
+    nx: normals[i * 3] as number,
+    ny: normals[i * 3 + 1] as number,
+    nz: normals[i * 3 + 2] as number,
+    spine: Math.min(1, Math.max(0, (max[2] - z) / Math.max(1e-6, max[2] - min[2]))),
+    height: normals[i * 3 + 1] as number,
+    limb: Math.min(1, Math.max(0, vein[i * 2] as number)),
+    crease: 0,
+    head: 0,
+    torso: 0,
+    limbs: 0,
+    tail: 0,
+    wings: 1,
+    ground: y,
+    pixel: 0,
+    time: 0,
+  };
+}
+
+/**
+ * Membranes' colours: each vertex's own, under the `wings` layers, its veins darkened as the
+ * shader draws them (sampled per vertex, so they alias on small wings).
+ */
+export function bakeMembraneColors(compiled: CompiledCreature, registry: Registry): BakedColors {
+  const { color: srgb, info, vein } = compiled.membranes;
+  const n = srgb.length / 3;
+  const color = new Float32Array(n * 3);
+  const roughness = new Float32Array(n);
+  const patterned = hasWingLayers(compiled.material);
+  const line = (x: number, count: number) => {
+    const f = Math.abs(((((x * count) % 1) + 1) % 1) - 0.5) * 2;
+    return 1 - smooth(0, 0.1, 1 - f);
+  };
+  for (let i = 0; i < n; i++) {
+    let rgb: number[] = [
+      srgb[i * 3] as number,
+      srgb[i * 3 + 1] as number,
+      srgb[i * 3 + 2] as number,
+    ];
+    let rough = info[i * 4 + 2] as number;
+    if (patterned) {
+      const shade = shadeMembrane(
+        cpuKit,
+        membraneSurfaceAt(compiled, i),
+        rgb as [number, number, number],
+        rough,
+        compiled.material,
+        registry,
+      );
+      rgb = [shade.r, shade.g, shade.b];
+      rough = shade.roughness;
+    }
+    const along = vein[i * 2] as number;
+    const lines = Math.max(line(vein[i * 2 + 1] as number, 6), line(along, 3) * 0.6);
+    const dark = 1 - (info[i * 4 + 3] as number) * lines * (1 - along * 0.5) * 0.55;
+    for (let c = 0; c < 3; c++)
+      color[i * 3 + c] = srgbToLinear(Math.min(1, Math.max(0, (rgb[c] as number) * dark)));
+    roughness[i] = Math.min(1, Math.max(0.04, rough));
+  }
+  return { color, roughness };
 }
 
 /** Hard parts already carry an sRGB colour and roughness per vertex. */
@@ -129,14 +216,15 @@ export function bakeEyeColors(compiled: CompiledCreature): BakedColors {
   return { color, roughness };
 }
 
-/** Vertex colours for the skin, the hard parts and the eyes. */
+/** Vertex colours for the skin, the hard parts, the eyes and the membranes. */
 export function bakeVertexColors(
   compiled: CompiledCreature,
   registry: Registry,
-): { skin: BakedColors; parts: BakedColors; eyes: BakedColors } {
+): { skin: BakedColors; parts: BakedColors; eyes: BakedColors; membranes: BakedColors } {
   return {
     skin: bakeSkinColors(compiled, registry),
     parts: bakePartColors(compiled),
     eyes: bakeEyeColors(compiled),
+    membranes: bakeMembraneColors(compiled, registry),
   };
 }

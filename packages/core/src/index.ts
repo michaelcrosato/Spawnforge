@@ -64,18 +64,29 @@ export {
 } from './blueprint/validate.ts';
 export * from './compile/compile.ts';
 export { type LimbIkSetup, solveLimb } from './compile/ik.ts';
+export type { MembraneLook, Spar } from './compile/membranes.ts';
 export { type MouthLine, mouthLine } from './compile/mouth.ts';
 export type {
   EmitOptions,
   EyeOptions,
+  PanelLook,
   PartBuildContext,
   PartHooks,
   Socket,
+  WingContext,
 } from './compile/parts.ts';
 export { buildSdf, type Sdf, SdfEvaluator } from './compile/sdf.ts';
 export { buildSkeleton, type SkeletonBuild } from './compile/skeleton.ts';
 export type * from './compile/types.ts';
 export { allEyes, mainHead } from './compile/types.ts';
+export {
+  BAT_STYLE,
+  type DigitChain,
+  type DigitContext,
+  FIN_STYLE,
+  type WingHooks,
+  type WingStyle,
+} from './compile/wings.ts';
 export {
   type BakedColors,
   bakeEyeColors,
@@ -105,7 +116,7 @@ export {
   type MotionEvent,
   type MotionOptions,
 } from './motion/controller.ts';
-export { applyFace, JAW_OPEN } from './motion/face.ts';
+export { applyFace, applyRest, JAW_OPEN } from './motion/face.ts';
 export { motionData } from './motion/gaits.ts';
 export { Pose } from './motion/pose.ts';
 export {
@@ -118,6 +129,7 @@ export {
   ScenarioSchema,
 } from './motion/scenario.ts';
 export { testCourse } from './motion/terrain.ts';
+export { applyStations, applyWings } from './motion/wings.ts';
 export * from './registry.ts';
 export { createRng, deriveSeed, type Rng } from './rng.ts';
 export * from './shading/compose.ts';

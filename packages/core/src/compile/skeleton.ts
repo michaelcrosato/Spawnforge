@@ -14,7 +14,7 @@ import {
 } from './anatomy.ts';
 import { headDetails, type MouthShape, mouthShape } from './head.ts';
 import { type LimbIkSetup, solveLimb } from './ik.ts';
-import type { PartHooks } from './parts.ts';
+import type { PartHooks, SpanLimb } from './parts.ts';
 import { sampleProfile } from './profile.ts';
 import type {
   ArmRig,
@@ -22,12 +22,15 @@ import type {
   BoneSection,
   ChainDef,
   LegRig,
+  LimbChainRig,
   MassDef,
   Rig,
   Skeleton,
   ToeChain,
   ToeContext,
+  WingRig,
 } from './types.ts';
+import { WING_SHARES, type WingFrame, type WingHooks, wingStyleOf } from './wings.ts';
 
 const DEG = Math.PI / 180;
 const X = new Vector3(1, 0, 0);
@@ -136,6 +139,12 @@ export interface SkeletonBuild extends Skeleton {
     readonly code: string;
     readonly message: string;
   }[];
+  /** Each wing's frame, for the fold (docs/design/9.3-wings-fins.md). */
+  readonly wingFrames: readonly WingFrame[];
+  /** Toe chains (a wing's thumb) on wings and fins, by limb id. */
+  readonly spanToes: ReadonlyMap<string, readonly (readonly number[])[]>;
+  /** Wings and fins as built, by limb id, for their membranes. */
+  readonly spans: ReadonlyMap<string, Omit<SpanLimb, 'legBehind'>>;
 }
 
 interface Frame {
@@ -275,8 +284,9 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
   const torsoRadius = (t: number) => sampleProfile(spec.body.torso.radius, t) * L;
   // Upright torsos (bipeds standing tall) get no waist, which reads as a sag on them.
   const upright = Math.abs(spec.body.torso.pitch) >= 45;
+  // Wings and fins carry their own shoulder (docs/design/9.3-wings-fins.md), not a chest.
   const plan = torsoPlan(
-    spec.limbs.filter((l) => l.on === 'torso'),
+    spec.limbs.filter((l) => l.on === 'torso' && (l.role === 'leg' || l.role === 'arm')),
     upright,
   );
   const torsoSegments = spec.body.torso.segments;
@@ -1007,12 +1017,383 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
   // --- Limbs -----------------------------------------------------------------------------------
   const legRigs: LegRig[] = [];
   const armRigs: ArmRig[] = [];
+  const wingRigs: WingRig[] = [];
+  const finRigs: LimbChainRig[] = [];
+  const wingFrames: WingFrame[] = [];
+  const spanToes = new Map<string, number[][]>();
+  const spans = new Map<string, Omit<SpanLimb, 'legBehind'>>();
   const frontPair = Math.max(-1, ...legs.map((l) => l.pair ?? -1));
   const forwardH = Z.clone();
+
+  /**
+   * A wing or fin (docs/design/9.3-wings-fins.md): built spread in its own plane as swept tubes
+   * (never in the field), with a shoulder mass on the body, digits from its membrane and, on a
+   * wing, a thumb from its foot. The fold comes later, in compile.
+   */
+  const spanLimb = (limb: LimbSpec, frame: Frame) => {
+    const fin = limb.role === 'fin';
+    const style = wingStyleOf(limb, registry);
+    const mirror = limb.mirror;
+    const normalOut = aroundDirection(frame, limb.angle, mirror);
+    // The shoulder joint stands just off the skin, the pectoral mass joining it to the body, so
+    // a wing folded along the body clears it.
+    const rootRadiusL = sampleProfile(limb.radius, 0) * L;
+    const rootPos = frame.point
+      .clone()
+      .addScaledVector(
+        normalOut,
+        radiusAt(frame.radius, frame.cross, limb.angle) + (fin ? -0.3 : 1.1) * rootRadiusL,
+      );
+    const sideRaw = new Vector3().crossVectors(frame.up, frame.forward).normalize();
+    const side = new Vector3(sideRaw.x, 0, sideRaw.z).multiplyScalar(mirror || 1);
+    if (side.lengthSq() < 1e-8) side.set(mirror || 1, 0, 0);
+    side.normalize();
+    // Straight out: mostly sideways, partly off the skin, so a wing high on the back rises.
+    const out =
+      mirror === 0
+        ? normalOut.clone()
+        : side.clone().multiplyScalar(0.6).addScaledVector(normalOut, 0.4).normalize();
+    let normal = new Vector3().crossVectors(out, forwardH);
+    if (normal.lengthSq() < 1e-6) normal = Y.clone();
+    normal.normalize();
+    if (normal.y < 0) normal.negate();
+    const lead = new Vector3().crossVectors(normal, out).normalize();
+    if (lead.dot(forwardH) < 0) lead.negate();
+    const R = limb.length * L;
+    const shares = WING_SHARES[limb.segments] ?? (WING_SHARES[3] as readonly number[]);
+    const n = shares.length;
+    const points = [rootPos.clone()];
+    for (let k = 0; k < n; k++) {
+      const a = ((style.bind[Math.min(k, style.bind.length - 1)] ?? 0) * Math.PI) / 180;
+      const dir = out.clone().multiplyScalar(Math.cos(a)).addScaledVector(lead, Math.sin(a));
+      points.push((points[k] as Vector3).clone().addScaledVector(dir, (shares[k] as number) * R));
+    }
+    // A fin is flat across its plane (a flipper alone, or a thin leading ray before its
+    // membrane); a wing's arm is round.
+    const cross: readonly [number, number] = fin
+      ? limb.membrane
+        ? [1.3, 0.35]
+        : [1.6, 0.3]
+      : [1, 1];
+    const thin = fin && limb.membrane ? 0.5 : 1;
+    const limbBones: number[] = [];
+    for (let k = 0; k < n; k++) {
+      limbBones.push(
+        b.bone({
+          name: `${limb.id}.${k}`,
+          parent: k === 0 ? frame.bone : (limbBones[k - 1] as number),
+          section: 'limb',
+          owner: limb.id,
+          head: (points[k] as Vector3).clone(),
+          tail: (points[k + 1] as Vector3).clone(),
+          up: normal.clone(),
+          r0: sampleProfile(limb.radius, k / n) * L * thin,
+          r1: sampleProfile(limb.radius, (k + 1) / n) * L * thin,
+          cross,
+          t0: k / n,
+          t1: (k + 1) / n,
+          // A hard case is its own arm: its bones carry the shell and draw nothing.
+          skin: style.shell !== true,
+          tube: true,
+        }),
+      );
+    }
+    // Elbow and wrist helpers, as arms have, for the skin around a folded joint.
+    for (let k = 1; k < n && !fin; k++) {
+      const upper = limbBones[k - 1] as number;
+      const lower = limbBones[k] as number;
+      const joint = (b.bones[lower] as BoneDef).head;
+      const helper = b.bone({
+        name: `${limb.id}.${k}.helper`,
+        parent: upper,
+        section: 'helper',
+        owner: limb.id,
+        head: joint.clone(),
+        tail: joint
+          .clone()
+          .addScaledVector(
+            new Vector3().subVectors(joint, (b.bones[upper] as BoneDef).head).normalize(),
+            0.02 * L,
+          ),
+        up: normal.clone(),
+        r0: (b.bones[lower] as BoneDef).r0,
+        r1: (b.bones[lower] as BoneDef).r0,
+        cross: [1, 1],
+        t0: k / n,
+        t1: k / n,
+        skin: false,
+      });
+      b.helpers.push([helper, upper, lower]);
+    }
+    b.chain(
+      {
+        id: limb.id,
+        section: 'limb',
+        owner: limb.id,
+        parentBone: frame.bone,
+        blend: 0,
+        masses: [],
+      },
+      limbBones,
+    );
+    b.path(
+      limb.id,
+      limbBones.map((id, k) => ({ bone: id, t0: k / n, t1: (k + 1) / n })),
+    );
+    // The shoulder: a mass on the body where the arm leaves the skin, and with muscle a flight
+    // muscle down the chest under it.
+    const rootRadius = sampleProfile(limb.radius, 0) * L;
+    const parentChain = (b.bones[frame.bone] as BoneDef).chain;
+    const host = b.chains[parentChain];
+    // Fins grow flush from the skin, with no shoulder.
+    if (host && !fin) {
+      const sLimb = strength(limb.muscle);
+      const masses: MassDef[] = [
+        // From inside the skin out to the joint, tapering, blended wide: a shoulder, not a ball.
+        {
+          bone: frame.bone,
+          a: rootPos.clone().addScaledVector(normalOut, -1.6 * rootRadius),
+          b: rootPos.clone(),
+          ra: rootRadius * 1.2,
+          rb: rootRadius * 0.95,
+          up: Y.clone(),
+          cross: [1, 1],
+          blend: rootRadius,
+        },
+      ];
+      if (sLimb > 0) {
+        const below = frame.point
+          .clone()
+          .addScaledVector(normalOut, -0.2 * frame.radius)
+          .addScaledVector(Y, -0.5 * frame.radius);
+        masses.push({
+          bone: frame.bone,
+          a: rootPos.clone().addScaledVector(normalOut, -0.3 * rootRadius),
+          b: below,
+          ra: 0.25 * sLimb * frame.radius,
+          rb: 0.18 * sLimb * frame.radius,
+          up: Y.clone(),
+          cross: [1, 1],
+          blend: 0.4 * frame.radius * Math.min(1, sLimb),
+        });
+      }
+      b.chains[parentChain] = { ...host, masses: [...host.masses, ...masses] };
+    }
+
+    const wristBone = limbBones[Math.max(0, n - 2)] as number;
+    const wrist = n >= 2 ? (points[n - 1] as Vector3).clone() : rootPos.clone();
+    const tip = (points[n] as Vector3).clone();
+    const handDir = new Vector3().subVectors(tip, points[n - 1] as Vector3).normalize();
+    const tipRadius = sampleProfile(limb.radius, 1) * L;
+    // Digits from the membrane module.
+    const digits: { bones: number[]; root: 'wrist' | 'tip' }[] = [];
+    const membrane = limb.membrane;
+    const mModule = membrane
+      ? (registry.get('part', membrane.type) as PartModule | undefined)
+      : undefined;
+    const digitHook = (mModule?.hooks as WingHooks | undefined)?.digits;
+    if (membrane && digitHook) {
+      const chains = digitHook(
+        {
+          wrist: wrist.clone(),
+          tip: tip.clone(),
+          out: out.clone(),
+          lead: lead.clone(),
+          normal: normal.clone(),
+          hand: handDir.clone(),
+          armLength: R,
+          tipRadius,
+          scale: L,
+        },
+        membrane.params as Record<string, unknown>,
+      );
+      chains.forEach((chain, di) => {
+        const ids: number[] = [];
+        const m = chain.points.length - 1;
+        for (let k = 0; k < m; k++) {
+          ids.push(
+            b.bone({
+              name: `${limb.id}.d${di}.${k}`,
+              parent:
+                k === 0
+                  ? chain.root === 'wrist'
+                    ? wristBone
+                    : (limbBones.at(-1) as number)
+                  : (ids[k - 1] as number),
+              section: 'digit',
+              owner: `${limb.id}.d${di}`,
+              head: (chain.points[k] as Vector3).clone(),
+              tail: (chain.points[k + 1] as Vector3).clone(),
+              up: normal.clone(),
+              r0: chain.radii[k] ?? tipRadius * 0.4,
+              r1: chain.radii[k + 1] ?? tipRadius * 0.2,
+              cross: [1, 1],
+              t0: k / m,
+              t1: (k + 1) / m,
+              skin: true,
+              tube: true,
+            }),
+          );
+        }
+        if (ids.length === 0) return;
+        digits.push({ bones: ids, root: chain.root });
+        b.chain(
+          {
+            id: `${limb.id}.d${di}`,
+            section: 'limb',
+            owner: `${limb.id}.d${di}`,
+            parentBone: ids[0] === undefined ? wristBone : (b.bones[ids[0]] as BoneDef).parent,
+            blend: 0,
+            masses: [],
+          },
+          ids,
+        );
+        b.path(
+          `${limb.id}.d${di}`,
+          ids.map((id, k) => ({ bone: id, t0: k / ids.length, t1: (k + 1) / ids.length })),
+        );
+      });
+    }
+    // A thumb from the foot, at the wrist.
+    const foot = limb.foot;
+    const fModule = foot ? (registry.get('part', foot.type) as PartModule | undefined) : undefined;
+    const toeHook = (
+      fModule?.hooks as
+        | { toes?: (ctx: ToeContext, p: Record<string, unknown>) => ToeChain[] }
+        | undefined
+    )?.toes;
+    const toes: number[][] = [];
+    if (foot && toeHook && !fin) {
+      toeHook(
+        {
+          ankle: wrist.clone(),
+          limbDir: lead.clone(),
+          forward: forwardH.clone(),
+          outward: side.clone(),
+          groundY: 0,
+          role: limb.role,
+          tipRadius,
+          scale: L,
+          mirror,
+          splay: 0,
+          stance: undefined,
+          footHeight: 0,
+        },
+        foot.params,
+      ).forEach((toe, ti) => {
+        const ids: number[] = [];
+        for (let k = 0; k + 1 < toe.points.length; k++) {
+          ids.push(
+            b.bone({
+              name: `${limb.id}.toe${ti}.${k}`,
+              parent: k === 0 ? wristBone : (ids[k - 1] as number),
+              section: 'toe',
+              owner: `${limb.id}.toe${ti}`,
+              head: (toe.points[k] as Vector3).clone(),
+              tail: (toe.points[k + 1] as Vector3).clone(),
+              up: normal.clone(),
+              r0: toe.radii[k] ?? tipRadius * 0.4,
+              r1: toe.radii[k + 1] ?? tipRadius * 0.3,
+              cross: [1, 0.8],
+              t0: k / (toe.points.length - 1),
+              t1: (k + 1) / (toe.points.length - 1),
+              skin: true,
+              tube: true,
+            }),
+          );
+        }
+        if (ids.length === 0) return;
+        toes.push(ids);
+        b.chain(
+          {
+            id: `${limb.id}.toe${ti}`,
+            section: 'toe',
+            owner: `${limb.id}.toe${ti}`,
+            parentBone: wristBone,
+            blend: 0,
+            masses: [],
+          },
+          ids,
+        );
+        b.path(
+          `${limb.id}.toe${ti}`,
+          ids.map((id, k) => ({ bone: id, t0: k / ids.length, t1: (k + 1) / ids.length })),
+        );
+      });
+    }
+    spanToes.set(limb.id, toes);
+    spans.set(limb.id, {
+      role: fin ? 'fin' : 'wing',
+      on: limb.on,
+      at: limb.at,
+      angle: limb.angle,
+      mirror,
+      out: out.clone(),
+      lead: lead.clone(),
+      normal: normal.clone(),
+      bones: limbBones,
+      digits,
+      armLength: R,
+      tipRadius,
+    });
+    const sideName = limb.side === 'center' ? 'center' : limb.side;
+    if (fin) {
+      finRigs.push({ id: limb.id, side: sideName, bones: limbBones });
+      return;
+    }
+    let span = 0;
+    for (const id of [...limbBones, ...digits.flatMap((d) => d.bones)])
+      span = Math.max(span, rootPos.distanceTo((b.bones[id] as BoneDef).tail));
+    const covered = spec.limbs.some(
+      (other) =>
+        other.role === 'wing' &&
+        other.on === limb.on &&
+        other.mirror === mirror &&
+        other.at < limb.at &&
+        other.membrane !== null &&
+        (registry.get('part', other.membrane.type) as PartModule | undefined)?.provides?.includes(
+          'cover',
+        ) === true,
+    );
+    wingFrames.push({
+      wing: wingRigs.length,
+      limb: limb.id,
+      mirror,
+      at: limb.at,
+      root: rootPos.clone(),
+      rootRadius,
+      out: out.clone(),
+      lead: lead.clone(),
+      normal: normal.clone(),
+      side: mirror === 0 ? normalOut.clone().setY(0).normalize() : side.clone(),
+      rootNormal: normalOut.clone(),
+      style,
+      bones: limbBones,
+      digits,
+      covered,
+    });
+    wingRigs.push({
+      id: limb.id,
+      side: sideName,
+      bones: limbBones,
+      digits: digits.map((d) => d.bones),
+      feathers: [],
+      normal: [normal.x, normal.y, normal.z],
+      span,
+      area: 0,
+      poses: {},
+      ...(covered ? { covered } : {}),
+    });
+  };
+
   for (const limb of spec.limbs) {
     const path = b.paths.get(limb.on);
     if (!path) continue;
     const frame = samplePath(b.bones, path, limb.at);
+    if (limb.role === 'wing' || limb.role === 'fin') {
+      spanLimb(limb, frame);
+      continue;
+    }
     const rootPos = limbRoot(limb, frame);
     const R = limb.length * L;
     const shares = SEGMENT_SHARES[limb.segments] ?? (SEGMENT_SHARES[3] as readonly number[]);
@@ -1303,9 +1684,10 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
       .sort((a, b) => (a.owner === 'tail' ? -1 : b.owner === 'tail' ? 1 : 0)),
     legs: legRigs,
     arms: armRigs,
-    wings: [],
-    fins: [],
+    wings: wingRigs,
+    fins: finRigs,
     tentacles: [],
+    stations: [],
     hipHeight:
       legRoots.length > 0 ? legRoots.reduce((a, c) => a + c, 0) / legRoots.length : center.y,
     posture,
@@ -1317,6 +1699,9 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
     paths: b.paths,
     helpers: b.helpers,
     notes,
+    wingFrames,
+    spanToes,
+    spans,
     mouths: builtHeads.map((h) => h.mouth),
   };
 }

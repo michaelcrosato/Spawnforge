@@ -10,12 +10,20 @@ const Y = new Vector3(0, 1, 0);
 export class Pose {
   readonly count: number;
   readonly parents: Int16Array;
-  /** Rest local transforms. */
+  /**
+   * Rest local transforms: the pose a creature stands in, which `reset` returns to. It equals
+   * the bind pose except where `BonesData.rest` says otherwise (folded wings,
+   * docs/design/9.3-wings-fins.md).
+   */
   readonly restRot: Quaternion[];
   readonly restPos: Vector3[];
   /** Rest world transforms (model space). */
   readonly restWorldRot: Quaternion[];
   readonly restWorldPos: Vector3[];
+  /** Bind local rotations (the pose the meshes were built in) and their world transforms. */
+  readonly bindRot: Quaternion[];
+  readonly bindWorldRot: Quaternion[];
+  readonly bindWorldPos: Vector3[];
   /** Current local transforms. */
   readonly rot: Quaternion[];
   readonly pos: Vector3[];
@@ -35,34 +43,46 @@ export class Pose {
     this.count = n;
     this.parents = bones.parents;
     this.lengths = bones.lengths;
-    this.restWorldPos = Array.from({ length: n }, (_, i) =>
+    this.bindWorldPos = Array.from({ length: n }, (_, i) =>
       new Vector3().fromArray(bones.positions, i * 3),
     );
-    this.restWorldRot = Array.from({ length: n }, (_, i) =>
+    this.bindWorldRot = Array.from({ length: n }, (_, i) =>
       new Quaternion().fromArray(bones.rotations, i * 4),
     );
-    this.restRot = [];
+    this.bindRot = [];
     this.restPos = [];
     for (let i = 0; i < n; i++) {
       const p = bones.parents[i] as number;
       if (p >= 0) {
-        const inv = (this.restWorldRot[p] as Quaternion).clone().invert();
+        const inv = (this.bindWorldRot[p] as Quaternion).clone().invert();
         this.restPos.push(
-          (this.restWorldPos[i] as Vector3)
+          (this.bindWorldPos[i] as Vector3)
             .clone()
-            .sub(this.restWorldPos[p] as Vector3)
+            .sub(this.bindWorldPos[p] as Vector3)
             .applyQuaternion(inv),
         );
-        this.restRot.push(inv.multiply(this.restWorldRot[i] as Quaternion));
+        this.bindRot.push(inv.multiply(this.bindWorldRot[i] as Quaternion));
       } else {
-        this.restPos.push((this.restWorldPos[i] as Vector3).clone());
-        this.restRot.push((this.restWorldRot[i] as Quaternion).clone());
+        this.restPos.push((this.bindWorldPos[i] as Vector3).clone());
+        this.bindRot.push((this.bindWorldRot[i] as Quaternion).clone());
       }
     }
+    const rest = bones.rest;
+    this.restRot = this.bindRot.map((q, i) =>
+      rest ? new Quaternion().fromArray(rest, i * 4) : q.clone(),
+    );
     this.rot = this.restRot.map((q) => q.clone());
     this.pos = this.restPos.map((v) => v.clone());
-    this.worldRot = this.restWorldRot.map((q) => q.clone());
-    this.worldPos = this.restWorldPos.map((v) => v.clone());
+    this.worldRot = this.bindWorldRot.map((q) => q.clone());
+    this.worldPos = this.bindWorldPos.map((v) => v.clone());
+    if (rest) {
+      this.solve();
+      this.restWorldRot = this.worldRot.map((q) => q.clone());
+      this.restWorldPos = this.worldPos.map((v) => v.clone());
+    } else {
+      this.restWorldRot = this.bindWorldRot;
+      this.restWorldPos = this.bindWorldPos;
+    }
   }
 
   /** Back to the rest pose. */

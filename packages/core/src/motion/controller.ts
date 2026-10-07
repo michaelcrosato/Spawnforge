@@ -9,6 +9,7 @@ import type { ActionContext, ActionGoals, ActionHooks } from './actions.ts';
 import { applyFace } from './face.ts';
 import { Pose } from './pose.ts';
 import { type FootRoll, footRoll, heelAt, plantToes, poseToes } from './roll.ts';
+import { applyStations, applyWings } from './wings.ts';
 
 const G = 9.81;
 const STEP = 1 / 120;
@@ -152,6 +153,11 @@ export class MotionController {
   private readonly hipHeight: number;
   private readonly legs: LegState[];
   private readonly springs: Spring[];
+  /** How far the wings are spread (damped toward the `wings` goal), and the standing goal. */
+  private spread = 0;
+  private wingGoal = 0;
+  private wingTree: number[] | undefined;
+  private bodyTree: number[] | null | undefined;
   private readonly trail: Vector3[] = [];
   private target: Vector3 | null = null;
   private desiredSpeed = 0;
@@ -560,6 +566,11 @@ export class MotionController {
       this.stepLegs(dt, ground, froude);
     }
     this.stepSprings(dt);
+    // Wings spread and fold over about 0.4 s (longer on big creatures).
+    if (this.compiled.rig.wings.length > 0) {
+      const want = Math.max(0, Math.min(1, this.goals.wings ?? this.wingGoal));
+      this.spread = damp(this.spread, want, 7.5 / this.timeScale, dt);
+    }
   }
 
   /** Ambient goals, then the main action's on top; fires the action's events as it passes them. */
@@ -923,7 +934,7 @@ export class MotionController {
     for (const spring of this.springs) {
       const pts = spring.points;
       // The root follows its bone; the rest feel inertia, gravity and a pull toward rest.
-      this.pose.solve();
+      this.solvePose();
       (pts[0] as Vector3).copy(this.pose.worldPos[spring.bones[0] as number] as Vector3);
       // Sprawlers carry the body's side-to-side wave on into the tail.
       const moving = Math.min(1, this.speed / Math.max(1e-3, this.paceSpeed()));
@@ -968,8 +979,9 @@ export class MotionController {
       // The main tail follows the trail; extra tails swing on their springs.
       if (this.springs.length > 1) {
         this.applySprings(this.tailBones);
-        this.pose.solve();
+        this.solvePose();
       }
+      this.applyWings();
       return;
     }
 
@@ -1021,7 +1033,7 @@ export class MotionController {
         );
       });
     });
-    pose.solve();
+    this.solvePose();
 
     // Heads: keep them level, facing the way it walks (or toward a look target); jaws.
     this.applyHeads();
@@ -1080,7 +1092,79 @@ export class MotionController {
 
     this.applySprings();
     this.applyHelpers();
-    pose.solve();
+    this.solvePose();
+    this.applyWings();
+  }
+
+  /**
+   * Wings from folded toward spread by the damped `wings` goal, the shoulders lifting a little
+   * with each breath, then the membranes' stations (docs/design/9.3-wings-fins.md).
+   */
+  private applyWings(): void {
+    const rig = this.compiled.rig;
+    const pose = this.pose;
+    if (rig.wings.length === 0) {
+      if (rig.stations.length > 0) applyStations(pose, rig.stations);
+      return;
+    }
+    applyWings(pose, rig.wings, this.spread);
+    const lift = (this.goals.breath ?? 0) * 2 * (Math.PI / 180) * (1 - this.spread);
+    if (lift > 0)
+      for (const wing of rig.wings) {
+        const side = wing.side === 'left' ? 1 : wing.side === 'right' ? -1 : 0;
+        const humerus = wing.bones[0] as number;
+        (pose.rot[humerus] as Quaternion).premultiply(
+          scratchQ.setFromAxisAngle(Y_AXIS, side * lift),
+        );
+      }
+    for (const b of this.wingBones) pose.solveBone(b);
+    applyStations(pose, rig.stations);
+  }
+
+  /**
+   * Forward kinematics for every bone but the membranes' stations, which `applyStations` poses
+   * and solves last (docs/design/9.3-wings-fins.md).
+   */
+  private solvePose(): void {
+    if (!this.bodyTree) {
+      const sections = this.compiled.bones.sections;
+      const tree: number[] = [];
+      for (let b = 0; b < sections.length; b++) if (sections[b] !== 'station') tree.push(b);
+      this.bodyTree = tree.length === sections.length ? null : tree;
+    }
+    if (this.bodyTree === null) this.pose.solve();
+    else for (const b of this.bodyTree) this.pose.solveBone(b);
+  }
+
+  /** Every bone hanging from a wing's shoulder except the stations, in solving order. */
+  private get wingBones(): readonly number[] {
+    if (this.wingTree) return this.wingTree;
+    const bones = this.compiled.bones;
+    const roots = new Set(this.compiled.rig.wings.map((w) => w.bones[0] as number));
+    const tree: number[] = [];
+    for (let b = 0; b < bones.names.length; b++) {
+      if (bones.sections[b] === 'station') continue;
+      for (let x = b, n = 0; x >= 0 && n < 64; x = bones.parents[x] ?? -1, n++)
+        if (roots.has(x)) {
+          tree.push(b);
+          break;
+        }
+    }
+    this.wingTree = tree;
+    return tree;
+  }
+
+  /**
+   * Spreads the wings (1) or folds them (0) when no action asks otherwise; they move there over
+   * about 0.4 s.
+   */
+  setWings(spread: number): void {
+    this.wingGoal = Math.max(0, Math.min(1, spread));
+  }
+
+  /** How far the wings are spread now, 0 folded to 1. */
+  get wingSpread(): number {
+    return this.spread;
   }
 
   /** Index (in `legs`) of the frontmost leg on a side, or -1. */
@@ -1249,7 +1333,7 @@ export class MotionController {
     const lead = this.rearing ? [] : [...main.neck].reverse();
     const chain = [...lead, ...[...rig.spine].reverse(), ...this.tailBones];
     if (this.trail.length < 2) {
-      pose.solve();
+      this.solvePose();
       return;
     }
     // Place each bone joint along the trail, measured from the head.
@@ -1297,7 +1381,7 @@ export class MotionController {
       .copy(hip)
       .sub(this.position)
       .applyQuaternion(scratchQ.copy(pose.rot[rig.root] as Quaternion).invert());
-    pose.solve();
+    this.solvePose();
     [...rig.spine].forEach((b, k) => {
       const from = joints[hipIndex - k] as Vector3;
       const to = joints[hipIndex - k - 1] as Vector3;
@@ -1322,7 +1406,7 @@ export class MotionController {
       pose.solveBone(b);
       pose.aim(b, scratch1.subVectors(to, from));
     });
-    pose.solve();
+    this.solvePose();
   }
 }
 
