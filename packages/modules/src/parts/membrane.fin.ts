@@ -30,9 +30,11 @@ export default definePart({
       // (docs/design/9.3-wings-fins.md), each shorter than the one before; the skin between
       // them dips a little at the edge. Fins never fold, so the sheet rides the limb's bones.
       const root = wing.arm.points[0] as Vector3;
-      const fan = Math.min(1.6, p.width * (Math.PI / 2));
       const rays = p.rays;
       const angleOf = (v: Vector3) => Math.atan2(v.dot(wing.lead), v.dot(wing.out));
+      // The last ray stays short of pointing back along the body, or it would turn into it.
+      const tip = (wing.arm.points.at(-1) as Vector3).clone().sub(root);
+      const fan = Math.max(0.2, Math.min(p.width * (Math.PI / 2), angleOf(tip) + 1.45));
       const rows = Math.max(4, Math.round(9 * ctx.detail));
       const cols = (rays - 1) * Math.max(1, Math.round(2 * ctx.detail)) + 1;
       const sheet = gridSheet(

@@ -1343,6 +1343,17 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
     let span = 0;
     for (const id of [...limbBones, ...digits.flatMap((d) => d.bones)])
       span = Math.max(span, rootPos.distanceTo((b.bones[id] as BoneDef).tail));
+    const covered = spec.limbs.some(
+      (other) =>
+        other.role === 'wing' &&
+        other.on === limb.on &&
+        other.mirror === mirror &&
+        other.at < limb.at &&
+        other.membrane !== null &&
+        (registry.get('part', other.membrane.type) as PartModule | undefined)?.provides?.includes(
+          'cover',
+        ) === true,
+    );
     wingFrames.push({
       wing: wingRigs.length,
       limb: limb.id,
@@ -1358,17 +1369,7 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
       style,
       bones: limbBones,
       digits,
-      covered: spec.limbs.some(
-        (other) =>
-          other.role === 'wing' &&
-          other.on === limb.on &&
-          other.mirror === mirror &&
-          other.at < limb.at &&
-          other.membrane !== null &&
-          (registry.get('part', other.membrane.type) as PartModule | undefined)?.provides?.includes(
-            'cover',
-          ) === true,
-      ),
+      covered,
     });
     wingRigs.push({
       id: limb.id,
@@ -1380,6 +1381,7 @@ export function buildSkeleton(spec: CreatureSpec, registry: Registry): SkeletonB
       span,
       area: 0,
       poses: {},
+      ...(covered ? { covered } : {}),
     });
   };
 

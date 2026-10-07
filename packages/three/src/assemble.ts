@@ -211,7 +211,17 @@ export function createCreatureObject(
     m.indices.length > 0
       ? new SkinnedMesh(
           geometryOf(m, { color: [m.color, 3], info: [m.info, 4], vein: [m.vein, 2] }),
-          membraneMaterial(m.info.some((v, i) => i % 4 === 0 && v < 0.999)),
+          membraneMaterial(
+            m.info.some((v, i) => i % 4 === 0 && v < 0.999),
+            {
+              spec: compiled.material,
+              scale: compiled.scale,
+              registry,
+              front: compiled.bounds.max[2],
+              back: compiled.bounds.min[2],
+              time,
+            },
+          ),
         )
       : undefined;
   if (membranes) {

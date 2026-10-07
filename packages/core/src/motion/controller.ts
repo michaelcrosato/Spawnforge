@@ -9,6 +9,7 @@ import type { ActionContext, ActionGoals, ActionHooks } from './actions.ts';
 import { applyFace } from './face.ts';
 import { Pose } from './pose.ts';
 import { type FootRoll, footRoll, heelAt, plantToes, poseToes } from './roll.ts';
+import { applyStations, applyWings } from './wings.ts';
 
 const G = 9.81;
 const STEP = 1 / 120;
@@ -152,6 +153,9 @@ export class MotionController {
   private readonly hipHeight: number;
   private readonly legs: LegState[];
   private readonly springs: Spring[];
+  /** How far the wings are spread (damped toward the `wings` goal), and the standing goal. */
+  private spread = 0;
+  private wingGoal = 0;
   private readonly trail: Vector3[] = [];
   private target: Vector3 | null = null;
   private desiredSpeed = 0;
@@ -560,6 +564,11 @@ export class MotionController {
       this.stepLegs(dt, ground, froude);
     }
     this.stepSprings(dt);
+    // Wings spread and fold over about 0.4 s (longer on big creatures).
+    if (this.compiled.rig.wings.length > 0) {
+      const want = Math.max(0, Math.min(1, this.goals.wings ?? this.wingGoal));
+      this.spread = damp(this.spread, want, 7.5 / this.timeScale, dt);
+    }
   }
 
   /** Ambient goals, then the main action's on top; fires the action's events as it passes them. */
@@ -970,6 +979,7 @@ export class MotionController {
         this.applySprings(this.tailBones);
         this.pose.solve();
       }
+      this.applyWings();
       return;
     }
 
@@ -1081,6 +1091,42 @@ export class MotionController {
     this.applySprings();
     this.applyHelpers();
     pose.solve();
+    this.applyWings();
+  }
+
+  /**
+   * Wings from folded toward spread by the damped `wings` goal, the shoulders lifting a little
+   * with each breath, then the membranes' stations (docs/design/9.3-wings-fins.md).
+   */
+  private applyWings(): void {
+    const rig = this.compiled.rig;
+    if (rig.wings.length === 0) return;
+    const pose = this.pose;
+    applyWings(pose, rig.wings, this.spread);
+    const lift = (this.goals.breath ?? 0) * 2 * (Math.PI / 180) * (1 - this.spread);
+    if (lift > 0)
+      for (const wing of rig.wings) {
+        const side = wing.side === 'left' ? 1 : wing.side === 'right' ? -1 : 0;
+        const humerus = wing.bones[0] as number;
+        (pose.rot[humerus] as Quaternion).premultiply(
+          scratchQ.setFromAxisAngle(Y_AXIS, side * lift),
+        );
+      }
+    pose.solve(Math.min(...rig.wings.map((w) => w.bones[0] as number)));
+    applyStations(pose, rig.stations);
+  }
+
+  /**
+   * Spreads the wings (1) or folds them (0) when no action asks otherwise; they move there over
+   * about 0.4 s.
+   */
+  setWings(spread: number): void {
+    this.wingGoal = Math.max(0, Math.min(1, spread));
+  }
+
+  /** How far the wings are spread now, 0 folded to 1. */
+  get wingSpread(): number {
+    return this.spread;
   }
 
   /** Index (in `legs`) of the frontmost leg on a side, or -1. */

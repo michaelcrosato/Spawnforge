@@ -444,7 +444,7 @@ Ids you can override: limb `pectoral`, limb `pelvic`, part `eyes`, part `dorsal`
     {
       "id": "pelvic",
       "role": "fin",
-      "attach": { "on": "torso", "at": 0.55, "side": "both", "angle": 150 },
+      "attach": { "on": "torso", "at": 0.55, "side": "both", "angle": 125 },
       "length": 0.18,
       "membrane": { "type": "membrane.fin", "rays": 5 }
     }

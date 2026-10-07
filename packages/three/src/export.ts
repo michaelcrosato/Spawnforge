@@ -10,6 +10,7 @@ import {
 import {
   AnimationClip,
   BufferAttribute,
+  DoubleSide,
   Group,
   type KeyframeTrack,
   Matrix4,
@@ -41,7 +42,11 @@ const average = (values: Float32Array) => {
 };
 
 function bakedMesh(
-  data: CompiledCreature['skin'] | CompiledCreature['parts'] | CompiledCreature['eyes'],
+  data:
+    | CompiledCreature['skin']
+    | CompiledCreature['parts']
+    | CompiledCreature['eyes']
+    | CompiledCreature['membranes'],
   colors: BakedColors,
   name: string,
   look?: MaterialLook,
@@ -62,6 +67,30 @@ function bakedMesh(
   material.name = name;
   const mesh = new SkinnedMesh(geometry, material);
   mesh.name = name;
+  return mesh;
+}
+
+/**
+ * Wing and fin membranes (docs/design/9.3-wings-fins.md): double-sided, and blended with each
+ * vertex's opacity in its colour's alpha when some of it is see-through.
+ */
+function membraneMesh(compiled: CompiledCreature, colors: BakedColors): SkinnedMesh {
+  const m = compiled.membranes;
+  const mesh = bakedMesh(m, colors, 'membranes');
+  const material = mesh.material as MeshStandardMaterial;
+  material.side = DoubleSide;
+  const n = colors.color.length / 3;
+  let seeThrough = false;
+  for (let i = 0; i < n; i++) if ((m.info[i * 4] as number) < 0.999) seeThrough = true;
+  if (seeThrough) {
+    const rgba = new Float32Array(n * 4);
+    for (let i = 0; i < n; i++) {
+      rgba.set(colors.color.subarray(i * 3, i * 3 + 3), i * 4);
+      rgba[i * 4 + 3] = m.info[i * 4] as number;
+    }
+    mesh.geometry.setAttribute('color', new BufferAttribute(rgba, 4));
+    material.transparent = true;
+  }
   return mesh;
 }
 
@@ -135,6 +164,7 @@ export function buildExportScene(
     bakedMesh(compiled.skin, colors.skin, 'skin', MATERIAL_LOOK[compiled.material.material]),
     bakedMesh(compiled.parts, colors.parts, 'parts'),
     bakedMesh(compiled.eyes, colors.eyes, 'eyes'),
+    membraneMesh(compiled, colors.membranes),
   ];
   for (const mesh of meshes) {
     if ((mesh.geometry.index?.count ?? 0) === 0) continue;
@@ -191,5 +221,9 @@ function exportNotes(compiled: CompiledCreature, glow: number): string[] {
     notes.push('fur is left out: its shells need the live shader; the skin under it is exported');
   if (glow > 0)
     notes.push('glowing layers are left out: glow needs an emissive texture (plan milestone 11.1)');
+  if (compiled.membranes.indices.length > 0)
+    notes.push(
+      'membranes are double-sided, with their veins and the light through them approximated in vertex colours (veins alias on small wings)',
+    );
   return notes;
 }

@@ -1180,6 +1180,16 @@ function gameSockets(
       });
     }
   }
+  // A wing's tip, at the end of its hand (docs/design/9.3-wings-fins.md).
+  for (const wing of rig.wings) {
+    const last = wing.bones.at(-1);
+    if (last === undefined) continue;
+    sockets.push({
+      name: `tip.${wing.id}`,
+      bone: last,
+      offset: local(last, (bones[last] as BoneDef).tail),
+    });
+  }
   const mid = rig.spine[Math.floor(rig.spine.length / 2)] as number;
   sockets.push({ name: 'centerOfMass', bone: mid, offset: [0, 0, 0] });
   return sockets;
@@ -1316,6 +1326,7 @@ function bodyCoordinates(
     let spineCoord = 0;
     let height = 0;
     let limb = 0;
+    let wing = 0;
     const reg = [0, 0, 0, 0];
     const entries = table.entries(v);
     let sum = 0;
@@ -1326,12 +1337,13 @@ function bodyCoordinates(
         w *
         ((axis[id * 2] as number) + ((axis[id * 2 + 1] as number) - (axis[id * 2] as number)) * t);
       const section = sectionOf(b);
-      if (section === 'limb' || section === 'toe') {
+      if (section === 'limb' || section === 'toe' || section === 'digit') {
         const outward = new Vector3(Math.sign(p.x) || 1, 0, 0);
         // Limbs read like the flank outside and the belly inside.
         height += w * (nrm.dot(outward) * 0.45 + nrm.y * 0.35 + 0.1);
-        limb += w * (section === 'toe' ? 1 : b.t0 + (b.t1 - b.t0) * t);
+        limb += w * (section === 'limb' ? b.t0 + (b.t1 - b.t0) * t : 1);
         reg[2] = (reg[2] as number) + w;
+        if (b.tube) wing += w;
       } else {
         const closest = b.head.clone().lerp(b.tail, t);
         const off = p.clone().sub(closest);
@@ -1348,8 +1360,12 @@ function bodyCoordinates(
       spineCoord /= sum;
       height /= sum;
       limb /= sum;
+      wing /= sum;
       for (let k = 0; k < 4; k++) reg[k] = (reg[k] as number) / sum;
     }
+    // Wing and fin tubes carry `limb + 2`, so the `wings` region finds them and fur skips them
+    // (docs/design/9.3-wings-fins.md).
+    if (wing >= 0.5) limb += 2;
     // Inside a mouth, `limb` holds -1 - depth and `crease` the kind (docs/design/8.3-heads.md).
     const depth = mouthDepth[v] as number;
     let crease = 0;

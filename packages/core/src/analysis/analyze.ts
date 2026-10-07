@@ -6,6 +6,8 @@ import { type CompiledCreature, compileCreature, type Quality } from '../compile
 import { isUprightFront } from '../compile/skeleton.ts';
 import { allEyes, mainHead } from '../compile/types.ts';
 import { type Ground, MotionController } from '../motion/controller.ts';
+import { applyRest } from '../motion/face.ts';
+import { Pose } from '../motion/pose.ts';
 import { testCourse } from '../motion/terrain.ts';
 import type { ActionModule, PartModule, PatternModule, Registry } from '../registry.ts';
 import { measureBody } from '../variation/generate.ts';
@@ -44,6 +46,19 @@ export interface MotionCheck {
     readonly between?: readonly [string, string];
     readonly time?: number;
   };
+  /**
+   * Deepest a wing or fin (its bones or membrane) passes into the body, a leg, an arm or the
+   * ground (m), and what it met (docs/design/9.3-wings-fins.md).
+   */
+  readonly wings: WingHit;
+}
+
+/** A wing or fin passing into something. */
+export interface WingHit {
+  readonly worst: number;
+  readonly wing?: string;
+  readonly against?: string;
+  readonly time?: number;
 }
 
 export interface Analysis {
@@ -67,6 +82,8 @@ export interface Analysis {
     readonly centreOfMass: readonly [number, number, number];
     readonly triangles: number;
     readonly bones: number;
+    /** Tip to tip with the wings spread (m); only with wings. */
+    readonly wingspan?: number;
   };
   /** m/s: the temperament's walking pace, and the top speed its gaits allow. */
   readonly speed: {
@@ -153,8 +170,11 @@ export function analyzeCreature(
     tailLength: spec.body.tail.length * L,
     mass: volume * DENSITY,
     centreOfMass: [centre.x, centre.y, centre.z] as const,
-    triangles: t.skin + t.parts + t.eyes,
+    triangles: t.skin + t.parts + t.eyes + t.membranes,
     bones: compiled.bones.names.length,
+    ...(compiled.rig.wings.length > 0 && compiled.spreadBounds
+      ? { wingspan: compiled.spreadBounds.max[0] - compiled.spreadBounds.min[0] }
+      : {}),
   };
 
   // --- Speed and reach -------------------------------------------------------------------
@@ -319,6 +339,42 @@ export function analyzeCreature(
               : `the front and hind legs meet in the stride: a smaller gait stride, attach.at further apart, or thinner legs, by about ${cm} cm`,
         );
       }
+    }
+  }
+
+  // --- Wings through the body, walking and standing spread (docs/design/9.3-wings-fins.md) ----
+  if (compiled.rig.wings.length + compiled.rig.fins.length > 0) {
+    const checks: [WingHit, string][] = [
+      ...motion.map(
+        (m) =>
+          [m.wings, m.ground === 'flat' ? 'walking' : 'walking on rough ground'] as [
+            WingHit,
+            string,
+          ],
+      ),
+      [wingHits(compiled, standing(compiled, 0.5)), 'half spread'],
+      [wingHits(compiled, standing(compiled, 1)), 'spread'],
+    ];
+    const [hit, when] = checks.reduce((a, b) => (b[0].worst > a[0].worst ? b : a));
+    if (hit.worst > Math.max(0.01, 0.01 * L) && hit.wing) {
+      const id = hit.wing.replace(/\.[LR]$/, '');
+      const limb = spec.limbs.find((l) => l.id === hit.wing || l.id === id);
+      // Fixes the membrane's own parameters offer, when it has them.
+      const module = limb?.membrane
+        ? (registry.get('part', limb.membrane.type) as PartModule | undefined)
+        : undefined;
+      const keys = Object.keys((module?.params as { shape?: object } | undefined)?.shape ?? {});
+      const span = keys.includes('span') ? ", or the membrane's span" : '';
+      const trailing =
+        keys.includes('trailing') && limb?.membrane?.params.trailing !== 'body'
+          ? '; or trail the membrane to the body ("trailing": "body")'
+          : '';
+      warn(
+        `limbs[id=${id}]`,
+        'wing_intersection',
+        `${hit.wing} passes ${(hit.worst * 100).toFixed(1)} cm into the ${hit.against ?? 'body'} ${when}`,
+        `attach it higher (a lower attach.angle) or further forward (attach.at), or make it shorter (length${span})${trailing}`,
+      );
     }
   }
 
@@ -506,6 +562,7 @@ function runMotion(
     ...(h.jaw >= 0 ? [h.jaw] : []),
   ]);
   const crowd = { worst: 0 } as { worst: number; between?: [string, string]; time?: number };
+  let wingHit: WingHit = { worst: 0 };
   let frames = 0;
   let cycles = 0;
   let last = c.phase;
@@ -545,6 +602,10 @@ function runMotion(
       }
     }
     if (frames % 4 !== 0) continue;
+    if (rig.wings.length + rig.fins.length > 0) {
+      const w = wingHits(compiled, pose, height);
+      if (w.worst > wingHit.worst) wingHit = { ...w, time };
+    }
     for (let i = 0; i < headBones.length; i++)
       for (let j = i + 1; j < headBones.length; j++)
         for (const bi of headBones[i] as number[])
@@ -618,7 +679,139 @@ function runMotion(
     },
     intersection: hit,
     heads: crowd,
+    wings: wingHit,
   };
+}
+
+/** The rest pose with the wings spread by `spread`, standing still. */
+function standing(compiled: CompiledCreature, spread: number): Pose {
+  const pose = new Pose(compiled.bones);
+  applyRest(pose, compiled.rig, { spread });
+  return pose;
+}
+
+/**
+ * How deep any wing or fin passes into the body, the legs, the arms or the ground in a pose:
+ * its bones past the shoulder (as capsules), and every 8th membrane vertex skinned by the pose,
+ * except where a membrane meets the body or a leg (within a tenth of its panel's width).
+ */
+function wingHits(
+  compiled: CompiledCreature,
+  pose: Pose,
+  ground: Ground = () => ({ height: 0 }),
+): WingHit {
+  const rig = compiled.rig;
+  const bones = compiled.bones;
+  const owner = (b: number) => bones.owners[b] ?? '';
+  const sections = new Set(['torso', 'neck', 'head', 'jaw', 'tail']);
+  const body = bones.names
+    .map((_, i) => i)
+    .filter((i) => sections.has(bones.sections[i] as string));
+  const legs = [...rig.legs.flatMap((l) => l.bones.slice(1)), ...rig.arms.flatMap((a) => a.bones)];
+  // A wing covered by a case rests inside the body by design, until it is fully spread.
+  const spread = (w: (typeof rig.wings)[number]) =>
+    (pose.rot[w.bones[0] as number] as Quaternion).angleTo(
+      pose.bindRot[w.bones[0] as number] as Quaternion,
+    ) < 0.05;
+  const shown = rig.wings.filter((w) => !w.covered || spread(w));
+  const hidden = new Set(rig.wings.filter((w) => !shown.includes(w)).map((w) => w.id));
+  const chains = [
+    ...shown.map((w) => ({ id: w.id, bones: [...w.bones.slice(1), ...w.digits.flat()] })),
+    ...rig.fins.map((f) => ({ id: f.id, bones: f.bones.slice(1) })),
+  ];
+  const wingish = new Set<number>();
+  for (const w of rig.wings)
+    for (const b of [...w.bones, ...w.digits.flat(), ...w.feathers]) wingish.add(b);
+  for (const f of rig.fins) for (const b of f.bones) wingish.add(b);
+  let worst: WingHit = { worst: 0 };
+  const a = new Vector3();
+  const b = new Vector3();
+  const e = new Vector3();
+  const f = new Vector3();
+  const consider = (depth: number, wing: string, against: string) => {
+    if (depth > worst.worst) worst = { worst: depth, wing, against };
+  };
+  const into = (p: Vector3, r: number, wing: string) => {
+    for (const s of body) {
+      e.copy(pose.worldPos[s] as Vector3);
+      pose.tail(s, f);
+      consider((bones.radii[s] ?? 0) * 0.8 + r - pointSegment(p, e, f), wing, owner(s));
+    }
+    for (const l of legs) {
+      e.copy(pose.worldPos[l] as Vector3);
+      pose.tail(l, f);
+      consider((bones.radii[l] ?? 0) * 0.8 + r - pointSegment(p, e, f), wing, owner(l));
+    }
+    consider(ground(p.x, p.z).height - (p.y - r), wing, 'ground');
+  };
+  for (const chain of chains)
+    for (const id of chain.bones) {
+      a.copy(pose.worldPos[id] as Vector3);
+      pose.tail(id, b);
+      const r = bones.radii[id] ?? 0;
+      into(a.clone().lerp(b, 0.5), r, chain.id);
+      into(b, r, chain.id);
+    }
+  // Membrane vertices, skinned.
+  const m = compiled.membranes;
+  const count = m.positions.length / 3;
+  if (count === 0) return worst;
+  const skin = bones.names.map((_, i) => {
+    const bindRot = (pose.bindWorldRot[i] as Quaternion).clone().invert();
+    return { bindRot, bindPos: pose.bindWorldPos[i] as Vector3 };
+  });
+  const wingOf = (bone: number): string | undefined => {
+    for (let x = bone, n = 0; x >= 0 && n < 64; x = pose.parents[x] ?? -1, n++) {
+      if (wingish.has(x)) {
+        const name = owner(x);
+        return name;
+      }
+    }
+    return undefined;
+  };
+  const p = new Vector3();
+  const v = new Vector3();
+  const sum = new Vector3();
+  // Each wing's and fin's first bone sits in the shoulder (or, for a fin, the body).
+  const roots = new Set([...rig.wings, ...rig.fins].map((w) => w.bones[0] as number));
+  for (let i = 0; i < count; i += 8) {
+    let attached = 0;
+    let root = 0;
+    let wing: string | undefined;
+    sum.set(0, 0, 0);
+    for (let k = 0; k < 4; k++) {
+      const w = m.skinWeight[i * 4 + k] as number;
+      if (w <= 0) continue;
+      const bone = m.skinIndex[i * 4 + k] as number;
+      const parent = pose.parents[bone] ?? -1;
+      // A station on the body's or a leg's spar: the membrane's attached edge; or the root.
+      const station = bones.sections[bone] === 'station';
+      if (station && !wingish.has(parent)) attached += w;
+      else if (roots.has(station ? parent : bone)) root += w;
+      else wing ??= wingOf(bone);
+      const sk = skin[bone] as { bindRot: Quaternion; bindPos: Vector3 };
+      v.set(
+        m.positions[i * 3] as number,
+        m.positions[i * 3 + 1] as number,
+        m.positions[i * 3 + 2] as number,
+      )
+        .sub(sk.bindPos)
+        .applyQuaternion(sk.bindRot)
+        .applyQuaternion(pose.worldRot[bone] as Quaternion)
+        .add(pose.worldPos[bone] as Vector3);
+      sum.addScaledVector(v, w);
+    }
+    if (attached > 0.9 || root > 0.5 || !wing || hidden.has(wing)) continue;
+    p.copy(sum);
+    into(p, 0, wing);
+  }
+  return worst;
+}
+
+function pointSegment(p: Vector3, a: Vector3, b: Vector3): number {
+  const ab = new Vector3().subVectors(b, a);
+  const t = Math.min(1, Math.max(0, p.clone().sub(a).dot(ab) / Math.max(1e-12, ab.lengthSq())));
+  return p.distanceTo(a.clone().addScaledVector(ab, t));
 }
 
 /** A paragraph a model (or person) can read instead of looking. */
@@ -640,9 +833,12 @@ export function describeCreature(
   const legs = spec.limbs.filter((l) => l.role === 'leg').length;
   const arms = spec.limbs.filter((l) => l.role === 'arm').length;
   const front = isUprightFront(spec);
+  const finned = spec.limbs.some((l) => l.role === 'fin');
   const plan =
     legs === 0
-      ? 'legless serpent'
+      ? finned
+        ? 'finned swimmer'
+        : 'legless serpent'
       : legs === 2
         ? 'biped'
         : legs === 4
@@ -671,6 +867,30 @@ export function describeCreature(
   // An upright front is a torso, not a neck (docs/design/9.2-legs-centaurs.md).
   if (front) body.push('an upright torso');
   if (arms > 0) body.push(`${arms === 2 ? 'two' : arms} arms`);
+  // Wings and fins, as their membranes describe them (docs/design/9.3-wings-fins.md).
+  const spans = new Map<string, CreatureSpec['limbs'][number][]>();
+  for (const l of spec.limbs)
+    if (l.role === 'wing' || l.role === 'fin') {
+      const id = l.id.replace(/\.[LR]$/, '');
+      spans.set(id, [...(spans.get(id) ?? []), l]);
+    }
+  for (const group of spans.values()) {
+    const first = group[0] as CreatureSpec['limbs'][number];
+    const count = group.length;
+    const module = first.membrane
+      ? (registry.get('part', first.membrane.type) as PartModule | undefined)
+      : undefined;
+    body.push(
+      module?.describe?.(first.membrane?.params ?? {}, { count }) ??
+        (first.role === 'fin'
+          ? count === 1
+            ? 'a flipper'
+            : 'flippers'
+          : count === 1
+            ? 'a wing'
+            : 'wings'),
+    );
+  }
   const head = spec.body.head;
   const words = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
   const heads = spec.body.neck.count;

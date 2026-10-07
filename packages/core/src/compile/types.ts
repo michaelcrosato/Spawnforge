@@ -198,6 +198,8 @@ export interface WingRig extends LimbChainRig {
    * order, then `feathers`. `folded` is the rest pose; the bind pose is spread.
    */
   readonly poses: Readonly<Record<string, readonly number[]>>;
+  /** Folded away inside the body under a wing case until it spreads. */
+  readonly covered?: boolean;
 }
 
 /**
