@@ -3,6 +3,7 @@ import { colorName } from '../blueprint/colors.ts';
 import type { CreatureSpec } from '../blueprint/creature.ts';
 import type { Issue } from '../blueprint/issues.ts';
 import { type CompiledCreature, compileCreature, type Quality } from '../compile/compile.ts';
+import { isUprightFront } from '../compile/skeleton.ts';
 import { allEyes, mainHead } from '../compile/types.ts';
 import { type Ground, MotionController } from '../motion/controller.ts';
 import { testCourse } from '../motion/terrain.ts';
@@ -225,7 +226,9 @@ export function analyzeCreature(
       `the centre of mass is ${(-stability.margin * 100).toFixed(1)} cm outside the feet`,
       feet.length <= 2
         ? 'move the legs under the body (attach.at), lean the torso less (pitch), or lighten the front or back (head, tail, arms)'
-        : 'move the legs toward the heavy end (attach.at), shorten or lighten that end, or add legs',
+        : isUprightFront(spec) && centre.z > Math.max(...feet.map((f) => f[1]))
+          ? 'the upright front tips it forward: stand it straighter (neck.pitch nearer 90), slim it (neck.radius) or shorten its arms, or move the forelegs forward (attach.at)'
+          : 'move the legs toward the heavy end (attach.at), shorten or lighten that end, or add legs',
     );
 
   // --- Eyes facing backwards ---------------------------------------------------------------
@@ -636,6 +639,7 @@ export function describeCreature(
           : `${Math.max(1, Math.round(v * 1000))} g`;
   const legs = spec.limbs.filter((l) => l.role === 'leg').length;
   const arms = spec.limbs.filter((l) => l.role === 'arm').length;
+  const front = isUprightFront(spec);
   const plan =
     legs === 0
       ? 'legless serpent'
@@ -664,13 +668,16 @@ export function describeCreature(
     else if (legLength > long) body.push(`long ${sprawl}legs`);
     else if (sprawl) body.push('sprawling legs');
   }
+  // An upright front is a torso, not a neck (docs/design/9.2-legs-centaurs.md).
+  if (front) body.push('an upright torso');
   if (arms > 0) body.push(`${arms === 2 ? 'two' : arms} arms`);
   const head = spec.body.head;
   const words = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
   const heads = spec.body.neck.count;
   const neck = spec.body.neck.length;
-  const neckWord =
-    neck >= 1
+  const neckWord = front
+    ? ''
+    : neck >= 1
       ? 'very long neck'
       : neck >= 0.6
         ? 'long neck'

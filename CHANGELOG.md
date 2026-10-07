@@ -68,6 +68,16 @@ Work in progress toward 0.2, phase by phase (see the plan's status table).
   `analyze` warns `head_intersection` when heads or necks meet in motion. Creatures with one head
   and one tail are unchanged.
 - **Examples:** a five-headed marsh hydra, a cerberus and a two-tailed fox.
+- **Eight legs and centaurs (9.2):** `tripod` runs on four leg pairs as the alternating tetrapod
+  spiders use. Sprawled legs longer than 0.7 torso lengths arch their knees above the hips
+  instead of standing straight; the `octopod` preset is a spider with front legs longest and
+  walks without its legs meeting. A neck carrying arms is an upright front: it rises straight
+  from the torso in equal bones, with shoulders and a chest (from muscle) and arms hanging from
+  the chest's edge; it stays upright on slopes and twists into turns. Arms above four legs swing
+  with the opposite foreleg, and a new action goal, `arms`, raises them to reach (`bite` uses
+  it). `analyze` names the upright front when it tips the body forward and describes it as an
+  upright torso. The `centaur` preset has a human torso, hooves and hands. Nothing else moves.
+- **Examples:** a tomb spider and a grove centaur.
   - New recipes: a flat head, forward goblin eyes, a club tail, a bushy tail, a beetle's horn,
     a tail-only colour and a rearing cobra's belly. `patch set` replacing whole objects is
     documented.

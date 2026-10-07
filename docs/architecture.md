@@ -69,9 +69,13 @@ each a pure function of the creature spec, seed and quality:
    run per instance, each turned about the vertical and shifted across the chest after it is
    built, so the main head's bones never change; tails do the same at the rear, or fork from one
    trunk (`forkAt`). Instance bones carry their suffix after the section (`neck.L1.0`, `head.L1`,
-   `jaw.L1`, `tail.R1.3`), and take their main counterpart's body coordinates. Limbs are posed by the
+   `jaw.L1`, `tail.R1.3`), and take their main counterpart's body coordinates. A neck that
+   carries arms is an upright front (a centaur's human torso): it rises nearly straight from the
+   torso's front in equal bones, carries a shoulder bar and pectoral masses, and hangs its arms
+   from the chest's edge. Limbs are posed by the
    coupled-joint IK (`ik.ts`) so the feet rest on the ground, at the height each foot module (or
-   the leg's stance) asks for, then foot parts add toe chains. Knee, hock, elbow and jaw joints
+   the leg's stance) asks for; a sprawled leg longer than 0.7 torso lengths keeps the hip height
+   of a 0.7 one and arches its knee above the hip (spiders). Then foot parts add toe chains. Knee, hock, elbow and jaw joints
    get helper bones.
 2. **SDF** (`sdf.ts`). A rounded cone per bone (elliptical cross-sections allowed), plain union
    inside a chain, a smooth minimum once where a chain meets its parent. Bones thinner than about
@@ -150,11 +154,14 @@ same code runs live in the browser, checks motion in Node and renders filmstrips
   tip stays where it landed, solved as two-bone IK, and the toes let go early in the swing.
 - **Body.** Height, pitch and roll follow the planted feet; the body sinks if a foot in a dip is
   out of reach. Bob and sway follow the steps, the spine bends into turns, sprawlers undulate.
+  An upright front leans back against 80% of the body's pitch and rearing, so it stays upright
+  on slopes, and twists about its own axis into turns.
 - **Legless bodies** lay a trail behind a weaving head and place each spine joint along it, so
   the body follows its own path in S-curves. A rearing neck (a cobra) keeps its raised pose.
 - **Actions** are modules (`hooks.goals` in an action module) that write body-relative goals
   each step: a point to look at, how far to lunge toward it, head raise and shake, jaw opening,
-  crouch, rear, weight shift, breath, blink and tail swish. Ambient actions (idle) run all the
+  crouch, rear, weight shift, breath, blink, tail swish and `arms` (raising the arms to reach
+  for the look target, as `bite` does). Ambient actions (idle) run all the
   time; main actions (`act(id, { target })`) run one at a time on top and override the goals
   they set. Durations scale by √(hip height / 1 m). The core never names an action: it only
   applies goals, and it needs the module registry (`new MotionController(compiled,
@@ -162,7 +169,9 @@ same code runs live in the browser, checks motion in Node and renders filmstrips
 - **Layering per step:** goals; body (with crouch, rear and shift); heads (stabilised, glances,
   look target with the neck taking a share, raise, shake, lunge by cyclic coordinate descent on
   the neck; with several heads, the others replay the main head's glances after a seeded delay,
-  and only the head nearest an action's target lunges); jaws; leg IK to the planted feet (so actions never make feet slide); arm swing; tail
+  and only the head nearest an action's target lunges); jaws; leg IK to the planted feet (so actions never make feet slide); arm swing (by the
+  gait phase on bipeds; above four or more legs, following the opposite foreleg's foot) and the
+  `arms` reach; tail
   springs pulling toward the rest shape (plus swish); helper bones.
 - **Events**, returned by `update`: `footstep` (leg id and position), `gait` changes,
   `action-start` and `action-end`, and the moments actions declare (`bite-contact`,

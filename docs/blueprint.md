@@ -51,8 +51,8 @@ a module that is not drawn yet.
   2 m giant is `scale` 0.8), a quadruped is about 2.2 × `scale` from snout to tail tip and 0.75 ×
   `scale` tall (a wolf is about 0.7), a hexapod is about 1.3 × `scale` long, and a serpent about
   3.5 × `scale`. A fish is about 2 × `scale` long (a 1.8 m reef shark is `scale` 0.9), a centaur
-  2 × `scale` long and 1.55 × `scale` tall to the top of its head, a wyvern 3.2 × `scale` from
-  snout to tail tip, and an octopod 1.4 × `scale` long and 1.5 × `scale` across its legs. Longer
+  1.7 × `scale` long and 1.6 × `scale` tall to the top of its head, a wyvern 3.2 × `scale` from
+  snout to tail tip, and an octopod 1.5 × `scale` long and 1.75 × `scale` across its legs. Longer
   legs, necks and tails change these, so check the size line on a render or with `analyze`.
 - **Angles are degrees.**
 - **The creature faces +Z with Y up** (glTF conventions). Its left side is +X.
@@ -123,6 +123,16 @@ how full the lips are (0 for a snake's or a bird's), `head.tongue` is `flat` (th
 `forked` (snakes and lizards) or `none`, and `head.brow` (0–1, default 0.2) raises a ridge over
 each eye (heavy for a troll, 0.5–0.8; none for a snake). Nostrils and cheekbones come with every
 head. Heads are meshed finer than the body, so these show at any size.
+
+**Upright fronts (centaurs).** Arms on the neck make it a second, upright torso: it rises
+nearly straight up from the front of the body, its `radius` profile reads as a person's from the
+neck under the head (`at` 0) down through the shoulders and chest to the waist (`at` 1), and the
+arms hang from the edge of the chest where they attach, with shoulders and a chest from
+`body.muscle`. Put the arms at `at` about 0.3 with `angle` 90, give the neck `pitch` 80–90, a
+`wide` cross-section and a profile thin at the start (the neck), widest at the shoulders and
+narrower at the waist: the `centaur` preset's is `[0.042, 0.045, 0.07, 0.135, 0.14, 0.125, 0.105,
+0.1, 0.11, 0.125]` over a length of 0.72. The front stays upright as the body climbs, its arms
+swing with the forelegs, and `analyze` warns `unbalanced` if it tips the body forward.
 
 **Upright and horizontal bodies.** Legs attach along the torso with `at`, so when you change the
 torso's `pitch`, move the legs with it. On an upright biped (pitch 70–85) legs sit at the back end
@@ -227,7 +237,10 @@ own defaults, so `{ "id": "wing", "role": "wing" }` is already a usable wing. Ev
   torso make a legless body a swimmer (see `media`); on the head they do not, so a tentacle pair
   on the head with an `eye.basic` at `at` 1 makes eyes on stalks for a slug that stays on land.
 - Typical lengths: a dog-like quadruped's legs are 0.5–0.6 torso lengths, an upright biped's legs
-  1–1.6, insect legs 0.6–0.8 with `splay` 55, a dragon's wings 1.2–1.8.
+  1–1.6, insect legs 0.6–0.8 with `splay` 55, spider legs 0.85–1.1, a dragon's wings 1.2–1.8.
+  A sprawled leg (`splay` 55 or more) longer than 0.7 torso lengths holds the body as low as a
+  0.7 one would and arches its knee above the hip, as a spider's do; the extra length widens its
+  stance. Eight legs walk in a wave and `tripod` in alternating sets of four.
 
 ## Parts
 

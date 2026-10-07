@@ -62,7 +62,10 @@ layers including glow, and a CPU–GPU parity test of the pattern kit,
 re-scored 20/20, the new look preferred in 20 of 20 quality pairs, budgets met
 (`eval/runs/2026-10-06-gate8/`). Then 9.1 (several heads fanned across the chest, each with its
 own mouth, eyes and parts, the nearest one biting; tails apart or forked, each a spring;
-`head_intersection`, `docs/design/9.1-heads-tails.md`).
+`head_intersection`, `docs/design/9.1-heads-tails.md`) and 9.2 (`tripod` on four pairs,
+spiders' arched legs, and the centaur's upright front with shoulders, arms that swing with the
+forelegs and reach to bite, and a balance check that names it,
+`docs/design/9.2-legs-centaurs.md`).
 
 ## Repo map
 

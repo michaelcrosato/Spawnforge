@@ -36,6 +36,8 @@ export default defineAction({
       out.jaw =
         ramp(t, 0.05, 0.3) * (1 - ramp(t, 0.4, 0.46)) + 0.15 * envelope(t, 0.46, 0.6, 0.7, 1);
       out.crouch = 0.06 * envelope(t, 0, 0.2, 0.3, 0.45);
+      // Arms, where it has them, reach out to seize what it bites.
+      out.arms = 0.7 * envelope(t, 0.15, 0.4, 0.55, 0.9);
     },
   },
 });

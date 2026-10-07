@@ -15,6 +15,10 @@
     "low": "8dcb330d",
     "medium": "88b262eb"
   },
+  "grove-centaur": {
+    "low": "adb4df71",
+    "medium": "df2ae06d"
+  },
   "hydra": {
     "low": "e3e98595",
     "medium": "69e910d7"
@@ -34,6 +38,10 @@
   "terror-bird": {
     "low": "bc7211cd",
     "medium": "74f3cc98"
+  },
+  "tomb-spider": {
+    "low": "0860aa3e",
+    "medium": "0a79a1a2"
   },
   "tusk-boar": {
     "low": "20b4fa6d",
