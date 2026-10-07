@@ -15,6 +15,10 @@
     "ok": true,
     "errors": []
   },
+  "examples/dune-scorpion.json": {
+    "ok": true,
+    "errors": []
+  },
   "examples/ember-beetle.json": {
     "ok": true,
     "errors": []
@@ -32,6 +36,10 @@
     "errors": []
   },
   "examples/hydra.json": {
+    "ok": true,
+    "errors": []
+  },
+  "examples/kraken.json": {
     "ok": true,
     "errors": []
   },
