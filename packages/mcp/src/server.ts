@@ -272,7 +272,7 @@ export function createServer(): McpServer {
     {
       title: 'Generate a creature from a theme',
       description:
-        'Builds a new, valid creature from a theme (list_modules with kind "theme": reptile, insect, demon) and a seed: the theme weights the body plan, proportions, parts, patterns, colours and temperament. Constraints fix the body plan, a body height range in metres (the creature is rescaled to fit), actions it must be able to do and part types it must have. The same theme, seed and constraints always give the same creature. Returns the minimal blueprint and its body height (bodyHeight, without horns, as analyze reports it) and length.',
+        'Builds a new, valid creature from a theme (list_modules with kind "theme": reptile, insect, demon, dragon, aquatic, eldritch, beast) and a seed: the theme weights the body plan, proportions, limbs, parts, patterns, colours and temperament. Constraints fix the body plan, a body height range in metres (the creature is rescaled to fit), actions it must be able to do, part types it must have and media it must move in (air needs a theme with wings). The same theme, seed and constraints always give the same creature. Returns the minimal blueprint and its body height (bodyHeight, without horns, as analyze reports it) and length.',
       inputSchema: z.object({
         theme: z.string().describe('Theme module id, e.g. "reptile"'),
         seed: z.number().int().optional().describe('Which creature (default 1)'),
@@ -286,6 +286,10 @@ export function createServer(): McpServer {
               .array(z.string())
               .optional()
               .describe('Part types it must have, e.g. ["horn.curved"]'),
+            requires: z
+              .array(z.enum(['land', 'water', 'air']))
+              .optional()
+              .describe('Media it must move in, e.g. ["air"] for a flyer, ["water"] for a swimmer'),
           })
           .optional(),
         out: outInput,

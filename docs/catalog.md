@@ -17,7 +17,7 @@ blueprint uses of it under `notBuilt`).
 - **Patterns:** `bands`, `bioluminescence`, `countershade`, `grime`, `mottle`, `rosettes`, `scales`, `scars`, `slime`, `spots`, `stripes`, `suckers`, `veins`, `warts`
 - **Gaits:** `bound` (10.1), `fly` (10.4), `gallop` (10.1), `glide` (10.4), `hover` (10.4), `run` (10.1), `slither`, `swim.flap` (10.3), `swim.paddle` (10.3), `swim.undulate` (10.3), `tripod`, `trot`, `walk`
 - **Actions:** `bite`, `display`, `idle`, `jump` (10.2), `lash`, `look`, `pinch`, `pounce` (10.2), `roar`
-- **Themes:** `demon`, `insect`, `reptile`
+- **Themes:** `aquatic`, `beast`, `demon`, `dragon`, `eldritch`, `insect`, `reptile`
 - **Stats:** `rpg`
 
 ## Blueprint fields
@@ -2117,6 +2117,22 @@ needs: `["jaw"]`
 
 ## Themes
 
+### `aquatic`
+
+Sea and river creatures: sharks and fish with dorsal and tail fins, finned eels and sea serpents, and low armoured walkers that swim, in countershaded blues, teals and greys.
+
+Generate creatures with it: spawnforge generate --theme aquatic --seed 1 (MCP: generate { "theme": "aquatic", "seed": 1 }).
+
+bodyPlans: `{"fish":5,"serpent":2,"quadruped":2}` · parts: `[{"chance":1,"id":"eyes"},{"chance":0.75,"id":"teeth","type":"teeth.row"},{"chance":1,"id":"dorsal","plans":["fish"]},{"chance":0.5,"id":"tailfin","plans":["fish"]},{"chance":0.8,"id":"dorsal","type":"fin.dorsal","plans":["serpent"]},{"chance":0.7,"id":"tailfin","type":"fin.tail","plans":["serpent"]},{"chance":0.7,"id":"scutes","type":"spikes.row","plans":["quadruped"]}]` · materials: `{"skin":2,"scales":2}` · temperaments: `{"calm":2,"skittish":2,"stalking":2,"aggressive":1}`
+
+### `beast`
+
+Muscled furred mammals: wolves and big cats on paws, boars and bulls on hooves, bears on pads, with ears, fangs, now and then horns or tusks, in tawny, brown, grey or black coats.
+
+Generate creatures with it: spawnforge generate --theme beast --seed 1 (MCP: generate { "theme": "beast", "seed": 1 }).
+
+bodyPlans: `{"quadruped":6}` · parts: `[{"chance":1,"id":"eyes"},{"chance":0.9,"id":"ears","type":"ear.pointed"},{"chance":0.9,"id":"teeth","type":"teeth.row"},{"chance":0.25,"id":"horns","type":"horn.curved"},{"chance":0.2,"id":"tusks","type":"horn.curved"},{"chance":0.2,"id":"bristles","type":"spikes.row"}]` · materials: `{"hide":2,"skin":1}` · temperaments: `{"lumbering":2,"stalking":2,"aggressive":2,"skittish":1,"calm":1}`
+
 ### `demon`
 
 Horned fiends and hellhounds: heavy shoulders, big curled or swept horns, fangs, spine rows, goat or slit pupils, blood reds and soot blacks.
@@ -2124,6 +2140,22 @@ Horned fiends and hellhounds: heavy shoulders, big curled or swept horns, fangs,
 Generate creatures with it: spawnforge generate --theme demon --seed 1 (MCP: generate { "theme": "demon", "seed": 1 }).
 
 bodyPlans: `{"biped":3,"quadruped":2}` · parts: `[{"chance":1,"id":"eyes"},{"chance":1,"id":"teeth","type":"teeth.row"},{"chance":0.8,"id":"horns","type":"horn.curved"},{"chance":0.5,"id":"spines","type":"spikes.row","plans":["quadruped"]},{"chance":0.4,"id":"ears","type":"ear.pointed"}]` · materials: `{"skin":3,"scales":1}` · temperaments: `{"aggressive":4,"stalking":2}`
+
+### `dragon`
+
+Winged dragons and wyverns: four legs and a pair of wings or wings for arms, long curved necks and tails, horns, crests, fangs, scales, in ember, emerald, gold or soot.
+
+Generate creatures with it: spawnforge generate --theme dragon --seed 1 (MCP: generate { "theme": "dragon", "seed": 1 }).
+
+bodyPlans: `{"quadruped":3,"wyvern":2}` · parts: `[{"chance":1,"id":"eyes"},{"chance":1,"id":"teeth","type":"teeth.row"},{"chance":0.85,"id":"horns","type":"horn.curved"},{"chance":0.6,"id":"crest","type":"spikes.row"},{"chance":0.35,"id":"tailspikes","type":"spikes.row"},{"chance":0.12,"id":"frill","type":"frill","plans":["quadruped"]}]` · materials: `{"scales":1}` · temperaments: `{"aggressive":3,"stalking":2,"calm":1}`
+
+### `eldritch`
+
+Things that should not be: tentacled krakens, many-headed hounds, faces of tentacles and clusters of eyes, slimy veined skin with a cold glow, in bruise purples and deep blacks.
+
+Generate creatures with it: spawnforge generate --theme eldritch --seed 1 (MCP: generate { "theme": "eldritch", "seed": 1 }).
+
+bodyPlans: `{"serpent":3,"quadruped":3,"octopod":2}` · parts: `[{"chance":1,"id":"eyes"},{"chance":0.7,"id":"eyes2","type":"eye.basic"},{"chance":0.35,"id":"eyes3","type":"eye.basic"},{"chance":0.8,"id":"teeth","type":"teeth.row","plans":["quadruped","serpent"]},{"chance":0.3,"id":"spines","type":"spikes.row","plans":["quadruped"]}]` · materials: `{"skin":3,"hide":1}` · temperaments: `{"stalking":3,"skittish":1,"aggressive":1,"calm":1}`
 
 ### `insect`
 
@@ -2145,11 +2177,11 @@ bodyPlans: `{"quadruped":5,"biped":2,"serpent":3}` · parts: `[{"chance":1,"id":
 
 ### `rpg`
 
-Generic action-RPG numbers: health from mass, speed from legs and gaits, attack from teeth, horns and claws, defence from chitin, scales and spikes, perception from eyes and ears.
+Generic action-RPG numbers: health from mass, speed from legs and gaits, attack from teeth, horns and claws, one attack per head, defence from shells, plates, chitin, scales and spikes, perception from eyes and ears.
 
 Game numbers from a creature's body: spawnforge analyze creature.json --stats rpg (MCP: analyze with "stats": "rpg").
 
-outputs: `{"health":"Hit points: grows with the cube root of mass, so a creature twice as long is about twice as tough","speed":"Top speed in m/s, from the fastest gait the legs allow","attack":"Damage per hit: teeth and fangs, horns and claws, scaled by size","defence":"Damage reduction: skin material, spikes and size","perception":"How far it notices things, in metres: eye size and ears","threat":"A one-number summary for encounter tables"}`
+outputs: `{"health":"Hit points: grows with the cube root of mass, so a creature twice as long is about twice as tough","speed":"Top speed in m/s, from the fastest gait the legs allow","attack":"Damage per hit: one head’s teeth and horns, plus claws and other weapons, scaled by size","attacks":"Attacks per turn: one per head","defence":"Damage reduction: shells, plates and bands of armour, skin material, spikes and size","perception":"How far it notices things, in metres: eye size and ears","threat":"A one-number summary for encounter tables"}`
 
 | Parameter | Type | Range | Default | Description |
 | --- | --- | --- | --- | --- |

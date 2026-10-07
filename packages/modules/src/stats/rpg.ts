@@ -14,21 +14,23 @@ const round = (v: number) => Math.round(v);
 
 /**
  * A generic action-RPG mapping, as an example of a per-game stats module: heavier creatures
- * have more health, longer legs make them faster, weapons (teeth, horns, claws) add attack, and
- * armour (chitin, scales, spikes) adds defence.
+ * have more health, longer legs make them faster, weapons (teeth, horns, claws) add attack, each
+ * head attacks once a turn, and armour (shells, plates, chitin, scales, spikes) adds defence.
  */
 export default defineStats({
   id: 'rpg',
   summary:
-    'Generic action-RPG numbers: health from mass, speed from legs and gaits, attack from teeth, horns and claws, defence from chitin, scales and spikes, perception from eyes and ears.',
+    'Generic action-RPG numbers: health from mass, speed from legs and gaits, attack from teeth, horns and claws, one attack per head, defence from shells, plates, chitin, scales and spikes, perception from eyes and ears.',
   tags: ['example'],
   params,
   outputs: {
     health:
       'Hit points: grows with the cube root of mass, so a creature twice as long is about twice as tough',
     speed: 'Top speed in m/s, from the fastest gait the legs allow',
-    attack: 'Damage per hit: teeth and fangs, horns and claws, scaled by size',
-    defence: 'Damage reduction: skin material, spikes and size',
+    attack:
+      'Damage per hit: one head’s teeth and horns, plus claws and other weapons, scaled by size',
+    attacks: 'Attacks per turn: one per head',
+    defence: 'Damage reduction: shells, plates and bands of armour, skin material, spikes and size',
     perception: 'How far it notices things, in metres: eye size and ears',
     threat: 'A one-number summary for encounter tables',
   },
@@ -36,7 +38,11 @@ export default defineStats({
     compute(input, raw) {
       const { level } = raw as z.output<typeof params>;
       const size = Math.cbrt(Math.max(0.01, input.measurements.mass));
-      const weapons = input.parts.filter((p) => p.tags.includes('weapon'));
+      // One hit comes from one head: weapons on the other heads are their own attacks.
+      const weapons = input.parts.filter(
+        (p) => p.tags.includes('weapon') && (p.head === undefined || p.head === 'head'),
+      );
+      const attacks = Math.max(1, input.heads);
       const teeth = weapons
         .filter((p) => p.tags.includes('mouth'))
         .reduce((s, p) => s + Math.min(p.count, 20) * 0.15 + p.size * 30, 0);
@@ -44,7 +50,12 @@ export default defineStats({
         .filter((p) => !p.tags.includes('mouth'))
         .reduce((s, p) => s + p.size * 25, 0);
       const claws = input.claws.count * input.claws.length * 8;
-      const armour = { chitin: 6, scales: 3, skin: 0 }[input.material] ?? 0;
+      const armour = { chitin: 6, scales: 3, hide: 2, skin: 0 }[input.material] ?? 0;
+      // Shells and bands cover the body; a row of plates covers it by their height.
+      const torso = Math.max(0.01, input.measurements.torsoLength);
+      const plating = input.parts
+        .filter((p) => p.tags.includes('armor'))
+        .reduce((s, p) => s + 10 * Math.min(1, p.size / torso) + Math.min(p.count, 30) * 0.15, 0);
       const spikes = input.parts
         .filter((p) => p.tags.includes('defence'))
         .reduce((s, p) => s + p.count * 0.25, 0);
@@ -52,15 +63,18 @@ export default defineStats({
       const sight = eyes.reduce((s, p) => s + p.size * 150, 0);
       const health = (10 + 12 * size) * level;
       const attack = (1 + (teeth + horns + claws) * (0.5 + 0.25 * size)) * level;
-      const defence = (armour + spikes + size) * level;
+      const defence = (armour + plating + spikes + size) * level;
       const speed = input.speed.max;
       return {
         health: round(health),
         speed: Math.round(speed * 10) / 10,
         attack: round(attack),
+        attacks,
         defence: round(defence),
         perception: round(8 + sight + input.measurements.height * 4),
-        threat: round((health * (attack + 1) * (1 + defence / 10) * (1 + speed / 5)) ** 0.5),
+        threat: round(
+          (health * (attack * attacks + 1) * (1 + defence / 10) * (1 + speed / 5)) ** 0.5,
+        ),
       };
     },
   },

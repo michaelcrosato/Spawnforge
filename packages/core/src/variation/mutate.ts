@@ -1,6 +1,8 @@
 import type { Issue } from '../blueprint/issues.ts';
 import { cloneJson, isRecord } from '../blueprint/merge.ts';
-import type { PartModule, Registry } from '../registry.ts';
+import { MEDIA } from '../blueprint/schema.ts';
+import { bodyMedia } from '../blueprint/validate.ts';
+import type { Medium, PartModule, Registry } from '../registry.ts';
 import { createRng, type Rng } from '../rng.ts';
 import {
   canonicalPath,
@@ -70,27 +72,72 @@ function mutateGene(gene: Gene, rng: Rng, amount: number): unknown {
   }
 }
 
-/** Part modules a creature can gain or swap to, by slot (feet change through limbs instead). */
+/** Part modules a creature can gain or swap to in `parts` (feet and membranes belong to limbs). */
 function placeable(registry: Registry): PartModule[] {
-  return registry.list('part').filter((m) => m.slot !== 'foot');
+  return registry.list('part').filter((m) => m.slot !== 'foot' && m.slot !== 'membrane');
 }
 
 /** Sense organs are never added, removed, swapped out or swapped in. */
 const isSense = (module: PartModule | undefined) => module?.tags.includes('sense') ?? false;
 
+/** Tags that tie a part to a medium: fins are for swimmers. */
+const HABITAT: Readonly<Record<string, Medium>> = { aquatic: 'water' };
+
+/** Where an expanded creature moves: its body's media, then its own `motion.media` switches. */
+function mediaOf(doc: Json): Record<Medium, boolean> {
+  const limbs = ((doc.limbs as unknown[] | undefined) ?? []).filter(isRecord).map((l) => ({
+    role: typeof l.role === 'string' ? l.role : 'leg',
+    attach: { on: isRecord(l.attach) && typeof l.attach.on === 'string' ? l.attach.on : 'torso' },
+  }));
+  const media = bodyMedia(limbs);
+  const set = isRecord(doc.motion) && isRecord(doc.motion.media) ? doc.motion.media : {};
+  for (const m of MEDIA) if (typeof set[m] === 'boolean') media[m] = set[m];
+  return media;
+}
+
 /**
- * One structural change: adds a part whose tags match the creature's existing parts, removes
- * one, or swaps one for another module with the same slot and a shared tag.
+ * Foot modules a limb can wear instead of `current`: a shared tag, and for legs a foot that
+ * stands them (one with a stance, or the pack's default leg foot), for arms one that does not.
+ * Wings, fins and tentacles keep theirs.
+ */
+function footSwaps(registry: Registry, role: string, current: PartModule): PartModule[] {
+  if (role !== 'leg' && role !== 'arm') return [];
+  const standing = registry.defaults().foot?.leg;
+  return registry
+    .list('part')
+    .filter(
+      (m) =>
+        m.slot === 'foot' &&
+        m.id !== current.id &&
+        m.tags.some((t) => current.tags.includes(t)) &&
+        (role === 'leg' ? m.stance !== undefined || m.id === standing : m.stance === undefined),
+    );
+}
+
+/** A module's example as a limb's inline `foot` object. */
+function footOf(module: PartModule): Json {
+  const { params, ...rest } = cloneJson(module.example);
+  return { ...rest, ...(isRecord(params) ? params : {}), type: module.id };
+}
+
+/**
+ * One structural change: adds a part whose tags match the creature's existing parts (fins only
+ * on swimmers), removes one, swaps one for another module with the same slot and a shared tag,
+ * or changes the feet of every limb of one role that wears one foot type. Limbs, heads and tails
+ * are never added: those come from themes, edits and crossbreeding.
  */
 function changeStructure(child: Json, rng: Rng, registry: Registry, locked: readonly string[]) {
   const parts = (child.parts as Json[] | undefined) ?? [];
   child.parts = parts;
+  const media = mediaOf(child);
+  const fits = (m: PartModule) =>
+    m.tags.every((t) => HABITAT[t] === undefined || media[HABITAT[t]]);
   const moduleOf = (p: Json) => registry.get('part', p.type as string);
   const free = parts.filter((p) => !isLocked(`parts[id=${p.id}]`, locked) && !isSense(moduleOf(p)));
   const tags = new Set(parts.flatMap((p) => moduleOf(p)?.tags ?? []));
   const present = new Set(parts.map((p) => p.type));
   const addable = placeable(registry).filter(
-    (m) => !present.has(m.id) && !isSense(m) && m.tags.some((t) => tags.has(t)),
+    (m) => !present.has(m.id) && !isSense(m) && fits(m) && m.tags.some((t) => tags.has(t)),
   );
   const swaps = (p: Json) => {
     const old = moduleOf(p);
@@ -100,14 +147,30 @@ function changeStructure(child: Json, rng: Rng, registry: Registry, locked: read
         m.id !== old.id &&
         m.slot === old.slot &&
         !isSense(m) &&
+        fits(m) &&
         m.tags.some((t) => old.tags.includes(t)),
     );
   };
   const swappable = free.filter((p) => swaps(p).length > 0);
+  // Feet change by group: every limb of one role wearing one foot type, so a wolf never ends up
+  // with hooves in front and paws behind.
+  const groups = new Map<string, { limbs: Json[]; swaps: PartModule[] }>();
+  for (const limb of ((child.limbs as unknown[] | undefined) ?? []).filter(isRecord)) {
+    const foot = isRecord(limb.foot) ? limb.foot : undefined;
+    const module = foot ? registry.get('part', foot.type as string) : undefined;
+    if (!module || isLocked(`limbs[id=${limb.id}].foot`, locked)) continue;
+    const role = typeof limb.role === 'string' ? limb.role : 'leg';
+    const key = `${role}:${module.id}`;
+    const group = groups.get(key) ?? { limbs: [], swaps: footSwaps(registry, role, module) };
+    group.limbs.push(limb);
+    groups.set(key, group);
+  }
+  const feet = [...groups.values()].filter((g) => g.swaps.length > 0);
   const choices = [
     ...(addable.length > 0 ? ['add'] : []),
     ...(free.length > 0 ? ['remove'] : []),
     ...(swappable.length > 0 ? ['swap'] : []),
+    ...(feet.length > 0 ? ['feet'] : []),
   ];
   if (choices.length === 0) return;
   const choice = rng.pick(choices);
@@ -125,12 +188,22 @@ function changeStructure(child: Json, rng: Rng, registry: Registry, locked: read
   } else if (choice === 'remove') {
     const victim = rng.pick(free);
     child.parts = parts.filter((p) => p !== victim);
-  } else {
+  } else if (choice === 'swap') {
     const target = rng.pick(swappable);
+    const old = moduleOf(target);
     const module = rng.pick(swaps(target));
     const example = module.example;
     target.type = module.id;
     target.params = cloneJson(isRecord(example.params) ? example.params : {});
+    // A part that sits elsewhere by default (a tail fin for a dorsal one) moves there.
+    if (old?.attach.on !== module.attach.on) {
+      if (isRecord(example.attach)) target.attach = cloneJson(example.attach);
+      else delete target.attach;
+    }
+  } else {
+    const group = rng.pick(feet);
+    const module = rng.pick(group.swaps);
+    for (const limb of group.limbs) limb.foot = footOf(module);
   }
 }
 

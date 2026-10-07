@@ -63,12 +63,16 @@ const FIXED = new Set([
   'on',
   'side',
   'region',
-  // Format 0.2: counts and media stay as written until 9.6 designs breeding across them.
-  'count',
-  'forkAt',
+  // Media follow the body (wings fly, fins swim); `area` places a covering, as `on` does.
   'media',
   'area',
 ]);
+
+/**
+ * How many heads and tails a body has. They are not genes: mutation never changes them, and
+ * crossbreeding takes each section's count (with its spread and fork) whole from one parent.
+ */
+export const COUNT_PATHS = ['body.neck.count', 'body.tail.count'] as const;
 
 const options = (node: Schema | undefined): Schema[] =>
   node ? [...(node.anyOf ?? []), ...(node.oneOf ?? [])] : [];
@@ -159,7 +163,7 @@ export function expand(blueprint: unknown, registry: Registry): { doc?: Json; er
 export function genesOf(doc: Json, registry: Registry): Gene[] {
   const genes: Gene[] = [];
   const walk = (value: unknown, node: Schema | undefined, path: string, key: string) => {
-    if (FIXED.has(key)) return;
+    if (FIXED.has(key) || (COUNT_PATHS as readonly string[]).includes(path)) return;
     // A species range stands where a number goes; it reads as a gene at its lower end.
     const ranged =
       isRecord(value) &&
@@ -385,6 +389,10 @@ export function finish(
 ): VariationResult {
   // Children are written in the current format.
   const base = toCurrentFormat(parent);
+  // Limbs the child gained (a wing from the other parent) may go; its own body's limbs may not.
+  const own = new Set(
+    (Array.isArray(parentDoc.limbs) ? parentDoc.limbs : []).map((l) => (isRecord(l) ? l.id : l)),
+  );
   let result = applyPatch(base, opsBetween(base, parentDoc, child), registry);
   for (let round = 0; round < 6 && !result.ok; round++) {
     let dropped = false;
@@ -393,6 +401,11 @@ export function finish(
       const part = /^parts\[id=([^\]]+)\]/.exec(e.path)?.[1];
       if (part !== undefined && Array.isArray(child.parts)) {
         child.parts = child.parts.filter((p) => !(isRecord(p) && p.id === part));
+        dropped = true;
+      }
+      const limb = /^limbs\[id=([^\]]+)\]/.exec(e.path)?.[1];
+      if (limb !== undefined && !own.has(limb) && Array.isArray(child.limbs)) {
+        child.limbs = child.limbs.filter((l) => !(isRecord(l) && l.id === limb));
         dropped = true;
       }
       const item = /^(skin\.layers|motion\.gaits|motion\.actions)\[(\d+)\]/.exec(e.path);

@@ -1,6 +1,8 @@
 import { readFileSync } from 'node:fs';
 import {
+  analyzeCreature,
   compileCreature,
+  computeStats,
   createRegistry,
   crossbreed,
   expand,
@@ -297,7 +299,7 @@ describe('generate', () => {
   }, 30_000);
 
   it('explains what it cannot do', () => {
-    const unknown = generate({ theme: 'dragon', seed: 1 }, registry);
+    const unknown = generate({ theme: 'unicorn', seed: 1 }, registry);
     expect(unknown.ok).toBe(false);
     expect(unknown.errors[0]?.fix).toContain('reptile');
     const plan = generate(
@@ -310,5 +312,208 @@ describe('generate', () => {
       registry,
     );
     expect(range.ok).toBe(false);
+  });
+});
+
+type Doc = {
+  body: { neck: { count: number }; tail: { count: number } };
+  limbs: { id: string; role?: string; foot?: { type: string } }[];
+  parts: { id: string; type: string; params?: Record<string, unknown> }[];
+};
+const docOf = (blueprint: unknown) => expand(blueprint, registry).doc as unknown as Doc;
+const roles = (doc: Doc, role: string) => doc.limbs.filter((l) => (l.role ?? 'leg') === role);
+
+describe('variation of format 0.2 bodies (9.6)', () => {
+  it('never changes how many heads, tails or limbs a mutant has', () => {
+    for (const name of ['hydra', 'two-tailed-fox', 'griffin', 'kraken', 'reef-shark']) {
+      const parent = docOf(example(name));
+      for (let seed = 1; seed <= 12; seed++) {
+        const child = mutate(example(name), { seed, amount: 1 }, registry);
+        expect(child.ok, `${name} #${seed}: ${JSON.stringify(child.errors)}`).toBe(true);
+        const doc = docOf(child.blueprint);
+        expect(doc.body.neck.count).toBe(parent.body.neck.count);
+        expect(doc.body.tail.count).toBe(parent.body.tail.count);
+        expect(doc.limbs.map((l) => `${l.id}:${l.role}`)).toEqual(
+          parent.limbs.map((l) => `${l.id}:${l.role}`),
+        );
+      }
+    }
+  });
+
+  it('lets part counts drift again (rows of spikes, teeth)', () => {
+    const changed = Array.from({ length: 20 }, (_, i) =>
+      mutate(example('ash-dragon'), { seed: i + 1, amount: 1 }, registry),
+    ).some((c) => c.diff.some((d) => d.path === 'parts[id=crest].params.count'));
+    expect(changed).toBe(true);
+  });
+
+  it('changes feet a whole role at a time, to feet that stand a leg', () => {
+    const standing = new Set(['foot.claw', 'foot.hoof', 'foot.pad', 'foot.paw', 'foot.talon']);
+    let swapped = 0;
+    for (let seed = 1; seed <= 60; seed++) {
+      const child = mutate(example('grey-wolf'), { seed, amount: 1 }, registry);
+      const legs = roles(docOf(child.blueprint), 'leg').map((l) => l.foot?.type ?? '');
+      expect(new Set(legs).size).toBe(1);
+      expect(standing.has(legs[0] ?? '')).toBe(true);
+      if (legs[0] !== 'foot.paw') swapped++;
+    }
+    expect(swapped).toBeGreaterThan(0);
+  });
+
+  it('adds fins only to swimmers', () => {
+    for (const name of ['ridgeback-stalker', 'plated-stegosaur', 'sail-back'])
+      for (let seed = 1; seed <= 30; seed++) {
+        const child = mutate(example(name), { seed, amount: 1 }, registry);
+        const fins = docOf(child.blueprint).parts.filter((p) => p.type.startsWith('fin.'));
+        expect(fins, `${name} #${seed}`).toEqual([]);
+      }
+  });
+
+  it('takes each section’s count of heads and tails whole from one parent', () => {
+    const hydra = example('hydra');
+    const wolf = example('grey-wolf');
+    const counts = new Set<number>();
+    for (let seed = 1; seed <= 16; seed++) {
+      const child = crossbreed(hydra, wolf, { seed, base: 'a' }, registry);
+      expect(child.ok, JSON.stringify(child.errors)).toBe(true);
+      counts.add(docOf(child.blueprint).body.neck.count);
+    }
+    expect([...counts].sort()).toEqual([1, 5]);
+    const fox = example('two-tailed-fox');
+    expect(
+      docOf(crossbreed(wolf, fox, { seed: 1, mix: 1, base: 'a' }, registry).blueprint).body.tail
+        .count,
+    ).toBe(2);
+    expect(
+      docOf(crossbreed(wolf, fox, { seed: 1, mix: 0, base: 'a' }, registry).blueprint).body.tail
+        .count,
+    ).toBe(1);
+  });
+
+  it('pairs wings by role and takes how many from one parent', () => {
+    const wolf = example('grey-wolf');
+    const griffin = example('griffin');
+    const winged = crossbreed(wolf, griffin, { seed: 1, mix: 1, base: 'a' }, registry);
+    expect(winged.ok, JSON.stringify(winged.errors)).toBe(true);
+    const doc = docOf(winged.blueprint);
+    expect(roles(doc, 'wing').length).toBe(roles(docOf(griffin), 'wing').length);
+    expect(roles(doc, 'leg').length).toBe(2);
+    expect(validateBlueprint(winged.blueprint, registry).creature?.motion.media.air).toBe(true);
+    expect(
+      roles(
+        docOf(crossbreed(wolf, griffin, { seed: 1, mix: 0, base: 'a' }, registry).blueprint),
+        'wing',
+      ),
+    ).toEqual([]);
+    // Built on the griffin with all of the wolf's share, the wings go.
+    const grounded = crossbreed(griffin, wolf, { seed: 1, mix: 1, base: 'a' }, registry);
+    expect(roles(docOf(grounded.blueprint), 'wing')).toEqual([]);
+    // Locked limbs stay as the base has them.
+    const locked = crossbreed(
+      wolf,
+      griffin,
+      { seed: 1, mix: 1, base: 'a', locked: ['limbs'] },
+      registry,
+    );
+    expect(roles(docOf(locked.blueprint), 'wing')).toEqual([]);
+  });
+
+  it('crossbreeds every pair of new-vocabulary examples into valid children', () => {
+    const names = ['hydra', 'griffin', 'kraken', 'reef-shark', 'stone-tortoise', 'tomb-spider'];
+    for (const a of names)
+      for (const b of names) {
+        if (a === b) continue;
+        const child = crossbreed(example(a), example(b), { seed: 3 }, registry);
+        expect(child.ok, `${a} × ${b}: ${JSON.stringify(child.errors)}`).toBe(true);
+      }
+  }, 60_000);
+
+  it('generates creatures that move where asked', () => {
+    for (let seed = 1; seed <= 4; seed++) {
+      const fly = generate({ theme: 'dragon', seed, constraints: { requires: ['air'] } }, registry);
+      expect(fly.ok).toBe(true);
+      expect(validateBlueprint(fly.blueprint, registry).creature?.motion.media.air).toBe(true);
+      const swim = generate(
+        { theme: 'beast', seed, constraints: { requires: ['water'] } },
+        registry,
+      );
+      expect(swim.ok).toBe(true);
+      const media = validateBlueprint(swim.blueprint, registry).creature?.motion.media;
+      expect(media).toMatchObject({ land: true, water: true });
+    }
+    const grounded = generate(
+      { theme: 'insect', seed: 1, constraints: { requires: ['air'] } },
+      registry,
+    );
+    expect(grounded.ok).toBe(false);
+    expect(grounded.errors[0]?.fix).toContain('dragon');
+    const wrong = generate(
+      { theme: 'dragon', seed: 1, constraints: { requires: ['space' as 'air'] } },
+      registry,
+    );
+    expect(wrong.errors[0]?.path).toBe('constraints.requires[0]');
+  });
+
+  it('shows every optional part and limb of every theme across seeds', () => {
+    for (const theme of registry.list('theme')) {
+      const seen = new Set<string>();
+      for (let seed = 1; seed <= 40; seed++) {
+        const made = generate({ theme: theme.id, seed }, registry);
+        expect(made.ok, `${theme.id} #${seed}`).toBe(true);
+        const doc = docOf(made.blueprint);
+        for (const p of doc.parts) seen.add(`part:${p.id}`);
+        for (const l of doc.limbs) seen.add(`limb:${l.id}:${l.foot?.type ?? ''}`);
+      }
+      for (const entry of theme.bias.parts ?? [])
+        expect(seen, `${theme.id}: ${String(entry.part.id)}`).toContain(
+          `part:${String(entry.part.id)}`,
+        );
+      for (const entry of theme.bias.limbs ?? [])
+        for (const limb of entry.limbs) {
+          const foot = (limb.foot as { type?: string } | undefined)?.type;
+          const hit = [...seen].some(
+            (s) => s.startsWith(`limb:${String(limb.id)}:`) && (!foot || s.endsWith(`:${foot}`)),
+          );
+          expect(hit, `${theme.id}: limb ${String(limb.id)}`).toBe(true);
+        }
+    }
+  }, 120_000);
+});
+
+describe('rpg for format 0.2 bodies (9.6)', () => {
+  const stats = (name: string) => {
+    const spec = validateBlueprint(example(name), registry).creature;
+    if (!spec) throw new Error(name);
+    return computeStats(spec, analyzeCreature(spec, registry), registry, 'rpg');
+  };
+
+  it('attacks once a turn per head, each hit from one head', () => {
+    const hydra = stats('hydra');
+    expect(hydra.attacks).toBe(5);
+    const one = validateBlueprint(
+      {
+        ...example('hydra'),
+        body: { ...example('hydra').body, neck: { ...example('hydra').body.neck, count: 1 } },
+      },
+      registry,
+    ).creature;
+    if (!one) throw new Error('hydra');
+    const single = computeStats(one, analyzeCreature(one, registry), registry, 'rpg');
+    expect(single.attacks).toBe(1);
+    expect(Math.abs((hydra.attack as number) - (single.attack as number))).toBeLessThanOrEqual(2);
+    expect(hydra.threat).toBeGreaterThan(single.threat as number);
+  });
+
+  it('gives shells and plates armour', () => {
+    const tortoise = example('stone-tortoise');
+    const bare = {
+      ...tortoise,
+      parts: tortoise.parts.filter((p: { id: string }) => p.id !== 'shell'),
+    };
+    const spec = validateBlueprint(bare, registry).creature;
+    if (!spec) throw new Error('tortoise');
+    const without = computeStats(spec, analyzeCreature(spec, registry), registry, 'rpg');
+    expect(stats('stone-tortoise').defence).toBeGreaterThanOrEqual((without.defence as number) + 8);
+    expect(stats('plated-stegosaur').defence).toBeGreaterThan(stats('grey-wolf').defence as number);
   });
 });
