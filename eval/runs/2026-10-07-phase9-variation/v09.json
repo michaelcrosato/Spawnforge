@@ -1,0 +1,139 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Ignmor",
+  "seed": 287307067,
+  "extends": "quadruped",
+  "scale": 0.6996,
+  "body": {
+    "torso": {
+      "radius": [0.143, 0.169, 0.174, 0.101],
+      "arch": 0.0484
+    },
+    "neck": {
+      "length": 0.622,
+      "radius": [0.06, 0.09],
+      "pitch": 34,
+      "curve": 29,
+      "segments": 5
+    },
+    "head": {
+      "shape": "wedge",
+      "length": 0.309,
+      "radius": 0.0914,
+      "brow": 0.407
+    },
+    "tail": {
+      "length": 1.68,
+      "radius": [0.0921, 0.012],
+      "curl": 9,
+      "segments": 12
+    }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "length": 0.544,
+      "splay": 10
+    },
+    {
+      "id": "hindleg",
+      "length": 0.525,
+      "radius": [0.075, 0.035]
+    },
+    {
+      "id": "wing",
+      "role": "wing",
+      "attach": {
+        "at": 0.122,
+        "angle": 35
+      },
+      "length": 1.42,
+      "radius": [0.045, 0.014],
+      "membrane": {
+        "span": 0.988,
+        "trailing": "body",
+        "scallop": 0.655,
+        "translucency": 0.363
+      }
+    }
+  ],
+  "parts": [
+    {
+      "id": "eyes",
+      "params": {
+        "pupil": "slit",
+        "squint": 0.229,
+        "irisColor": "#da8520"
+      }
+    },
+    {
+      "id": "teeth",
+      "type": "teeth.row",
+      "params": {
+        "fangs": 2
+      }
+    },
+    {
+      "id": "horns",
+      "type": "horn.curved",
+      "attach": {
+        "on": "head",
+        "at": 0.85,
+        "angle": 40,
+        "side": "both"
+      },
+      "params": {
+        "length": 0.327,
+        "curve": 62,
+        "ridges": 1,
+        "color": "#9b9486"
+      }
+    },
+    {
+      "id": "crest",
+      "type": "spikes.row",
+      "attach": {
+        "on": "spine",
+        "from": 0.3,
+        "to": 0.95,
+        "angle": 0
+      },
+      "params": {
+        "count": 12,
+        "height": [0.0699, 0.0979, 0.0394],
+        "curve": 28
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#1a413e",
+      "belly": "#4c817c",
+      "accent": "#060f0d"
+    },
+    "material": "scales",
+    "layers": [
+      {
+        "type": "countershade",
+        "strength": 0.603
+      },
+      {
+        "type": "scales",
+        "size": 0.0285,
+        "bump": 0.561
+      },
+      {
+        "type": "veins",
+        "color": "accent",
+        "region": "wings",
+        "strength": 0.48
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "stalking",
+    "media": {
+      "air": true
+    }
+  }
+}

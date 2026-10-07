@@ -26,6 +26,12 @@ export interface StatsInput {
     readonly size: number;
     /** How many pieces it has (a row's `count`, else 1). */
     readonly count: number;
+    /**
+     * The head it sits on (`head`, `head.L1`, …), through its neck, jaw or the part it sits on;
+     * undefined off the heads. Parts on a head are copied to every head, so each head's weapons
+     * appear once per head.
+     */
+    readonly head?: string;
   }[];
   /** Claws: toes per foot on legs and arms, and claw length in metres. */
   readonly claws: { readonly count: number; readonly length: number };
@@ -38,6 +44,24 @@ export interface StatsHooks {
 
 const num = (v: unknown, fallback = 0) => (typeof v === 'number' ? v : fallback);
 const largest = (v: unknown) => (Array.isArray(v) ? Math.max(...v.map((x) => num(x))) : num(v));
+
+/** Sections that belong to a head instance: `neck.L1`, `head.L1` and `jaw.L1` are head.L1's. */
+const HEAD_SECTION = /^(?:neck|head|jaw)(\.[LR]\d+)?$/;
+
+/** The head instance a part sits on, following parts on parts; undefined off the heads. */
+function headOf(
+  part: { readonly on: string },
+  parts: readonly { readonly id: string; readonly on: string }[],
+): string | undefined {
+  let on = part.on;
+  for (let depth = 0; depth < 8; depth++) {
+    const host = parts.find((p) => p.id === on);
+    if (!host) break;
+    on = host.on;
+  }
+  const match = HEAD_SECTION.exec(on);
+  return match ? `head${match[1] ?? ''}` : undefined;
+}
 
 /** The inputs a stats module sees, from a resolved creature and its analysis. */
 export function statsInput(spec: CreatureSpec, analysis: Analysis, registry: Registry): StatsInput {
@@ -68,6 +92,7 @@ export function statsInput(spec: CreatureSpec, analysis: Analysis, registry: Reg
     // What the part built, when it says (sizes may follow the head); else its parameters.
     parts: spec.parts.map((part) => {
       const built = analysis.parts[part.baseId];
+      const head = headOf(part, spec.parts);
       return {
         type: part.type,
         tags: registry.get('part', part.type)?.tags ?? [],
@@ -75,6 +100,7 @@ export function statsInput(spec: CreatureSpec, analysis: Analysis, registry: Reg
           ? built.size
           : largest(part.params.length ?? part.params.height ?? part.params.size) * L,
         count: built ? built.count : num(part.params.count, 1),
+        ...(head ? { head } : {}),
       };
     }),
     claws: { count: clawCount, length: clawLength },

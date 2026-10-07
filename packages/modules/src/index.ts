@@ -76,7 +76,11 @@ import actionsLook from './actions/look.ts';
 import actionsPinch from './actions/pinch.ts';
 import actionsPounce from './actions/pounce.ts';
 import actionsRoar from './actions/roar.ts';
+import themesAquatic from './themes/aquatic.ts';
+import themesBeast from './themes/beast.ts';
 import themesDemon from './themes/demon.ts';
+import themesDragon from './themes/dragon.ts';
+import themesEldritch from './themes/eldritch.ts';
 import themesInsect from './themes/insect.ts';
 import themesReptile from './themes/reptile.ts';
 import statsRpg from './stats/rpg.ts';
@@ -158,7 +162,11 @@ export const basicPack = definePack({
     actionsPinch,
     actionsPounce,
     actionsRoar,
+    themesAquatic,
+    themesBeast,
     themesDemon,
+    themesDragon,
+    themesEldritch,
     themesInsect,
     themesReptile,
     statsRpg,

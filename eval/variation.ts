@@ -1,11 +1,14 @@
 /**
- * Checks a phase 5 variation eval run: `node eval/variation.ts eval/runs/<run>`. Each task in
+ * Checks a variation eval run: `node eval/variation.ts eval/runs/<run>`. Each task in
  * eval/variation.json saves files in the run folder; this validates them and checks what the
- * task asked for, then writes `variation-score.json`. Gate: at least 7 of 8 tasks pass.
+ * task asked for, then writes `variation-score.json`. Gate: every task passes (12/12 from 9.6;
+ * phase 5's eight tasks needed 7). A run made before 9.6 is scored on its eight tasks.
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
+  analyzeCreature,
+  computeStats,
   createRegistry,
   expand,
   isRange,
@@ -157,6 +160,54 @@ const checks: Record<string, () => string> = {
     need(!kids.some((k) => same(doc(k), doc(example('reed-viper')))), 'a mutant equals the parent');
     return '3 striped mutants';
   },
+  'v09-flying-dragon': () => {
+    const s = spec(load('v09.json'));
+    need(
+      s.limbs.some((l) => l.role === 'wing'),
+      'no wings',
+    );
+    need(s.motion.media.air, 'it cannot fly (motion.media.air is off)');
+    const height = measureBody(s, registry).height;
+    need(height <= 1.2 + 1e-3, `body height ${height.toFixed(2)} m`);
+    return `wings, flies, body height ${height.toFixed(2)} m`;
+  },
+  'v10-winged-wolf': () => {
+    const s = spec(load('v10.json'));
+    const legs = s.limbs.filter((l) => l.role === 'leg');
+    need(legs.length === 4, `${legs.length} legs`);
+    need(
+      legs.every((l) => l.foot?.type === 'foot.paw'),
+      `feet: ${[...new Set(legs.map((l) => l.foot?.type))].join(', ')}`,
+    );
+    const wings = s.limbs.filter((l) => l.role === 'wing');
+    need(wings.length >= 2, 'no wings');
+    need(s.body.torso.pitch < 30, `torso pitch ${s.body.torso.pitch}: not a four-legged stance`);
+    return `4 legs on paws, ${wings.length} wings`;
+  },
+  'v11-hydra-litter': () => {
+    const parent = example('hydra');
+    const kids = ['a', 'b', 'c'].map((k) => load(`v11.${k}.json`));
+    for (const kid of kids) {
+      const s = spec(kid);
+      need(s.body.neck.count === 5, `a mutant has ${s.body.neck.count} heads`);
+      need(!s.limbs.some((l) => l.role === 'wing'), 'a mutant has wings');
+    }
+    need(
+      !same(kids[0], kids[1]) && !same(kids[1], kids[2]) && !same(kids[0], kids[2]),
+      'mutants are not all different',
+    );
+    need(!kids.some((k) => same(doc(k), doc(parent))), 'a mutant equals the parent');
+    return '3 five-headed mutants';
+  },
+  'v12-armoured-horror': () => {
+    const s = spec(load('v12.json'));
+    need(s.body.neck.count >= 2, `${s.body.neck.count} head`);
+    const armour = s.parts.filter((p) => registry.get('part', p.type)?.tags.includes('armor'));
+    need(armour.length > 0, 'no shell or bands of armour');
+    const defence = computeStats(s, analyzeCreature(s, registry), registry, 'rpg').defence ?? 0;
+    need(defence >= 12, `rpg defence ${defence}`);
+    return `${s.body.neck.count} heads, ${armour[0]?.type}, defence ${defence}`;
+  },
   'v08-tall-raptor': () => {
     const s = spec(load('v08.json'));
     need(s.limbs.filter((l) => l.role === 'leg').length === 2, 'not two-legged');
@@ -166,17 +217,26 @@ const checks: Record<string, () => string> = {
   },
 };
 
-const rows = Object.entries(checks).map(([id, check]) => {
-  try {
-    return { id, pass: true, note: check() };
-  } catch (error) {
-    return { id, pass: false, note: (error as Error).message };
-  }
-});
+// Runs from before 9.6 asked only the first eight tasks.
+const asked = existsSync(join(dir, 'v09.json')) || existsSync(join(dir, 'v12.json')) ? 12 : 8;
+const order = (id: string) => Number(id.slice(1, 3));
+const rows = Object.entries(checks)
+  .filter(([id]) => order(id) <= asked)
+  .sort(([a], [b]) => order(a) - order(b))
+  .map(([id, check]) => {
+    try {
+      return { id, pass: true, note: check() };
+    } catch (error) {
+      return { id, pass: false, note: (error as Error).message };
+    }
+  });
 const passed = rows.filter((r) => r.pass).length;
 console.log('| Task | Result | Note |\n| --- | --- | --- |');
 for (const r of rows) console.log(`| ${r.id} | ${r.pass ? 'pass' : 'FAIL'} | ${r.note} |`);
-console.log(`\n${passed}/${rows.length} tasks pass. Gate (≥ 7): ${passed >= 7 ? 'PASS' : 'FAIL'}`);
+const gate = rows.length > 8 ? rows.length : 7;
+console.log(
+  `\n${passed}/${rows.length} tasks pass. Gate (≥ ${gate}): ${passed >= gate ? 'PASS' : 'FAIL'}`,
+);
 writeFileSync(
   join(dir, 'variation-score.json'),
   `${JSON.stringify({ passed, total: rows.length, rows }, null, 2)}\n`,

@@ -27,7 +27,8 @@ All seven phases (0 to 6) are done, and so is the proof of concept ([docs/poc.md
   PoC gate.
 
 - Phase 5: variation. Species with `{ min, max }` ranges and `instantiate`, `mutate` (with
-  locked paths and part swaps by tag), `crossbreed`, theme modules (reptile, insect, demon) and
+  locked paths and part swaps by tag), `crossbreed`, theme modules (reptile, insect, demon; plan
+  2 adds dragon, aquatic, eldritch and beast) and
   `generate` with constraints, as CLI commands, MCP tools and the sandbox's breed tab.
 
 - Phase 6: the path into games. Baked clips, vertex-colour bake, `.glb` export (CLI, MCP and the
@@ -75,7 +76,11 @@ ground, sway on soft springs and reach by FABRIK; part modules with bones of the
 drives; `pinch`, `lash`, `suckers`; `tentacle_intersection`; `docs/design/9.4-tentacles-parts.md`)
 and 9.5 (the area slot with `ctx.surface` and `ctx.scatter`; `shell`, `armor.bands`,
 `plates.row`, `quills`, `frill`, `hood` and `sail`; frills, hoods, sails and quills on the `flare`
-drive, opened by `display`; `render --flare`; `docs/design/9.5-coverings.md`).
+drive, opened by `display`; `render --flare`; `docs/design/9.5-coverings.md`) and 9.6 (variation
+for the new vocabulary: mutation keeps head, tail and limb counts and swaps feet by role,
+crossbreeding takes heads, tails, wings, fins and tentacles by role and count from one parent;
+themes `dragon`, `aquatic`, `eldritch` and `beast`; `generate --requires air,water`; `rpg`
+attacks per head and armour; `docs/design/9.6-variation.md`).
 
 ## Repo map
 
@@ -118,6 +123,7 @@ pnpm spawnforge analyze examples/ridgeback-stalker.json --scenario examples/scen
 pnpm render:examples          # re-render examples/*.png after changing a blueprint or the pipeline
 pnpm fuzz [count] [quality]   # compile random blueprints from the schema (the PoC gate runs 1,000)
 pnpm budgets                  # compile time, triangles, draw calls and motion cost of the examples
+node scripts/theme-sheet.ts dragon --out dragon.png  # a theme across 20 seeds on one sheet
 node packages/mcp/src/bin.ts  # the MCP server over stdio
 node eval/score.ts <run>      # score an eval run from its saved attempts
 node eval/quality.ts prepare <out> --base <commit>   # the same blueprints at two commits, blind pairs

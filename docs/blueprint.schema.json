@@ -4102,14 +4102,38 @@
       },
       "additionalProperties": false
     },
+    "theme:aquatic": {
+      "description": "Sea and river creatures: sharks and fish with dorsal and tail fins, finned eels and sea serpents, and low armoured walkers that swim, in countershaded blues, teals and greys.",
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    },
+    "theme:beast": {
+      "description": "Muscled furred mammals: wolves and big cats on paws, boars and bulls on hooves, bears on pads, with ears, fangs, now and then horns or tusks, in tawny, brown, grey or black coats.",
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    },
     "theme:demon": {
       "description": "Horned fiends and hellhounds: heavy shoulders, big curled or swept horns, fangs, spine rows, goat or slit pupils, blood reds and soot blacks.",
       "type": "object",
       "properties": {},
       "additionalProperties": false
     },
+    "theme:dragon": {
+      "description": "Winged dragons and wyverns: four legs and a pair of wings or wings for arms, long curved necks and tails, horns, crests, fangs, scales, in ember, emerald, gold or soot.",
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    },
+    "theme:eldritch": {
+      "description": "Things that should not be: tentacled krakens, many-headed hounds, faces of tentacles and clusters of eyes, slimy veined skin with a cold glow, in bruise purples and deep blacks.",
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    },
     "theme:insect": {
-      "description": "Six-legged beetles and ants: glossy chitin, a thorax and abdomen with a narrow waist, thin legs, horns or pincers, dark or warning colours.",
+      "description": "Six-legged beetles and ants: glossy chitin, a thorax and abdomen with a narrow waist, thin legs, horns or mandibles, dark or warning colours.",
       "type": "object",
       "properties": {},
       "additionalProperties": false
@@ -4121,7 +4145,7 @@
       "additionalProperties": false
     },
     "stats:rpg": {
-      "description": "Generic action-RPG numbers: health from mass, speed from legs and gaits, attack from teeth, horns and claws, defence from chitin, scales and spikes, perception from eyes and ears.",
+      "description": "Generic action-RPG numbers: health from mass, speed from legs and gaits, attack from teeth, horns and claws, one attack per head, defence from shells, plates, chitin, scales and spikes, perception from eyes and ears.",
       "type": "object",
       "properties": {
         "level": {

@@ -1,9 +1,10 @@
 import type { Issue } from '../blueprint/issues.ts';
 import { cloneJson, isRecord, mergeBlueprint } from '../blueprint/merge.ts';
-import { validateBlueprint } from '../blueprint/validate.ts';
+import { MEDIA } from '../blueprint/schema.ts';
+import { bodyMedia, validateBlueprint } from '../blueprint/validate.ts';
 import { buildSkeleton } from '../compile/skeleton.ts';
 import { FORMAT } from '../format.ts';
-import type { Feature, Registry } from '../registry.ts';
+import type { Feature, Medium, Registry } from '../registry.ts';
 import { createRng, type Rng } from '../rng.ts';
 import { resolveSpecies, type Species } from './species.ts';
 
@@ -38,6 +39,17 @@ export interface ThemeBias {
     readonly part: Species;
     readonly plans?: readonly string[];
   }[];
+  /**
+   * Optional limbs: each entry's `limbs[]` items join together with `chance`, on some plans only.
+   * An item whose id the body already has changes that limb (hooves for paws on every leg).
+   */
+  readonly limbs?: readonly {
+    readonly chance: number;
+    readonly limbs: readonly Species[];
+    readonly plans?: readonly string[];
+  }[];
+  /** Skin fields beside the palette, material and layers, such as fur. */
+  readonly skin?: Species;
   /** Pattern layers: `always` first, then `count` picks from `options` by weight. */
   readonly layers?: {
     readonly always?: readonly Species[];
@@ -69,6 +81,11 @@ export interface GenerateConstraints {
   readonly actions?: readonly string[];
   /** Part types it must have, e.g. ["horn.curved"]. */
   readonly parts?: readonly string[];
+  /**
+   * Media it must move in, e.g. ["air"]: a body with wings for the air; a swimmer, or a walker
+   * that swims, for water.
+   */
+  readonly requires?: readonly Medium[];
 }
 
 export interface GenerateOptions {
@@ -162,7 +179,41 @@ function planHas(registry: Registry, plan: string, role: 'leg' | 'arm'): boolean
   return limbs.some((l) => isRecord(l) && (l.role ?? 'leg') === role);
 }
 
-/** One draw of the grammar: plan, shape, parts, skin, motion. */
+const limbList = (v: unknown): Json[] => (Array.isArray(v) ? v.filter(isRecord) : []);
+const hasWing = (limbs: readonly unknown[]) => limbs.some((l) => isRecord(l) && l.role === 'wing');
+
+/** A plan's limbs with a theme's shape on them (shape limbs change preset limbs by id). */
+function planLimbs(registry: Registry, plan: string, bias: ThemeBias): Json[] {
+  const preset = registry.get('bodyPlan', plan)?.preset ?? {};
+  const shape = mergeBlueprint(
+    (bias.shape ?? {}) as Json,
+    (bias.plans[plan]?.shape ?? {}) as Json,
+  ).merged;
+  return limbList(
+    mergeBlueprint({ limbs: limbList(preset.limbs) }, { limbs: limbList(shape.limbs) }).merged
+      .limbs,
+  );
+}
+
+/** Whether a theme can give a plan wings: its own, or among the theme's optional limbs. */
+function canFly(registry: Registry, plan: string, bias: ThemeBias): boolean {
+  return (
+    hasWing(planLimbs(registry, plan, bias)) ||
+    (bias.limbs ?? []).some((e) => (!e.plans || e.plans.includes(plan)) && hasWing(e.limbs))
+  );
+}
+
+/** Where a set of limbs moves, as `bodyMedia` reads them. */
+function limbMedia(limbs: readonly Json[]): Record<Medium, boolean> {
+  return bodyMedia(
+    limbs.map((l) => ({
+      role: typeof l.role === 'string' ? l.role : 'leg',
+      attach: { on: isRecord(l.attach) && typeof l.attach.on === 'string' ? l.attach.on : 'torso' },
+    })),
+  );
+}
+
+/** One draw of the grammar: plan, shape, limbs, parts, skin, motion. */
 function draw(
   bias: ThemeBias,
   rng: Rng,
@@ -170,11 +221,13 @@ function draw(
   constraints: GenerateConstraints,
   needs: Set<Feature>,
 ): Json {
+  const requires = constraints.requires ?? [];
   const plans = Object.fromEntries(
     Object.entries(bias.plans)
       .filter(([id]) => registry.get('bodyPlan', id))
       .filter(([id]) => !needs.has('arm') || planHas(registry, id, 'arm'))
       .filter(([id]) => !needs.has('legs') || planHas(registry, id, 'leg'))
+      .filter(([id]) => !requires.includes('air') || canFly(registry, id, bias))
       .map(([id, p]) => [id, p.weight]),
   );
   const plan =
@@ -188,6 +241,25 @@ function draw(
     (bias.plans[plan]?.shape ?? {}) as Json,
   ).merged;
   const resolved = resolveSpecies(shape, rng.stream('shape'));
+
+  // Optional limbs: a set joins with its chance, or because the creature must fly and has no
+  // wings of its own yet.
+  const limbRng = rng.stream('limbs');
+  const extra: Json[] = [];
+  let needWing = requires.includes('air') && !hasWing(planLimbs(registry, plan, bias));
+  for (const [i, entry] of (bias.limbs ?? []).entries()) {
+    if (entry.plans && !entry.plans.includes(plan)) continue;
+    const hit = limbRng.stream(`chance:${i}`).chance(entry.chance);
+    if (!hit && !(needWing && hasWing(entry.limbs))) continue;
+    if (hasWing(entry.limbs)) needWing = false;
+    entry.limbs.forEach((limb, j) => {
+      extra.push(resolveSpecies(limb, limbRng.stream(`limb:${i}:${j}`)) as Json);
+    });
+  }
+  const limbs =
+    extra.length > 0
+      ? limbList(mergeBlueprint({ limbs: limbList(resolved.limbs) }, { limbs: extra }).merged.limbs)
+      : resolved.limbs;
 
   const partRng = rng.stream('parts');
   const parts: Json[] = Array.isArray(resolved.parts) ? (resolved.parts as Json[]) : [];
@@ -220,6 +292,7 @@ function draw(
   const material = bias.materials
     ? weighted(skinRng.stream('material'), bias.materials)
     : undefined;
+  const skinExtra = bias.skin ? (resolveSpecies(bias.skin, skinRng.stream('extra')) as Json) : {};
   const temperament = bias.temperaments
     ? weighted(rng.stream('temperament'), bias.temperaments)
     : undefined;
@@ -236,6 +309,23 @@ function draw(
     const tail = isRecord(body.tail) ? body.tail : {};
     if (typeof tail.length !== 'number' || tail.length <= 0) body.tail = { ...tail, length: 0.6 };
   }
+
+  // Media the body does not give on its own: a walker that must swim swims too. Flying needs
+  // wings, which only the plan and the optional limbs give.
+  const shapeMotion = isRecord(resolved.motion) ? resolved.motion : {};
+  const media: Json = { ...(isRecord(shapeMotion.media) ? shapeMotion.media : {}) };
+  const preset = registry.get('bodyPlan', plan)?.preset ?? {};
+  const allLimbs = limbList(
+    mergeBlueprint({ limbs: limbList(preset.limbs) }, { limbs: limbList(limbs) }).merged.limbs,
+  );
+  const own = limbMedia(allLimbs);
+  for (const medium of requires)
+    if (medium !== 'air' && !own[medium] && media[medium] === undefined) media[medium] = true;
+  const motion: Json = {
+    ...shapeMotion,
+    ...(temperament ? { temperament } : {}),
+    ...(Object.keys(media).length > 0 ? { media } : {}),
+  };
   return {
     format: FORMAT,
     ...(name ? { name } : {}),
@@ -243,13 +333,15 @@ function draw(
     extends: plan,
     ...resolved,
     body,
+    ...(limbList(limbs).length > 0 ? { limbs } : {}),
     ...(parts.length > 0 ? { parts } : {}),
     skin: {
+      ...skinExtra,
       palette: palette(skinRng.stream('palette'), bias.palette),
       ...(material ? { material } : {}),
       ...(layers.length > 0 ? { layers } : {}),
     },
-    ...(temperament ? { motion: { temperament } } : {}),
+    ...(Object.keys(motion).length > 0 ? { motion } : {}),
   };
 }
 
@@ -270,9 +362,9 @@ function repair(blueprint: Json, registry: Registry) {
 }
 
 /**
- * A new creature from a theme and a seed. The theme weights the body plan, shape, parts, skin and
- * temperament; constraints then fix the body plan, required parts and actions (choosing a body
- * that has what they need), and the height (by rescaling the whole creature).
+ * A new creature from a theme and a seed. The theme weights the body plan, shape, limbs, parts,
+ * skin and temperament; constraints then fix the body plan, required parts, actions and media
+ * (choosing a body that has what they need), and the height (by rescaling the whole creature).
  */
 export function generate(options: GenerateOptions, registry: Registry): GenerateResult {
   const theme = registry.get('theme', options.theme);
@@ -315,6 +407,27 @@ export function generate(options: GenerateOptions, registry: Registry): Generate
   const { minHeight = 0, maxHeight = Number.POSITIVE_INFINITY } = constraints;
   if (minHeight > maxHeight)
     return fail('constraints.minHeight', `minHeight ${minHeight} is above maxHeight ${maxHeight}`);
+  for (const [i, medium] of (constraints.requires ?? []).entries())
+    if (!(MEDIA as readonly string[]).includes(medium))
+      return fail(`constraints.requires[${i}]`, `no medium "${medium}"`, `use ${MEDIA.join(', ')}`);
+  if (constraints.requires?.includes('air')) {
+    const flies = (bias: ThemeBias, plans: readonly string[]) =>
+      plans.some((plan) => registry.get('bodyPlan', plan) && canFly(registry, plan, bias));
+    const plans = constraints.bodyPlan ? [constraints.bodyPlan] : Object.keys(theme.bias.plans);
+    if (!flies(theme.bias, plans)) {
+      const fliers = registry
+        .list('theme')
+        .filter((t) => t.bias && flies(t.bias, Object.keys(t.bias.plans)))
+        .map((t) => t.id);
+      return fail(
+        'constraints.requires',
+        `no ${constraints.bodyPlan ?? options.theme} body in the ${options.theme} theme has wings to fly with`,
+        fliers.length > 0
+          ? `use a theme with wings: ${fliers.join(', ')}`
+          : 'add wings to a creature with patch',
+      );
+    }
+  }
 
   const needs = neededFeatures(registry, constraints.actions ?? []);
   const root = createRng(options.seed).stream(`theme:${options.theme}`);
@@ -351,8 +464,16 @@ export function generate(options: GenerateOptions, registry: Registry): Generate
     const missingParts = (constraints.parts ?? []).filter(
       (t) => !result.creature?.parts.some((p) => p.type === t),
     );
-    if (missing.length > 0 || missingParts.length > 0) {
+    const media = result.creature.motion.media;
+    const unmet = (constraints.requires ?? []).filter((m) => !media[m]);
+    if (missing.length > 0 || missingParts.length > 0 || unmet.length > 0) {
       last = [
+        ...unmet.map((m) => ({
+          severity: 'error' as const,
+          path: 'constraints.requires',
+          code: 'cannot_generate',
+          message: `could not make a ${options.theme} creature that moves ${m === 'air' ? 'through the air' : m === 'water' ? 'in water' : 'on land'}`,
+        })),
         ...missing.map((a) => ({
           severity: 'error' as const,
           path: 'constraints.actions',
@@ -384,8 +505,8 @@ export function generate(options: GenerateOptions, registry: Registry): Generate
 }
 
 /**
- * Height and length of the body (metres) from its skeleton: skin bones and their radii, not horns
- * or spikes. Cheap: no meshing.
+ * Height and length of the body (metres) from its skeleton: skin bones and their radii, not horns,
+ * spikes, wings or fins. Cheap: no meshing.
  */
 export function measureBody(
   spec: NonNullable<ReturnType<typeof validateBlueprint>['creature']>,
@@ -396,7 +517,8 @@ export function measureBody(
   let front = Number.NEGATIVE_INFINITY;
   let back = Number.POSITIVE_INFINITY;
   for (const b of bones) {
-    if (!b.skin) continue;
+    // Wing and fin bones are built spread (the bind pose) and rest folded: not the body.
+    if (!b.skin || b.tube) continue;
     top = Math.max(top, b.head.y + b.r0 * b.cross[1], b.tail.y + b.r1 * b.cross[1]);
     front = Math.max(front, b.head.z + b.r0, b.tail.z + b.r1);
     back = Math.min(back, b.head.z - b.r0, b.tail.z - b.r1);

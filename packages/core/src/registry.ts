@@ -234,6 +234,16 @@ export interface PackDefaults {
   readonly layers?: readonly Readonly<Record<string, unknown>>[];
   /** Body plan `generate` falls back on when no plan of a theme fits. */
   readonly bodyPlan?: string;
+  /**
+   * Part tags that mark a lineage, such as `bird` or `insect`: mutation adds or swaps in a part
+   * with one only on a creature that already wears a part, foot or membrane with it.
+   */
+  readonly lineage?: readonly string[];
+  /**
+   * Part tags that tie a part to a medium, such as `aquatic` for water: mutation adds or swaps in
+   * such a part only on a creature that moves in it (or already wears one).
+   */
+  readonly habitat?: Readonly<Record<string, Medium>>;
 }
 
 /** A named set of modules. Games include only the packs they want. */
@@ -325,7 +335,7 @@ export function createRegistry(packs: readonly Pack[]): Registry {
       if (value !== undefined && defaults[name] === undefined) defaults[name] = value;
     }
   }
-  const kindOf: Record<keyof PackDefaults, ModuleKind> = {
+  const kindOf: Partial<Record<keyof PackDefaults, ModuleKind>> = {
     foot: 'part',
     membrane: 'part',
     layers: 'pattern',

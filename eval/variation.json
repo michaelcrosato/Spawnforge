@@ -1,5 +1,5 @@
 {
-  "description": "Phase 5 variation eval: tasks that need species, mutate, crossbreed and generate. Each names the files to save in the run folder; eval/variation.ts checks them.",
+  "description": "Variation eval: tasks that need species, mutate, crossbreed and generate, over plan 1's vocabulary (v01\u2013v08, phase 5) and format 0.2's heads, wings, tentacles, coverings and themes (v09\u2013v12, milestone 9.6). Each names the files to save in the run folder; eval/variation.ts checks them.",
   "tasks": [
     {
       "id": "v01-wolf-species",
@@ -32,6 +32,22 @@
     {
       "id": "v08-tall-raptor",
       "task": "Generate a reptile that walks on two legs and whose body is at least 1.5 m tall. Save it as v08.json."
+    },
+    {
+      "id": "v09-flying-dragon",
+      "task": "Generate a dragon that can fly and whose body is no taller than 1.2 m. Save it as v09.json."
+    },
+    {
+      "id": "v10-winged-wolf",
+      "task": "Crossbreed examples/grey-wolf.json with examples/griffin.json so that the child keeps the wolf's four-legged body and its paws but grows the griffin's wings. Save it as v10.json."
+    },
+    {
+      "id": "v11-hydra-litter",
+      "task": "Make three different mutants of examples/hydra.json that all keep its five heads and gain no wings. Save them as v11.a.json, v11.b.json and v11.c.json."
+    },
+    {
+      "id": "v12-armoured-horror",
+      "task": "Use the eldritch theme to find a creature with at least two heads, then give it armour (a shell or bands of armour) so that its defence in the rpg stats module is at least 12. Save the final blueprint as v12.json."
     }
   ]
 }

@@ -1,7 +1,7 @@
 import type { Issue } from '../blueprint/issues.ts';
 import { cloneJson, isRecord } from '../blueprint/merge.ts';
 import type { Registry } from '../registry.ts';
-import { createRng } from '../rng.ts';
+import { createRng, type Rng } from '../rng.ts';
 import {
   blendColor,
   canonicalPath,
@@ -97,6 +97,78 @@ function counterpart(path: string, pairs: Map<string, string>): string | undefin
   return other === undefined ? undefined : other + path.slice(item.length);
 }
 
+const section = (doc: Json, name: string): Json | undefined =>
+  isRecord(doc.body) && isRecord(doc.body[name]) ? doc.body[name] : undefined;
+
+/**
+ * Heads and tails: each section's count comes whole from one parent (the donor's with chance
+ * `t`), with that parent's fan and, for tails, fork. A creature never gets two and a half heads.
+ */
+function inheritCounts(child: Json, donor: Json, t: number, locked: readonly string[], rng: Rng) {
+  for (const [name, keys] of [
+    ['neck', ['spread']],
+    ['tail', ['spread', 'forkAt']],
+  ] as const) {
+    const mine = section(child, name);
+    const theirs = section(donor, name);
+    // One draw per section, made whatever happens, so locking one never moves the other.
+    const take = rng.stream(name).chance(t);
+    if (!mine || !theirs || !take || mine.count === theirs.count) continue;
+    if (isLocked(`body.${name}.count`, locked)) continue;
+    // A count of tails means nothing on a body without one.
+    if (name === 'tail' && (mine.length === 0 || theirs.length === 0)) continue;
+    mine.count = theirs.count;
+    for (const key of keys)
+      if (theirs[key] === undefined) delete mine[key];
+      else mine[key] = cloneJson(theirs[key]);
+  }
+}
+
+/** Roles a child may gain or lose by breeding; legs and arms are its body plan's. */
+const BRED_ROLES = ['wing', 'fin', 'tentacle'] as const;
+
+/**
+ * Wings, fins and tentacles: pairs of one role match one to one (by id, then from front to back),
+ * and how many the child has comes from one parent, the donor's with chance `t`. Taking the
+ * donor's brings over its unmatched limbs of that role (a wolf gains a griffin's wings) or drops
+ * the base's (a griffin loses them); matched limbs blend gene by gene as before.
+ */
+function inheritLimbs(child: Json, donor: Json, t: number, locked: readonly string[], rng: Rng) {
+  const roleOf = (l: Json) => (typeof l.role === 'string' ? l.role : 'leg');
+  const at = (l: Json) => (isRecord(l.attach) && typeof l.attach.at === 'number' ? l.attach.at : 0);
+  let limbs = items(child, 'limbs');
+  const ids = new Set([...limbs, ...items(child, 'parts')].map((x) => x.id));
+  for (const role of BRED_ROLES) {
+    const take = rng.stream(role).chance(t);
+    if (!take || isLocked('limbs', locked)) continue;
+    const mine = limbs.filter((l) => roleOf(l) === role);
+    const theirs = items(donor, 'limbs').filter((l) => roleOf(l) === role);
+    if (mine.length === theirs.length) continue;
+    const matched = new Set<Json>();
+    const unmatched = theirs.filter((d) => {
+      const same = mine.find((l) => l.id === d.id && !matched.has(l));
+      if (same) matched.add(same);
+      return !same;
+    });
+    const rest = mine.filter((l) => !matched.has(l)).sort((x, y) => at(x) - at(y));
+    unmatched.sort((x, y) => at(x) - at(y));
+    // Front to back, as many as both have.
+    const paired = Math.min(rest.length, unmatched.length);
+    for (const limb of rest.slice(0, paired)) matched.add(limb);
+    unmatched.splice(0, paired);
+    limbs = limbs.filter(
+      (l) => roleOf(l) !== role || matched.has(l) || isLocked(`limbs[id=${l.id}]`, locked),
+    );
+    for (const limb of unmatched) {
+      let id = limb.id as string;
+      for (let n = 2; ids.has(id); n++) id = `${limb.id}${n}`;
+      ids.add(id);
+      limbs.push({ ...cloneJson(limb), id });
+    }
+  }
+  child.limbs = limbs;
+}
+
 /** Resamples a profile to `n` values. */
 function resample(profile: readonly number[], n: number): number[] {
   if (profile.length === n) return [...profile];
@@ -177,6 +249,9 @@ export function crossbreed(
     }
     if (value !== undefined) setAt(child, gene.path, value);
   }
+
+  inheritCounts(child, donor, t, locked, root.stream('counts'));
+  inheritLimbs(child, donor, t, locked, root.stream('limbs'));
 
   // Unmatched parts: the base's stay with chance 1 - t (sense organs always stay), the donor's
   // come over with chance t.

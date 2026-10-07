@@ -1,0 +1,100 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Azoth",
+  "seed": 1714134545,
+  "extends": "quadruped",
+  "scale": 1.42,
+  "body": {
+    "muscle": 0.439,
+    "torso": {
+      "radius": [0.161, 0.246, 0.212, 0.154],
+      "arch": 0.099
+    },
+    "neck": {
+      "count": 3,
+      "spread": 67,
+      "length": 0.569,
+      "radius": [0.06, 0.1],
+      "pitch": 37,
+      "curve": 4
+    },
+    "head": {
+      "radius": 0.0834
+    },
+    "tail": {
+      "length": 0.835,
+      "radius": [0.08, 0.012]
+    }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "length": 0.59
+    },
+    {
+      "id": "hindleg",
+      "length": 0.571
+    },
+    {
+      "id": "feelers",
+      "role": "tentacle",
+      "attach": {
+        "on": "head",
+        "at": 0.15,
+        "angle": 133
+      },
+      "length": 0.59,
+      "segments": 8,
+      "radius": [0.03, 0.006],
+      "curl": 125
+    }
+  ],
+  "parts": [
+    {
+      "id": "eyes",
+      "params": {
+        "scale": 1.91,
+        "pupil": "slit",
+        "irisColor": "#d2d644",
+        "lids": false
+      }
+    },
+    {
+      "id": "teeth",
+      "type": "teeth.row",
+      "params": {
+        "count": 20,
+        "spacing": 0.2
+      }
+    },
+    {
+      "id": "shell",
+      "type": "shell"
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#533867",
+      "belly": "#9f8aad",
+      "accent": "#0b080e"
+    },
+    "material": "hide",
+    "layers": [
+      {
+        "type": "countershade",
+        "softness": 0.4,
+        "strength": 0.6
+      },
+      {
+        "type": "bioluminescence",
+        "color": "#42d1be",
+        "size": 0.0244
+      },
+      {
+        "type": "mottle",
+        "color": "accent",
+        "scale": 0.153
+      }
+    ]
+  }
+}

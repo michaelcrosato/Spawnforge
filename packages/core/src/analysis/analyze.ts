@@ -96,6 +96,16 @@ export interface Analysis {
     readonly centreOfMass: readonly [number, number, number];
     readonly triangles: number;
     readonly bones: number;
+    /** How many heads, tails, legs, arms, wings, fins and tentacles it has (a pair counts 2). */
+    readonly counts: {
+      readonly heads: number;
+      readonly tails: number;
+      readonly legs: number;
+      readonly arms: number;
+      readonly wings: number;
+      readonly fins: number;
+      readonly tentacles: number;
+    };
     /** Tip to tip with the wings spread (m); only with wings. */
     readonly wingspan?: number;
     /** The longest tentacle, root to tip (m); only with tentacles. */
@@ -188,6 +198,15 @@ export function analyzeCreature(
     centreOfMass: [centre.x, centre.y, centre.z] as const,
     triangles: t.skin + t.parts + t.eyes + t.membranes,
     bones: compiled.bones.names.length,
+    counts: {
+      heads: compiled.rig.heads.length,
+      tails: compiled.rig.tails.length,
+      legs: spec.limbs.filter((l) => l.role === 'leg').length,
+      arms: spec.limbs.filter((l) => l.role === 'arm').length,
+      wings: spec.limbs.filter((l) => l.role === 'wing').length,
+      fins: spec.limbs.filter((l) => l.role === 'fin').length,
+      tentacles: spec.limbs.filter((l) => l.role === 'tentacle').length,
+    },
     ...(compiled.rig.wings.length > 0 && compiled.spreadBounds
       ? { wingspan: compiled.spreadBounds.max[0] - compiled.spreadBounds.min[0] }
       : {}),

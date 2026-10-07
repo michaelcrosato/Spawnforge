@@ -37,7 +37,7 @@ const bestiary = await createBestiary({
 const blueprint = await (await fetch('/creatures/stalker.json')).json();
 const stalker = await bestiary.spawn(blueprint, { seed: 7, quality: 'medium', position: { x: 4, z: 0 } });
 scene.add(stalker.object);
-const stats = bestiary.stats(stalker, 'rpg'); // { health, speed, attack, defence, perception, threat }
+const stats = bestiary.stats(stalker, 'rpg'); // { health, speed, attack, attacks, defence, perception, threat }
 
 stalker.moveTo({ x: 10, z: -3 }, { speed: 2 });
 stalker.on('arrive', () => stalker.act('roar'));
@@ -233,8 +233,10 @@ metadata or custom properties, and where yours does not, read them from the file
 A stats module turns a creature's measured body into one game's numbers, so form drives
 function. `spawnforge analyze creature.json --stats rpg` adds them to the analysis, `export
 --stats rpg` stores them in the file, and `bestiary.stats` computes them live. The `rpg` module in
-the basic pack is an example: health from mass, speed from the fastest gait, attack from teeth,
-horns and claws, defence from chitin, scales and spikes, perception from eyes.
+the basic pack is an example: health from mass, speed from the fastest gait, attack from one
+head's teeth and horns plus claws, one attack a turn per head, defence from shells, plates and
+bands of armour, chitin, scales and spikes, perception from eyes. Stats modules see which head
+each part sits on (`parts[].head`), since parts on a head are copied to every head.
 
 A game writes its own as one file in a pack:
 

@@ -143,7 +143,7 @@ export function createServer(): McpServer {
     {
       title: 'Analyze a blueprint',
       description:
-        'Builds the creature and checks it: measurements (length, height, width, mass, centre of mass, hip height), speeds per gait, bite reach, balance over its feet, and motion run for two gait cycles on flat and rough ground (foot slide, ground penetration, legs stretched past their reach, limbs passing through each other or the body, each with the limb and time). Returns plausibility warnings with id-based paths and fixes, and a plain-text description of the creature. With a scenario it also runs that scripted scene and reports its events, distance walked, how close a snout came to each target, courses reached and foot slide. Use it after validate and before render to catch problems you cannot see in a still image.',
+        'Builds the creature and checks it: measurements (length, height, bodyHeight, width, mass, centre of mass, hip height, and counts of heads, tails and limbs by role), speeds per gait, bite reach, balance over its feet, and motion run for two gait cycles on flat and rough ground (foot slide, ground penetration, legs stretched past their reach, limbs passing through each other or the body, each with the limb and time). Returns plausibility warnings with id-based paths and fixes, and a plain-text description of the creature. With a scenario it also runs that scripted scene and reports its events, distance walked, how close a snout came to each target, courses reached and foot slide. Use it after validate and before render to catch problems you cannot see in a still image.',
       inputSchema: z.object({
         blueprint: z
           .record(z.string(), z.unknown())
@@ -272,7 +272,7 @@ export function createServer(): McpServer {
     {
       title: 'Generate a creature from a theme',
       description:
-        'Builds a new, valid creature from a theme (list_modules with kind "theme": reptile, insect, demon) and a seed: the theme weights the body plan, proportions, parts, patterns, colours and temperament. Constraints fix the body plan, a body height range in metres (the creature is rescaled to fit), actions it must be able to do and part types it must have. The same theme, seed and constraints always give the same creature. Returns the minimal blueprint and its body height (bodyHeight, without horns, as analyze reports it) and length.',
+        'Builds a new, valid creature from a theme (list_modules with kind "theme": reptile, insect, demon, dragon, aquatic, eldritch, beast) and a seed: the theme weights the body plan, proportions, limbs, parts, patterns, colours and temperament. Constraints fix the body plan, a body height range in metres (the creature is rescaled to fit), actions it must be able to do, part types it must have and media it must move in (air needs a theme with wings). The same theme, seed and constraints always give the same creature. Returns the minimal blueprint and its body height (bodyHeight, without horns, as analyze reports it) and length.',
       inputSchema: z.object({
         theme: z.string().describe('Theme module id, e.g. "reptile"'),
         seed: z.number().int().optional().describe('Which creature (default 1)'),
@@ -286,6 +286,10 @@ export function createServer(): McpServer {
               .array(z.string())
               .optional()
               .describe('Part types it must have, e.g. ["horn.curved"]'),
+            requires: z
+              .array(z.enum(['land', 'water', 'air']))
+              .optional()
+              .describe('Media it must move in, e.g. ["air"] for a flyer, ["water"] for a swimmer'),
           })
           .optional(),
         out: outInput,

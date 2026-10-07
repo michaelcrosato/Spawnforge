@@ -575,11 +575,25 @@ make an individual first:
 
 **Mutate.** `mutate` (CLI `spawnforge mutate wolf.json --seed 3 --amount 0.3 --lock
 skin,body.head`) makes a child: numbers drift within their schema ranges, profiles scale, colours
-shift, and now and then an enum flips or a part is added, removed or swapped for one with the
-same slot and a shared tag (eyes and ears are never touched). `amount` (0 to 1) is how many genes
-change and how far; values of zero stay zero, so a tailless creature does not sprout a tail.
-`locked` paths, such as `skin`, `body.head`, `parts[id=horns]` or `skin.layers[type=stripes]`,
-never change; a lock that matches nothing comes back as an `unknown_lock` warning. Palette colours
+shift, and now and then an enum flips, a part is added, removed or swapped for one with the
+same slot and a shared tag (eyes and ears are never touched), or the feet of every limb of one
+role change together to other feet that stand a leg (paws, hooves, pads, talons, claws; hands
+to other hands). A part of a lineage (a beak, mandibles, a hood) joins only a creature that
+already wears one (a bird, an insect, a snake), and fins only creatures that swim. Switches
+(`head.jaw`, a teeth row's `upper`, eyelids, cloven hooves) never flip, and the skin's `material`
+never drifts, so a viper stays a scaled snake with fangs. Mutation never changes how many
+heads, tails or limbs a creature has, so it never grows wings or a second head: those come from
+themes, `patch` and crossbreeding. `amount` (0 to 1) is how many genes change and how far;
+values of zero stay zero, so a tailless creature does not sprout a tail and a single tail does
+not fork.
+`locked` paths, such as `skin`, `body.head`, `parts[id=horns]`, `skin.layers[type=stripes]` or
+a top-level field like `scale`, never change; a lock that matches nothing comes back as an
+`unknown_lock` warning. `scale` is a gene like any other, and lengths are in torso lengths, so lock
+`scale` too when a size must hold in metres. Quote lock paths in a shell (`--lock
+'skin,parts[id=horns]'`), since brackets glob. `--keep-parts` (MCP `structure: false`) turns off
+the structural changes: no part or foot is added, removed or swapped. Mutation checks that the
+child is valid, not that it moves well: run `analyze` on it (a mutated hydra's necks can fan into
+each other). Palette colours
 keep their contrast with the base, so a mutated stripe never fades into the skin, and eyes and
 ears are never added, removed or swapped. The result is the parent's file with the changes
 written in, plus a gene-by-gene diff; it keeps the parent's `name` and `seed` (the seed places
@@ -592,20 +606,32 @@ parent's file. It pairs limbs by id or by role and position (forelegs with forel
 or type (same type on the same section: tusks on the jaw don't pair with a horn on the head),
 and layers, gaits and actions by type; then it blends numbers and colours between pairs, picks
 enums and switches from either parent, and brings unpaired parts, layers and actions over by
-chance. `mix` 0 or 1 copies a parent; in between, each gene's share wobbles a little around
-`mix`. Posture blends too (torso and neck pitch), so to keep one parent's body, build on it with
+chance. Heads and tails come whole from one parent: the child has the base's count of necks
+and heads, or the other parent's with chance `mix`, with that parent's `spread` (and, for tails,
+`forkAt`). Wings, fins and tentacles pair one to one by role, and how many of each the child has
+comes from one parent the same way: a wolf can grow a griffin's wings, and a griffin can lose
+them. Legs and arms are always the base's. `--lock limbs` keeps the base's limbs exactly, so
+it also keeps out the other parent's wings: to keep the legs and take the wings, lock the legs by
+id (`--lock 'limbs[id=foreleg],limbs[id=hindleg]'`). The base's own unpaired parts stay only with
+chance `1 − mix` (a wolf crossed with a griffin may lose its teeth); lock `parts` to keep them.
+`mix` 0 or 1 copies a parent; in between, each gene's share wobbles a little around `mix`. Posture blends too (torso and neck pitch), so to keep one parent's body, build on it with
 `--base a` and lock what must not change: `--lock body.torso,limbs`. The result says which parent
 it is built on (`base`) and diffs against it.
 
 **Generate.** `generate` (CLI `spawnforge generate --theme reptile --seed 4`) builds a new
-creature from a theme module (`list_modules` with kind `theme`: `reptile`, `insect`, `demon`).
-The theme weights the body plan and narrows the proportions, optional parts, patterns, palette,
-material and temperament; the same theme and seed always give the same creature. Constraints
+creature from a theme module (`list_modules` with kind `theme`: `reptile`, `insect`, `demon`,
+`dragon` (wings), `aquatic` (fins, swimmers), `eldritch` (tentacles, extra eyes and heads) and
+`beast` (furred mammals on paws or hooves)). The theme weights the body plan and narrows the
+proportions, optional limbs and parts, patterns, palette, fur, material and temperament; the
+same theme and seed always give the same creature. Constraints
 narrow it further: `--body-plan biped`, `--max-height 1.2` and `--min-height 0.5` (body height in
 metres, not counting horns or spikes, the same as `analyze`'s `bodyHeight`; its `height` counts
-them; the creature is rescaled to fit), `--actions bite,roar` (it gets a body that can; the file
-leaves `motion.actions` out, which means every action the body allows) and `--parts
-horn.curved`. Generated blueprints are ordinary blueprints: edit them
+them; the creature is rescaled to fit, so a limit it would break is met exactly, to the
+millimetre), `--actions bite,roar` (it gets a body that can; the file
+leaves `motion.actions` out, which means every action the body allows), `--parts
+horn.curved` and `--requires air,water` (media it must move in: `air` needs wings, so only a
+theme with wings can fly; `water` picks a swimmer or turns swimming on for a walker). The blueprint's own `seed` (which places its markings) is drawn from the theme and the
+`--seed` you give, so it differs from it. Generated blueprints are ordinary blueprints: edit them
 with `patch`, or `mutate` and `crossbreed` them. In the sandbox, the breed tab does all three.
 
 ## Validation

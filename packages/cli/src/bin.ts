@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { readFileSync, writeFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
-import { MODULE_KINDS, type ModuleKind } from '@spawnforge/core';
+import { type Medium, MODULE_KINDS, type ModuleKind } from '@spawnforge/core';
 import type { View } from '@spawnforge/render';
 import {
   analyze,
@@ -62,8 +62,9 @@ Commands:
                                         JSON list, e.g. '[{"op":"set","path":"body.tail.length","value":1.2}]'
                                         (ops: set, add, remove, mirror, scale)
   generate --theme <id> [--seed n] [--body-plan id] [--max-height m] [--min-height m]
-           [--actions bite,roar] [--parts horn.curved] [--out file]
-                                        A new creature from a theme (reptile, insect, demon…)
+           [--actions bite,roar] [--parts horn.curved] [--requires air,water] [--out file]
+                                        A new creature from a theme (reptile, dragon, beast…);
+                                        --requires names media it must move in
   mutate <file|-> [--seed n] [--amount 0-1] [--lock path,path] [--keep-parts] [--out file]
                                         A child of one blueprint: values drift, parts may change;
                                         locked paths (e.g. skin,body.head) never do
@@ -131,6 +132,7 @@ function parseOptions() {
       seed: { type: 'string' },
       'body-plan': { type: 'string' },
       'max-height': { type: 'string' },
+      requires: { type: 'string' },
       'min-height': { type: 'string' },
       actions: { type: 'string' },
       parts: { type: 'string' },
@@ -365,6 +367,7 @@ const commands: Record<
     const minHeight = number('min-height', values['min-height']);
     const actions = list(values.actions);
     const parts = list(values.parts);
+    const requires = list(values.requires) as Medium[] | undefined;
     return emit(
       generate({
         theme: values.theme,
@@ -375,6 +378,7 @@ const commands: Record<
           ...(minHeight !== undefined ? { minHeight } : {}),
           ...(actions ? { actions } : {}),
           ...(parts ? { parts } : {}),
+          ...(requires ? { requires } : {}),
         },
       }),
     );

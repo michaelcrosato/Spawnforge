@@ -93,6 +93,7 @@ describe('stats', () => {
       'health',
       'speed',
       'attack',
+      'attacks',
       'defence',
       'perception',
       'threat',

@@ -142,6 +142,27 @@ Work in progress toward 0.2, phase by phase (see the plan's status table).
   skips bones without children. Creatures without these parts are unchanged.
 - **Examples:** a stone tortoise, a plated stegosaur, a porcupine, a frilled lizard, a hooded
   cobra and a sail-back.
+- **Variation for format 0.2 (9.6):** genes cover the new fields: part `count`s and `forkAt`
+  drift again (since 7.3 every field named `count` was held still). Mutation never changes how
+  many heads, tails or limbs a creature has; its structural changes now include the feet of one
+  role at a time (to feet that stand a leg, or hands to hands), skip membranes, add fins only to
+  swimmers, and move a swapped part to where its new module sits. Crossbreeding takes each
+  section's head and tail count (with `spread` and `forkAt`) whole from one parent, and pairs
+  wings, fins and tentacles one to one by role, the child's count of each coming from one
+  parent, so a wolf can grow a griffin's wings; limbs it gains that do not fit are dropped.
+  Themes `dragon`, `aquatic`, `eldritch` and `beast`; themes may add optional limb sets
+  (`bias.limbs`, which may change a limb by id, such as hooves for paws) and skin fields
+  (`bias.skin`, such as fur), and their shapes may set `motion.media`. `generate --requires
+  air,water` (MCP `constraints.requires`) asks for media: air only from a theme with wings,
+  water from a swimmer or by turning swimming on. `rpg` gains `attacks` (one per head; `attack`
+  is one head's hit) and defence from shells, plates and bands of armour (and `hide`), and stats
+  inputs say which head each part sits on. `scripts/theme-sheet.ts` draws a theme across seeds.
+  The variation eval gains four tasks (v09–v12) and passed 12/12. From its feedback: mutation
+  never flips a switch (`head.jaw` is no longer a gene at all) or drifts the skin's material;
+  packs name lineage tags (`bird`, `insect`, `snake`) and habitat tags (`aquatic`) in their
+  defaults, so a snake never sprouts a beak; `bodyHeight` leaves out wings and fins (it counted
+  the spread wing bones); `analyze` reports `measurements.counts`; the insect theme's pincers are
+  mandibles.
 
 ## 0.1.0
 

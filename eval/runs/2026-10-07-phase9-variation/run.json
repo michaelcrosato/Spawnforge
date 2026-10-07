@@ -1,0 +1,10 @@
+{
+  "phase": 9,
+  "kind": "variation eval (milestone 9.6): twelve tasks that need species, mutate, crossbreed and generate, v09–v12 over format 0.2's heads, wings, tentacles, coverings and themes (eval/variation.json), checked by eval/variation.ts",
+  "date": "2026-10-07",
+  "model": "Claude Sonnet (Claude Code subagent, model alias \"sonnet\")",
+  "commit": "4a0b25d",
+  "tools": "spawnforge CLI: validate, describe-module, list-modules, analyze, patch, diff, render, generate, mutate, crossbreed, instantiate",
+  "docs": ["docs/blueprint.md", "docs/catalog.md", "examples/", "README.md"],
+  "agents": "3 independent agents, 4 tasks each, no shared context"
+}
