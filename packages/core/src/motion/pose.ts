@@ -10,6 +10,8 @@ const Y = new Vector3(0, 1, 0);
 export class Pose {
   readonly count: number;
   readonly parents: Int16Array;
+  /** Whether each bone has children. */
+  private readonly parent: Uint8Array;
   /**
    * Rest local transforms: the pose a creature stands in, which `reset` returns to. It equals
    * the bind pose except where `BonesData.rest` says otherwise (folded wings,
@@ -42,6 +44,8 @@ export class Pose {
     const n = bones.names.length;
     this.count = n;
     this.parents = bones.parents;
+    this.parent = new Uint8Array(bones.parents.length);
+    for (const p of bones.parents) if (p >= 0) this.parent[p] = 1;
     this.lengths = bones.lengths;
     this.bindWorldPos = Array.from({ length: n }, (_, i) =>
       new Vector3().fromArray(bones.positions, i * 3),
@@ -118,6 +122,8 @@ export class Pose {
   /** Solves a bone and all its descendants (bones are ordered parents first). */
   solveSubtree(i: number): void {
     this.solveBone(i);
+    // Leaves (most part bones: quills, a frill's spines) have nothing below them.
+    if (!this.parent[i]) return;
     for (let j = i + 1; j < this.count; j++) {
       let p = this.parents[j] as number;
       while (p > i) p = this.parents[p] as number;

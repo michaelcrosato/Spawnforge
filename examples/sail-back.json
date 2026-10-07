@@ -1,0 +1,41 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Sail-back",
+  "seed": 4404,
+  "extends": "quadruped",
+  "scale": 1.3,
+  "body": {
+    "torso": { "radius": [0.13, 0.16, 0.17, 0.14] },
+    "neck": { "length": 0.12 },
+    "head": { "shape": "snout", "length": 0.3, "radius": 0.1 },
+    "tail": { "length": 1.3, "radius": [0.1, 0.015], "pitch": 3 }
+  },
+  "limbs": [
+    { "id": "foreleg", "splay": 50, "length": 0.38 },
+    { "id": "hindleg", "splay": 50, "length": 0.4 }
+  ],
+  "parts": [
+    {
+      "id": "sail",
+      "type": "sail",
+      "attach": { "on": "spine", "from": 0.14, "to": 0.55 },
+      "params": {
+        "height": [0.08, 0.45, 0.5, 0.35, 0.06],
+        "spines": 18,
+        "color": "#b0482a",
+        "spineColor": "#6a5038"
+      }
+    },
+    { "id": "teeth", "type": "teeth.row" },
+    { "id": "eyes", "params": { "irisColor": "#d07020" } }
+  ],
+  "skin": {
+    "palette": { "base": "#7a5a3a", "belly": "#c8a878", "accent": "#3a2418" },
+    "material": "scales",
+    "layers": [
+      { "type": "countershade", "softness": 0.3 },
+      { "type": "stripes", "color": "accent", "count": 10, "width": 0.3, "region": "torso" }
+    ]
+  },
+  "motion": { "temperament": "stalking", "actions": ["display", "bite", "roar", "idle"] }
+}

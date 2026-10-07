@@ -72,7 +72,10 @@ station bones; `fin.dorsal` and `fin.tail`; the `wings` goal, `render --pose spr
 `wing_intersection`; `docs/design/9.3-wings-fins.md`) and 9.4 (tentacles that curl onto the
 ground, sway on soft springs and reach by FABRIK; part modules with bones of their own through a
 `bones` hook, so `antenna`, `mandible` and `hand.pincer` are one file each; `jaw` and `grip`
-drives; `pinch`, `lash`, `suckers`; `tentacle_intersection`; `docs/design/9.4-tentacles-parts.md`).
+drives; `pinch`, `lash`, `suckers`; `tentacle_intersection`; `docs/design/9.4-tentacles-parts.md`)
+and 9.5 (the area slot with `ctx.surface` and `ctx.scatter`; `shell`, `armor.bands`,
+`plates.row`, `quills`, `frill`, `hood` and `sail`; frills, hoods, sails and quills on the `flare`
+drive, opened by `display`; `render --flare`; `docs/design/9.5-coverings.md`).
 
 ## Repo map
 

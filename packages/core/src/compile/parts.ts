@@ -1,6 +1,6 @@
 import { type Quaternion, Vector3 } from 'three';
 import { hexToRgb, toHex } from '../blueprint/colors.ts';
-import type { PartSpec } from '../blueprint/creature.ts';
+import type { Area, PartSpec } from '../blueprint/creature.ts';
 import { type GeometryKit, geometryKit, type MeshPiece, mirrorX } from '../geometry/kit.ts';
 import type { PartMaterial, PartModule, Registry } from '../registry.ts';
 import { createRng, type Rng } from '../rng.ts';
@@ -231,10 +231,46 @@ export interface PartBuildContext {
   }[];
   /** Rows and columns a membrane may use at this quality (scale counts by it). */
   readonly detail: number;
+  /**
+   * The skin at a signed `angle` round what the part sits on (negative to the right), whatever
+   * its side: area parts cover both flanks with it (docs/design/9.5-coverings.md). `near`, a
+   * socket close by (the last one on a grid), makes finding the skin much cheaper.
+   */
+  surface(at: number, angle: number, near?: Socket): Socket;
+  /** Area-slot parts: the band of skin they cover. */
+  readonly area?: AreaBand;
+  /**
+   * Area-slot parts: points over the area no closer than `spacing` metres (Poisson-disk, by dart
+   * throwing from the part's own stream), measured along the body and round it, at most `count`.
+   */
+  scatter(spacing: number, options?: { readonly count?: number }): ScatterPoint[];
 }
 
 /** Hooks a part module provides (membrane modules add `WingHooks`). */
 /** A chain of bones a part declares for itself (docs/design/9.4-tentacles-parts.md). */
+/**
+ * The skin an area-slot part covers (docs/design/9.5-coverings.md): its area, `from` and `to`
+ * along what it sits on, and the angles from the top (0) toward the belly (180) the area spans
+ * on each side.
+ */
+export interface AreaBand {
+  readonly area: Area;
+  readonly from: number;
+  readonly to: number;
+  readonly angles: readonly [number, number];
+}
+
+/** Each area's band of angles from the top, on both sides. */
+export const AREA_ANGLES: Readonly<Record<Area, readonly [number, number]>> = {
+  back: [0, 70],
+  sides: [50, 130],
+  belly: [110, 180],
+  all: [0, 180],
+};
+
+/** A scattered point: its socket on the skin and where it is, `at` along and signed `angle`. */
+export type ScatterPoint = Socket & { readonly at: number; readonly angle: number };
+
 export interface PartChain {
   /** Joints in model space, root first (one more than bones); place them with `ctx.toModel`. */
   readonly points: readonly Vector3[];
@@ -246,12 +282,13 @@ export interface PartChain {
   readonly up?: Vector3;
   /**
    * What moves it: `spring` sways (antennae), `jaw` opens with the jaw (mandibles), `grip`
-   * closes with the `grip` goal (a pincer's finger). Left out, it holds still.
+   * closes with the `grip` goal (a pincer's finger), `flare` opens with the `flare` goal (frills,
+   * hoods, quills and sails, docs/design/9.5-coverings.md). Left out, it holds still.
    */
-  readonly drive?: 'spring' | 'jaw' | 'grip';
+  readonly drive?: 'spring' | 'jaw' | 'grip' | 'flare';
   /** Springs: how hard it is pulled back toward rest per step, 0 to 1. */
   readonly stiffness?: number;
-  /** jaw and grip: each bone's turn about its local X at full drive (radians). */
+  /** jaw, grip and flare: each bone's turn about its local X at full drive (radians). */
   readonly pose?: readonly number[];
 }
 
@@ -437,6 +474,28 @@ export function buildParts(
     return { position, normal };
   };
 
+  /**
+   * `toSurface` near a known hit: neighbouring points on a grid lie at about the same depth, so a
+   * bracket round `guess` (metres from `point`) and a short bisection find the skin with far fewer
+   * field evaluations. Falls back to the full march when the bracket misses.
+   */
+  const toSurfaceNear = (point: Vector3, dir: Vector3, radius: number, guess: number) => {
+    const f = (s: number) =>
+      evaluator.eval(point.x + dir.x * s, point.y + dir.y * s, point.z + dir.z * s);
+    let lo = Math.max(0, guess - 0.15 * radius);
+    let hi = guess + 0.15 * radius;
+    if (!(f(lo) < 0 && f(hi) >= 0)) return toSurface(point, dir, radius);
+    for (let i = 0; i < 16; i++) {
+      const mid = (lo + hi) / 2;
+      if (f(mid) >= 0) hi = mid;
+      else lo = mid;
+    }
+    const position = point.clone().addScaledVector(dir, hi);
+    const normal = evaluator.gradient(position.x, position.y, position.z, radius * 0.05);
+    if (normal.dot(dir) < 0.2) normal.copy(dir);
+    return { position, normal };
+  };
+
   const frameOf = (
     position: Vector3,
     normal: Vector3,
@@ -451,7 +510,13 @@ export function buildParts(
     return { position, normal, forward, side, radius, weights };
   };
 
-  const socketOn = (target: string, at: number, angle: number, mirror: number): Socket => {
+  const socketOn = (
+    target: string,
+    at: number,
+    angle: number,
+    mirror: number,
+    near?: Socket,
+  ): Socket => {
     const partPath = partPaths.get(target);
     if (partPath) {
       // On another part: around its centreline.
@@ -483,15 +548,71 @@ export function buildParts(
       m = (mirror || 1) * Math.sign(left.x * (limbMirror || 1) || 1);
     }
     const dir = aroundDirection(frame, angle, m);
-    const { position, normal } = toSurface(
-      frame.point,
-      dir,
-      frame.radius * Math.max(frame.cross[0], frame.cross[1]),
-    );
+    const reach = frame.radius * Math.max(frame.cross[0], frame.cross[1]);
+    const { position, normal } = near
+      ? toSurfaceNear(frame.point, dir, reach, near.position.distanceTo(frame.point))
+      : toSurface(frame.point, dir, reach);
     // Parts follow what they attach to: weights come only from that section's bones (the head,
     // not the jaw, which is a section of its own).
     const weights = weightsAt(position, input.weightOptions, new Set(path.map((seg) => seg.bone)));
     return frameOf(position, normal, frame.forward, frame.radius, weights);
+  };
+
+  /** Poisson-disk points over an area of `target` (docs/design/9.5-coverings.md). */
+  const scatterOn = (
+    target: string,
+    band: AreaBand,
+    spacing: number,
+    count: number,
+    stream: Rng,
+  ): ScatterPoint[] => {
+    const path = input.paths.get(target);
+    if (!path || spacing <= 0 || count <= 0) return [];
+    // The section's length and radius along the band, to measure distances on the body.
+    const steps = 32;
+    const along: number[] = [0];
+    const radius: number[] = [];
+    let previous: Vector3 | undefined;
+    for (let i = 0; i <= steps; i++) {
+      const frame = samplePath(input.bones, path, band.from + ((band.to - band.from) * i) / steps);
+      radius.push(frame.radius * Math.max(frame.cross[0], frame.cross[1]));
+      if (previous) along.push((along[i - 1] as number) + previous.distanceTo(frame.point));
+      previous = frame.point.clone();
+    }
+    const at = (u: number, values: readonly number[]) => {
+      const x = Math.min(1, Math.max(0, u)) * steps;
+      const i = Math.min(steps - 1, Math.floor(x));
+      return (values[i] as number) + ((values[i + 1] as number) - (values[i] as number)) * (x - i);
+    };
+    const widest = Math.max(...radius);
+    const [lo, hi] = band.angles;
+    const kept: { u: number; s: number; angle: number; r: number }[] = [];
+    let misses = 0;
+    while (kept.length < count && misses < 60) {
+      const u = stream.next();
+      const r = at(u, radius);
+      // Thicker stretches hold more of the area.
+      if (stream.next() * widest > r) continue;
+      const side = stream.next() < 0.5 ? -1 : 1;
+      const angle = side * (lo + (hi - lo) * stream.next());
+      const s = at(u, along);
+      const near = kept.some((k) => {
+        let turn = Math.abs(k.angle - angle);
+        if (turn > 180) turn = 360 - turn;
+        const round = ((k.r + r) / 2) * ((turn * Math.PI) / 180);
+        return Math.hypot(k.s - s, round) < spacing;
+      });
+      if (near) {
+        misses++;
+        continue;
+      }
+      misses = 0;
+      kept.push({ u, s, angle, r });
+    }
+    return kept.map((k) => {
+      const t = band.from + (band.to - band.from) * k.u;
+      return { ...socketOn(target, t, k.angle, 1), at: t, angle: k.angle };
+    });
   };
 
   const emitInto = (
@@ -767,7 +888,14 @@ export function buildParts(
     type: string,
     module: PartModule,
     mirror: 1 | -1 | 0,
-    place: { on: string; at: number; from: number; to: number; angle: number },
+    place: {
+      on: string;
+      at: number;
+      from: number;
+      to: number;
+      angle: number;
+      area?: Area | undefined;
+    },
     toes: PartBuildContext['toes'],
     wing?: WingContext,
   ): PartBuildContext => ({
@@ -784,6 +912,30 @@ export function buildParts(
     geo: geometryKit,
     color: resolveColor,
     socket: (at = place.at, angle = place.angle) => socketOn(place.on, at, angle, mirror),
+    surface: (at, angle, near) => socketOn(place.on, at, angle, 1, near),
+    ...(module.slot === 'area'
+      ? {
+          area: {
+            area: place.area ?? 'all',
+            from: place.from,
+            to: place.to,
+            angles: AREA_ANGLES[place.area ?? 'all'],
+          },
+        }
+      : {}),
+    scatter: (spacing, options = {}) =>
+      scatterOn(
+        place.on,
+        {
+          area: place.area ?? 'all',
+          from: place.from,
+          to: place.to,
+          angles: AREA_ANGLES[place.area ?? 'all'],
+        },
+        spacing,
+        options.count ?? 400,
+        rng.stream(`part:${baseId}:scatter`),
+      ),
     around: (t, row, angle) => {
       const h = headOf(place.on);
       if (!h?.mouth || h.jaw < 0) return undefined;
@@ -1098,7 +1250,14 @@ export function buildParts(
             part.type,
             module,
             part.mirror,
-            { on: part.on, at: part.at, from: part.from, to: part.to, angle: part.angle },
+            {
+              on: part.on,
+              at: part.at,
+              from: part.from,
+              to: part.to,
+              angle: part.angle,
+              area: part.area,
+            },
             [],
           ),
           hooks,

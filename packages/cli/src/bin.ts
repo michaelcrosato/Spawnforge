@@ -32,9 +32,10 @@ Commands:
                                         (--quiet leaves the blueprint out)
   render <file|-> [--out f.png] [--labels] [--size px] [--quality low|medium|high]
          [--views 3/4,side,head,front,top,rear,underside] [--jaw 0-1] [--blink 0-1]
-         [--pose rest|spread]
+         [--pose rest|spread] [--flare 0-1]
                                         PNG contact sheet of the creature (headless Chromium);
-                                        wings rest folded, --pose spread opens them
+                                        wings rest folded, --pose spread opens them; --flare
+                                        opens frills and hoods and raises quills and sails
   render <file|-> --filmstrip [--gait id] [--speed m/s] [--frames n] [--view side|3/4|top|front]
                                         One gait cycle as frames with a footfall diagram;
                                         prints cycle, stride, duty and foot slide
@@ -114,6 +115,7 @@ function parseOptions() {
       labels: { type: 'boolean' },
       jaw: { type: 'string' },
       blink: { type: 'string' },
+      flare: { type: 'string' },
       pose: { type: 'string' },
       size: { type: 'string' },
       views: { type: 'string' },
@@ -259,12 +261,13 @@ async function render(): Promise<{ output: unknown; exitCode?: number }> {
       ...(views ? { views } : {}),
       ...(values.quality ? { quality: qualityOf(values.quality) } : {}),
       ...(filmstrip ? { filmstrip } : {}),
-      ...(values.jaw || values.blink || values.pose
+      ...(values.jaw || values.blink || values.pose || values.flare
         ? {
             pose: {
               jaw: Number(values.jaw ?? 0),
               blink: Number(values.blink ?? 0),
               spread: poseSpread(values.pose),
+              flare: Number(values.flare ?? 0),
             },
           }
         : {}),

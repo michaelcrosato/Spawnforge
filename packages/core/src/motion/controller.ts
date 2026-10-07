@@ -170,6 +170,8 @@ export class MotionController {
   /** Grip-driven parts on the creature's left and right, damped toward the `grip` goal. */
   private gripLeft = 0;
   private gripRight = 0;
+  /** Frills, hoods, quills and sails, damped toward the `flare` goal (0 at rest, 1 open). */
+  private flare = 0;
   private readonly reachPoints: Vector3[] = [];
   /** Per arm, how far the `arms` goal turns it at 1 (radians). */
   private readonly armReach: readonly number[];
@@ -628,6 +630,8 @@ export class MotionController {
     const gripSide = this.goals.nearest ? this.sideOf(this.goals.look) : 0;
     this.gripLeft = damp(this.gripLeft, gripSide < 0 ? 0 : grip, 40, dt);
     this.gripRight = damp(this.gripRight, gripSide > 0 ? 0 : grip, 40, dt);
+    // Frills and hoods open in about 0.15 s.
+    this.flare = damp(this.flare, Math.max(0, Math.min(1, this.goals.flare ?? 0)), 7, dt);
     // Wings spread and fold over about 0.4 s (longer on big creatures).
     if (this.compiled.rig.wings.length > 0) {
       const want = Math.max(0, Math.min(1, this.goals.wings ?? this.wingGoal));
@@ -1485,10 +1489,14 @@ export class MotionController {
   private applyJaw(): void {
     this.pose.breath = this.goals.breath ?? 0;
     this.pose.time = this.time;
-    applyFace(this.pose, this.compiled.rig, this.goals.jaw ?? 0, this.goals.blink ?? 0, [
-      this.gripLeft,
-      this.gripRight,
-    ]);
+    applyFace(
+      this.pose,
+      this.compiled.rig,
+      this.goals.jaw ?? 0,
+      this.goals.blink ?? 0,
+      [this.gripLeft, this.gripRight],
+      this.flare,
+    );
   }
 
   /** Aims each spring chain's bones along its points, except chains starting in `skip`. */

@@ -517,9 +517,15 @@ export function createServer(): McpServer {
               .max(1)
               .optional()
               .describe('Spread the wings, 0 folded (as they rest) to 1 spread'),
+            flare: z
+              .number()
+              .min(0)
+              .max(1)
+              .optional()
+              .describe('Open frills and hoods and raise quills and sails, 0 at rest to 1'),
           })
           .optional()
-          .describe('Pose the still: jaw, eyes and wings (wings rest folded)'),
+          .describe('Pose the still: jaw, eyes, wings (they rest folded) and display parts'),
       }),
       annotations: { readOnlyHint: true },
     },

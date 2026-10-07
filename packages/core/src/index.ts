@@ -66,15 +66,18 @@ export * from './compile/compile.ts';
 export { type LimbIkSetup, solveLimb } from './compile/ik.ts';
 export type { MembraneLook, Spar } from './compile/membranes.ts';
 export { type MouthLine, mouthLine } from './compile/mouth.ts';
-export type {
-  EmitOptions,
-  EyeOptions,
-  PanelLook,
-  PartBuildContext,
-  PartChain,
-  PartHooks,
-  Socket,
-  WingContext,
+export {
+  AREA_ANGLES,
+  type AreaBand,
+  type EmitOptions,
+  type EyeOptions,
+  type PanelLook,
+  type PartBuildContext,
+  type PartChain,
+  type PartHooks,
+  type ScatterPoint,
+  type Socket,
+  type WingContext,
 } from './compile/parts.ts';
 export { buildSdf, type Sdf, SdfEvaluator } from './compile/sdf.ts';
 export { buildSkeleton, type SkeletonBuild } from './compile/skeleton.ts';

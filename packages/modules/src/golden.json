@@ -23,6 +23,10 @@
     "low": "13506973",
     "medium": "45a024bd"
   },
+  "frilled-lizard": {
+    "low": "dcd192a1",
+    "medium": "f03d47ef"
+  },
   "grey-wolf": {
     "low": "8dcb330d",
     "medium": "88b262eb"
@@ -35,6 +39,10 @@
     "low": "adb4df71",
     "medium": "df2ae06d"
   },
+  "hooded-cobra": {
+    "low": "0571a1cb",
+    "medium": "c085fe7b"
+  },
   "hydra": {
     "low": "e3e98595",
     "medium": "69e910d7"
@@ -46,6 +54,14 @@
   "luna-moth": {
     "low": "2fb3298b",
     "medium": "d2069db8"
+  },
+  "plated-stegosaur": {
+    "low": "bbc5b469",
+    "medium": "c0740709"
+  },
+  "porcupine": {
+    "low": "da753c64",
+    "medium": "85eff5cb"
   },
   "reed-viper": {
     "low": "f80424e4",
@@ -66,6 +82,14 @@
   "rust-raptor": {
     "low": "21d7ec06",
     "medium": "0d5b3563"
+  },
+  "sail-back": {
+    "low": "99fa579b",
+    "medium": "2d1b2cd8"
+  },
+  "stone-tortoise": {
+    "low": "e140aebb",
+    "medium": "a6911eac"
   },
   "storm-wyvern": {
     "low": "ed0b6fd2",

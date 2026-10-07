@@ -173,6 +173,11 @@ describe('parts with bones', () => {
       },
       mandible: { extends: 'hexapod', parts: [{ id: 'jaws', type: 'mandible' }] },
       'hand.pincer': example('dune-scorpion'),
+      // Coverings that open (docs/design/9.5-coverings.md).
+      frill: example('frilled-lizard'),
+      hood: example('hooded-cobra'),
+      quills: example('porcupine'),
+      sail: example('sail-back'),
     };
     for (const id of withBones) {
       const host = hosts[id];

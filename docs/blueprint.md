@@ -36,7 +36,7 @@ The workflow is always the same:
    `fix`, then validate again until `ok` is true. Read the warnings too.
 
 Format 0.2 already holds everything plan 2 adds (wings, fins, tentacles, several heads and tails,
-shells, quills, fur, swimming and flying, …), but most of it is not drawn yet. A blueprint may use
+shells, quills, fur, swimming and flying, …), and some of it is not drawn yet. A blueprint may use
 all of it: it validates, and `validate` lists what is not drawn yet under `notBuilt`, with the
 milestone that builds it. **Keep those features**; they appear once built. [Not drawn
 yet](#not-drawn-yet) has the list; in the [catalogue](catalog.md) a milestone in brackets marks
@@ -279,7 +279,28 @@ part sits depends on its slot (shown in `describe_module`):
 Fins come two ways: paired fins (pectoral fins, flippers) are limbs with `"role": "fin"`, and
 fins on the midline are parts: `fin.dorsal` stands at one point on the back, `fin.tail` sits on
 the tail tip. Area parts carry their own placement, so `{ "id": "shell", "type": "shell" }` alone
-covers the back of the torso; `area` is only for them (skin layers use `region`).
+covers the back of the torso; `area` is only for them (skin layers use `region`). `back` covers
+within 70° of the top on both sides, `sides` 50°–130°, `belly` the underside past 110°, `all`
+everything, between `from` and `to` along what they sit on.
+
+**Coverings.**
+
+- `shell` follows the body: `dome` (0 flat, 1 a high tortoise shell), `thickness`, `overhang`
+  (how far the rim reaches out past the body) and `scutes` (a row down the middle, a row each
+  side and marginal plates round the rim; 0 smooth), with `seamColor` between them. For a
+  tortoise give the torso a `wide` cross-section and keep its radius modest: the shell adds the
+  height (see `examples/stone-tortoise.json`).
+- `armor.bands` lays `bands` overlapping strips (`overlap`) from front to back; `scales: true`
+  breaks them into staggered scales, as on a pangolin or an armadillo's tail.
+- `plates.row` stands flat plates along the midline, `kite` (a stegosaur's), `round` or `spike`,
+  edged in `edgeColor`.
+- `quills` scatter over their area, spaced by `density`, lying back by `lie`, tipped in
+  `tipColor`.
+- `frill`, `hood` and `sail` are spines with skin between them, lit through like wings. They rest
+  folded (`open` says how far: a frill lies back over the neck, a hood's ribs back along the neck,
+  a sail leans back a little) and open in `display`, which also raises quills; `render --flare 1`
+  (MCP `pose.flare`) shows them open. A hood has two eye marks on its back (`markColor`); give
+  the cobra's neck `pitch` about 80 so it rears.
 
 Parameters go inside `params`: `{ "id": "horns", "type": "horn.curved", "params": { "length": 0.3 } }`.
 Each part has a default anchor, so `{ "id": "teeth", "type": "teeth.row" }` is complete.
@@ -296,7 +317,8 @@ runs on past the snout) and `depth`; use `"lips": 0` and leave out teeth for a b
 
 A row's `count` is per row: a `spikes.row` with `side` "both" makes two rows of `count` spikes,
 while `plates.row` is one centred part whose `count` plates alternate left and right
-(`alternate`). Parts sit on tentacles, wings and fins as on any limb.
+(`alternate`); its plates and a `sail`'s spines run from `from` to `to`. Parts sit on
+tentacles, wings and fins as on any limb.
 
 **Parts with bones.** `antenna`, `mandible` and `hand.pincer` move on bones of their own, which
 exports carry. An `antenna` (surface slot, on the head; `side` "both" for a pair) is a jointed
@@ -314,7 +336,7 @@ All lengths are in torso lengths.
 | Look | Part |
 | --- | --- |
 | Ram horns, coiled beside the head | `horn.curved` on `head`, `at` 0.8, `angle` 40; `length` 0.65, `width` 0.05, `curve` 400, `turn` -35, `lean` -10, `ridges` 12 (on an upright biped's head: `at` 0.6, `angle` 85, `turn` -70, `lean` 10) |
-| A cobra rearing up | `serpent` with `neck` `pitch` 75 and `length` about 1, and `torso` and `tail` `pitch` 0–1 so the body lies flat (higher values lift the tail tip off the ground and sink the torso). For a hood give the neck `crossSection` "wide" and a radius profile that swells and narrows, such as `[0.09, 0.15, 0.07]`, starting no wider than the torso's first radius (the `hood` part draws a real one from 9.5). A rearing neck shows its belly to the front, so lower `countershade`'s `height` (about -0.6) to keep it the body's colour |
+| A cobra rearing up | `serpent` with `neck` `pitch` 75–80 and `torso` and `tail` `pitch` 0–1 so the body lies flat (higher values lift the tail tip off the ground and sink the torso); a `hood` on the neck and `display` to spread it (see `examples/hooded-cobra.json`). A rearing neck shows its belly to the front, so lower `countershade`'s `height` (about -0.6) to keep it the body's colour |
 | A flat, broad head | `"head": { "shape": "flat", "crossSection": "wide" }`: the shape alone still reads as a dome from the front |
 | A big round head with forward eyes (a goblin) | `"head": { "shape": "round", "radius": 0.3 }` and `eye.basic` at `at` 0.22, `angle` 62, `scale` 2.6: the default places eyes on the crown, like a frog's |
 | A club on the tail | a tail `radius` profile that swells near the end, such as `[0.15, 0.12, 0.1, 0.1, 0.14, 0.24, 0.25, 0.08]`, with `segments` 12 so the swell keeps its shape |
@@ -439,9 +461,10 @@ when the creature moves.
 - **`actions`**: what the creature can do when asked. `bite` and `roar` need a jaw, `look`
   needs a head, `idle` needs nothing. `pinch` needs a pincer: the claw nearer the target rises,
   opens wide and snaps shut (`both` snaps both). `lash` needs a tail or a tentacle: the one
-  nearest the target winds up and whips toward it (`arc`, the most it sweeps in degrees). Later
-  milestones add `jump` and `pounce` (_10.2_) and `display` (opens frills and hoods, raises
-  quills and sails, _9.5_). Some actions need what a module provides rather than a section:
+  nearest the target winds up and whips toward it (`arc`, the most it sweeps in degrees).
+  `display` is a threat display: it faces the target, rears a little and hisses, opens frills
+  and hoods, raises quills and sails and spreads any wings, holds and folds back (`duration`,
+  `intensity`). Later milestones add `jump` and `pounce` (_10.2_). Some actions need what a module provides rather than a section:
   `display` needs a part that provides `display` (`frill`, `hood`, `quills` or `sail`; wings do
   not), `pinch` a `hand.pincer`; `describe-module` and the catalogue list what each module
   provides, and a `needs` entry that is a list means any of them. Leave the field out to get
@@ -618,16 +641,14 @@ name the section to change.
 Everything format 0.1 had is drawn today: legs and arms, `foot.claw`, horns, ears, eyes, teeth,
 mouths with lips, gums and tongues, eyelids, brows, beaks, spike rows, every material, fur, every
 pattern layer, several heads and tails, wings, fins and their membranes, tentacles, antennae,
-mandibles, pincers, walking, trotting, the tripod gait, slithering, and the bite, roar, look,
-idle, pinch and lash actions. Everything in
-this table validates but is **not drawn yet**: compile skips it, and `validate` lists it under
-`notBuilt`. Each row goes when its milestone lands. Until then, approximate with what exists if
-you need to see it: a spike row for a frill or plates, a wide
-neck for a cobra's hood (see the recipes).
+mandibles, pincers, shells, armour bands, plates, quills, frills, hoods, sails, walking,
+trotting, the tripod gait, slithering, and the bite, roar, look, idle, pinch, lash and display
+actions. Everything in this table validates but is **not drawn yet** (or does not move yet):
+compile and motion skip it, and `validate` lists it under `notBuilt`. Each row goes when its
+milestone lands.
 
 | Not drawn yet | Milestone that draws it |
 | --- | --- |
-| `shell`, `armor.bands`, `quills`, `plates.row`, `frill`, `hood`, `sail`, `display` | 9.5 |
 | `run`, `gallop`, `bound` | 10.1 |
 | `jump`, `pounce` | 10.2 |
 | Swimming (`media.water`, `swim.*`) | 10.3 |
@@ -648,14 +669,14 @@ milestones land.
 | Shark or fish | `fish`, whose preset already has the fins: override its parts `dorsal` (`fin.dorsal`) and `tailfin` (`fin.tail`, `"shape": "forked"`) and its limbs `pectoral` and `pelvic` by id, and add `teeth.row` (see `examples/reef-shark.json`) |
 | Spider or scorpion | `octopod`; `mandible` (`"shape": "fang"`) for a spider (see `examples/tomb-spider.json`); for a scorpion a slimmer even torso, `arm`s at `at` 0 with `lift` 80 and `"foot": "hand.pincer"`, a tail with `pitch` 60 and `curl` 160, a `horn.curved` stinger on its tip, and `pinch` and `lash` (see `examples/dune-scorpion.json`) |
 | Centaur | `centaur`; give its legs `foreleg` and `hindleg` `"foot": "foot.hoof"`, its `arm`s `"foot": "hand.grasp"`, and the head horns |
-| Turtle | `quadruped` with `{ "id": "shell", "type": "shell" }`, its `foreleg` and `hindleg` removed (`"remove": true`) and fin limbs with `"membrane": null` (flippers) instead; fins and no legs make it a swimmer |
+| Turtle or tortoise | `quadruped` with a `wide` torso and `{ "id": "shell", "type": "shell", "params": { "dome": 0.95, "overhang": 0.28 } }`, short legs with `foot.pad` (see `examples/stone-tortoise.json`); for a sea turtle remove `foreleg` and `hindleg` (`"remove": true`) and add fin limbs with `"membrane": null` (flippers), which make it a swimmer |
 | Two-tailed fox | `quadruped` with `"tail": { "count": 2, "spread": 22, "pitch": 12, "curl": 35 }` (raised, like a kitsune's), `"foot": "foot.paw"` on both leg pairs and `"skin": { "fur": {} }` (examples/two-tailed-fox.json) |
 | Griffin | `quadruped`; `beak`, `{ "role": "wing", "membrane": "membrane.feather" }`, `foot.talon` on the forelegs and `foot.paw` on the hindlegs, fur (see `examples/griffin.json`) |
 | Moth | `hexapod`; two wing pairs with their own ids, `forewing` at `at` 0.15 and `hindwing` at 0.3, each with `membrane.insect` (`"shape": "broad"` and `"round"`), `spots` with `ring` and `"region": "wings"` for eye spots (see `examples/luna-moth.json`); `antenna` with `"shape": "feather"`, fur on the torso |
 | Beetle with wing cases | `hexapod` with a deep abdomen (more torso `radius` points); `{ "id": "case", "role": "wing", "attach": { "on": "torso", "at": 0.5, "angle": 6 }, "length": 0.5, "segments": 2, "membrane": "membrane.case" }` and a `wing` just behind it (`at` 0.53) with `membrane.insect` (`"shape": "round"`), which folds away under the case (see `examples/rhino-beetle.json`) |
 | Slug or snail | `serpent` with a short tail and `"material": "skin"`; eyes on stalks: a tentacle pair on the `head` (`length` 0.3, 4 segments) with `eye.basic` on it at `at` 1; `slime` |
-| Stegosaur, sail-back, porcupine | `plates.row`, `sail` or `quills` along the `spine` |
-| Frilled lizard or cobra | `frill` or `hood` on the `neck`, and `display` in `motion.actions` (it needs one of them) |
+| Stegosaur, sail-back, porcupine | `plates.row`, `sail` or `quills` along the `spine` (see `examples/plated-stegosaur.json`, `sail-back.json`, `porcupine.json`) |
+| Frilled lizard or cobra | `frill` or `hood` on the `neck`, and `display` in `motion.actions` (it needs one of them; see `examples/frilled-lizard.json`, `hooded-cobra.json`) |
 
 ## Format versions
 

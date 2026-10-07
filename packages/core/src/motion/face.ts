@@ -14,7 +14,9 @@ export const JAW_OPEN = 0.65;
  * shut), on top of the pose's rest rotations. Lids are blink-driven chains whose `closed` pose
  * holds each bone's turn about its local X (docs/design/8.3-heads.md). Parts' jaw-driven chains
  * (mandibles) turn by their `full` pose times `jaw`, and grip-driven ones (a pincer's finger) by
- * it times `grip`, one value for every side or `[left, right]` (docs/design/9.4-tentacles-parts.md).
+ * it times `grip`, one value for every side or `[left, right]` (docs/design/9.4-tentacles-parts.md),
+ * and flare-driven ones (frills, hoods, quills, sails) by it times `flare`
+ * (docs/design/9.5-coverings.md).
  */
 export function applyFace(
   pose: Pose,
@@ -22,6 +24,7 @@ export function applyFace(
   jaw: number,
   blink: number,
   grip: number | readonly [number, number] = 0,
+  flare = 0,
 ): void {
   pose.blink = blink;
   if (jaw > 0)
@@ -33,15 +36,17 @@ export function applyFace(
       pose.solveSubtree(h.jaw);
     }
   for (const chain of rig.chains) {
-    if (chain.drive === 'jaw' || chain.drive === 'grip') {
+    if (chain.drive === 'jaw' || chain.drive === 'grip' || chain.drive === 'flare') {
       const full = chain.poses?.full;
       const first = chain.bones[0] as number;
       const amount =
         chain.drive === 'jaw'
           ? jaw
-          : typeof grip === 'number'
-            ? grip
-            : grip[(pose.restWorldPos[first] as Vector3).x >= 0 ? 0 : 1];
+          : chain.drive === 'flare'
+            ? flare
+            : typeof grip === 'number'
+              ? grip
+              : grip[(pose.restWorldPos[first] as Vector3).x >= 0 ? 0 : 1];
       if (!full || amount === 0) continue;
       chain.bones.forEach((bone, i) => {
         (pose.rot[bone] as Quaternion)
@@ -76,11 +81,12 @@ export function applyRest(
     readonly blink?: number;
     readonly spread?: number;
     readonly grip?: number;
+    readonly flare?: number;
   } = {},
 ): void {
   pose.reset();
   applyWings(pose, rig.wings, options.spread ?? 0);
   pose.solve();
-  applyFace(pose, rig, options.jaw ?? 0, options.blink ?? 0, options.grip ?? 0);
+  applyFace(pose, rig, options.jaw ?? 0, options.blink ?? 0, options.grip ?? 0, options.flare ?? 0);
   applyStations(pose, rig.stations);
 }

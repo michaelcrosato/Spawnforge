@@ -1072,12 +1072,18 @@ export function describeCreature(
     const module = registry.get('part', part.type) as PartModule | undefined;
     const count = spec.parts.filter((p) => p.baseId === part.baseId).length;
     const phrase = module?.describe?.(part.params, { count }) ?? part.baseId;
+    // Area parts say which area of the body they cover (docs/design/9.5-coverings.md).
+    const area =
+      module?.slot === 'area' && part.area && (part.on === 'torso' || part.on === 'spine')
+        ? part.area === 'all'
+          ? 'all over it'
+          : `on its ${part.area === 'sides' ? 'sides' : part.area}`
+        : undefined;
     const place =
       module?.slot === 'mouth' || module?.material === 'eye'
         ? ''
-        : part.on === 'torso' && Math.abs(part.angle) < 30
-          ? 'along its back'
-          : where[part.on];
+        : (area ??
+          (part.on === 'torso' && Math.abs(part.angle) < 30 ? 'along its back' : where[part.on]));
     body.push(place ? `${phrase} ${place}` : phrase);
   }
   const foot = spec.limbs.find((l) => l.role === 'leg' && l.foot)?.foot;

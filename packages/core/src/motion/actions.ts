@@ -79,6 +79,11 @@ export interface ActionGoals {
   lash?: number;
   /** The most a lash sweeps toward its target, in radians (default π/2). */
   lashArc?: number;
+  /**
+   * Opens frills and hoods and raises quills and sails, 0 at rest to 1 fully open
+   * (docs/design/9.5-coverings.md).
+   */
+  flare?: number;
   /** Stand still while the action runs. */
   stop?: boolean;
 }

@@ -1,0 +1,32 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Porcupine",
+  "seed": 7311,
+  "extends": "quadruped",
+  "scale": 0.42,
+  "body": {
+    "torso": { "radius": [0.18, 0.24, 0.26, 0.21] },
+    "neck": { "length": 0.1 },
+    "head": { "length": 0.3, "radius": 0.15 },
+    "tail": { "length": 0.3, "radius": [0.08, 0.03] }
+  },
+  "limbs": [
+    { "id": "foreleg", "length": 0.35, "foot": "foot.paw", "splay": 30 },
+    { "id": "hindleg", "length": 0.38, "foot": "foot.paw", "splay": 30 }
+  ],
+  "parts": [
+    {
+      "id": "quills",
+      "type": "quills",
+      "attach": { "on": "spine", "area": "back", "from": 0.18, "to": 0.98 },
+      "params": { "length": 0.38, "density": 0.65 }
+    },
+    { "id": "eyes", "params": { "scale": 0.8, "irisColor": "#140c08" } }
+  ],
+  "skin": {
+    "palette": { "base": "#3a2e24", "belly": "#6a5a48", "accent": "#1a140e" },
+    "fur": { "length": 0.03 },
+    "layers": [{ "type": "countershade", "softness": 0.4 }]
+  },
+  "motion": { "temperament": "skittish", "actions": ["display", "bite", "idle"] }
+}
