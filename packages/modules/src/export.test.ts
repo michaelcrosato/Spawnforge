@@ -50,10 +50,10 @@ describe('vertex colour bake', () => {
 });
 
 describe('baked clips', () => {
-  it('bakes idle, a looping in-place cycle per gait, and each action', () => {
+  it('bakes idle, a looping in-place cycle per gait, each action and the death', () => {
     const c = compile('ridgeback-stalker');
     const clips = bakeClips(c, registry);
-    expect(clips.map((k) => k.name)).toEqual(['idle', 'walk', 'trot', 'bite', 'roar']);
+    expect(clips.map((k) => k.name)).toEqual(['idle', 'walk', 'trot', 'bite', 'roar', 'death']);
     const n = c.bones.names.length;
     for (const clip of clips.filter((k) => k.loop)) {
       const last = (clip.frames - 1) * n;

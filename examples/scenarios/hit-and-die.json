@@ -1,0 +1,10 @@
+{
+  "ground": "course",
+  "duration": 6,
+  "frames": 12,
+  "calls": [
+    { "at": 0.5, "do": "hit", "from": "left", "strength": 0.4 },
+    { "at": 1.5, "do": "hit", "from": "left", "strength": 1, "bone": "head" },
+    { "at": 3, "do": "die", "from": "left" }
+  ]
+}

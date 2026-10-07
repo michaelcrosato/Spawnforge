@@ -95,6 +95,8 @@ and the way to use the runtime in Node or tests.
 | `fly({ height, speed })` | metres above the ground, m/s | Takes off (or, flying, changes height or speed) and circles, or hovers, until told where to go; throws for a creature that cannot fly. Waits for a running action to end |
 | `land(target)` | `{ x, z }` or `null` | Comes in to land there (or on the first clear ground ahead), flares and touches down, then walks; over water a swimmer lands on it |
 | `flying` | | True from the takeoff's crouch until the feet touch down |
+| `hit({ direction, bone, strength })` | where the blow pushes (attacker to target), a bone name as `hitCapsules` gives it, 0 to 1 | The spine and neck flinch with it (a blow to the head snaps it); a blow that would carry it past its feet makes it stagger and step to catch itself. Fires `hit` (and `stagger`) |
+| `die({ direction })` | where the killing blow pushes (default from its right) | It collapses onto the ground over about a second, falling away from the blow, and lies there; `dead` is true from then on, `dying` until it comes to rest. The dead ignore `moveTo`, `act`, `fly` and `hit`; `controller.place(...)` stands one up again |
 | `lookAt(point)` | `{ x, y, z }` or `null` | The head tracks the point; `null` looks ahead again |
 | `act(id, { target })` | an action id, a point or an `Object3D` | Starts it now, replacing a running action; throws, naming the creature's actions, if it has no such action |
 | `actions()` | | The action ids it can start (`bite`, `roar`, `look`…) |
@@ -112,6 +114,13 @@ no tighter than its wings allow, glides between flaps where it can, and never fl
 ground. `controller.flightStage` says where a flight is (`crouch`, `launch`, `flight`, `flare`,
 `descend`), `controller.wingbeat` the beats a second, and `controller.attitude` its pitch and
 bank. Actions run in the air (a bite, a roar), except leaps.
+
+**Hits and death.** A death is procedural, with no physics engine: legs buckle, a body on four
+legs (or a bird or raptor) topples onto its side, an upright biped falls along the blow, sprawlers
+sink onto their bellies, snakes go limp; necks droop until the heads rest on the ground, tails and
+tentacles flop onto it, wings fold and the eyes close. It rests on the game's ground and never
+sinks into it by more than about 2% of its size, on flat or uneven ground. Killed in the air, it
+falls first; in water, it sinks to the bed. See docs/design/10.5-hits-death.md.
 
 **Water.** `water(x, z)` returns `{ surface }` (the water's height there) or `null` where there
 is none; the ground under it is the bed. A creature that swims takes to water deeper than about
@@ -134,6 +143,9 @@ events it fired. Every event has `type` and `time` (seconds of the creature's mo
 | `action-start`, `action-end` | `action` | An action begins or ends |
 | `takeoff`, `land` | `action`, `position` (the head) | A `jump` or `pounce` leaves the ground and comes down; in between every foot is off the ground and the creature flies a ballistic arc over the game's ground to the target. Flying, the same events (without `action`) mark leaving the ground and touching down |
 | `flap` | | A wingbeat's downstroke begins (one a beat; none while gliding) |
+| `hit` | `bone`, `position` (the bone hit) | A blow lands |
+| `stagger` | `position` | The blow knocks it off balance; it steps to catch itself |
+| `death` | `position` | It dies and begins to collapse |
 | `bite-contact`, `roar-peak`, `pinch-contact`, `lash-contact`, `display-peak` | `action`, `position` (the head), `head` (with several heads: which one, such as `head.L1`) | Moments actions mark: the jaw snaps shut, the roar is loudest, a pincer snaps shut, a lash strikes, a display is fully open |
 | `*` | | Every event |
 
@@ -159,7 +171,8 @@ whatever the target is doing, so test hits yourself, with sockets or hit capsule
 - Pass `camera` to `bestiary.update`: beyond `lodDistance` (default 30) times the creature's
   torso length it drops foot IK and tail springs and plays baked gait cycles at the speed it is
   moving, and it switches back when the camera comes near. A creature busy with an action
-  finishes it first. Baked creatures hide their fur. A distant flyer keeps flying (its flight
+  finishes it first, and a dying one its fall; a dead one keeps lying as it fell at any
+  distance. Baked creatures hide their fur. A distant flyer keeps flying (its flight
   steps without posing, so it goes where it would have) and plays its air gait's cycle tilted to
   its pitch and bank; takeoffs and landings happen at full detail, and coming near it carries on
   flying where it is.
@@ -207,7 +220,9 @@ A `.glb` holds:
   extras giving `air.pitch`, the pitch they were baked at) and each action (`bite`, `roar`,
   `look`). A flyer also gets `takeoff` (from standing to half a second into powered flight) and
   `land` (from the flare's start to its feet planted), both with root motion as leaps have:
-  `takeoff` starts on the ground, `land` ends on it. Frames are at `--fps` (default 30).
+  `takeoff` starts on the ground, `land` ends on it. Every creature gets `death` (hit from its
+  right, it falls onto its left, until half a second after it comes to rest; the root stays in
+  place). Frames are at `--fps` (default 30).
   - Gait clips are exactly one cycle, in place: the root stays at the origin facing +Z, the clip
     loops seamlessly, and the game moves the creature.
   - Action clips run the action and then 0.25 s of settling back, so they are a little longer

@@ -53,6 +53,8 @@ Calls (a point is `[x, z]` on the ground or `[x, y, z]`, or a target's name):
 | `follow` | `path` (up to 32 points), `speed` | Walks (or flies) through the points in order, stopping at the last: a course |
 | `fly` | `height` (metres above the ground), `speed` | Takes off and circles (or hovers) until told where to go; flying, changes its height or speed |
 | `land` | `to` (a point, optional) | Comes in to land there, or on the first clear ground ahead, and walks on |
+| `hit` | `from` (`"left"`, `"right"`, `"front"`, `"back"`, or degrees from its facing, 90 its left; default `"left"`), `strength` (0 to 1, default 0.5), `bone` (a bone name, as hit capsules give them) | A blow: it flinches, and staggers if the blow would knock it over |
+| `die` | `from` (as `hit`; default `"right"`) | It dies and collapses onto the ground, falling away from the blow; later calls do nothing |
 | `drive` | `speed` (m/s), `heading` (degrees) | Keeps moving with no destination |
 | `stop` | | Stops moving |
 | `act` | `action` (one of the creature's), `target` (a point) | Starts an action aimed at the point; one runs at a time, and a new one replaces it |
@@ -72,7 +74,7 @@ after the end, `fly` or `land` for a creature without wings (`cannot_fly`).
 | --- | --- |
 | `end` | Where it ended: `x`, `z` (metres), `heading` (degrees), `speed` (m/s) |
 | `distance` | Metres walked along the ground |
-| `events` | Every event but footsteps, with `time` in seconds: `arrive` (at a `moveTo` point or each course point), `gait` (a change of gait), `medium` (into the water, out onto land, into the air, with `medium`), `takeoff` and `land` (a flight's, or a leap's with its `action`), `action-start`, `action-end` and the action's own (`bite-contact`, `roar-peak`); wingbeats (`flap`) are left out like footsteps |
+| `events` | Every event but footsteps, with `time` in seconds: `arrive` (at a `moveTo` point or each course point), `gait` (a change of gait), `medium` (into the water, out onto land, into the air, with `medium`), `hit`, `stagger` and `death`, `takeoff` and `land` (a flight's, or a leap's with its `action`), `action-start`, `action-end` and the action's own (`bite-contact`, `roar-peak`); wingbeats (`flap`) are left out like footsteps |
 | `footsteps` | How many steps it took |
 | `gaits` | Gaits in the order used, each with when it began |
 | `targets` | Per target, the `closest` any snout came (metres) and when |
@@ -98,3 +100,6 @@ show where the bumps are.
 - [`flight-course.json`](../examples/scenarios/flight-course.json): a flyer takes off from flat
   ground, circles at its cruising height, and comes in to land uphill on a 15° slope 80 m ahead.
   Try it with the ash dragon, the storm wyvern, the cave bat or the luna moth (which hovers).
+- [`hit-and-die.json`](../examples/scenarios/hit-and-die.json): on the uneven course, a blow from
+  the left, a heavy one that staggers it, and a death from the left: it falls onto its right
+  side.

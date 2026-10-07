@@ -35,6 +35,11 @@ const speed = range(0, 60).describe(
   'Metres a second (default: its pace on land, in water or in the air)',
 );
 
+/** Where a blow comes from: a side of the creature, or degrees from its facing. */
+const from = z
+  .union([z.enum(['left', 'right', 'front', 'back']), range(-360, 360)])
+  .describe('Where the blow comes from: a side, or degrees from its facing (0 ahead, 90 its left)');
+
 const call = z.discriminatedUnion('do', [
   z
     .strictObject({ at: time, do: z.literal('moveTo'), to: whereAny, speed: speed.optional() })
@@ -73,6 +78,23 @@ const call = z.discriminatedUnion('do', [
     })
     .describe('Keep moving at a speed (and heading) with no destination'),
   z.strictObject({ at: time, do: z.literal('stop') }).describe('Stop moving'),
+  z
+    .strictObject({
+      at: time,
+      do: z.literal('hit'),
+      from: from.default('left'),
+      strength: range(0, 1)
+        .default(0.5)
+        .describe('0 a tap, 1 a heavy blow that staggers most creatures'),
+      bone: z
+        .string()
+        .optional()
+        .describe("The bone it lands on, as hit capsules name them (default the torso's middle)"),
+    })
+    .describe('A blow: it flinches, and staggers if the blow would knock it over'),
+  z
+    .strictObject({ at: time, do: z.literal('die'), from: from.default('right') })
+    .describe('It dies and collapses, falling away from the blow'),
   z
     .strictObject({
       at: time,
@@ -494,7 +516,29 @@ export class ScenarioRun {
         c.land(p ? { x: p.x, z: p.z } : null);
         return;
       }
+      case 'hit':
+        c.hit({
+          direction: this.blow(call.from),
+          strength: call.strength,
+          ...(call.bone === undefined ? {} : { bone: call.bone }),
+        });
+        return;
+      case 'die':
+        c.die({ direction: this.blow(call.from) });
+        return;
     }
+  }
+
+  /** The way a blow from `from` pushes, in the world. */
+  private blow(from: 'left' | 'right' | 'front' | 'back' | number): { x: number; z: number } {
+    const degrees =
+      typeof from === 'number' ? from : { front: 0, left: 90, back: 180, right: -90 }[from];
+    // The blow's source in the creature's frame (+Z ahead, +X its left); it pushes the other way.
+    const a = degrees * DEG;
+    const lx = -Math.sin(a);
+    const lz = -Math.cos(a);
+    const h = this.controller.heading;
+    return { x: lx * Math.cos(h) + lz * Math.sin(h), z: -lx * Math.sin(h) + lz * Math.cos(h) };
   }
 
   /** Heads for the course's next point; `first` starts it. */

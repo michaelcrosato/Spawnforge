@@ -56,8 +56,8 @@ export interface BakeOptions {
 const STEP = 1 / 120;
 
 /**
- * What `clips` may name for this creature: idle, its gaits and its actions, and for a flyer
- * `takeoff` and `land`.
+ * What `clips` may name for this creature: idle, its gaits and its actions, `death`, and for a
+ * flyer `takeoff` and `land`.
  */
 export function clipNames(compiled: CompiledCreature, registry: Registry): string[] {
   const controller = new MotionController(compiled, { registry });
@@ -65,7 +65,8 @@ export function clipNames(compiled: CompiledCreature, registry: Registry): strin
   const flight = controller.canFly
     ? ['takeoff', 'land'].filter((name) => !actions.includes(name))
     : [];
-  return ['idle', ...compiled.motion.gaits.map((g) => g.id), ...actions, ...flight];
+  const death = actions.includes('death') ? [] : ['death'];
+  return ['idle', ...compiled.motion.gaits.map((g) => g.id), ...actions, ...flight, ...death];
 }
 
 /**
@@ -92,6 +93,7 @@ export function bakeClips(
     if (gaits.has(name)) return bakeGait(compiled, registry, fps, name);
     if (name === 'takeoff' && !actions.includes(name)) return bakeTakeoff(compiled, registry, fps);
     if (name === 'land' && !actions.includes(name)) return bakeLand(compiled, registry, fps);
+    if (name === 'death' && !actions.includes(name)) return bakeDeath(compiled, registry, fps);
     return bakeAction(compiled, registry, fps, name);
   });
 }
@@ -410,4 +412,30 @@ function bakeLand(compiled: CompiledCreature, registry: Registry, fps: number): 
     speed: 0,
     rootMotion: true,
   });
+}
+
+/**
+ * A death on flat ground (docs/design/10.5-hits-death.md): standing, hit from its right, it falls
+ * onto its left side; from the blow until half a second after it comes to rest. The root stays
+ * in place; the body lies beside where it stood.
+ */
+function bakeDeath(compiled: CompiledCreature, registry: Registry, fps: number): BakedClip {
+  const start = () => {
+    const controller = new MotionController(compiled, { registry });
+    for (let i = 0; i < 120; i++) controller.update(STEP);
+    return controller;
+  };
+  // Time it on a twin: the controller is deterministic.
+  const probe = start();
+  probe.die({ direction: { x: 1, z: 0 } });
+  let length = 0;
+  while (probe.dying && length < 10) {
+    probe.update(STEP);
+    length += STEP;
+  }
+  length += 0.5;
+  const controller = start();
+  controller.die({ direction: { x: 1, z: 0 } });
+  const frames = Math.round(length * fps) + 1;
+  return record(controller, 'death', frames, length / (frames - 1), { loop: false, speed: 0 });
 }

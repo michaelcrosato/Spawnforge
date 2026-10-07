@@ -245,7 +245,22 @@ async function main(): Promise<void> {
       }),
       // A flyer takes off from where it walks, and lands ahead (10.4).
       ...(focus?.controller.canFly ? [flightButton(focus.controller)] : []),
+      // A blow from the camera's side, and a death (or a return to life) (10.5).
+      ...(focus ? blowButtons(focus.controller) : []),
     );
+  };
+  const blowButtons = (c: MotionController) => {
+    const away = () => c.position.clone().sub(camera.position).setY(0).normalize();
+    const hit = document.createElement('button');
+    hit.textContent = 'hit';
+    hit.addEventListener('click', () => c.hit({ direction: away(), strength: 0.6 }));
+    const die = document.createElement('button');
+    die.textContent = 'die / revive';
+    die.addEventListener('click', () => {
+      if (c.dead) c.place(c.position.x, c.position.z, c.heading, world.ground, world.water);
+      else c.die({ direction: away() });
+    });
+    return [hit, die];
   };
   const flightButton = (c: MotionController) => {
     const button = document.createElement('button');

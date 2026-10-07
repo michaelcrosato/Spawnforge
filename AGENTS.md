@@ -94,7 +94,10 @@ climbing out; `head_underwater`, `hits_bed`, `speed.swim`; scenarios' `"water"`,
 cruise from wing loading, banked turns, flap-gliding, hovering and landings with a flare on any
 slope; strokes compiled per wing; `fly()`, `land()`, `spawn({ flying })`; air cycles baked at exact
 phases, `takeoff` and `land` clips; distant flyers keep flying; `cannot_fly`, `hard_landing` and a
-flight course in `analyze`; scenarios' slopes and `fly`/`land`; `docs/design/10.4-flight.md`).
+flight course in `analyze`; scenarios' slopes and `fly`/`land`; `docs/design/10.4-flight.md`)
+and 10.5 (`hit` flinches and staggers, `die` collapses any body onto the ground on support hulls,
+necks droop, springs go limp; `dead`/`dying`, a `death` clip, scenarios' `hit` and `die`;
+`docs/design/10.5-hits-death.md`).
 
 ## Repo map
 
