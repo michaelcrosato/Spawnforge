@@ -697,6 +697,7 @@ export function compileCreature(
       bones,
       paths: skeleton.paths as Map<string, readonly import('./skeleton.ts').PathSegment[]>,
       sdf,
+      culling,
       weightOptions,
       heads: skeleton.rig.heads.map((h, i) => ({
         id: h.id,

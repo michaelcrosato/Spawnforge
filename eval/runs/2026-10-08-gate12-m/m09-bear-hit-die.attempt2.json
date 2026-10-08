@@ -1,0 +1,118 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Cave Bear",
+  "seed": 909,
+  "extends": "quadruped",
+  "scale": 1.25,
+  "body": {
+    "muscle": 0.65,
+    "torso": {
+      "radius": [0.17, 0.24, 0.2, 0.18],
+      "arch": 0.12
+    },
+    "neck": {
+      "length": 0.3,
+      "radius": [0.14, 0.22],
+      "pitch": 32
+    },
+    "head": {
+      "shape": "snout",
+      "length": 0.3,
+      "radius": 0.12,
+      "pitch": -18,
+      "brow": 0.4
+    },
+    "tail": {
+      "length": 0.1,
+      "radius": [0.07, 0.04],
+      "pitch": -20
+    }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "length": 0.52,
+      "splay": 32,
+      "radius": [0.12, 0.05],
+      "stance": "plantigrade",
+      "foot": {
+        "type": "foot.paw",
+        "toes": 5,
+        "claws": "long"
+      }
+    },
+    {
+      "id": "hindleg",
+      "length": 0.52,
+      "radius": [0.13, 0.05],
+      "stance": "plantigrade",
+      "foot": {
+        "type": "foot.paw",
+        "toes": 5,
+        "claws": "long"
+      },
+      "attach": {
+        "angle": 95
+      },
+      "splay": 20
+    }
+  ],
+  "parts": [
+    {
+      "id": "ears",
+      "type": "ear.pointed",
+      "attach": {
+        "on": "head",
+        "at": 0.85,
+        "angle": 50
+      },
+      "params": {
+        "length": 0.06,
+        "width": 0.07
+      }
+    },
+    {
+      "id": "teeth",
+      "type": "teeth.row",
+      "params": {
+        "fangs": 1
+      }
+    },
+    {
+      "id": "eyes",
+      "params": {
+        "irisColor": "#2a1a0a",
+        "squint": 0.4
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#4a3626",
+      "belly": "#6a5038",
+      "accent": "#2a1c12"
+    },
+    "fur": {
+      "length": 0.04,
+      "density": 0.9
+    },
+    "layers": [
+      {
+        "type": "mottle",
+        "color": "accent",
+        "strength": 0.5
+      },
+      {
+        "type": "scars",
+        "color": "#8a7058",
+        "count": 3,
+        "region": "head",
+        "strength": 0.6
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "lumbering",
+    "actions": ["bite", "roar", "look", "idle"]
+  }
+}

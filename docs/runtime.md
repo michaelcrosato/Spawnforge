@@ -141,7 +141,7 @@ events it fired. Every event has `type` and `time` (seconds of the creature's mo
 | `medium` | `medium` (`water`, `land` or `air`) | It takes to the water, climbs out onto land, leaves the ground or touches down |
 | `arrive` | | It reaches its `moveTo` target |
 | `action-start`, `action-end` | `action` | An action begins or ends |
-| `takeoff`, `land` | `action`, `position` (the head) | A `jump` or `pounce` leaves the ground and comes down; in between every foot is off the ground and the creature flies a ballistic arc over the game's ground to the target. Flying, the same events (without `action`) mark leaving the ground and touching down |
+| `takeoff`, `land` | `action`, `position` (the head) | A `jump` or `pounce` leaves the ground and comes down; in between every foot is off the ground and the creature flies a ballistic arc over the game's ground to the target. Flying, the same events (without `action` or `position`) mark leaving the ground and touching down |
 | `flap` | | A wingbeat's downstroke begins (one a beat; none while gliding) |
 | `hit` | `bone`, `position` (the bone hit) | A blow lands |
 | `stagger` | `position` | The blow knocks it off balance; it steps to catch itself |
@@ -232,8 +232,9 @@ A `.glb` holds:
     than 1; on membranes this map also carries the light through them.
   Maps are 1024 texels at medium quality (512 at low, 2048 at high) for the skin, half that for
   parts and membranes, 256 for eyes; `--textures 2048` picks the skin's size whatever the mesh's
-  quality (the two combine), and `--textures none` writes vertex colours (`COLOR_0`, albedo only)
-  instead, as before 11.1. Maps are PNG; when the file would pass 8 MB (2048 maps, or a
+  quality (`--quality` sets the mesh and `--textures` the maps, so `--quality high` alone gives
+  2048 maps and `--quality high --textures 1024` a fine mesh with medium maps), and `--textures none` writes vertex colours (`COLOR_0`, albedo only)
+  instead, as before 11.1. Maps are PNG; when the file would pass 8 MB with them (2048 maps always do, as can a
   creature with many meshes) the colour and glow maps are written as JPEG instead (normal and
   ORM maps stay PNG), and the export's `notes` say so.
 - **Levels of detail** (docs/design/11.2-lod.md): `skin_LOD1`, `skin_LOD2` and `skin_LOD3`
@@ -266,7 +267,9 @@ A `.glb` holds:
   `land` (from the flare's start to its feet planted), both with root motion as leaps have:
   `takeoff` starts on the ground, `land` ends on it. Every creature gets `death` (hit from its
   right, it falls onto its left, until half a second after it comes to rest; the root stays in
-  place). Frames are at `--fps` (default 30).
+  place). Frames are at `--fps` (default 30), except that a gait cycle is cut into whole frames
+  over exactly one cycle with at least 12 of them (8 a wingbeat for the air gaits), so a quick
+  cycle (a beetle's 0.15 s `tripod`) gets a higher rate.
   - Gait clips are exactly one cycle, in place: the root stays at the origin facing +Z, the clip
     loops seamlessly, and the game moves the creature.
   - Action clips run the action and then 0.25 s of settling back, so they are a little longer
@@ -287,7 +290,8 @@ A `.glb` holds:
   bone), `hitCapsules` (bone and radius), `clips` (name, duration, loop, `speed` it was baked at,
   `distance` one cycle covers, or for a clip with `rootMotion` (its root track moves) how far
   forward the root ends, and `events` with their times), `lods`, `fur` (length in metres:
-  the blueprint's is in torso lengths), `glow`, and `stats` when asked for.
+  the blueprint's is in torso lengths), `glow`, and `stats` when asked for (`{ module, values }`:
+  the module's id and the numbers `bestiary.stats` returns). An action clip's `speed` is 0.
 
 ### What the file leaves out
 

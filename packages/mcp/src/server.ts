@@ -22,11 +22,10 @@ import {
 import { MODULE_KINDS } from '@spawnforge/core';
 import type { Renderer } from '@spawnforge/render';
 import { z } from 'zod';
+import { DOCS, docsDir } from './docs.ts';
 
 const SCENARIO_HELP =
   'A scenario: { "ground": "flat" | "course", "duration": seconds, "start": { "x", "z", "heading" }, "targets": { "prey": [x, y, z] }, "calls": [{ "at": 0, "do": "moveTo", "to": [x, z] | "prey" }, { "at": 0, "do": "follow", "path": [[x, z], …] }, { "at": 2, "do": "act", "action": "bite", "target": "prey" }, { "at": 1, "do": "lookAt", "target": … }, { "at": 3, "do": "stop" }, { "at": 0, "do": "drive", "speed": 1, "heading": 90 }, { "at": 0, "do": "gait", "gait": "trot" }], "frames": 8 }. Metres and seconds; heading 0 faces +Z. Returns its events, the distance walked, how close a head came to each target, courses reached and foot slide.';
-
-const docsDir = new URL('../../../docs/', import.meta.url);
 
 const INSTRUCTIONS = `Spawnforge builds 3D monsters from JSON blueprints.
 Workflow: read the blueprint guide (resource spawnforge://docs/blueprint.md) and the catalogue
@@ -78,7 +77,7 @@ function readBlueprint(input: { blueprint?: unknown; path?: string }): unknown {
 /** One server instance with every Spawnforge tool and doc resource registered. */
 export function createServer(): McpServer {
   const server = new McpServer(
-    { name: 'spawnforge', version: '0.1.0' },
+    { name: 'spawnforge', version: '0.2.0' },
     { capabilities: { tools: {}, resources: {} }, instructions: INSTRUCTIONS },
   );
 
@@ -418,32 +417,7 @@ export function createServer(): McpServer {
       ),
   );
 
-  for (const [name, file, mimeType, description] of [
-    [
-      'blueprint-guide',
-      'blueprint.md',
-      'text/markdown',
-      'How to write a blueprint: fields, units, attachment and rules',
-    ],
-    [
-      'catalog',
-      'catalog.md',
-      'text/markdown',
-      'Every module with its parameters, ranges and defaults',
-    ],
-    [
-      'blueprint-schema',
-      'blueprint.schema.json',
-      'application/schema+json',
-      'The blueprint JSON Schema',
-    ],
-    [
-      'runtime-guide',
-      'runtime.md',
-      'text/markdown',
-      'Using creatures in a game: the live runtime API, .glb export and stats modules',
-    ],
-  ] as const) {
+  for (const { name, file, mimeType, description } of DOCS) {
     server.registerResource(
       name,
       `spawnforge://docs/${file}`,

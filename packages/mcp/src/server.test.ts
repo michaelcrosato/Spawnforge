@@ -109,4 +109,20 @@ describe('MCP server', () => {
     const res = await client.readResource({ uri: 'spawnforge://docs/blueprint.md' });
     expect((res.contents[0] as { text: string }).text).toMatch(/^# Blueprint format/);
   });
+
+  it('serves every guide, the engines and scenarios too', async () => {
+    const { resources } = await client.listResources();
+    expect(resources.map((r) => r.uri).sort()).toEqual(
+      [
+        'blueprint.md',
+        'blueprint.schema.json',
+        'catalog.md',
+        'engines.md',
+        'runtime.md',
+        'scenarios.md',
+      ].map((file) => `spawnforge://docs/${file}`),
+    );
+    const engines = await client.readResource({ uri: 'spawnforge://docs/engines.md' });
+    expect((engines.contents[0] as { text: string }).text).toMatch(/^# Creatures in game engines/);
+  });
 });

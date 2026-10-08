@@ -39,10 +39,10 @@ All seven phases (0 to 6) are done, and so is the proof of concept ([docs/poc.md
 Every format gate scored 20/20 on the prompt suite and 20/20 in blind review, and the variation
 and export evals passed (`eval/runs/`).
 
-Next is [plan 2](docs/plan-2.md): anatomy and surfaces, the bodies plan 1 deferred (wings, fins,
-tentacles, shells, extra heads), motion for games (run, jump, swim, fly, hits, death), texture
-maps and levels of detail in exports, installable packages, and editing tools. Its status table
-tracks each milestone. Done so far: 7.1 (carry-overs), 7.2 (`migrate` and the corpus test) and
+Then came [plan 2](docs/plan-2.md), now complete: anatomy and surfaces, the bodies plan 1
+deferred (wings, fins, tentacles, shells, extra heads), motion for games (run, jump, swim, fly,
+hits, death), texture maps and levels of detail in exports, installable packages, and editing
+tools. Its status table tracks each milestone. In order: 7.1 (carry-overs), 7.2 (`migrate` and the corpus test) and
 7.3 (format 0.2, which holds all of plan 2's vocabulary as stub modules before it is built; its
 format eval scored 20/20 on suite B, `eval/runs/2026-10-06-phase7-format/`) and 7.4 (the
 compiled rig holds lists of heads, tails and driven chains, with goldens unchanged) and 7.5
@@ -119,7 +119,15 @@ Then 12.1 (the sandbox's place tab: click the creature to place a part, drag to 
 undo, save to `creatures/`; core's `anchorAt` inverts part placement, round-tripping on every
 section and limb; `docs/design/12.1-placing.md`) and 12.2 (`apps/gallery`: the examples, every theme
 at six seeds and the agents' creatures, with live thumbnails, a viewer, blueprint and `.glb`
-downloads and a link into the sandbox; CI builds it as an artifact; `docs/design/12.2-gallery.md`).
+downloads and a link into the sandbox; CI builds it as an artifact; `docs/design/12.2-gallery.md`)
+and 12.3 (release 0.2: format 0.2 frozen, its schema pinned in `packages/cli/src/frozen.json`, so
+any change to what a blueprint may say needs format 0.3 and a migration; `@spawnforge/mcp` ships
+the docs it serves and `@spawnforge/render` its page; the packages at 0.2.0). Gate 12 passed:
+suites A and B in full, 20/20 valid and matched blind (suite B 20/20 meeting `expects`), suite M
+10/10 and 10/10 blind, variation 12/12, export 11/11, fuzz, budgets, the round trip and the smoke
+test (`eval/runs/2026-10-08-gate12/`). Plan 2 is complete. Publishing the packages and the
+gallery, and the license, wait for the owner (plan 2's open questions); new work starts from the
+"Later" column of plan 2's scope table.
 
 ## Repo map
 

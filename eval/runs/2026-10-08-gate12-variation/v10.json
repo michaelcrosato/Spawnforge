@@ -1,0 +1,168 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Grey Wolf × Griffin",
+  "seed": 1128277033,
+  "extends": "quadruped",
+  "scale": 1.1,
+  "body": {
+    "torso": {
+      "radius": [0.15, 0.194, 0.17, 0.12],
+      "arch": 0.05
+    },
+    "neck": {
+      "length": 0.325,
+      "radius": [0.0839, 0.128],
+      "pitch": 34.5,
+      "curve": 12.2
+    },
+    "head": {
+      "shape": "snout",
+      "length": 0.383,
+      "radius": 0.099,
+      "jaw": true,
+      "pitch": -11.1,
+      "brow": 0.417
+    },
+    "tail": {
+      "length": 0.729,
+      "radius": [0.065, 0.107, 0.0849, 0.0301],
+      "pitch": -22.5,
+      "curl": 12.8
+    }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "length": 0.62,
+      "radius": [0.06, 0.03],
+      "attach": {
+        "angle": 122
+      },
+      "splay": 14,
+      "foot": {
+        "type": "foot.paw",
+        "toes": 4,
+        "claws": "short",
+        "padColor": "#2a2624"
+      }
+    },
+    {
+      "id": "hindleg",
+      "length": 0.64,
+      "radius": [0.075, 0.03],
+      "attach": {
+        "angle": 120
+      },
+      "foot": {
+        "type": "foot.paw",
+        "toes": 4,
+        "claws": "short",
+        "padColor": "#2a2624"
+      }
+    },
+    {
+      "id": "wing",
+      "role": "wing",
+      "attach": {
+        "on": "torso",
+        "at": 0.15,
+        "side": "both",
+        "angle": 22
+      },
+      "length": 1.45,
+      "segments": 3,
+      "radius": [0.05, 0.02],
+      "foot": null,
+      "membrane": {
+        "type": "membrane.feather",
+        "feathers": 22,
+        "length": 1.15,
+        "tips": "fingered",
+        "color": "#7a5a34",
+        "tipColor": "#2e2218"
+      }
+    }
+  ],
+  "parts": [
+    {
+      "id": "ears",
+      "type": "ear.pointed",
+      "attach": {
+        "on": "head",
+        "at": 0.85,
+        "angle": 45
+      },
+      "params": {
+        "length": 0.11,
+        "width": 0.04
+      }
+    },
+    {
+      "id": "teeth",
+      "type": "teeth.row",
+      "params": {
+        "fangs": 1
+      }
+    },
+    {
+      "id": "eyes",
+      "params": {
+        "irisColor": "#e7a026",
+        "squint": 0.385
+      },
+      "attach": {
+        "at": 0.445,
+        "angle": 57.6
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#a08760",
+      "belly": "#ddd7c6",
+      "accent": "#504840"
+    },
+    "fur": {
+      "length": 0.026
+    },
+    "layers": [
+      {
+        "type": "countershade",
+        "height": 0.13,
+        "softness": 0.301,
+        "strength": 0.817
+      },
+      {
+        "type": "mottle",
+        "scale": 0.07,
+        "contrast": 0.25,
+        "coverage": 0.5,
+        "strength": 0.7
+      },
+      {
+        "type": "mottle",
+        "color": "#35383b",
+        "scale": 0.22,
+        "coverage": 0.35,
+        "contrast": 0.2,
+        "region": "back",
+        "strength": 0.6
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "stalking",
+    "actions": [
+      {
+        "type": "bite",
+        "reach": 0.7,
+        "speed": 1
+      },
+      {
+        "type": "roar",
+        "duration": 2,
+        "intensity": 0.8
+      }
+    ]
+  }
+}

@@ -1,6 +1,6 @@
 {
   "name": "@spawnforge/render",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Headless renders of creatures: contact sheets and filmstrips as PNG, through Chromium.",
   "license": "UNLICENSED",

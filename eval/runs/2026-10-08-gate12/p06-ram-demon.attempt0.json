@@ -1,0 +1,48 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Ram Demon",
+  "seed": 666,
+  "extends": "biped",
+  "scale": 0.85,
+  "body": {
+    "muscle": 0.75,
+    "torso": { "radius": [0.17, 0.25, 0.2, 0.16], "pitch": 78 },
+    "neck": { "length": 0.14, "radius": [0.1, 0.13], "pitch": 78 },
+    "head": { "shape": "round", "length": 0.3, "radius": 0.13, "pitch": 0, "brow": 0.7 }
+  },
+  "limbs": [
+    { "id": "leg", "length": 1.15, "radius": [0.11, 0.06], "foot": "foot.hoof" },
+    {
+      "id": "arm",
+      "length": 1.15,
+      "radius": [0.09, 0.055],
+      "foot": { "type": "hand.grasp", "fingers": 4, "fingerLength": 0.14, "claws": 0.04 }
+    }
+  ],
+  "parts": [
+    {
+      "id": "horns",
+      "type": "horn.curved",
+      "attach": { "on": "head", "at": 0.6, "angle": 85 },
+      "params": {
+        "length": 0.65,
+        "width": 0.05,
+        "curve": 400,
+        "turn": -70,
+        "lean": 10,
+        "ridges": 12
+      }
+    },
+    { "id": "eyes", "params": { "pupil": "goat", "irisColor": "#ffb020", "squint": 0.5 } },
+    { "id": "teeth", "type": "teeth.row", "params": { "fangs": 2, "fangScale": 1.5 } }
+  ],
+  "skin": {
+    "palette": { "base": "#b01818", "belly": "#d05a3a", "accent": "#120808" },
+    "material": "hide",
+    "layers": [
+      { "type": "countershade", "strength": 0.5 },
+      { "type": "stripes", "color": "accent", "count": 12, "width": 0.3, "jitter": 0.4 }
+    ]
+  },
+  "motion": { "temperament": "aggressive" }
+}

@@ -48,7 +48,7 @@ milestone that builds it. **Keep those features**; they appear once built. In th
   monster by changing `scale`.
 - **Sizing.** With the presets' proportions, an upright biped stands about 2.5 × `scale` tall (a
   2 m giant is `scale` 0.8), a quadruped is about 2.2 × `scale` from snout to tail tip and 0.75 ×
-  `scale` tall (a wolf is about 0.7), a hexapod is about 1.3 × `scale` long, and a serpent about
+  `scale` tall (`examples/grey-wolf.json`, `scale` 0.9, is 1.9 m long and 0.74 m tall), a hexapod is about 1.3 × `scale` long, and a serpent about
   3.5 × `scale`. Wings span far more than the body: about 6–7 × `scale` for a bat or a dragon
   with wings of `length` 1.5–1.9 (a 4.8 m bat is `scale` 0.7), so size a flier by its span
   (`analyze` gives `measurements.wingspan`). A fish is about 2 × `scale` long (a 1.8 m reef
@@ -68,7 +68,7 @@ Four sections make the main axis, from snout to tail: `head`, `neck`, `torso`, `
 
 | Section | `at` = 0 | `at` = 1 | Notes |
 | --- | --- | --- | --- |
-| `head` | snout tip | back of the skull | `shape`: round, snout, flat or wedge. `jaw: true` adds a hinged lower jaw (needed for teeth, bite and roar). |
+| `head` | snout tip | back of the skull | `shape`: round, snout, flat or wedge. `jaw` (default true) gives it a hinged lower jaw (needed for teeth, bite and roar); `false` leaves the head closed. |
 | `jaw` | jaw tip | hinge | Exists only when `head.jaw` is true. |
 | `neck` | head end | torso end | `length: 0` removes the neck. |
 | `torso` | neck end (front) | tail end (back) | Its length is `scale`. `pitch` tilts it up: 0 is horizontal, about 75–85 for an upright biped. |
@@ -101,7 +101,8 @@ the main one and keeps the plain names (`head`, `jaw`); the others are `head.L1`
 from it outward (with an even count the extra one is on the right: four heads are `head.L1`,
 `head`, `head.R1`, `head.R2`), so `"on": "head.R1"` puts a part on that head only, while `"on": "head"` gives
 every head a copy (`horns.L1.L` is the left horn on `head.L1`). Each head has its own mouth,
-eyes and teeth, looks about on its own, and the one nearest a target bites (its events name it
+eyes and teeth, glances about on its own when idle (a game's `lookAt` turns every head toward
+the point), and the one nearest a target bites (its events name it
 in `head`); `analyze` warns `head_intersection` when heads or necks hit each other in motion,
 with the spread or length that clears it. Big heads need room: three wolf-sized heads want about
 `spread` 90 and `length` 0.45. `"tail": { "count": 2 }` gives two tails (`spread`, 20° per extra
@@ -301,9 +302,10 @@ everything, between `from` and `to` along what they sit on.
   edged in `edgeColor`.
 - `quills` scatter over their area, spaced by `density`, lying back by `lie`, tipped in
   `tipColor`.
-- `frill`, `hood` and `sail` are spines with skin between them, lit through like wings. They rest
-  folded (`open` says how far: a frill lies back over the neck, a hood's ribs back along the neck,
-  a sail leans back a little) and open in `display`, which also raises quills; `render --flare 1`
+- `frill`, `hood` and `sail` are spines with skin between them, lit through like wings. Frills
+  and hoods rest folded (`open` says how far: a frill lies back over the neck, a hood's ribs back
+  along the neck), so the default sheet shows them flat; a sail stands at rest, leaning back a
+  little. All three open in `display`, which also raises quills; `render --flare 1`
   (MCP `pose.flare`) shows them open. A hood has two eye marks on its back (`markColor`); give
   the cobra's neck `pitch` about 80 so it rears.
 
@@ -345,7 +347,7 @@ All lengths are in torso lengths.
 | A flat, broad head | `"head": { "shape": "flat", "crossSection": "wide" }`: the shape alone still reads as a dome from the front |
 | A big round head with forward eyes (a goblin) | `"head": { "shape": "round", "radius": 0.3 }` and `eye.basic` at `at` 0.22, `angle` 62, `scale` 2.6: the default places eyes on the crown, like a frog's |
 | A club on the tail | a tail `radius` profile that swells near the end, such as `[0.15, 0.12, 0.1, 0.1, 0.14, 0.24, 0.25, 0.08]`, with `segments` 12 so the swell keeps its shape |
-| A bushy tail | a thick `radius` profile (`[0.08, 0.14, 0.12, 0.05]`) and longer fur on it: `"fur": { "length": 0.06, "region": "tail" }` (a full coat at 0.03 reads as fur, not a brush) |
+| A bushy tail | a thick `radius` profile (`[0.08, 0.14, 0.12, 0.05]`), and on a creature without fur, fur on the tail alone: `"fur": { "length": 0.06, "region": "tail" }`. `fur` is one coat with one length, so that leaves the body bare: a furry creature keeps its coat over `all` (0.03 reads as fur, 0.05 as shaggy) and gets its bushy tail from the profile |
 | A beetle's nose horn | `horn.curved` on `head`, `at` 0.2, `angle` 0; `length` 0.55, `width` 0.065, `lean` -5, `curve` -75 (it rises and arcs back; mammal horn values hang it down) |
 | A colour only on the tail | a layer with `"region": "tail"`, e.g. `countershade` with `color` "base" and `height` 1 to keep a curled tail's underside dark |
 | Bull horns, out then forward | `horn.curved` on `head`, `at` 0.85, `angle` 75; `length` 0.3, `width` 0.04, `curve` -70 |
@@ -354,7 +356,7 @@ All lengths are in torso lengths.
 | Insect mandibles | `{ "id": "jaws", "type": "mandible", "params": { "length": 0.2 } }`: a pair that opens with the bite (fixed horns, `horn.curved` with `aim` "forward" and `side` "both", do not move) |
 | Horns swept back along the head | `horn.curved` on `head`, `at` 0.8, `angle` 50; `length` 0.4, `curve` 50, `aim` "back" |
 | Spikes down the whole back | `spikes.row` on `spine`, `from` 0.1, `to` 0.95, `angle` 0; a `height` profile such as `[0.06, 0.12, 0.05]` |
-| A stinger on the tail tip | `horn.curved` on `tail`, `at` 0.97, `angle` 0; `length` 0.14, `width` 0.025, `curve` 60, a dark `color` |
+| A stinger on the tail tip | `horn.curved` on `tail`, `at` 0.97, `angle` 0; `length` 0.14, `width` 0.025, `curve` 60, a dark `color`, on a tail that lies back. Its `width` is its base radius: keep it under the tail tip's (the last `radius`; swell the tip, e.g. `[0.06, 0.035]`, for a heavy sting). On a tail curled up over the back, as a scorpion's, put it underneath (`at` 1, `angle` 180, which faces up there) with `curve` -80 so it hooks forward, as in `examples/dune-scorpion.json` |
 | Pointed ears | `ear.pointed` on `head`, `at` 0.85, `angle` 45; `length` 0.14, `width` 0.05 (for hanging ears, param `droop` 0.8 and `attach.angle` 70) |
 | A wolf's or croc's grin | `teeth.row` with `fangs` 1 and nothing else: the row fills the mouth and the fangs show over the lips when it is shut; `fangs` 0 and `scale` 1.2 for a crocodile's even teeth, `fangScale` 1.8 for sabres |
 | A snake's mouth | the `serpent` preset (forked tongue, no lips, no eyelids); `teeth.row` with `incisors` 0, `fangs` 1, `lower` false |
@@ -392,7 +394,7 @@ length on the coil, so they need a `length` of 0.5–0.75 to read from a distanc
 - **`fur`** grows a coat over the material: `"fur": { "length": 0.03, "density": 0.8, "region":
   ["torso", "limbs", "tail"] }` (`length` in torso lengths, 0.002–0.3, default 0.03; `density`
   0–1, default 0.8; `region` one layer region or a list, default `all`), so a griffin can have a
-  furry body and a bare head. Fur takes the colours of the skin under it (palette and layers), so
+  furry body and a bare head. It is one coat: one length over every region it covers. Fur takes the colours of the skin under it (palette and layers), so
   stripes and spots show through, though detail finer than a hair does not. `"fur": {}` is a full
   coat; `null` removes an inherited one. Fur is shorter on the face, in creases and on the feet,
   stays clear of the eyes and the mouth, and never grows on wings or fins. It is drawn as shells, from medium quality up; a 0.02–0.04 coat reads as fur, longer as
@@ -431,7 +433,9 @@ length on the coil, so they need a `length` of 0.5–0.75 to read from a distanc
   layers first and markings after them, or lower the late layer's `strength`.
 - **Very dark creatures.** A base near black (`#000`–`#111`) loses its shape in renders: shading
   has nothing to darken. Use a dark grey or brown such as `#1c1a1e`, and give `grime` or `mottle`
-  on it a colour well above the base so they show.
+  on it a colour well above the base so they show. The same holds for any base about that dark,
+  brown included. `analyze`'s description names such a base "charcoal": it says "black" only at
+  about `#101010` and darker, which renders flat.
 - On a creature with no legs, `countershade` at its default height gives the pale belly of a
   snake; raise `height` toward 0 to pale the flanks too.
 
@@ -451,9 +455,11 @@ when the creature moves.
   follows the body: `land` with legs (or no legs and no fins or tentacles on the torso), `water`
   for a body with fins or tentacles on the torso and no legs, `air` with wings. Switches merge
   over that:
-  `"media": { "water": true }` adds swimming to a walker or a snake, `{ "air": false }` grounds
+  `"media": { "water": true }` adds swimming to a walker or a snake, `{ "land": false }` keeps a
+  swimmer in the water (it stops at the shore), `{ "air": false }` grounds
   a winged one (a beetle too heavy for its wings, `examples/rhino-beetle.json`); flying needs a
-  wing limb.
+  wing limb. Tentacles on the head leave a body on land (`examples/kraken.json` slithers): give
+  a sea creature `"media": { "water": true, "land": false }`.
 - **Swimming.** A creature that swims takes to water deeper than about its hip height (a
   legless one, a little more than its girth) and walks or slithers out where it is shallower;
   one that only swims stops at the shore. Walkers and paddlers swim with the back awash and the
@@ -461,7 +467,8 @@ when the creature moves.
   scenario asks for, pitching toward it and never into the bed. The tail beats at a frequency
   from a Strouhal number of 0.3 (faster the faster it swims), so its tip sweeps about a fifth of
   the body's length side to side; flippers beat with it, and legs paddle or trail. In water its
-  pace is its swimming gait's, and `analyze` gives `speed.swim`, checks that a swimmer at the
+  pace is its swimming gait's, and `analyze` gives `speed.swim` (for a body that only swims,
+  `speed.walk` is its swimming pace too, and its description says it swims), checks that a swimmer at the
   surface holds its head out (`head_underwater`) and that nothing goes into the bed when it dives
   (`hits_bed`). Games pass the water with the ground (docs/runtime.md); scenarios take `"water"`.
 - **Flying.** A creature with wings flies only when asked (a game's `fly()`, a scenario's `fly`
@@ -520,7 +527,8 @@ when the creature moves.
   `display` needs a part that provides `display` (`frill`, `hood`, `quills` or `sail`; wings do
   not), `pinch` a `hand.pincer`; `describe-module` and the catalogue list what each module
   provides, and a `needs` entry that is a list means any of them. Leave the field out to get
-  every action the body allows.
+  every action the body allows, which can be more than the animal would do (a gecko that roars
+  and lashes, a moth that jumps; exports bake a clip for each): list the actions you mean.
   `idle` runs by itself (breathing, blinks, glances, weight shifts, tail swish); the others run
   once when a game or the sandbox calls them, timed by size (a big creature bites slowly) and
   aimed at a target.
@@ -530,8 +538,9 @@ when the creature moves.
 - **Check motion with a filmstrip**: `render` with `filmstrip` (CLI: `--filmstrip`, optionally
   `--gait trot` or `--speed 2`) draws one gait cycle and a footfall diagram, and reports the
   cycle time, stride, the share of time each foot is planted and how far planted feet slide (in
-  metres; anything above a centimetre or two is visible). With `--action bite` (or `roar`,
-  `look`) it draws the action instead, close on the head and neck, with the times of its events;
+  metres; anything above a centimetre or two is visible). With `--action bite` (or any action
+  in `motion.actions`: `roar`, `look`, `display`, `pounce`, …) it draws the action instead, close
+  on the head and neck (a long serpent from above, at full length), with the times of its events;
   a bite comes mostly from the neck, so short-necked creatures mostly snap. Other options:
   `--view side|3/4|top|front` (default side; serpents from above; actions at 3/4; `front` shows
   the legs' stance), `--frames n` (2–16, default 8) and `--size px` (per frame, default 320).
@@ -546,13 +555,14 @@ when the creature moves.
 - **Script motion with a scenario**: `render` and `analyze` take `--scenario s.json` (MCP:
   `filmstrip.scenario` and `scenario`): ground (flat or the uneven course), named targets and
   timed calls (`moveTo`, `follow` a course, `act` at a target, `lookAt`, `stop`, `drive`,
-  `gait`, `fly`, `land`, `hit`, `die`). `analyze` reports the events, the distance walked, how
+  `gait`, `fly`, `land`, `hit`, `die`). `analyze` reports the events, the distance travelled, how
   high and low the body went, how far it turned, how close a snout came to each target and foot
   slide; `render` draws it. See [scenarios](scenarios.md).
 - **Check everything else with `analyze`**: its warnings and description come first, and
-  `--summary` (MCP `summary`) leaves out the detailed motion numbers (it keeps the sizes,
-  speeds and `reach`: each head's bite lunge and height, and with several heads which side each
-  is on). It measures the creature (size, mass, centre of mass,
+  `--summary` (MCP `summary`) leaves out the detailed motion numbers, `cadence` and each gait's
+  `intersection` among them (it keeps the sizes: `length`, `height`, `bodyHeight`, which
+  `generate --max-height` limits, `width`, `mass`, `counts` and `wingspan`; the speeds; and
+  `reach`: each head's bite lunge and height, and with several heads which side each is on). It measures the creature (size, mass, centre of mass,
   hip height, speeds per gait, bite reach, balance over the feet), runs two gait cycles on flat
   and rough ground, and warns, with a path and a fix, about sliding feet, a body or tail in the
   ground, legs stretched past their reach, limbs passing through each other or the body, parts
@@ -560,7 +570,8 @@ when the creature moves.
   fast (`fast_cadence`: `cadence` lists each gait's steps a second, per foot, at its usual
   speed; above 8 a second legs read as jitter at 30 frames a second, which happens to creatures
   with a torso under about 20 cm; make them bigger or, if they are meant to be that small,
-  skittish). Every pair of limbs that meet is listed at once, each where it was deepest (flat
+  skittish: a skittish creature is meant to scurry, so `analyze` stops warning, though `cadence`
+  still shows the same steps a second). Every pair of limbs that meet is listed at once, each where it was deepest (flat
   or rough ground), and fixes give amounts where they can (`about 10° more splay`); a leg that
   hits the body during the swing also clears with a smaller gait `stride` or `stepHeight`. One
   leg's change can move the others in the stride, so analyze again after each. It also writes a one-paragraph description
@@ -639,13 +650,16 @@ role change together to other feet that stand a leg (paws, hooves, pads, talons,
 to other hands). A part of a lineage (a beak, mandibles, a hood) joins only a creature that
 already wears one (a bird, an insect, a snake), and fins only creatures that swim. Switches
 (`head.jaw`, a teeth row's `upper`, eyelids, cloven hooves) never flip, and the skin's `material`
-never drifts, so a viper stays a scaled snake with fangs. Mutation never changes how many
+never drifts, so a viper stays a scaled snake. Its parts' numbers drift like any other gene (a
+teeth row's `fangs` can fall to 0) and a part can go: lock it (`parts[id=fangs]`) or pass
+`--keep-parts` to keep it as it is. Mutation never changes how many
 heads, tails or limbs a creature has, so it never grows wings or a second head: those come from
 themes, `patch` and crossbreeding. `amount` (0 to 1) is how many genes change and how far;
 values of zero stay zero, so a tailless creature does not sprout a tail and a single tail does
 not fork.
-`locked` paths, such as `skin`, `body.head`, `parts[id=horns]`, `skin.layers[type=stripes]` or
-a top-level field like `scale`, never change; a lock that matches nothing comes back as an
+`locked` paths, such as `skin`, `body.head`, `parts[id=horns]`, `skin.layers[type=stripes]`, a
+single param (`parts[id=horns].params.length`) or a top-level field like `scale`, never change
+(`diff` the child against its parent to see that they held); a lock that matches nothing comes back as an
 `unknown_lock` warning. `scale` is a gene like any other, and lengths are in torso lengths, so lock
 `scale` too when a size must hold in metres. Quote lock paths in a shell (`--lock
 'skin,parts[id=horns]'`), since brackets glob. `--keep-parts` (MCP `structure: false`) turns off
@@ -673,7 +687,9 @@ it also keeps out the other parent's wings: to keep the legs and take the wings,
 id (`--lock 'limbs[id=foreleg],limbs[id=hindleg]'`). The base's own unpaired parts stay only with
 chance `1 − mix` (a wolf crossed with a griffin may lose its teeth); lock `parts` to keep them.
 `mix` 0 or 1 copies a parent; in between, each gene's share wobbles a little around `mix`. Posture blends too (torso and neck pitch), so to keep one parent's body, build on it with
-`--base a` and lock what must not change: `--lock body.torso,limbs`. The result says which parent
+`--base a` and lock what must not change: `--lock body,limbs` (the whole `body`: locking only
+`body.torso` still blends the neck's pitch). `scale` blends as well; lock it to keep the base's
+size. The result says which parent
 it is built on (`base`) and diffs against it.
 
 **Generate.** `generate` (CLI `spawnforge generate --theme reptile --seed 4`) builds a new
@@ -698,7 +714,9 @@ with `patch`, or `mutate` and `crossbreed` them. In the sandbox, the breed tab d
 `validate` returns `ok`, `errors`, `warnings` and the **minimal blueprint**: the same creature
 with every value that equals the preset or a default removed. Validation never changes your file;
 the minimal blueprint is there to show what actually differs from the preset (`validate --quiet`
-leaves it out, for just the verdict). Each issue has:
+leaves it out, for just the verdict; `validate --expanded` gives the full blueprint instead, every
+preset and default value filled in, which shows what a creature inherits: a preset's tail
+`curl`, its parts and their params). Each issue has:
 
 - `path`, id-based, e.g. `limbs[id=hindleg].attach.at`
 - `message`, e.g. `1.4 is outside 0–1`
@@ -740,7 +758,7 @@ milestones land.
 | Wyvern | `wyvern` (its wings are its forelimbs); a stinger as in the recipe above |
 | Bat | `wyvern` with bat proportions: a short neck and tail, a big `snout` head, legs under the middle (`at` 0.45), wings `length` 1.9 with `"membrane": { "type": "membrane.bat", "fingers": 5, "trailing": "leg" }`, big `ear.pointed` and fur on the head and torso (see `examples/cave-bat.json`) |
 | Hydra or cerberus | `quadruped` with `"neck": { "count": 5, "length": 0.75 }` and a small head (examples/hydra.json), or 3 with `length` 0.45 and `spread` 90 for a cerberus (examples/cerberus.json); parts on `head` appear on every head |
-| Kraken | `serpent` with a short, thick torso (the mantle), no tail, a big `round` head and four `tentacle` entries on the `head` with `side` "both" at `angle`s 25 to 155, plus two long feeding tentacles with a club in their `radius`; `suckers` on the limbs (see `examples/kraken.json`). Tentacles on the torso trail behind instead, like a squid's |
+| Kraken | `serpent` with a short, thick torso (the mantle), no tail, a big `round` head and four `tentacle` entries on the `head` with `side` "both" at `angle`s 25 to 155, plus two long feeding tentacles with a club in their `radius`; `suckers` on the limbs (see `examples/kraken.json`, which crawls on land; add `"media": { "water": true, "land": false }` for one that swims). Tentacles on the torso trail behind instead, like a squid's |
 | Crocodile | `quadruped` with a `wide` torso, a long low `wedge` head, legs `splay` 60 with `foot.claw` (forelegs `length` 0.36, hindlegs 0.42: shorter ones overstretch), a long `tall` tail, a `spikes.row` of low scutes, `"media": { "water": true }` (see `examples/river-crocodile.json`): it walks in, swims with its back awash and climbs out. Its pace is slow (about 0.4 m/s), so give `moveTo` a `speed` to cross water quickly |
 | Shark or fish | `fish`, whose preset already has the fins: override its parts `dorsal` (`fin.dorsal`) and `tailfin` (`fin.tail`, `"shape": "forked"`) and its limbs `pectoral` and `pelvic` by id (`"remove": true` drops the pelvic pair), and add `teeth.row` (see `examples/reef-shark.json`). Its fins already make it a swimmer, so it needs no `media`. Keep the torso and head `tall` (a `round` fish reads as a plank from the side) and the pectorals shorter than 0.4: from 0.4 on, fins beat as flippers (`swim.flap`) like a turtle's. Paired fins hold out flat, so check them in the `top` and `front` views |
 | Spider or scorpion | `octopod`; `mandible` (`"shape": "fang"`) for a spider (see `examples/tomb-spider.json`); for a scorpion a slimmer even torso, `arm`s at `at` 0 with `lift` 80 and `"foot": "hand.pincer"`, a tail with `pitch` 60 and `curl` 160, a `horn.curved` stinger on its tip, and `pinch` and `lash` (see `examples/dune-scorpion.json`) |
@@ -748,7 +766,7 @@ milestones land.
 | Turtle or tortoise | `quadruped` with a `wide` torso and `{ "id": "shell", "type": "shell", "params": { "dome": 0.95, "overhang": 0.28 } }`, short legs with `foot.pad` (see `examples/stone-tortoise.json`); for a sea turtle remove `foreleg` and `hindleg` (`"remove": true`) and add fin limbs with `"membrane": null` (flippers; `length` 0.4 or more so they beat), which make it a swimmer (see `examples/sea-turtle.json`) |
 | Two-tailed fox | `quadruped` with `"tail": { "count": 2, "spread": 22, "pitch": 12, "curl": 35 }` (raised, like a kitsune's), `"foot": "foot.paw"` on both leg pairs and `"skin": { "fur": {} }` (examples/two-tailed-fox.json) |
 | Griffin | `quadruped`; `beak`, `{ "role": "wing", "membrane": "membrane.feather" }`, `foot.talon` on the forelegs and `foot.paw` on the hindlegs, fur (see `examples/griffin.json`) |
-| Moth | `hexapod`; two wing pairs with their own ids, `forewing` at `at` 0.15 and `hindwing` at 0.3, each with `membrane.insect` (`"shape": "broad"` and `"round"`), `spots` with `ring` and `"region": "wings"` for eye spots (see `examples/luna-moth.json`); `antenna` with `"shape": "feather"`, fur on the torso. A moth cannot bite: `"head": { "jaw": false }` drops the jaw, and with it `bite` and `roar` |
+| Moth | `hexapod`; two wing pairs with their own ids, `forewing` at `at` 0.18 (`angle` 20) and `hindwing` at 0.3 (`angle` 25), each with thin bones (`radius` `[0.014, 0.006]`: a wing's default is a bat's arm) and `membrane.insect` (`"shape": "broad"` and `"round"`), `spots` with `ring` and `"region": "wings"` for eye spots (see `examples/luna-moth.json`); `antenna` with `"shape": "feather"`, fur on the torso. A moth cannot bite: `"head": { "jaw": false }` drops the jaw, and with it `bite` and `roar` |
 | Beetle with wing cases | `hexapod` with a deep abdomen (more torso `radius` points); `{ "id": "case", "role": "wing", "attach": { "on": "torso", "at": 0.5, "angle": 6 }, "length": 0.5, "segments": 2, "membrane": "membrane.case" }` and a `wing` just behind it (`at` 0.53) with `membrane.insect` (`"shape": "round"`), which folds away under the case (see `examples/rhino-beetle.json`) |
 | Slug or snail | `serpent` with a short tail, a thicker torso (the preset is a thin snake) and `"material": "skin"`; eyes on stalks: a tentacle pair on the `head` (`length` 0.3, 4 segments, `radius` 0.025 or more) with `eye.basic` on it at `at` 1 and a `size` of about 0.05 (`scale` is relative to what it sits on, so on a thin stalk the eyes come out as dots); `slime` |
 | Stegosaur, sail-back, porcupine | `plates.row`, `sail` or `quills` along the `spine` (see `examples/plated-stegosaur.json`, `sail-back.json`, `porcupine.json`) |
@@ -758,7 +776,7 @@ Big mammals, from what agents found by render at gate 10 (all on `quadruped`):
 
 | Creature | Blueprint |
 | --- | --- |
-| Horse | `scale` 1.5; a deep `round` barrel, torso `radius` `[0.17, 0.23, 0.22, 0.2]` (a `tall` torso reads as a deer); neck `length` 0.52, `radius` `[0.07, 0.16]`, `pitch` 58, `tall`; a long `snout` head (`length` 0.46, `pitch` -50); legs `length` 0.92 and 0.98 with root `radius` 0.08 and 0.1 and `foot.hoof` (`cloven` false); a mane of `spikes.row` (`height` 0.13, `width` 0.04, `count` 26); `muscle` 0.7 makes it heavy (750 kg), 0.5 is nearer a horse's 500 |
+| Horse | `scale` 1.5; a deep `round` barrel, torso `radius` `[0.17, 0.23, 0.22, 0.2]` (a `tall` torso reads as a deer); neck `length` 0.52, `radius` `[0.07, 0.16]`, `pitch` 58, `tall`; a long `snout` head (`length` 0.46, `pitch` -50); legs `length` 0.92 and 0.98 with root `radius` 0.08 and 0.1 and `foot.hoof` (`cloven` false); a mane of `spikes.row` (`height` 0.13, `width` 0.04, `count` 26). `muscle` adds mass as well as bulk, and mass grows with the cube of `scale`: check `analyze`'s `mass` (`examples/wild-horse.json`, `scale` 1.4 with `muscle` 0.6, weighs about 330 kg; a deep barrel at `scale` 1.5 can pass 700) and thin the barrel or lower `muscle` to reach a horse's 400–500 kg |
 | Big cat | `scale` 1.3; torso `radius` `[0.13, 0.19, 0.17, 0.11]`; a short thick neck (`length` 0.22, `radius` `[0.11, 0.16]`); a `round` head (`length` 0.28, `radius` 0.12); legs `length` 0.7 and 0.74 with `foot.paw` (`claws` "hidden"), forelegs `splay` 18; a long tail (`length` 0.85, `curl` 15); `stalking`, with `pounce` |
 | Bear | `scale` 1.25; torso `radius` `[0.17, 0.24, 0.2, 0.18]` with `arch` 0.12; a thick neck held up (`length` 0.3, `radius` `[0.14, 0.22]`, `pitch` 32: lower and the head sinks into the chest), head `pitch` -18; short thick legs (`length` 0.52, root `radius` 0.12) with `"stance": "plantigrade"`, forelegs `splay` 32, `foot.paw` with 5 `long` claws; a stub tail; `lumbering` |
 

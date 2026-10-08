@@ -1,0 +1,78 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Cinder Drake",
+  "seed": 6606,
+  "extends": "quadruped",
+  "scale": 1.5,
+  "body": {
+    "muscle": 0.6,
+    "torso": { "radius": [0.13, 0.18, 0.17, 0.11], "arch": 0.06 },
+    "neck": { "length": 0.65, "radius": [0.055, 0.1], "pitch": 38, "curve": 25, "segments": 5 },
+    "head": {
+      "shape": "wedge",
+      "length": 0.32,
+      "radius": 0.085,
+      "jaw": true,
+      "brow": 0.55,
+      "pitch": -12
+    },
+    "tail": { "length": 1.5, "radius": [0.1, 0.012], "pitch": -8, "curl": 12, "segments": 12 }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "length": 0.5,
+      "radius": [0.06, 0.03],
+      "foot": { "type": "foot.claw", "toes": 4 }
+    },
+    {
+      "id": "hindleg",
+      "length": 0.58,
+      "radius": [0.08, 0.035],
+      "foot": { "type": "foot.claw", "toes": 4 }
+    },
+    {
+      "id": "wing",
+      "role": "wing",
+      "attach": { "on": "torso", "at": 0.14, "side": "both", "angle": 35 },
+      "length": 1.8,
+      "segments": 3,
+      "radius": [0.05, 0.014],
+      "membrane": {
+        "type": "membrane.bat",
+        "fingers": 4,
+        "span": 1.15,
+        "trailing": "body",
+        "scallop": 0.45,
+        "color": "#5a2a22",
+        "translucency": 0.45
+      }
+    }
+  ],
+  "parts": [
+    {
+      "id": "horns",
+      "type": "horn.curved",
+      "attach": { "on": "head", "at": 0.85, "angle": 35, "side": "both" },
+      "params": { "length": 0.32, "curve": 50, "aim": "back", "color": "#2a2420" }
+    },
+    {
+      "id": "crest",
+      "type": "spikes.row",
+      "attach": { "on": "spine", "from": 0.1, "to": 0.9, "angle": 0 },
+      "params": { "count": 14, "height": [0.04, 0.09, 0.04] }
+    },
+    { "id": "eyes", "params": { "pupil": "slit", "irisColor": "#ffb020", "squint": 0.45 } },
+    { "id": "teeth", "type": "teeth.row", "params": { "fangs": 2 } }
+  ],
+  "skin": {
+    "palette": { "base": "#7a2e22", "belly": "#d8a860", "accent": "#f0a030" },
+    "material": "scales",
+    "layers": [
+      { "type": "countershade", "strength": 0.8 },
+      { "type": "scales", "size": 0.02, "bump": 0.5 },
+      { "type": "veins", "color": "accent", "region": "wings", "strength": 0.5 }
+    ]
+  },
+  "motion": { "temperament": "aggressive", "actions": ["bite", "roar", "look", "idle"] }
+}

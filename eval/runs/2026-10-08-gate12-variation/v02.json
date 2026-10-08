@@ -1,0 +1,98 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Khaxis",
+  "seed": 1794900987,
+  "extends": "quadruped",
+  "scale": 1.057,
+  "body": {
+    "torso": {
+      "radius": [0.148, 0.207, 0.154, 0.116],
+      "arch": 0.0794
+    },
+    "neck": {
+      "length": 0.321,
+      "pitch": 25,
+      "radius": [0.08, 0.12]
+    },
+    "head": {
+      "length": 0.4,
+      "radius": 0.115,
+      "pitch": -15
+    },
+    "tail": {
+      "length": 0.711,
+      "radius": [0.07, 0.01],
+      "curl": 11
+    }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "length": 0.597,
+      "radius": [0.055, 0.03]
+    },
+    {
+      "id": "hindleg",
+      "length": 0.682
+    }
+  ],
+  "parts": [
+    {
+      "id": "eyes",
+      "params": {
+        "scale": 1.43,
+        "pupil": "goat",
+        "irisColor": "#ffcc00"
+      }
+    },
+    {
+      "id": "teeth",
+      "type": "teeth.row",
+      "params": {
+        "fangs": 2,
+        "fangScale": 1.47,
+        "spacing": 0.0579
+      }
+    },
+    {
+      "id": "horns",
+      "type": "horn.curved",
+      "attach": {
+        "on": "head",
+        "at": 0.6,
+        "angle": 85,
+        "side": "both"
+      },
+      "params": {
+        "length": 0.592,
+        "width": 0.0626,
+        "curve": 301,
+        "turn": -1,
+        "ridges": 8,
+        "color": "#2a1a14",
+        "tipColor": "#d8c8a0"
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#4f1c1f",
+      "belly": "#a45c65",
+      "accent": "#110e0d"
+    },
+    "layers": [
+      {
+        "type": "countershade",
+        "strength": 0.5
+      },
+      {
+        "type": "stripes",
+        "count": 13,
+        "width": 0.3
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "aggressive"
+  }
+}

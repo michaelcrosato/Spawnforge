@@ -594,7 +594,7 @@ window.spawnforgeRender = async (request) => {
     const named = (label: string) => (request.anonymous ? '' : `${label} · `);
     ctx.fillText(
       motion.scenario
-        ? `${named('scenario')}${motion.cycle.toFixed(1)} s · walked ${fmt(motion.stride)} · ${sizeLine}`
+        ? `${named('scenario')}${motion.cycle.toFixed(1)} s · covered ${fmt(motion.stride)} · ${sizeLine}`
         : motion.action
           ? `${named(motion.action)}${motion.cycle.toFixed(2)} s · ${sizeLine}`
           : `${named(motion.gait)}${motion.speed.toFixed(2)} m/s · cycle ${motion.cycle.toFixed(2)} s · stride ${fmt(motion.stride)} · ${sizeLine}`,

@@ -408,9 +408,15 @@ export function refineHeads(input: RefineHeadsInput): {
     const head = bones[h.head] as BoneDef;
     const ids = new Set([h.head, h.jaw].filter((b) => b >= 0));
     const mask = new Uint8Array(positions.length / 3);
+    const SLOTS = table.bones.length / table.count;
     for (let v = 0; v < mask.length; v++) {
+      // The head's and jaw's weight, read from the slots in place (as `entries` lists them).
       let w = 0;
-      for (const [b, x] of table.entries(v)) if (ids.has(b)) w += x;
+      for (let s = v * SLOTS; s < (v + 1) * SLOTS; s++) {
+        const b = table.bones[s] as number;
+        const x = table.weights[s] as number;
+        if (b >= 0 && x > 0 && ids.has(b)) w += x;
+      }
       if (w >= 0.5) mask[v] = 1;
     }
     let area = 0;

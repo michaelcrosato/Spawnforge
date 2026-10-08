@@ -1,0 +1,18 @@
+{
+  "phase": 12,
+  "kind": "gate 12: the export eval's eleven tasks (eval/export.json) at the release commit, checked by eval/export.ts",
+  "date": "2026-10-08",
+  "model": "Claude Sonnet (Claude Code subagent, model alias \"sonnet\")",
+  "commit": "802cac3",
+  "tools": "spawnforge CLI: export, validate, generate, list-modules, describe-module, analyze, patch, render",
+  "docs": [
+    "README.md",
+    "docs/runtime.md",
+    "docs/engines.md",
+    "docs/blueprint.md",
+    "docs/catalog.md",
+    "examples/",
+    "engines/"
+  ],
+  "agents": "1 agent, 11 tasks; the .glb files are not committed (export is deterministic: the commands in feedback.md make them again)"
+}

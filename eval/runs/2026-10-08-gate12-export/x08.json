@@ -1,0 +1,9 @@
+{
+  "differences": [
+    "Shell fur is left out: glTF has no shells, so the coat is not drawn; the skin's maps carry its mean colour and roughness, and the engine's own fur should be driven from extras.fur",
+    "Light wrapping round the skin is left out: the engine shows a harder edge between light and shadow",
+    "Breathing (a 1% swell of the chest while idle) is left out",
+    "Fine pattern detail is baked at the texel's size, where the live skin fades it with distance; mipmaps fade it further away"
+  ],
+  "furLengthMetres": 0.0096
+}

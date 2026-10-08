@@ -168,6 +168,15 @@ export async function drawFilmstrip(
     );
     return { gait: controller.gait?.id ?? 'none', speed, cycle, stride, duty, footSlide };
   }
+  // In the water the cycle is a stroke: the body sweeps through the water, not along a trail.
+  if (controller.medium === 'water') {
+    ctx.fillText(
+      `in the water: one stroke${anonymous ? '' : ` (${controller.gait?.id ?? 'swim'})`}, no foot on the ground`,
+      14,
+      rowsTop + 12,
+    );
+    return { gait: controller.gait?.id ?? 'none', speed, cycle, stride, duty, footSlide };
+  }
   ctx.fillText('footfalls over one cycle (filled = planted)', 14, rowsTop + 12);
   if (legs.length === 0) {
     ctx.fillText(
@@ -330,7 +339,7 @@ async function drawScenario(
   ctx.font = '11px ui-monospace, monospace';
   ctx.fillStyle = '#aab';
   ctx.fillText(
-    `scenario: ${scenario.duration.toFixed(1)} s, walked ${result.distance.toFixed(2)} m, events`,
+    `scenario: ${scenario.duration.toFixed(1)} s, covered ${result.distance.toFixed(2)} m, events`,
     14,
     y + 12,
   );

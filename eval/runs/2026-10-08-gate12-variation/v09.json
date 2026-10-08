@@ -1,0 +1,125 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Zordrix",
+  "seed": 289083964,
+  "extends": "quadruped",
+  "scale": 1.218,
+  "body": {
+    "torso": {
+      "radius": [0.138, 0.16, 0.175, 0.101],
+      "arch": 0.0695
+    },
+    "neck": {
+      "length": 0.614,
+      "radius": [0.06, 0.09],
+      "pitch": 27,
+      "curve": 25,
+      "segments": 5
+    },
+    "head": {
+      "shape": "wedge",
+      "length": 0.283,
+      "radius": 0.0849,
+      "brow": 0.371
+    },
+    "tail": {
+      "length": 1.32,
+      "radius": [0.0986, 0.012],
+      "curl": 15,
+      "segments": 12
+    }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "length": 0.46
+    },
+    {
+      "id": "hindleg",
+      "length": 0.59,
+      "radius": [0.075, 0.035]
+    },
+    {
+      "id": "wing",
+      "role": "wing",
+      "attach": {
+        "at": 0.137,
+        "angle": 35
+      },
+      "length": 1.72,
+      "radius": [0.045, 0.014],
+      "membrane": {
+        "fingers": 3,
+        "span": 0.951,
+        "trailing": "body",
+        "scallop": 0.578,
+        "translucency": 0.301
+      }
+    }
+  ],
+  "parts": [
+    {
+      "id": "eyes",
+      "params": {
+        "pupil": "slit",
+        "squint": 0.291,
+        "irisColor": "#d16311"
+      }
+    },
+    {
+      "id": "teeth",
+      "type": "teeth.row",
+      "params": {
+        "fangs": 2
+      }
+    },
+    {
+      "id": "horns",
+      "type": "horn.curved",
+      "attach": {
+        "on": "head",
+        "at": 0.85,
+        "angle": 37,
+        "side": "both"
+      },
+      "params": {
+        "length": 0.282,
+        "curve": 59,
+        "ridges": 4,
+        "color": "#c6bfad"
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#567126",
+      "belly": "#94ae69",
+      "accent": "#293713"
+    },
+    "material": "scales",
+    "layers": [
+      {
+        "type": "countershade",
+        "strength": 0.856
+      },
+      {
+        "type": "scales",
+        "size": 0.0259,
+        "bump": 0.434
+      },
+      {
+        "type": "veins",
+        "color": "accent",
+        "region": "wings",
+        "strength": 0.561
+      },
+      {
+        "type": "mottle",
+        "scale": 0.197
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "stalking"
+  }
+}

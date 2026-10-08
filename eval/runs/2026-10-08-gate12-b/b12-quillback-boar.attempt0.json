@@ -1,0 +1,62 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Quillback Boar",
+  "seed": 12,
+  "extends": "quadruped",
+  "scale": 1.1,
+  "body": {
+    "torso": { "radius": [0.17, 0.23, 0.22, 0.17], "arch": 0.1 },
+    "neck": { "length": 0.2, "radius": [0.13, 0.19], "pitch": 15 },
+    "head": {
+      "shape": "snout",
+      "length": 0.36,
+      "radius": 0.12,
+      "pitch": -15,
+      "lips": 0.2,
+      "brow": 0.5
+    },
+    "tail": { "length": 0.3, "radius": [0.04, 0.01], "pitch": -30, "curl": 20 }
+  },
+  "limbs": [
+    { "id": "foreleg", "length": 0.46, "foot": { "type": "foot.hoof", "cloven": true } },
+    { "id": "hindleg", "length": 0.5, "foot": { "type": "foot.hoof", "cloven": true } }
+  ],
+  "parts": [
+    {
+      "id": "tusks",
+      "type": "horn.curved",
+      "attach": { "on": "jaw", "at": 0.25, "angle": 60 },
+      "params": {
+        "length": 0.16,
+        "width": 0.025,
+        "curve": -60,
+        "color": "#e8e0c0",
+        "tipColor": "#e8e0c0"
+      }
+    },
+    {
+      "id": "quills",
+      "type": "quills",
+      "attach": { "on": "spine", "area": "back", "from": 0.15, "to": 0.6 },
+      "params": {
+        "density": 0.6,
+        "length": 0.22,
+        "lie": 55,
+        "color": "#d8ccaa",
+        "tipColor": "#2a2018"
+      }
+    },
+    { "id": "teeth", "type": "teeth.row", "params": { "fangs": 0, "incisors": 1 } }
+  ],
+  "skin": {
+    "palette": { "base": "#4a3a30", "belly": "#8a7260", "accent": "#2a1e18" },
+    "material": "hide",
+    "layers": [
+      { "type": "countershade" },
+      { "type": "mottle", "color": "accent", "scale": 0.2, "coverage": 0.4, "strength": 0.6 },
+      { "type": "scars", "color": "#b8a490", "count": 12, "length": 0.18, "rake": 3 },
+      { "type": "grime", "amount": 0.4 }
+    ]
+  },
+  "motion": { "temperament": "aggressive" }
+}

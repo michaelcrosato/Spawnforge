@@ -1,0 +1,95 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Sea Serpent",
+  "seed": 1101,
+  "extends": "serpent",
+  "scale": 1.5,
+  "body": {
+    "torso": {
+      "radius": [0.1, 0.14, 0.16, 0.14],
+      "crossSection": "tall"
+    },
+    "neck": {
+      "length": 0.55,
+      "radius": [0.085, 0.12],
+      "pitch": 40,
+      "curve": 35,
+      "segments": 5
+    },
+    "head": {
+      "shape": "wedge",
+      "length": 0.26,
+      "radius": 0.1,
+      "pitch": -10
+    },
+    "tail": {
+      "length": 2,
+      "radius": [0.14, 0.012],
+      "crossSection": "tall"
+    }
+  },
+  "parts": [
+    {
+      "id": "spikes",
+      "type": "spikes.row",
+      "attach": {
+        "on": "spine",
+        "from": 0.03,
+        "to": 0.97,
+        "angle": 0
+      },
+      "params": {
+        "count": 50,
+        "height": [0.08, 0.16, 0.2, 0.14, 0.07],
+        "width": 0.025,
+        "curve": 30,
+        "color": "#9fb8c8",
+        "tipColor": "#22344e"
+      }
+    },
+    {
+      "id": "tailfin",
+      "type": "fin.tail",
+      "params": {
+        "shape": "rounded",
+        "size": 0.3,
+        "color": "#14284a"
+      }
+    },
+    {
+      "id": "fangs",
+      "type": "teeth.row",
+      "params": {
+        "incisors": 0,
+        "fangs": 1,
+        "fangScale": 1.2
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#14284a",
+      "belly": "#d6e4ea",
+      "accent": "#0a1630"
+    },
+    "material": "scales",
+    "layers": [
+      {
+        "type": "countershade",
+        "height": 0.05,
+        "softness": 0.25
+      },
+      {
+        "type": "scales",
+        "size": 0.03
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "stalking",
+    "media": {
+      "water": true
+    },
+    "actions": ["bite", "roar", "look", "idle"]
+  }
+}

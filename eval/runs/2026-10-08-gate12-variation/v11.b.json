@@ -1,0 +1,155 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Marsh Hydra",
+  "seed": 505,
+  "extends": "quadruped",
+  "scale": 1.6,
+  "body": {
+    "muscle": 0.6,
+    "torso": {
+      "radius": [0.2, 0.27, 0.26, 0.18],
+      "arch": 0.03
+    },
+    "neck": {
+      "count": 5,
+      "length": 0.656,
+      "radius": [0.0576, 0.0979],
+      "pitch": 45,
+      "curve": 39.7
+    },
+    "head": {
+      "shape": "wedge",
+      "length": 0.26,
+      "radius": 0.07,
+      "jaw": true,
+      "pitch": -11.5,
+      "brow": 0.443,
+      "lips": 0.311
+    },
+    "tail": {
+      "length": 0.9,
+      "radius": [0.13, 0.15, 0.08, 0.02],
+      "pitch": -20,
+      "curl": 30.4,
+      "segments": 7
+    }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "length": 0.5,
+      "radius": [0.09, 0.05],
+      "attach": {
+        "angle": 118,
+        "at": 0.123
+      },
+      "splay": 30,
+      "foot": {
+        "type": "foot.claw",
+        "toes": 3,
+        "clawLength": 0.0386
+      }
+    },
+    {
+      "id": "hindleg",
+      "length": 0.47,
+      "radius": [0.1, 0.05],
+      "attach": {
+        "angle": 118
+      },
+      "splay": 22,
+      "foot": {
+        "type": "foot.claw",
+        "toes": 4,
+        "clawCurve": 81.6,
+        "clawWidth": 1.07
+      },
+      "segments": 2
+    }
+  ],
+  "parts": [
+    {
+      "id": "teeth",
+      "type": "teeth.row",
+      "params": {
+        "fangs": 1,
+        "scale": 1.2,
+        "fangScale": 1.12
+      }
+    },
+    {
+      "id": "eyes",
+      "params": {
+        "irisColor": "#f7db2a",
+        "pupil": "slit",
+        "lids": false,
+        "scale": 0.87
+      }
+    },
+    {
+      "id": "crest",
+      "type": "spikes.row",
+      "attach": {
+        "on": "spine",
+        "from": 0.3,
+        "to": 0.9
+      },
+      "params": {
+        "height": [0.0386, 0.0642, 0.0279],
+        "width": 0.0262,
+        "color": "#e0beb0",
+        "tipColor": "#6f5245"
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#3e5a3a",
+      "belly": "#b8b07a",
+      "accent": "#1e2214"
+    },
+    "material": "scales",
+    "layers": [
+      {
+        "type": "countershade",
+        "softness": 0.25
+      },
+      {
+        "type": "mottle",
+        "scale": 0.2,
+        "coverage": 0.45,
+        "strength": 0.603
+      },
+      {
+        "type": "scales",
+        "size": 0.0279,
+        "bump": 0.5
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "lumbering",
+    "actions": [
+      {
+        "type": "bite",
+        "reach": 0.722,
+        "speed": 1
+      },
+      {
+        "type": "roar",
+        "duration": 2.53,
+        "intensity": 0.8
+      },
+      {
+        "type": "look",
+        "speed": 1,
+        "range": 100
+      },
+      {
+        "type": "idle",
+        "breath": 0.559,
+        "fidget": 0.5
+      }
+    ]
+  }
+}

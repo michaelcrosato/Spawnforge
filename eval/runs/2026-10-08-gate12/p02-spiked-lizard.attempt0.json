@@ -1,0 +1,69 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Mace-Tail Lizard",
+  "seed": 202,
+  "extends": "quadruped",
+  "scale": 1.0,
+  "body": {
+    "torso": { "radius": [0.16, 0.22, 0.22, 0.17], "crossSection": "wide" },
+    "neck": { "length": 0.16, "radius": [0.12, 0.15], "pitch": 5 },
+    "head": {
+      "shape": "wedge",
+      "length": 0.32,
+      "radius": 0.11,
+      "pitch": -5,
+      "lips": 0.1,
+      "tongue": "forked",
+      "brow": 0.5
+    },
+    "tail": {
+      "length": 1.1,
+      "radius": [0.15, 0.12, 0.1, 0.1, 0.14, 0.24, 0.25, 0.08],
+      "segments": 12,
+      "pitch": -3,
+      "curl": 0
+    }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "length": 0.42,
+      "splay": 55,
+      "radius": [0.085, 0.055],
+      "foot": { "type": "foot.claw", "toes": 4 }
+    },
+    {
+      "id": "hindleg",
+      "length": 0.46,
+      "splay": 55,
+      "radius": [0.1, 0.06],
+      "foot": { "type": "foot.claw", "toes": 4 }
+    }
+  ],
+  "parts": [
+    {
+      "id": "armor",
+      "type": "armor.bands",
+      "attach": { "on": "torso", "area": "back", "from": 0.12, "to": 0.95 },
+      "params": { "bands": 10, "scales": true, "color": "#4a4430" }
+    },
+    {
+      "id": "spikes",
+      "type": "spikes.row",
+      "attach": { "on": "spine", "from": 0.08, "to": 0.72, "angle": 0 },
+      "params": { "count": 14, "height": [0.05, 0.14, 0.12, 0.05], "width": 0.03 }
+    },
+    { "id": "teeth", "type": "teeth.row", "params": { "fangs": 0, "scale": 1.1 } },
+    { "id": "eyes", "params": { "pupil": "slit", "irisColor": "#c88a20", "squint": 0.5 } }
+  ],
+  "skin": {
+    "palette": { "base": "#5a5238", "belly": "#b8a878", "accent": "#2e2a1a" },
+    "material": "scales",
+    "layers": [
+      { "type": "countershade", "softness": 0.3 },
+      { "type": "scales", "size": 0.04 },
+      { "type": "mottle", "scale": 0.15, "coverage": 0.4, "strength": 0.6 }
+    ]
+  },
+  "motion": { "temperament": "lumbering", "actions": ["bite", "roar", "look", "idle"] }
+}

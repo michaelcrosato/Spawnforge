@@ -1,0 +1,6 @@
+{
+  "ground": "flat",
+  "duration": 8,
+  "frames": 12,
+  "calls": [{ "at": 0.5, "do": "fly", "height": 1.5 }]
+}

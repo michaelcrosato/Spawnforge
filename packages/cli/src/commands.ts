@@ -579,6 +579,7 @@ export function analysisView(result: AnalyzeResult, summary = false): unknown {
     measurements: {
       length: m.length,
       height: m.height,
+      bodyHeight: m.bodyHeight,
       width: m.width,
       mass: m.mass,
       counts: m.counts,

@@ -1,0 +1,152 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Deep Kraken",
+  "seed": 612,
+  "extends": "serpent",
+  "scale": 1.6,
+  "body": {
+    "torso": {
+      "radius": [0.16, 0.3, 0.36, 0.3, 0.1],
+      "pitch": 0,
+      "segments": 6
+    },
+    "neck": {
+      "length": 0.05,
+      "radius": [0.2, 0.22],
+      "pitch": 0
+    },
+    "head": {
+      "shape": "round",
+      "length": 0.34,
+      "radius": 0.26,
+      "jaw": true,
+      "lips": 0,
+      "tongue": "none"
+    },
+    "tail": {
+      "length": 0
+    }
+  },
+  "limbs": [
+    {
+      "id": "arm1",
+      "role": "tentacle",
+      "attach": {
+        "on": "head",
+        "at": 0.35,
+        "side": "both",
+        "angle": 25
+      },
+      "length": 2.2,
+      "segments": 12,
+      "radius": [0.08, 0.035, 0.008],
+      "curl": 140,
+      "curlStart": 0.3
+    },
+    {
+      "id": "arm2",
+      "role": "tentacle",
+      "attach": {
+        "on": "head",
+        "at": 0.35,
+        "side": "both",
+        "angle": 70
+      },
+      "length": 2.2,
+      "segments": 12,
+      "radius": [0.08, 0.035, 0.008],
+      "curl": 160,
+      "curlStart": 0.3
+    },
+    {
+      "id": "arm3",
+      "role": "tentacle",
+      "attach": {
+        "on": "head",
+        "at": 0.35,
+        "side": "both",
+        "angle": 115
+      },
+      "length": 2.2,
+      "segments": 12,
+      "radius": [0.08, 0.035, 0.008],
+      "curl": 180,
+      "curlStart": 0.3
+    },
+    {
+      "id": "arm4",
+      "role": "tentacle",
+      "attach": {
+        "on": "head",
+        "at": 0.35,
+        "side": "both",
+        "angle": 155
+      },
+      "length": 2.2,
+      "segments": 12,
+      "radius": [0.08, 0.035, 0.008],
+      "curl": 200,
+      "curlStart": 0.3
+    }
+  ],
+  "parts": [
+    {
+      "id": "eyes",
+      "attach": {
+        "on": "head",
+        "at": 0.62,
+        "angle": 48
+      },
+      "params": {
+        "scale": 3,
+        "pupil": "slit",
+        "irisColor": "#40e0d0",
+        "scleraColor": "#0a1020",
+        "lids": false,
+        "bulge": 0.8
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#2a2a5a",
+      "belly": "#7a6aa0",
+      "accent": "#101030"
+    },
+    "material": "skin",
+    "layers": [
+      {
+        "type": "countershade",
+        "softness": 0.4
+      },
+      {
+        "type": "mottle",
+        "color": "accent",
+        "scale": 0.12
+      },
+      {
+        "type": "suckers",
+        "count": 18,
+        "width": 0.9,
+        "bump": 0.6,
+        "region": "limbs"
+      },
+      {
+        "type": "bioluminescence",
+        "color": "#60ffe0",
+        "shape": "spots",
+        "size": 0.02,
+        "density": 0.4,
+        "region": "torso"
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "stalking",
+    "media": {
+      "water": true,
+      "land": false
+    },
+    "actions": ["bite", "lash"]
+  }
+}

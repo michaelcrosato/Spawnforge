@@ -1,0 +1,7 @@
+{
+  "ground": "flat",
+  "duration": 2.4,
+  "frames": 12,
+  "targets": { "prey": [1.4, 1.0, 1.0] },
+  "calls": [{ "at": 0.5, "do": "act", "action": "bite", "target": "prey" }]
+}

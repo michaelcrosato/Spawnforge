@@ -1,0 +1,64 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Dusk Hawk Moth",
+  "seed": 707,
+  "extends": "hexapod",
+  "scale": 0.35,
+  "body": {
+    "torso": { "radius": [0.15, 0.19, 0.16, 0.14, 0.11, 0.07] },
+    "head": { "jaw": false, "radius": 0.085 }
+  },
+  "limbs": [
+    {
+      "id": "forewing",
+      "role": "wing",
+      "attach": { "on": "torso", "at": 0.18, "side": "both", "angle": 25 },
+      "length": 1.3,
+      "segments": 2,
+      "radius": [0.014, 0.006],
+      "membrane": {
+        "type": "membrane.insect",
+        "shape": "broad",
+        "width": 0.55,
+        "veins": 0.5,
+        "color": "#9a8a78",
+        "translucency": 0.25
+      }
+    },
+    {
+      "id": "hindwing",
+      "role": "wing",
+      "attach": { "on": "torso", "at": 0.3, "side": "both", "angle": 28 },
+      "length": 0.95,
+      "segments": 2,
+      "radius": [0.012, 0.005],
+      "membrane": {
+        "type": "membrane.insect",
+        "shape": "round",
+        "width": 0.7,
+        "veins": 0.5,
+        "color": "#c8a070",
+        "translucency": 0.3
+      }
+    }
+  ],
+  "parts": [
+    { "id": "eyes", "params": { "irisColor": "#201810", "scale": 1.3 } },
+    {
+      "id": "antennae",
+      "type": "antenna",
+      "attach": { "on": "head", "at": 0.35, "angle": 25, "side": "both" },
+      "params": { "length": 0.45, "shape": "feather", "curve": 50, "color": "#8a7860" }
+    }
+  ],
+  "skin": {
+    "palette": { "base": "#6a5a48", "belly": "#d8c8a8", "accent": "#3a2a20" },
+    "material": "skin",
+    "fur": { "length": 0.04, "region": ["torso", "head"] },
+    "layers": [
+      { "type": "bands", "color": "accent", "count": 6, "width": 0.25, "region": "torso" },
+      { "type": "stripes", "color": "accent", "count": 5, "region": "wings", "strength": 0.7 }
+    ]
+  },
+  "motion": { "temperament": "skittish" }
+}

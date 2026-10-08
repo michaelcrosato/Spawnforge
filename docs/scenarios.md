@@ -52,7 +52,7 @@ Calls (a point is `[x, z]` on the ground or `[x, y, z]`, or a target's name):
 | `do` | Fields | What it does |
 | --- | --- | --- |
 | `moveTo` | `to` (a point), `speed` (m/s, default its pace on land, in water or in the air, set by its size and temperament: a crocodile paces at about 0.4 m/s) | Walks, swims or flies there and stops; with a height (`[x, y, z]` or a target) a diver dives or rises to it and a flyer flies at it (taking off if it is out of reach on foot). It gets up to speed within about half a second, changing gait on the way |
-| `follow` | `path` (up to 32 points), `speed` | Walks (or flies) through the points in order, stopping at the last: a course |
+| `follow` | `path` (up to 32 points), `speed` | Walks, swims or flies through the points in order (`[x, z]`, or `[x, y, z]` for a height), stopping at the last: a course |
 | `fly` | `height` (metres from the ground up to its origin, where its feet are when it stands; default its cruising height, 2 m or more for wide wings), `speed` | Takes off and circles where it is, or hovers if its wings can (insect wings), until told where to go; flying, changes its height or speed. A `stop` in the air hovers or circles there |
 | `land` | `to` (a point, optional) | Comes in to land there, or on the first clear ground ahead, and walks on |
 | `hit` | `from` (`"left"`, `"right"`, `"front"`, `"back"`, or degrees from its facing, 90 its left; default `"left"`), `strength` (0 to 1, default 0.5), `bone` (a bone name, as hit capsules give them) | A blow: it flinches away from it (a blow from its left pushes it to its right), and staggers if the blow would carry its body past its feet. Bipeds and tall, narrow bodies (a horse, a cheetah) stagger from about 0.35–0.45, a wolf from 0.5, broad, low bodies (a bear, a boar) from about 0.8, a tortoise only at 1, and a spider on eight legs not at all |
@@ -65,8 +65,9 @@ Calls (a point is `[x, z]` on the ground or `[x, y, z]`, or a target's name):
 
 A new `moveTo`, `drive` or `stop` ends a course in progress. Calls at the same time run in the
 order written. Mistakes come back like blueprint errors, with a path under `scenario`, the
-valid values and a fix: an unknown target name, an action the creature does not have, a call
-after the end, `fly` or `land` for a creature without wings (`cannot_fly`).
+valid values and a fix: an unknown target name, an action the creature does not have, `fly` or
+`land` for a creature without wings (`cannot_fly`). A call after the end is a warning
+(`after_end`): the scenario still runs, without it.
 
 ## What you get back
 
@@ -75,9 +76,9 @@ after the end, `fly` or `land` for a creature without wings (`cannot_fly`).
 | Field | Meaning |
 | --- | --- |
 | `end` | Where it ended: `x`, `z` (metres), `heading` (degrees), `speed` (m/s) |
-| `distance` | Metres walked along the ground |
+| `distance` | Metres travelled, measured along the ground (walking, swimming or flying) |
 | `topSpeed` | The fastest it went (m/s) |
-| `body` | The middle of its torso: the `lowest` and `highest` it went in the world (metres; under a sea's surface is below 0, so a dive to 3 m shows about -3) and the most it rose `aboveGround` (a flyer's altitude, a leap's height) |
+| `body` | The middle of its torso: the `lowest` and `highest` it went in the world (metres; under a sea's surface is below 0, so a dive to 3 m shows about -3) and the most it rose `aboveGround`, over the ground under it (a flyer's altitude, a leap's height; in water, its height over the bed) |
 | `turned` | Degrees it turned in all, left and right alike |
 | `events` | Every event but footsteps, with `time` in seconds: `arrive` (at a `moveTo` point or each course point, with the `position` it stopped at), `gait` (a change of gait), `medium` (into the water, out onto land, into the air, with `medium`), `hit`, `stagger` and `death`, `takeoff` and `land` (a flight's, or a leap's with its `action`), `action-start`, `action-end` and the action's own (`bite-contact`, `roar-peak`); wingbeats (`flap`) are left out like footsteps |
 | `footsteps` | How many steps it took |

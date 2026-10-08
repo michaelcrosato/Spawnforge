@@ -1,0 +1,136 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Griffin",
+  "seed": 1818,
+  "extends": "quadruped",
+  "scale": 1.2,
+  "body": {
+    "muscle": 0.5,
+    "torso": {
+      "radius": [0.15, 0.19, 0.17, 0.12],
+      "arch": 0.04
+    },
+    "neck": {
+      "length": 0.38,
+      "radius": [0.085, 0.14],
+      "pitch": 50,
+      "curve": 25
+    },
+    "head": {
+      "shape": "snout",
+      "length": 0.3,
+      "radius": 0.1,
+      "lips": 0,
+      "brow": 0.7,
+      "pitch": -8,
+      "tongue": "none"
+    },
+    "tail": {
+      "length": 0.85,
+      "radius": [0.05, 0.035, 0.03, 0.075],
+      "pitch": -20,
+      "curl": 15,
+      "segments": 10
+    }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "length": 0.58,
+      "radius": [0.065, 0.03],
+      "splay": 26,
+      "foot": {
+        "type": "foot.talon",
+        "toeLength": 0.13,
+        "talonLength": 0.06,
+        "color": "#d9b040"
+      }
+    },
+    {
+      "id": "hindleg",
+      "length": 0.62,
+      "radius": [0.085, 0.035],
+      "stance": "digitigrade",
+      "splay": 16,
+      "foot": {
+        "type": "foot.paw",
+        "toes": 4,
+        "claws": "short"
+      }
+    },
+    {
+      "id": "wing",
+      "role": "wing",
+      "attach": {
+        "on": "torso",
+        "at": 0.13,
+        "side": "both",
+        "angle": 28
+      },
+      "length": 1.55,
+      "segments": 3,
+      "membrane": {
+        "type": "membrane.feather",
+        "feathers": 22,
+        "length": 1.05,
+        "tips": "fingered",
+        "color": "#8a6038",
+        "tipColor": "#2a1c10"
+      }
+    }
+  ],
+  "parts": [
+    {
+      "id": "beak",
+      "type": "beak",
+      "params": {
+        "shape": "hooked",
+        "length": 1,
+        "depth": 1,
+        "color": "#e6b83c",
+        "tipColor": "#3a2a10"
+      }
+    },
+    {
+      "id": "eyes",
+      "attach": {
+        "on": "head",
+        "at": 0.55,
+        "angle": 58
+      },
+      "params": {
+        "irisColor": "#f0b020",
+        "squint": 0.6,
+        "scale": 1.1
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#c8944a",
+      "belly": "#e8d4a8",
+      "accent": "#5a3c20"
+    },
+    "fur": {
+      "length": 0.03,
+      "region": ["torso", "limbs", "tail"]
+    },
+    "layers": [
+      {
+        "type": "countershade",
+        "strength": 0.7
+      },
+      {
+        "type": "countershade",
+        "color": "#f2eee2",
+        "height": 1,
+        "softness": 0.1,
+        "region": "head"
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "stalking",
+    "actions": ["bite", "roar", "look", "idle"]
+  }
+}

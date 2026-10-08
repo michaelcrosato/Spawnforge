@@ -1,0 +1,158 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Ridgeback Stalker",
+  "seed": 4127,
+  "extends": "quadruped",
+  "scale": 1.2,
+  "body": {
+    "torso": {
+      "radius": [0.13, 0.18, 0.16, 0.11],
+      "arch": 0.15,
+      "segments": 7
+    },
+    "neck": {
+      "length": 0.35,
+      "radius": [0.0779, 0.102],
+      "pitch": 25
+    },
+    "head": {
+      "shape": "snout",
+      "length": 0.3,
+      "radius": 0.105,
+      "jaw": true,
+      "lips": 0.313,
+      "brow": 0.197
+    },
+    "tail": {
+      "length": 0.924,
+      "radius": [0.1, 0.015],
+      "curl": 20,
+      "segments": 9
+    },
+    "muscle": 0.428
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "role": "leg",
+      "attach": {
+        "on": "torso",
+        "at": 0.15,
+        "side": "both"
+      },
+      "length": 0.403,
+      "segments": 3,
+      "radius": [0.0625, 0.0345],
+      "foot": {
+        "type": "foot.pad",
+        "width": 1.5,
+        "nails": 3
+      }
+    },
+    {
+      "id": "hindleg",
+      "role": "leg",
+      "attach": {
+        "on": "torso",
+        "at": 0.852,
+        "side": "both"
+      },
+      "length": 0.6,
+      "segments": 2,
+      "radius": [0.07, 0.035],
+      "foot": {
+        "type": "foot.pad",
+        "width": 1.5,
+        "nails": 3
+      }
+    }
+  ],
+  "parts": [
+    {
+      "id": "horns",
+      "type": "horn.curved",
+      "attach": {
+        "on": "head",
+        "at": 0.902,
+        "angle": 40,
+        "side": "both"
+      },
+      "params": {
+        "length": 0.4416,
+        "curve": 60,
+        "tipColor": "#381d12"
+      }
+    },
+    {
+      "id": "dorsal",
+      "type": "spikes.row",
+      "attach": {
+        "on": "torso",
+        "from": 0.055,
+        "to": 0.95,
+        "angle": 0
+      },
+      "params": {
+        "count": 12,
+        "height": [0.08, 0.15, 0.06],
+        "curve": 23.2
+      }
+    },
+    {
+      "id": "eyes",
+      "type": "eye.basic",
+      "attach": {
+        "on": "head",
+        "at": 0.399,
+        "angle": 56.9,
+        "side": "both"
+      },
+      "params": {
+        "pupil": "slit",
+        "squint": 0.394,
+        "irisColor": "#bb9e32"
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#5b6b3a",
+      "belly": "#d8cfa0",
+      "accent": "#2a1e14"
+    },
+    "layers": [
+      {
+        "type": "countershade",
+        "strength": 0.6
+      },
+      {
+        "type": "stripes",
+        "color": "accent",
+        "count": 12,
+        "region": "back",
+        "jitter": 0.4
+      },
+      {
+        "type": "scales",
+        "size": 0.02,
+        "bump": 0.4
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "stalking",
+    "gaits": ["walk", "trot"],
+    "actions": [
+      {
+        "type": "bite",
+        "reach": 0.847,
+        "speed": 0.967
+      },
+      {
+        "type": "roar",
+        "duration": 1.57,
+        "intensity": 0.8
+      }
+    ]
+  }
+}

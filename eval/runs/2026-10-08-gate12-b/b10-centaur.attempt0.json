@@ -1,0 +1,35 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Centaur",
+  "seed": 1010,
+  "extends": "centaur",
+  "scale": 1.2,
+  "body": {
+    "head": { "brow": 0.5 }
+  },
+  "limbs": [
+    { "id": "foreleg", "foot": "foot.hoof" },
+    { "id": "hindleg", "foot": "foot.hoof" },
+    { "id": "arm", "foot": "hand.grasp" }
+  ],
+  "parts": [
+    {
+      "id": "horns",
+      "type": "horn.curved",
+      "attach": { "on": "head", "at": 0.7, "angle": 35, "side": "both" },
+      "params": { "length": 0.2, "width": 0.03, "curve": 70, "turn": -20, "lean": -15, "ridges": 6 }
+    },
+    {
+      "id": "ears",
+      "type": "ear.pointed",
+      "attach": { "on": "head", "at": 0.85, "angle": 80, "side": "both" },
+      "params": { "length": 0.08, "curve": 30 }
+    }
+  ],
+  "skin": {
+    "material": "hide",
+    "palette": { "base": "#7a5030", "belly": "#c8a078", "accent": "#2e1c10" },
+    "layers": [{ "type": "countershade", "softness": 0.4 }]
+  },
+  "motion": { "temperament": "calm" }
+}

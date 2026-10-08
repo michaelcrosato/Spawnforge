@@ -1,0 +1,75 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Emerald Constrictor",
+  "seed": 404,
+  "extends": "serpent",
+  "scale": 2.0,
+  "body": {
+    "torso": {
+      "radius": [0.1, 0.125, 0.135, 0.125]
+    },
+    "neck": {
+      "length": 0.5,
+      "radius": [0.11, 0.13],
+      "pitch": 45,
+      "curve": 40
+    },
+    "head": {
+      "shape": "wedge",
+      "length": 0.34,
+      "radius": 0.13,
+      "pitch": -15
+    },
+    "tail": {
+      "length": 2.4,
+      "radius": [0.12, 0.012]
+    }
+  },
+  "parts": [
+    {
+      "id": "fangs",
+      "type": "teeth.row",
+      "params": {
+        "incisors": 0,
+        "fangs": 1,
+        "fangScale": 1.7,
+        "lower": false
+      }
+    },
+    {
+      "id": "eyes",
+      "params": {
+        "irisColor": "#e8d020"
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#2f7a2e",
+      "belly": "#d8d890",
+      "accent": "#f0d020"
+    },
+    "layers": [
+      {
+        "type": "countershade"
+      },
+      {
+        "type": "stripes",
+        "color": "accent",
+        "count": 26,
+        "width": 0.3,
+        "jitter": 0.2
+      },
+      {
+        "type": "scales",
+        "size": 0.03,
+        "gapColor": "#16301a",
+        "gap": 0.2
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "stalking",
+    "actions": ["bite", "look", "idle"]
+  }
+}

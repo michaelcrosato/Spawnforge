@@ -69,14 +69,14 @@ This table is plan 2's contract, as plan 1's scope table was. New ideas go to th
 
 | Area | Plan 2 | Later |
 | --- | --- | --- |
-| Body plans | `octopod` (eight legs), `centaur`, `wyvern` (wings as forelimbs) and `fish` | Different heads on one body, segmented bodies (caterpillars), colonies; a `bat` preset; necks of different lengths on one body; human faces; a balance check stride by stride (dynamic balance) |
+| Body plans | `octopod` (eight legs), `centaur`, `wyvern` (wings as forelimbs) and `fish` | Different heads on one body, segmented bodies (caterpillars), colonies; a `bat` preset; necks of different lengths on one body; human faces; a balance check stride by stride (dynamic balance); upright bipeds that stand straight, and shoulders and a waist on a wide biped torso |
 | Body sections | Muscle masses, joints and body shape; an S-curved neck; several identical necks and heads; several or split tails | General body graphs |
 | Limbs | Stance (plantigrade, digitigrade, unguligrade); wings (membrane, feathered, and insect wings with wing cases); fins and flippers; tentacles | Walking on tentacles, prehensile tails as limbs |
-| Parts | Hooves, paws, pads, talons, hands, beaks, mandibles, pincers, antennae, shells, armour plates and bands, quills, frills, hoods, sails, dorsal and tail fins | Body feathers, manes and hair, worn gear; a stinger that continues the tail (with a venom bulb); several rows of teeth; a ring frill; stalked eyes as one part; fin tip colours; glowing eyes |
-| Textures | Distinct skin, hide, scales and chitin; fur shells; scars, bioluminescence, slime, warts, veins, rosettes, bands | Wounds that appear in play, wetness from water; fur colour and length per region; solid tints for a region or a tip (a white tail tip); finer regions (neck, arms, legs, feet) |
-| Animation | Gaits that change with speed; run, gallop, bound; jump and pounce; swimming; flight (flap, glide, hover, take off, land); hit reactions; death | Ragdolls and physics, climbing, burrowing, herd and flock behaviour; a slug's crawl; curling into a ball; a quadruped rearing to run on two legs; resting wing poses |
-| Export and runtime | Buildable npm packages; texture maps from UV atlases; levels of detail; crowds; a GPU benchmark; engine guides | KTX2 texture compression, engine plug-ins, Three.js past r186 |
-| Tools | `diff`, `migrate`, an underside view, cadence and sibling-field checks, scenario files for renders and analysis, click-to-place parts, a static gallery, quality and motion reviews in the evals | Submissions to a hosted gallery, an in-game editor for players |
+| Parts | Hooves, paws, pads, talons, hands, beaks, mandibles, pincers, antennae, shells, armour plates and bands, quills, frills, hoods, sails, dorsal and tail fins | Body feathers, manes and hair, worn gear; a stinger that continues the tail (with a venom bulb); several rows of teeth; a ring frill; stalked eyes as one part; fin tip colours; glowing eyes; compound eyes; claw lengths on paws, sickle claws, toe pads; a crown, a snout disc; tail stiffness |
+| Textures | Distinct skin, hide, scales and chitin; fur shells; scars, bioluminescence, slime, warts, veins, rosettes, bands | Wounds that appear in play, wetness from water; fur colour and length per region; solid tints for a region or a tip (a white tail tip); finer regions (neck, arms, legs, feet); a quality round on fur shells, chitin and wing cases (which ignore skin layers) |
+| Animation | Gaits that change with speed; run, gallop, bound; jump and pounce; swimming; flight (flap, glide, hover, take off, land); hit reactions; death | Ragdolls and physics, climbing, burrowing, herd and flock behaviour; a slug's crawl; curling into a ball; a quadruped rearing to run on two legs; resting wing poses; jet swimming |
+| Export and runtime | Buildable npm packages; texture maps from UV atlases; levels of detail; crowds; a GPU benchmark; engine guides | KTX2 texture compression, engine plug-ins, Three.js past r186; a floor on how far a part's level of detail simplifies |
+| Tools | `diff`, `migrate`, an underside view, cadence and sibling-field checks, scenario files for renders and analysis, click-to-place parts, a static gallery, quality and motion reviews in the evals | Submissions to a hosted gallery, an in-game editor for players; from gate 12's feedback: a proportions and readable-size guide, occlusion checks, intersection fixes found by search over the knobs, render time windows, zoom and label filters, `diff` matching lists by type, variation results with motion warnings and a `--count`, scenario plausibility checks, a description pass |
 
 ## Decisions this plan takes
 
@@ -134,7 +134,7 @@ since anatomy comes before the new vocabulary.
 | [11.4 Engine guides](#114-engine-guides) | high (lowered) | Docs plus per-engine scripts and an import test: tooling, not design | 11.1, 11.2 | Done ([#36](https://github.com/michaelcrosato/Spawnforge/pull/36)); Blender, imported in CI, keeps the levels of detail in a hidden collection |
 | [12.1 Click-to-place](#121-click-to-place-editing) | high (lowered) | UI on existing seams, with a round-trip oracle | Gate 9 | Done ([#38](https://github.com/michaelcrosato/Spawnforge/pull/38)); a point inside a bend lies off two bones, and the field picks the one that reaches it |
 | [12.2 Gallery](#122-gallery) | medium (lowered) | Assembles finished pieces into a static site | Gate 11 | Done ([#39](https://github.com/michaelcrosato/Spawnforge/pull/39)); thumbnails render in the page, so nothing goes stale; publishing waits for the owner |
-| [12.3 Release 0.2](#123-release-02) | high (lowered) | Protocol reruns and docs over finished work | All | Not started |
+| [12.3 Release 0.2](#123-release-02) | high (lowered) | Protocol reruns and docs over finished work | All | Done ([#40](https://github.com/michaelcrosato/Spawnforge/pull/40)); format 0.2 frozen; gate 12 passed; compile time cut back under budget without moving a vertex; ready to publish, which waits for the owner's go-ahead and license |
 
 **Rules for effort**
 
@@ -1039,6 +1039,16 @@ test places, moves and removes a horn, leaving a file that validates.
 
 **Done when** the evals pass at the release commit, the docs are current, and the release is
 published or ready to publish.
+
+**Passed (2026-10-08, [#40](https://github.com/michaelcrosato/Spawnforge/pull/40)):** suites A and B
+in full, 20/20 valid and 20/20 matched blind (suite B 20/20 meeting `expects`); suite M 10/10
+meeting its checks and 10/10 filmstrips matched blind; the variation eval 12/12; the export eval
+11/11; the fuzz without failures (median 347 ms); every budget met, compile time after cutting
+work the compile did not need (about 10–15% on multi-headed creatures and wing cases, which
+had run over 500 ms in Chrome on this machine; every example compiles to the same bytes); the round trip and the validator clean; the smoke test passing. Format
+0.2's schema is pinned (`packages/cli/src/frozen.json`). The packages are 0.2.0 and ready to
+publish; publishing, the license and the gallery's home wait for the owner. See
+`eval/runs/2026-10-08-gate12/notes.md`.
 
 ## Dependencies
 

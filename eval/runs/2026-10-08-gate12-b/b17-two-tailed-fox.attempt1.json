@@ -1,0 +1,120 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Two-tailed Fox",
+  "seed": 1717,
+  "extends": "quadruped",
+  "scale": 0.6,
+  "body": {
+    "torso": {
+      "radius": [0.13, 0.17, 0.16, 0.12],
+      "arch": 0.05
+    },
+    "neck": {
+      "length": 0.28,
+      "radius": [0.07, 0.11],
+      "pitch": 35
+    },
+    "head": {
+      "shape": "snout",
+      "length": 0.4,
+      "radius": 0.095,
+      "pitch": -12,
+      "lips": 0.1
+    },
+    "tail": {
+      "count": 2,
+      "spread": 24,
+      "length": 0.9,
+      "radius": [0.05, 0.14, 0.13, 0.04],
+      "pitch": 15,
+      "curl": 40,
+      "segments": 10
+    }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "length": 0.6,
+      "radius": [0.06, 0.03],
+      "foot": {
+        "type": "foot.paw",
+        "claws": "hidden",
+        "padColor": "#2a1c16",
+        "size": 1.2
+      }
+    },
+    {
+      "id": "hindleg",
+      "length": 0.62,
+      "radius": [0.075, 0.03],
+      "foot": {
+        "type": "foot.paw",
+        "claws": "hidden",
+        "padColor": "#2a1c16",
+        "size": 1.2
+      }
+    }
+  ],
+  "parts": [
+    {
+      "id": "ears",
+      "type": "ear.pointed",
+      "attach": {
+        "on": "head",
+        "at": 0.85,
+        "angle": 40,
+        "side": "both"
+      },
+      "params": {
+        "length": 0.17,
+        "width": 0.06,
+        "tipColor": "#2a1a12"
+      }
+    },
+    {
+      "id": "teeth",
+      "type": "teeth.row",
+      "params": {
+        "fangs": 1
+      }
+    },
+    {
+      "id": "eyes",
+      "params": {
+        "irisColor": "#e0a020",
+        "squint": 0.3,
+        "pupil": "slit"
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#d9722a",
+      "belly": "#f6ecdc",
+      "accent": "#2a1a12"
+    },
+    "fur": {
+      "length": 0.035,
+      "density": 0.9
+    },
+    "layers": [
+      {
+        "type": "countershade",
+        "height": 0.1,
+        "softness": 0.25
+      },
+      {
+        "type": "countershade",
+        "color": "#4a2a1a",
+        "height": 1,
+        "softness": 0.15,
+        "region": "limbs",
+        "strength": 0.85
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "skittish",
+    "actions": ["bite", "look", "idle"]
+  }
+}

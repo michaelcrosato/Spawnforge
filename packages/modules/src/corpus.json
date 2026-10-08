@@ -2410,5 +2410,709 @@
   "eval/runs/2026-10-08-gate11-export/x10-blueprint.json": {
     "ok": true,
     "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b01-dragon.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b01-dragon.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b02-wyvern.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b02-wyvern.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b02-wyvern.attempt2.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b02-wyvern.attempt3.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b03-giant-bat.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b03-giant-bat.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b04-hydra.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b04-hydra.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b04-hydra.attempt2.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b05-cerberus.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b05-cerberus.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b05-cerberus.attempt2.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b05-cerberus.attempt3.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b06-kraken.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b06-kraken.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b07-reef-shark.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b07-reef-shark.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b08-cave-spider.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b08-cave-spider.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b08-cave-spider.attempt2.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b08-cave-spider.attempt3.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b09-scorpion-king.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b09-scorpion-king.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b10-centaur.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b10-centaur.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b10-centaur.attempt2.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b11-sea-turtle.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b11-sea-turtle.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b11-sea-turtle.attempt2.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b11-sea-turtle.attempt3.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b11-sea-turtle.attempt4.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b12-quillback-boar.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b12-quillback-boar.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b12-quillback-boar.attempt2.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b12-quillback-boar.attempt3.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b12-quillback-boar.attempt4.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b13-frilled-lizard.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b13-frilled-lizard.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b14-stegosaur.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b14-stegosaur.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b15-sail-back.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b16-giant-moth.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b16-giant-moth.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b16-giant-moth.attempt2.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b17-two-tailed-fox.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b17-two-tailed-fox.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b17-two-tailed-fox.attempt2.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b18-griffin.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b18-griffin.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b18-griffin.attempt2.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b19-armoured-burrower.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b19-armoured-burrower.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b19-armoured-burrower.attempt2.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b20-glow-slug.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b20-glow-slug.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-b/b20-glow-slug.attempt2.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-export/x02-blueprint.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-export/x03-blueprint.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-export/x07-blueprint.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-export/x10-blueprint.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-m/m01-horse-gallop.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-m/m01-horse-gallop.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-m/m02-raptor-run.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-m/m03-cat-pounce.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-m/m03-cat-pounce.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-m/m03-cat-pounce.attempt2.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-m/m03-cat-pounce.attempt3.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-m/m04-shark-turn.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-m/m04-shark-turn.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-m/m05-crocodile-lake.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-m/m05-crocodile-lake.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-m/m06-dragon-flight.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-m/m07-moth-hover.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-m/m08-hydra-bite-left.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-m/m09-bear-hit-die.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-m/m09-bear-hit-die.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-m/m09-bear-hit-die.attempt2.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-m/m10-turtle-dive.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-m/m10-turtle-dive.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-variation/v01.a.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-variation/v01.b.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-variation/v01.c.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-variation/v01.species.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-variation/v02.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-variation/v03.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-variation/v04.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-variation/v05.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-variation/v06.species.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-variation/v07.a.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-variation/v07.b.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-variation/v07.c.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-variation/v08.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-variation/v09.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-variation/v10.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-variation/v11.a.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-variation/v11.b.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-variation/v11.c.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12-variation/v12.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p01-wolf.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p01-wolf.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p01-wolf.attempt2.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p01-wolf.attempt3.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p02-spiked-lizard.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p02-spiked-lizard.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p02-spiked-lizard.attempt2.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p03-horn-beetle.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p03-horn-beetle.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p03-horn-beetle.attempt2.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p03-horn-beetle.attempt3.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p03-horn-beetle.attempt4.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p04-green-serpent.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p04-green-serpent.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p04-green-serpent.attempt2.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p05-swamp-troll.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p05-swamp-troll.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p05-swamp-troll.attempt2.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p05-swamp-troll.attempt3.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p06-ram-demon.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p06-ram-demon.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p06-ram-demon.attempt2.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p06-ram-demon.attempt3.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p06-ram-demon.attempt4.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p07-sprawl-lizard.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p07-sprawl-lizard.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p07-sprawl-lizard.attempt2.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p07-sprawl-lizard.attempt3.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p08-boar.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p08-boar.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p08-boar.attempt2.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p08-boar.attempt3.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p08-boar.attempt4.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p09-long-neck.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p09-long-neck.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p09-long-neck.attempt2.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p09-long-neck.attempt3.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p10-scorpion.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p10-scorpion.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p10-scorpion.attempt2.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p11-sea-serpent.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p11-sea-serpent.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p11-sea-serpent.attempt2.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p11-sea-serpent.attempt3.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p12-raptor.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p12-raptor.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p12-raptor.attempt2.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p13-cave-bear.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p13-cave-bear.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p13-cave-bear.attempt2.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p13-cave-bear.attempt3.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p13-cave-bear.attempt4.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p14-leopard-stalker.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p14-leopard-stalker.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p14-leopard-stalker.attempt2.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p15-gecko.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p15-gecko.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p15-gecko.attempt2.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p15-gecko.attempt3.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p16-ant-soldier.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p16-ant-soldier.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p17-goblin.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p17-goblin.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p17-goblin.attempt2.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p17-goblin.attempt3.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p18-cobra.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p18-cobra.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p18-cobra.attempt2.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p19-rhino.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p19-rhino.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p19-rhino.attempt2.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p19-rhino.attempt3.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p19-rhino.attempt4.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p20-nightmare-hound.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p20-nightmare-hound.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate12/p20-nightmare-hound.attempt2.json": {
+    "ok": true,
+    "errors": []
   }
 }

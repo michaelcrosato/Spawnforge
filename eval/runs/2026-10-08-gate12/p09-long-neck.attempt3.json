@@ -1,0 +1,157 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Spotted Stilt Grazer",
+  "seed": 909,
+  "extends": "quadruped",
+  "scale": 1.5,
+  "body": {
+    "torso": {
+      "radius": [0.15, 0.22, 0.2, 0.14],
+      "arch": 0.06
+    },
+    "neck": {
+      "length": 1.3,
+      "radius": [0.05, 0.12],
+      "pitch": 72,
+      "segments": 6,
+      "curve": 20
+    },
+    "head": {
+      "shape": "wedge",
+      "length": 0.3,
+      "radius": 0.07,
+      "pitch": -10,
+      "lips": 0.2,
+      "tongue": "forked"
+    },
+    "tail": {
+      "length": 1.3,
+      "radius": [0.06, 0.01],
+      "pitch": -12,
+      "segments": 10
+    }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "attach": {
+        "at": 0.07,
+        "angle": 105
+      },
+      "length": 1.1,
+      "radius": [0.075, 0.035],
+      "foot": {
+        "type": "foot.hoof",
+        "cloven": true
+      },
+      "stance": "unguligrade"
+    },
+    {
+      "id": "hindleg",
+      "attach": {
+        "at": 0.93,
+        "angle": 105
+      },
+      "length": 1.05,
+      "radius": [0.085, 0.035],
+      "foot": {
+        "type": "foot.hoof",
+        "cloven": true
+      },
+      "stance": "unguligrade"
+    }
+  ],
+  "parts": [
+    {
+      "id": "eyes",
+      "attach": {
+        "on": "head",
+        "at": 0.4,
+        "angle": 60
+      },
+      "params": {
+        "scale": 1.5,
+        "irisColor": "#7a4a18"
+      }
+    },
+    {
+      "id": "horns",
+      "type": "horn.curved",
+      "attach": {
+        "on": "head",
+        "at": 0.85,
+        "angle": 30
+      },
+      "params": {
+        "length": 0.1,
+        "width": 0.03,
+        "curve": 0,
+        "aim": "up",
+        "tipColor": "#5a3418"
+      }
+    },
+    {
+      "id": "ears",
+      "type": "ear.pointed",
+      "attach": {
+        "on": "head",
+        "at": 0.9,
+        "angle": 70
+      },
+      "params": {
+        "length": 0.1,
+        "width": 0.04,
+        "droop": 0.5
+      }
+    },
+    {
+      "id": "crest",
+      "type": "spikes.row",
+      "attach": {
+        "on": "spine",
+        "from": 0.05,
+        "to": 0.55,
+        "angle": 0
+      },
+      "params": {
+        "count": 22,
+        "height": [0.05, 0.035, 0.045],
+        "width": 0.015,
+        "color": "#8a5a2a",
+        "tipColor": "#3a2210"
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#d8b068",
+      "belly": "#f0e0b0",
+      "accent": "#5a3418"
+    },
+    "material": "scales",
+    "layers": [
+      {
+        "type": "countershade",
+        "softness": 0.3
+      },
+      {
+        "type": "spots",
+        "color": "accent",
+        "size": 0.07,
+        "density": 0.9,
+        "jitter": 0.5
+      },
+      {
+        "type": "bands",
+        "color": "accent",
+        "count": 12,
+        "width": 0.3,
+        "region": "tail"
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "calm",
+    "actions": ["look", "idle"]
+  }
+}

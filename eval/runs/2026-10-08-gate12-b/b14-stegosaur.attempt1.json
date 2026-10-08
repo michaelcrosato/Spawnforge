@@ -1,0 +1,116 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Stegosaur",
+  "seed": 14,
+  "extends": "quadruped",
+  "scale": 2,
+  "body": {
+    "torso": {
+      "radius": [0.15, 0.22, 0.24, 0.16],
+      "arch": 0.16,
+      "pitch": -6
+    },
+    "neck": {
+      "length": 0.34,
+      "radius": [0.06, 0.12],
+      "pitch": -5
+    },
+    "head": {
+      "shape": "snout",
+      "length": 0.2,
+      "radius": 0.065,
+      "pitch": -25,
+      "lips": 0.15,
+      "brow": 0.3
+    },
+    "tail": {
+      "length": 1.1,
+      "radius": [0.11, 0.015],
+      "pitch": 8,
+      "curl": -10,
+      "segments": 12
+    }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "length": 0.5,
+      "radius": [0.09, 0.05],
+      "foot": {
+        "type": "foot.pad",
+        "nails": 3
+      }
+    },
+    {
+      "id": "hindleg",
+      "length": 0.78,
+      "radius": [0.12, 0.055],
+      "foot": {
+        "type": "foot.pad",
+        "nails": 3
+      }
+    }
+  ],
+  "parts": [
+    {
+      "id": "plates",
+      "type": "plates.row",
+      "attach": {
+        "on": "spine",
+        "from": 0.17,
+        "to": 0.7
+      },
+      "params": {
+        "count": 14,
+        "height": [0.14, 0.4, 0.16],
+        "alternate": true,
+        "shape": "kite",
+        "color": "#cdb88a",
+        "edgeColor": "#b8402a"
+      }
+    },
+    {
+      "id": "tailspikes",
+      "type": "spikes.row",
+      "attach": {
+        "on": "tail",
+        "from": 0.6,
+        "to": 0.95,
+        "angle": 50,
+        "side": "both"
+      },
+      "params": {
+        "count": 3,
+        "height": [0.22, 0.3, 0.2],
+        "width": 0.045,
+        "curve": 15,
+        "color": "#e0d4b0",
+        "tipColor": "#5e5040"
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#6a7a4a",
+      "belly": "#b8b078",
+      "accent": "#b8402a"
+    },
+    "material": "hide",
+    "layers": [
+      {
+        "type": "countershade"
+      },
+      {
+        "type": "mottle",
+        "color": "#4a5a30",
+        "scale": 0.15,
+        "coverage": 0.4,
+        "strength": 0.6
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "lumbering",
+    "gaits": ["walk", "trot"]
+  }
+}
