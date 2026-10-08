@@ -20,6 +20,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { createBreeder } from './breed.ts';
 import { createEditor } from './editor.ts';
+import { createPlacer } from './place.ts';
 import { FootstepRings, terrainMesh, waterMesh } from './terrain.ts';
 
 const registry = createRegistry([basicPack]);
@@ -133,7 +134,8 @@ async function main(): Promise<void> {
     name: string,
     at: { x: number; z: number; heading: number },
   ): Promise<Walker> => {
-    const { compiled, ms } = await compiler.compile(byName.get(name), quality);
+    // With the distance field, for placing parts on the skin (the place tab).
+    const { compiled, ms } = await compiler.compile(byName.get(name), quality, { field: true });
     const creature = createCreatureObject(compiled, registry);
     const controller = new MotionController(compiled, { registry });
     // A body that only swims starts in the lake.
@@ -171,6 +173,7 @@ async function main(): Promise<void> {
     const blueprint = byName.get(picker.value);
     if (blueprint && typeof blueprint === 'object')
       editor.load(blueprint as Record<string, unknown>);
+    placer.reset();
     buildActions();
     if (focus) {
       const [x0, y0, z0] = focus.compiled.bounds.min;
@@ -201,6 +204,7 @@ async function main(): Promise<void> {
       scene.remove(old.creature.object);
       old.creature.dispose();
       walkers = walkers.map((w) => (w === old ? next : w));
+      if (placer.active) standAtRest(next);
       scene.add(next.creature.object);
       focus = next;
       buildActions();
@@ -218,6 +222,62 @@ async function main(): Promise<void> {
     },
     (blueprint) => void replaceFocus(blueprint),
   );
+
+  const placer = createPlacer(registry, $<HTMLElement>('#tab-place'), {
+    canvas,
+    camera,
+    scene,
+    focus: () => {
+      const blueprint = focus ? byName.get(focus.name) : undefined;
+      return focus && blueprint && typeof blueprint === 'object'
+        ? {
+            name: focus.name,
+            blueprint: blueprint as Record<string, unknown>,
+            compiled: focus.compiled,
+            creature: focus.creature,
+          }
+        : undefined;
+    },
+    apply: async (blueprint) => {
+      editor.load(blueprint);
+      await replaceFocus(blueprint);
+    },
+    save: async (name, blueprint) => {
+      const response = await fetch(`/__creatures/${encodeURIComponent(name)}`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(blueprint),
+      });
+      const reply = (await response.json()) as { ok: boolean; error?: string };
+      if (!reply.ok) throw new Error(reply.error ?? `HTTP ${response.status}`);
+    },
+    orbit: (enabled) => {
+      controls.enabled = enabled;
+    },
+  });
+  /** While placing, the focused creature stands still in its rest pose where it was. */
+  const standAtRest = (w: Walker) => {
+    const { bones, rest, object, signals } = w.creature;
+    bones.forEach((bone, i) => {
+      bone.position.copy(rest.positions[i] as THREE.Vector3);
+      bone.quaternion.copy(rest.rotations[i] as THREE.Quaternion);
+    });
+    const c = w.controller;
+    object.position.set(c.position.x, heightAt(c.position.x, c.position.z), c.position.z);
+    object.rotation.set(0, c.heading, 0);
+    signals.breath.value = 0;
+  };
+  const leaveRest = (w: Walker | undefined) => {
+    w?.creature.object.position.set(0, 0, 0);
+    w?.creature.object.rotation.set(0, 0, 0);
+  };
+  const updatePlacing = () => {
+    const on =
+      !panel.hidden &&
+      panel.querySelector('nav button.active')?.getAttribute('data-tab') === 'place';
+    if (placer.active && !on) leaveRest(focus);
+    placer.setActive(on);
+  };
 
   /** One button per action the focused creature can perform. */
   const buildActions = () => {
@@ -353,6 +413,7 @@ async function main(): Promise<void> {
 
   $<HTMLButtonElement>('#toggle-panel').addEventListener('click', () => {
     panel.hidden = !panel.hidden;
+    updatePlacing();
   });
   for (const tab of panel.querySelectorAll<HTMLButtonElement>('nav button')) {
     tab.addEventListener('click', () => {
@@ -360,7 +421,13 @@ async function main(): Promise<void> {
         other.classList.toggle('active', other === tab);
       for (const section of panel.querySelectorAll<HTMLElement>('section'))
         section.hidden = section.id !== `tab-${tab.dataset.tab}`;
+      updatePlacing();
     });
+  }
+  // `?place` opens the place tab.
+  if (params.has('place')) {
+    panel.hidden = false;
+    panel.querySelector<HTMLButtonElement>('nav button[data-tab="place"]')?.click();
   }
 
   /** The speed slider: 0 is a slow walk, 1 the fastest gait; the middle is the creature's pace. */
@@ -382,6 +449,7 @@ async function main(): Promise<void> {
     down = { x: e.clientX, y: e.clientY };
   });
   canvas.addEventListener('pointerup', (e) => {
+    if (placer.active) return;
     if (!down || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 5) return;
     const rect = canvas.getBoundingClientRect();
     raycaster.setFromCamera(
@@ -454,6 +522,10 @@ async function main(): Promise<void> {
     const t0 = performance.now();
     for (const w of walkers) {
       const c = w.controller;
+      if (placer.active && w === focus) {
+        standAtRest(w);
+        continue;
+      }
       // Wander: after a pause, stroll to a random spot on the course.
       if (wander.checked && c.speed === 0) {
         w.rest -= dt;

@@ -41,6 +41,8 @@ All seven phases of [the plan](docs/plan.md) are done, and the proof of concept 
   warnings, a description), `patch`, fuzzing, golden determinism and budgets.
 - **Variation** (phase 5): species with ranges, `mutate`, `crossbreed`, and `generate` from a
   theme (`spawnforge generate --theme demon --seed 3`), also in the sandbox's breed tab.
+- **Placing parts** (12.1): the sandbox's place tab puts a part where you click the creature,
+  moves it where you drag it, and saves the blueprint to `creatures/`.
 - **Into games** (phase 6): `spawnforge export` writes a `.glb` with baked clips, texture maps
   (since 11.1: colour, relief, roughness, occlusion and glow, baked from the live material),
   sockets and stats, and `createBestiary` runs creatures live in a Three.js game
@@ -88,7 +90,7 @@ packages/
   cli/       command line and headless renderer
   mcp/       MCP server over the CLI functions
 apps/
-  sandbox/   viewer, sliders, JSON panel, terrain test course, gallery
+  sandbox/   viewer, sliders, JSON panel, terrain test course, gallery, breeding, placing parts
 examples/    blueprints beside their renders (also the golden test set)
 docs/        plans, architecture, blueprint format
 ```

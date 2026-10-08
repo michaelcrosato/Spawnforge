@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import type { Plugin } from 'vite';
 
@@ -22,6 +22,7 @@ function read(file: string): CreatureFile {
 /**
  * Serves `<dir>/*.json` at `/__creatures` and pushes changes to the page as
  * `spawnforge:creature` events, so a blueprint saved by an LLM (or anyone) shows up live.
+ * `POST /__creatures/<name>` writes one.
  */
 export function creaturesFolder(dir: string): Plugin {
   return {
@@ -29,7 +30,32 @@ export function creaturesFolder(dir: string): Plugin {
     configureServer(server) {
       if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
       server.watcher.add(dir);
-      server.middlewares.use('/__creatures', (_req, res) => {
+      server.middlewares.use('/__creatures', (req, res) => {
+        // POST /__creatures/<name> saves a blueprint as <name>.json (the place tab's save).
+        if (req.method === 'POST') {
+          const name = decodeURIComponent((req.url ?? '').replace(/^\//, ''));
+          if (!/^[\w-]+$/.test(name)) {
+            res.statusCode = 400;
+            res.end(JSON.stringify({ ok: false, error: `bad creature name "${name}"` }));
+            return;
+          }
+          let body = '';
+          req.on('data', (chunk: Buffer) => {
+            body += chunk.toString('utf8');
+          });
+          req.on('end', () => {
+            try {
+              const blueprint = JSON.parse(body) as unknown;
+              writeFileSync(join(dir, `${name}.json`), `${JSON.stringify(blueprint, null, 2)}\n`);
+              res.setHeader('content-type', 'application/json');
+              res.end(JSON.stringify({ ok: true, file: `${name}.json` }));
+            } catch (error) {
+              res.statusCode = 400;
+              res.end(JSON.stringify({ ok: false, error: (error as Error).message }));
+            }
+          });
+          return;
+        }
         const files = readdirSync(dir)
           .filter((f) => f.endsWith('.json'))
           .sort()
