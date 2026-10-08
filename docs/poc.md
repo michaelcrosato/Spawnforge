@@ -23,3 +23,20 @@ All five pass.
 
 Reproduce: `pnpm budgets --out docs/poc/budgets.json`, `pnpm fuzz 1000 medium --out
 docs/poc/fuzz-1000.json`, `pnpm test`, and the eval protocol in [eval/README.md](../eval/README.md).
+
+## GPU benchmark (plan 2, 11.3)
+
+`pnpm bench` measures what creatures cost a GPU in three scenes: 50 near the camera at full
+motion (all 32 examples in turn, walking and acting, with fur and membranes), 500 distant ones,
+and the same 500 drawn as crowds (docs/design/11.3-crowds.md). Plan 2's targets are 50 animated
+creatures and 500 distant ones at 60 fps on a mid-range laptop.
+
+| Machine | Near (50) | Distant (500) | Crowds (500) |
+| --- | --- | --- | --- |
+| Mid-range laptop (the owner's) | Awaiting the owner's run | Awaiting the owner's run | Awaiting the owner's run |
+
+To measure: `pnpm bench --open`, open the printed URL in Chrome on the laptop (in front: a
+background tab is throttled), wait for the three scenes, save `bench.json` as
+`docs/poc/bench-<machine>.json` and fill in the row: the median frame time and GPU time per
+scene. Headless numbers (`pnpm bench`, and CI's `--small` run kept as an artifact) come from
+SwiftShader on the CPU, so they are recorded, not judged.

@@ -28,6 +28,10 @@ import {
 import * as THREE from 'three';
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 import type {
+  BenchRequest,
+  BenchResponse,
+  CrowdRequest,
+  CrowdResponse,
   ExportInfo,
   ExportRequest,
   ExportResponse,
@@ -40,6 +44,8 @@ import type {
   RoundTripResponse,
   View,
 } from '../src/protocol.ts';
+import { bench } from './bench.ts';
+import { crowdCheck } from './crowd.ts';
 import { diagramHeight, drawFilmstrip } from './filmstrip.ts';
 import { roundTrip } from './roundtrip.ts';
 
@@ -62,6 +68,8 @@ declare global {
     spawnforgeFingerprint?: (blueprint: unknown, quality: 'low' | 'medium' | 'high') => string;
     spawnforgeExport?: (request: ExportRequest) => Promise<ExportResponse>;
     spawnforgeRoundTrip?: (request: RoundTripRequest) => Promise<RoundTripResponse>;
+    spawnforgeCrowd?: (request: CrowdRequest) => Promise<CrowdResponse>;
+    spawnforgeBench?: (request: BenchRequest) => Promise<BenchResponse>;
     spawnforgeParity?: (request: ParityRequest) => Promise<ParityResponse>;
     spawnforgeDiff?: (
       a: string,
@@ -725,4 +733,26 @@ window.spawnforgeRender = async (request) => {
     },
   };
 };
+window.spawnforgeCrowd = (request) => crowdCheck({ renderer, registry }, request);
+window.spawnforgeBench = (request) => bench(request);
+
+// `?bench` (from `pnpm bench --open`): run the benchmark in this browser and show the numbers.
+const benchParams = new URLSearchParams(location.search);
+if (benchParams.has('bench')) {
+  const panel = document.createElement('main');
+  panel.style.font = '14px system-ui, sans-serif';
+  panel.textContent = 'Running the Spawnforge bench: near, distant, crowd…';
+  document.body.prepend(panel);
+  void bench({ frames: Number(benchParams.get('frames') ?? 300) }, panel).then((result) => {
+    const json = JSON.stringify(result, null, 2);
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
+    link.download = 'bench.json';
+    link.textContent = 'Save bench.json (for docs/poc/)';
+    const pre = document.createElement('pre');
+    pre.textContent = json;
+    panel.replaceChildren(link, pre);
+  });
+}
+
 window.spawnforgeReady = true;

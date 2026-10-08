@@ -308,6 +308,19 @@ Work in progress toward 0.2, phase by phase (see the plan's status table).
   scene's tree, and the extras' `lods` give each level's triangles and error; `export --lods
   none` (MCP `lods: false`) leaves them out. Core gains `pickLevel`, `projectedError` and
   `screenCoverage`.
+- **Crowds (11.3):** `createBestiary({ crowds: true })` draws distant creatures (at the baked
+  level of detail) through `bestiary.crowd`: one instanced draw per species, mesh level and
+  material, skinned on the GPU from the baked clips' bone matrices in a float texture
+  (`clipRows`, `CrowdDraw`, `crowdPosition`), each member with its own clip, frame, position
+  and heading. Members skip posing their bones; sockets and hit capsules pose them when read.
+  On a frame a member is posed exactly as by its own skeleton (a Node test against three's
+  skinning, and a render test comparing pixels); between frames within a few millimetres.
+  `createRenderer` takes `trackTimestamp`.
+- **Bench (11.3):** `pnpm bench` runs 50 creatures near the camera, 500 distant and 500 as
+  crowds, and reports frame and update times, GPU time where timestamps exist, draw calls and
+  triangles as JSON (`Renderer.bench`); `--open` serves the page for a browser on real hardware,
+  and CI keeps a small headless run as an artifact. The owner's laptop numbers are awaited
+  (`docs/poc.md`).
 
 ## 0.1.0
 

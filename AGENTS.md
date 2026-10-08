@@ -107,7 +107,10 @@ kit on workers; `export --textures`; `pnpm roundtrip` loads every export back be
 creature, and the Khronos validator checks it; `docs/design/11.1-textures.md`) and 11.2 (levels
 of detail: `bake/lod` simplifies skin and parts to 50, 25 and 10% with meshoptimizer; the
 runtime swaps them by screen size, under a pixel of error; exports carry `skin_LOD1` to 3 with
-`MSFT_lod`; `docs/design/11.2-lod.md`). Next is 11.3.
+`MSFT_lod`; `docs/design/11.2-lod.md`) and 11.3 (crowds: distant creatures drawn instanced per
+species, level and mesh, skinned on the GPU from their baked clips, posed exactly as by their own
+skeletons on a frame; `pnpm bench`, whose laptop numbers await the owner;
+`docs/design/11.3-crowds.md`). Next is 11.4.
 
 ## Repo map
 
@@ -154,6 +157,7 @@ pnpm render:examples          # re-render examples/*.png after changing a bluepr
 pnpm fuzz [count] [quality]   # compile random blueprints from the schema (the PoC gate runs 1,000)
 pnpm budgets                  # compile time, triangles, draw calls, .glb size and motion cost of the examples
 pnpm roundtrip [name …]       # export each example with maps, load it back and compare it with the live creature
+pnpm bench [--small]          # GPU benchmark headless (CPU-rendered: recorded, not judged); --open for your own browser
 node scripts/theme-sheet.ts dragon --out dragon.png  # a theme across 20 seeds on one sheet
 node packages/mcp/src/bin.ts  # the MCP server over stdio
 node eval/score.ts <run>      # score an eval run from its saved attempts

@@ -1,5 +1,12 @@
 export { buildBones, type CreatureObject, createCreatureObject, geometryOf } from './assemble.ts';
 export {
+  type ClipRows,
+  CrowdDraw,
+  type CrowdMember,
+  clipRows,
+  crowdPosition,
+} from './crowd.ts';
+export {
   buildExportScene,
   type ExportSceneOptions,
   exportName,
