@@ -298,6 +298,16 @@ Work in progress toward 0.2, phase by phase (see the plan's status table).
   of memory without.
 - **Export eval:** four texture tasks (x05–x08): the sharpest maps, vertex colours only, a
   pulsing glow read back from the file, and what a furred creature's export leaves out.
+- **Levels of detail (11.2):** `@spawnforge/bake/lod` simplifies the skin and the hard parts
+  with meshoptimizer into levels of 50, 25 and 10% of their triangles, over the same vertices
+  (weights, normals, UVs and seams untouched). Live, `bestiary.update(dt, { camera, pixels })`
+  draws each creature at the coarsest level whose error projects under one pixel
+  (`creature.detail`, `lods: false` to keep every triangle); the levels are made once per
+  species and shared, and fur follows the skin. Exports carry `skin_LOD1` to `skin_LOD3` and
+  `parts_LOD1` to `parts_LOD3`, listed by `MSFT_lod` with screen coverages and kept out of the
+  scene's tree, and the extras' `lods` give each level's triangles and error; `export --lods
+  none` (MCP `lods: false`) leaves them out. Core gains `pickLevel`, `projectedError` and
+  `screenCoverage`.
 
 ## 0.1.0
 

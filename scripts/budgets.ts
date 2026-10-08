@@ -1,7 +1,8 @@
 /**
  * Measures the plan's budgets: compile time (Node, and Chromium as in the sandbox), skin
  * triangles, draw calls, the size and export time of a medium `.glb` with texture maps (11.1),
- * and motion update time for one and for 50 creatures.
+ * the time to make a creature's levels of detail (11.2), and motion update time for one and for
+ * 50 creatures.
  *
  *   node scripts/budgets.ts [name …] [--out report.json]
  *
@@ -9,6 +10,7 @@
  */
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
+import { simplifyChain } from '@spawnforge/bake/lod';
 import {
   type CompiledCreature,
   compileCreature,
@@ -55,6 +57,15 @@ try {
     });
     // One kept per example: the rest are garbage, not a heap the motion timing works around.
     compiled.push(c);
+    // Its levels of detail, skin and parts, as the runtime makes them (warm: the median of three).
+    await simplifyChain(c.skin);
+    const lodTimes: number[] = [];
+    for (let i = 0; i < 3; i++) {
+      const t = performance.now();
+      await simplifyChain(c.skin);
+      await simplifyChain(c.parts);
+      lodTimes.push(performance.now() - t);
+    }
     // In Chromium, through the render page: the median of three warm compiles.
     await renderer.render({ blueprint, size: 64, views: ['side'] });
     const chromeTimes: number[] = [];
@@ -77,6 +88,7 @@ try {
       drawCalls:
         [c.skin, c.parts, c.eyes, c.membranes].filter((m) => m.indices.length > 0).length +
         (c.material.fur && c.quality !== 'low' ? 1 : 0),
+      lodMs: Number(median(lodTimes).toFixed(0)),
       glbMB: Number((info.bytes / 1e6).toFixed(2)),
       exportMs: Math.round(info.exportMs),
     });
@@ -136,6 +148,7 @@ const report = {
     drawCalls: 3,
     furDrawCalls: 1,
     membraneDrawCalls: 1,
+    lodMs: 100,
     glbMB: 8,
     exportMs: 10000,
     motionMsPerCreature: 0.1,

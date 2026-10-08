@@ -6,14 +6,18 @@ import {
   bakeVertexColors,
   type CompiledCreature,
   EYE_ROUGHNESS,
+  type LodChain,
+  type LodLevel,
   MATERIAL_LOOK,
   type MaterialLook,
   type Registry,
+  screenCoverage,
   type TexturedMesh,
 } from '@spawnforge/core';
 import {
   AnimationClip,
   BufferAttribute,
+  BufferGeometry,
   ClampToEdgeWrapping,
   Color,
   DataTexture,
@@ -49,6 +53,85 @@ export interface ExportSceneOptions {
   readonly textures?: BakedTextures;
   /** How albedo and glow images are encoded: PNG (default) or JPEG, to keep files small. */
   readonly colorImages?: 'image/png' | 'image/jpeg';
+  /**
+   * Levels of detail from `@spawnforge/bake/lod` (docs/design/11.2-lod.md), over the meshes as
+   * written: the textured ones when `textures` has them, else the compiled ones. Written as
+   * `skin_LOD1` and so on with `MSFT_lod`; register `lodExporterPlugin` with the exporter.
+   */
+  readonly lods?: LodChain;
+}
+
+/** The levels each written mesh carries, and their screen coverages, for `lodExporterPlugin`. */
+const lodsOf = new WeakMap<
+  Object3D,
+  { readonly levels: Object3D[]; readonly coverage: number[] }
+>();
+
+/**
+ * A level of a mesh: its geometry's attributes (written once, shared) with fewer triangles, its
+ * material and skeleton.
+ */
+function lodMesh(base: SkinnedMesh, level: LodLevel, k: number): SkinnedMesh {
+  const geometry = new BufferGeometry();
+  for (const [name, attribute] of Object.entries(base.geometry.attributes))
+    geometry.setAttribute(name, attribute);
+  geometry.setIndex(new BufferAttribute(level.indices, 1));
+  geometry.boundingBox = base.geometry.boundingBox;
+  geometry.boundingSphere = base.geometry.boundingSphere;
+  const mesh = new SkinnedMesh(geometry, base.material);
+  mesh.name = `${base.name}_LOD${k}`;
+  return mesh;
+}
+
+/** The part of three's GLTFWriter a plugin reads. */
+interface GltfWriter {
+  readonly json: {
+    nodes?: {
+      children?: number[];
+      extensions?: Record<string, unknown>;
+      extras?: Record<string, unknown>;
+    }[];
+    scenes?: { nodes?: number[] }[];
+  };
+  readonly nodeMap: Map<Object3D, number>;
+  readonly extensionsUsed: Record<string, boolean>;
+}
+
+/**
+ * For `new GLTFExporter().register(lodExporterPlugin)`: lists each mesh's levels on its node with
+ * `MSFT_lod` (and `MSFT_screencoverage` in its extras), and takes them out of the scene's tree,
+ * so loaders without the extension show only the full mesh (docs/design/11.2-lod.md, decision 7).
+ */
+export function lodExporterPlugin(gltfWriter: object): { afterParse(): void } {
+  // Three's types leave out the writer's JSON and node map, which plugins do read.
+  const writer = gltfWriter as GltfWriter;
+  return {
+    afterParse() {
+      const nodes = writer.json.nodes ?? [];
+      const levels = new Set<number>();
+      for (const [object, index] of writer.nodeMap) {
+        const entry = lodsOf.get(object);
+        const node = nodes[index];
+        if (!entry || !node) continue;
+        const ids = entry.levels
+          .map((o) => writer.nodeMap.get(o))
+          .filter((i): i is number => i !== undefined);
+        if (ids.length === 0) continue;
+        for (const id of ids) levels.add(id);
+        node.extensions = { ...node.extensions, MSFT_lod: { ids } };
+        node.extras = { ...node.extras, MSFT_screencoverage: entry.coverage };
+        writer.extensionsUsed.MSFT_lod = true;
+      }
+      if (levels.size === 0) return;
+      for (const node of nodes) {
+        if (!node.children) continue;
+        node.children = node.children.filter((c) => !levels.has(c));
+        if (node.children.length === 0) delete node.children;
+      }
+      for (const scene of writer.json.scenes ?? [])
+        if (scene.nodes) scene.nodes = scene.nodes.filter((n) => !levels.has(n));
+    },
+  };
 }
 
 /** Bone names become node names, and animation tracks address nodes as `name.property`. */
@@ -281,10 +364,35 @@ export function buildExportScene(
       ? texturedMesh(maps.membranes, 'membranes', { membrane: true, colorImages })
       : membraneMesh(compiled, colors.membranes),
   ];
+  // The creature's size, for the levels' screen coverages.
+  const size = Math.max(
+    ...compiled.bounds.max.map((v, i) => v - (compiled.bounds.min[i] as number)),
+  );
+  const lods: Record<string, { triangles: number; error: number; node: string }[]> = {};
   for (const mesh of meshes) {
     if ((mesh.geometry.index?.count ?? 0) === 0) continue;
     mesh.bind(skeleton, new Matrix4());
     scene.add(mesh);
+    const chain = options.lods?.[mesh.name as keyof LodChain];
+    const vertices = mesh.geometry.getAttribute('position').count;
+    if (!chain || chain.length === 0 || chain.some((l) => l.indices.some((v) => v >= vertices)))
+      continue;
+    const levels = chain.map((level, k) => {
+      const lod = lodMesh(mesh, level, k + 1);
+      lod.bind(skeleton, new Matrix4());
+      scene.add(lod);
+      return lod;
+    });
+    // Each level from where the previous one's error drops under a pixel at 1080 pixels.
+    lodsOf.set(mesh, {
+      levels,
+      coverage: [...chain.map((l) => Number(screenCoverage(l.error, size).toFixed(4))), 0],
+    });
+    lods[mesh.name] = chain.map((l, k) => ({
+      triangles: l.triangles,
+      error: Number(l.error.toPrecision(3)),
+      node: `${mesh.name}_LOD${k + 1}`,
+    }));
   }
   for (const socket of compiled.sockets) {
     const node = new Object3D();
@@ -357,6 +465,7 @@ export function buildExportScene(
           }
         : {}),
       ...glowLayers(compiled),
+      ...(Object.keys(lods).length > 0 ? { lods } : {}),
       ...options.extras,
     },
   };

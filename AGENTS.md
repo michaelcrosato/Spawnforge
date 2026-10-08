@@ -104,7 +104,10 @@ results' `body` and `turned`, and `analyze` naming every pair of limbs that meet
 from its feedback. Then 11.1 (texture maps: `@spawnforge/bake` unwraps each mesh with xatlas
 and bakes colour, a normal map, occlusion with roughness, and emissive per texel through the CPU
 kit on workers; `export --textures`; `pnpm roundtrip` loads every export back beside the live
-creature, and the Khronos validator checks it; `docs/design/11.1-textures.md`). Next is 11.2.
+creature, and the Khronos validator checks it; `docs/design/11.1-textures.md`) and 11.2 (levels
+of detail: `bake/lod` simplifies skin and parts to 50, 25 and 10% with meshoptimizer; the
+runtime swaps them by screen size, under a pixel of error; exports carry `skin_LOD1` to 3 with
+`MSFT_lod`; `docs/design/11.2-lod.md`). Next is 11.3.
 
 ## Repo map
 
@@ -112,8 +115,8 @@ creature, and the Khronos validator checks it; `docs/design/11.1-textures.md`). 
 | ------------------ | ------------------------------------------------------------------------------------------------ | -------------------------------- |
 | `packages/core`    | Blueprint schema, module registry, seeded RNG, compile pipeline, motion controller, analysis     | `zod`, Three.js math classes     |
 | `packages/modules` | First pack: body plans, parts, patterns, gaits, actions                                          | core                             |
-| `packages/three`   | The only layer that renders: skinned mesh assembly, TSL materials, pose sync, export             | core, `three`                    |
-| `packages/bake`    | Export processing: UV atlases (xatlas), texture maps baked per texel, tangents                    | core, `watlas`, `meshoptimizer`  |
+| `packages/three`   | The only layer that renders: skinned mesh assembly, TSL materials, pose sync, export             | core, `three`, bake (LODs only)  |
+| `packages/bake`    | Export processing: UV atlases (xatlas), texture maps baked per texel, tangents; levels of detail (`bake/lod`) | core, `watlas`, `meshoptimizer` |
 | `packages/cli`     | The `spawnforge` command. Every command prints JSON. Headless renderer later                     | core, modules                    |
 | `packages/mcp`     | MCP server: a thin wrapper over the CLI command functions                                        | cli, render                      |
 | `packages/render`  | Headless contact sheets, exports and the texture round trip through Chromium (Playwright) and a Vite-served page, WebGL 2 backend | core, modules, three, bake |

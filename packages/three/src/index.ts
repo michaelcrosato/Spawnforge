@@ -1,5 +1,10 @@
 export { buildBones, type CreatureObject, createCreatureObject, geometryOf } from './assemble.ts';
-export { buildExportScene, type ExportSceneOptions, exportName } from './export.ts';
+export {
+  buildExportScene,
+  type ExportSceneOptions,
+  exportName,
+  lodExporterPlugin,
+} from './export.ts';
 export {
   eyeMaterial,
   FUR_SHELLS,

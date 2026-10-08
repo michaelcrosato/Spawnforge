@@ -17,7 +17,8 @@
   ],
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./lod": "./src/lod.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
@@ -36,6 +37,10 @@
       ".": {
         "types": "./dist/index.d.ts",
         "default": "./dist/index.js"
+      },
+      "./lod": {
+        "types": "./dist/lod.d.ts",
+        "default": "./dist/lod.js"
       }
     }
   }

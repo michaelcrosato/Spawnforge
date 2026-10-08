@@ -30,6 +30,7 @@ flowchart LR
   sandbox --> modules
   sandbox --> core
   sandbox --> bake
+  three --> bake
   bake --> core
   games --> three
   games --> core
@@ -42,7 +43,7 @@ flowchart LR
 | `core`    | Blueprint schema, module registry, seeded RNG, compile pipeline, motion controller, analysis | Browser, Web Workers, Node      |
 | `modules` | Module packs: body plans, parts, patterns, gaits, actions, themes                          | Browser, Web Workers, Node      |
 | `three`   | Skinned mesh assembly, TSL materials, pose sync, glTF export                               | Browser (and headless Chromium) |
-| `bake`    | Export processing: UV atlases, texture maps baked per texel, tangents (no renderer)         | Browser, Web Workers, Node      |
+| `bake`    | Export processing: UV atlases, texture maps baked per texel, tangents; levels of detail (`bake/lod`) | Browser, Web Workers, Node |
 | `cli`     | Commands as plain functions returning JSON, plus the `spawnforge` binary                   | Node                            |
 | `mcp`     | MCP tools wrapping the CLI functions                                                       | Node                            |
 | `sandbox` | Live view and editing UI                                                                   | Browser                         |
@@ -319,6 +320,12 @@ See [runtime.md](runtime.md) for how games use them.
   light-through. Plain data (`BakedTextures` in core), which `buildExportScene` turns into
   textured materials. The round trip (`pnpm roundtrip`) loads each export back with
   `GLTFLoader` and compares it with the live creature drawn with the export's simplifications.
+- **Levels of detail** (`packages/bake/src/lod.ts`, [design](design/11.2-lod.md)):
+  `simplifyChain` drops triangles with meshoptimizer toward 50, 25 and 10%, over the mesh's own
+  vertices, each level with its error in metres. Exports write the levels as `MSFT_lod` nodes
+  (`lodExporterPlugin`); the runtime (`three` depends on `bake` for this only, loading
+  `bake/lod` on first use) swaps a species' shared index buffers by `pickLevel`, the coarsest
+  level whose error projects under a pixel.
 - **Stats** (`packages/core/src/analysis/stats.ts`): `computeStats` gives a stats module a
   `StatsInput` of measured body numbers; modules never see the blueprint.
 - **Export scene** (`packages/three/src/export.ts`): `buildExportScene` assembles the skeleton,

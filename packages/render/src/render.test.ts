@@ -128,8 +128,9 @@ describe('headless renders', () => {
     expect(glb.subarray(0, 4).toString()).toBe('glTF');
     expect(glb.readUInt32LE(8)).toBe(glb.length);
     const json = JSON.parse(glb.subarray(20, 20 + glb.readUInt32LE(12)).toString('utf8'));
-    expect(json.meshes).toHaveLength(3);
-    expect(json.skins).toHaveLength(3);
+    // Skin, parts and eyes, and three levels of detail each for skin and parts (11.2).
+    expect(json.meshes).toHaveLength(3 + 6);
+    expect(json.skins).toHaveLength(3 + 6);
     for (const mesh of json.meshes)
       expect(Object.keys(mesh.primitives[0].attributes)).toEqual(
         expect.arrayContaining(['POSITION', 'NORMAL', 'JOINTS_0', 'WEIGHTS_0', 'COLOR_0']),
@@ -163,7 +164,8 @@ describe('headless renders', () => {
     );
     const { glb, info } = await renderer.export({ blueprint, quality: 'low', clips: ['walk'] });
     const json = JSON.parse(glb.subarray(20, 20 + glb.readUInt32LE(12)).toString('utf8'));
-    expect(json.meshes).toHaveLength(4);
+    // With membranes, and the six levels of detail of skin and parts (11.2).
+    expect(json.meshes).toHaveLength(4 + 6);
     const holder = json.nodes.find((n: { name?: string }) => n.name === 'membranes');
     const membranes = json.meshes[holder.mesh];
     expect(json.materials[membranes.primitives[0].material].doubleSided).toBe(true);

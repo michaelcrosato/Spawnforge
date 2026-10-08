@@ -1,9 +1,10 @@
 /**
  * The sandbox's "export .glb", as `spawnforge export` writes it: baked clips, texture maps baked
- * on workers, sockets and the blueprint in the extras. Loaded on the first export, so the page
+ * on workers, levels of detail, sockets and the blueprint in the extras. Loaded on the first export, so the page
  * does not carry the validator, xatlas or the exporter until then.
  */
 import { type BandJob, type BandResult, bakeTextures } from '@spawnforge/bake';
+import { simplifyChain } from '@spawnforge/bake/lod';
 import {
   bakeClips,
   type CompiledCreature,
@@ -11,7 +12,7 @@ import {
   type Registry,
   resolveBlueprint,
 } from '@spawnforge/core';
-import { buildExportScene } from '@spawnforge/three';
+import { buildExportScene, lodExporterPlugin } from '@spawnforge/three';
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 
 let bakers: Worker[] | undefined;
@@ -65,12 +66,18 @@ export async function exportGlb(
     run: runBands,
     bands: bakeWorkers().length * 2,
   });
+  // Levels of detail over the meshes as written (docs/design/11.2-lod.md).
+  const lods = {
+    skin: await simplifyChain(textures.skin ?? withField.skin),
+    parts: await simplifyChain(textures.parts ?? withField.parts),
+  };
   const { scene, animations } = buildExportScene(withField, registry, {
     clips,
     extras: { blueprint },
     textures,
+    lods,
   });
-  const glb = (await new GLTFExporter().parseAsync(scene, {
+  const glb = (await new GLTFExporter().register(lodExporterPlugin).parseAsync(scene, {
     binary: true,
     animations,
   })) as ArrayBuffer;

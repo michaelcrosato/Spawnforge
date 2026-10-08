@@ -25,6 +25,7 @@
     "build": "tsc -p tsconfig.build.json"
   },
   "dependencies": {
+    "@spawnforge/bake": "workspace:*",
     "@spawnforge/core": "workspace:*",
     "@spawnforge/modules": "workspace:*",
     "three": "catalog:"

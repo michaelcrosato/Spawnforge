@@ -164,4 +164,39 @@ describe('runtime', () => {
     expect(Math.max(...after)).toBeLessThan(0.5);
     bestiary.dispose();
   }, 60_000);
+  it('draws fewer triangles as the camera backs away, each level under a pixel (11.2)', async () => {
+    const bestiary = await createBestiary({ packs: [basicPack] });
+    const wolf = await bestiary.spawn(example('grey-wolf'), { quality: 'medium' });
+    const camera = new PerspectiveCamera(50);
+    const skin = wolf.object.getObjectByName('skin') as unknown as {
+      geometry: { index: { count: number } };
+    };
+    const full = skin.geometry.index.count;
+    // The levels are made off the first frames: wait for them.
+    camera.position.set(0, 1, 40);
+    for (let i = 0; i < 50 && wolf.detail === 0; i++) {
+      bestiary.update(1 / 60, { camera });
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+    expect(wolf.detail).toBe(3);
+    expect(skin.geometry.index.count / full).toBeCloseTo(0.1, 2);
+    const seen: number[] = [];
+    for (const z of [40, 12, 6, 3, 1.5, 0.8]) {
+      camera.position.set(0, 1, z);
+      bestiary.update(1 / 60, { camera, pixels: 1080 });
+      seen.push(wolf.detail);
+    }
+    // Every level on the way in, ending at full detail up close; never coarser when nearer.
+    expect(seen[seen.length - 1]).toBe(0);
+    for (let i = 1; i < seen.length; i++)
+      expect(seen[i] as number).toBeLessThanOrEqual(seen[i - 1] as number);
+    expect(new Set(seen).size).toBeGreaterThanOrEqual(3);
+    // A 4K viewport keeps detail longer than a small one.
+    camera.position.set(0, 1, 3);
+    bestiary.update(1 / 60, { camera, pixels: 2160 });
+    const near4k = wolf.detail;
+    bestiary.update(1 / 60, { camera, pixels: 360 });
+    expect(wolf.detail).toBeGreaterThan(near4k);
+    bestiary.dispose();
+  }, 60_000);
 });
