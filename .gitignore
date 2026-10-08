@@ -20,3 +20,4 @@ eval/runs/*/motion/*.png
 
 # Exported .glb files from eval runs are regenerated, not committed
 eval/runs/*/*.glb
+__pycache__/

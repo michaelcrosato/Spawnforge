@@ -110,7 +110,9 @@ runtime swaps them by screen size, under a pixel of error; exports carry `skin_L
 `MSFT_lod`; `docs/design/11.2-lod.md`) and 11.3 (crowds: distant creatures drawn instanced per
 species, level and mesh, skinned on the GPU from their baked clips, posed exactly as by their own
 skeletons on a frame; `pnpm bench`, whose laptop numbers await the owner;
-`docs/design/11.3-crowds.md`). Next is 11.4.
+`docs/design/11.3-crowds.md`) and 11.4 (`docs/engines.md`: Godot 4, Unity 6, Unreal 5 and
+Blender, with an extras reader per engine; the Python reader and Blender's import are tested in
+CI). Next is gate 11.
 
 ## Repo map
 
@@ -127,7 +129,8 @@ skeletons on a frame; `pnpm bench`, whose laptop numbers await the owner;
 | `examples/`        | Blueprints beside their renders; also the golden test set                                        |                                  |
 | `eval/`            | The 20-prompt agent eval: prompts, scorer and one folder per run                                  |                                  |
 | `scripts/`         | `generate.ts`: writes every generated file (pack index, catalogue, JSON Schema)                  |                                  |
-| `docs/`            | `plan.md` (design), `plan-2.md` (current plan), `architecture.md`, `blueprint.md` (format), `scenarios.md`, `catalog.md` (generated) |                                  |
+| `docs/`            | `plan.md` (design), `plan-2.md` (current plan), `architecture.md`, `blueprint.md` (format), `scenarios.md`, `runtime.md`, `engines.md`, `catalog.md` (generated) |                                  |
+| `engines/`         | Scripts that read an export's extras in Godot, Unity and Python (Unreal), and Blender's import check |                                  |
 
 ## Commands
 

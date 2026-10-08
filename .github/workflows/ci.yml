@@ -25,9 +25,18 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Install Chromium for headless renders
         run: pnpm --filter @spawnforge/render exec playwright-core install --with-deps chromium
+      - name: Blender as a Python module, for the engine import test (docs/engines.md)
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: |
+          sudo apt-get install -y --no-install-recommends libxxf86vm1 libxfixes3 libxi6 libxkbcommon0 libsm6 libxrender1 libxext6 libgl1 libegl1
+          python -m pip install bpy==5.2.2
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
+        env:
+          SPAWNFORGE_BPY_PYTHON: python
       - run: pnpm build
       - name: Smoke test the packed packages in a small game
         run: pnpm smoke
