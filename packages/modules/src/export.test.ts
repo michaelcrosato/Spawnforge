@@ -79,6 +79,11 @@ describe('baked clips', () => {
     const c = compile('reed-viper');
     expect(bakeClips(c, registry, { clips: ['slither'] }).map((k) => k.name)).toEqual(['slither']);
     expect(() => bakeClips(c, registry, { clips: ['trot'] })).toThrow(/slither/);
+    // A clip from a module the creature lacks says where the module goes.
+    expect(() => bakeClips(c, registry, { clips: ['pounce'] })).toThrow(
+      /add "pounce" to motion.actions/,
+    );
+    expect(() => bakeClips(c, registry, { clips: ['trot'] })).toThrow(/add "trot" to motion.gaits/);
   });
 });
 

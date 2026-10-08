@@ -1,0 +1,9 @@
+{
+  "differences": [
+    "Shell fur is left out: glTF has no shells, so the skin shows only the coat's mean colour and roughness (the engine must grow its own fur)",
+    "Light wrapping round the skin is left out, so engines show a harder edge between light and shadow",
+    "Breathing (a 1% swell of the chest) is left out of the idle clip",
+    "Fine surface detail that fades with distance is approximated: it is baked at the texel size and only mipmaps fade it"
+  ],
+  "furLengthMetres": 0.0096
+}

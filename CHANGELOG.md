@@ -326,6 +326,13 @@ Work in progress toward 0.2, phase by phase (see the plan's status table).
   of detail, and the live-only effects. `engines/` has a script per engine that reads the
   extras from the file (GDScript, C#, and Python for Unreal or anything else), and Blender's
   import check; CI imports an export into Blender (`bpy`) and reads it with the Python script.
+- **Gate 11:** passed (suites A and B re-scored 20/20; the export eval 11/11, with three new tasks:
+  levels of detail, root motion and engine notes; the round trip 32/32 and the validator clean;
+  the smoke test passing; the bench pending the owner's laptop). From the export eval's feedback:
+  textured exports' notes name breathing and texel-sized detail too; a missing clip's error says
+  where to add its action or gait; runtime.md documents the JPEG colour maps of big files, when a
+  level of detail is under a pixel, `MSFT_screencoverage`, and the units of `fur.length`,
+  `glow[].pulse` and a leap's `distance`; blueprint.md no longer says glow stays out of exports.
 
 ## 0.1.0
 

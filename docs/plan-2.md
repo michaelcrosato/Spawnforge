@@ -990,6 +990,13 @@ Extend the export eval with textures, levels of detail, root-motion clips and en
 meet the gate 11 row of the [gate thresholds](#gate-thresholds). 7.6's smoke test must still
 pass, and the bench numbers are recorded from the owner's run or listed as pending.
 
+**Passed (2026-10-08, [#37](https://github.com/michaelcrosato/Spawnforge/pull/37)):** suites A
+and B re-scored 20/20 (suite B 20/20 meeting `expects`); the export eval, now eleven tasks with
+levels of detail, root motion and engine notes, 11/11 by an agent from the docs; the round trip
+32/32 with its three probes passing and six mistakes failing, and the validator without errors;
+the smoke test passing; the bench pending the owner's laptop. See
+`eval/runs/2026-10-08-gate11/notes.md`.
+
 ## Phase 12: Tools and release
 
 ### 12.1 Click-to-place editing

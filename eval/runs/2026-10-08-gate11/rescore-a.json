@@ -1,0 +1,150 @@
+{
+  "run": "eval/runs/2026-10-07-gate9",
+  "prompts": 20,
+  "passed": 20,
+  "firstTry": 20,
+  "threshold": 18,
+  "gate": true,
+  "rows": [
+    {
+      "id": "p01-wolf",
+      "attempts": 3,
+      "validAt": 0,
+      "passed": true,
+      "errorsPerAttempt": [0, 0, 0]
+    },
+    {
+      "id": "p02-spiked-lizard",
+      "attempts": 4,
+      "validAt": 0,
+      "passed": true,
+      "errorsPerAttempt": [0, 0, 0, 0]
+    },
+    {
+      "id": "p03-horn-beetle",
+      "attempts": 3,
+      "validAt": 0,
+      "passed": true,
+      "errorsPerAttempt": [0, 0, 0]
+    },
+    {
+      "id": "p04-green-serpent",
+      "attempts": 4,
+      "validAt": 0,
+      "passed": true,
+      "errorsPerAttempt": [0, 0, 0, 0]
+    },
+    {
+      "id": "p05-swamp-troll",
+      "attempts": 4,
+      "validAt": 0,
+      "passed": true,
+      "errorsPerAttempt": [0, 0, 0, 0]
+    },
+    {
+      "id": "p06-ram-demon",
+      "attempts": 5,
+      "validAt": 0,
+      "passed": true,
+      "errorsPerAttempt": [0, 0, 0, 1, 0]
+    },
+    {
+      "id": "p07-sprawl-lizard",
+      "attempts": 2,
+      "validAt": 0,
+      "passed": true,
+      "errorsPerAttempt": [0, 0]
+    },
+    {
+      "id": "p08-boar",
+      "attempts": 4,
+      "validAt": 0,
+      "passed": true,
+      "errorsPerAttempt": [0, 0, 0, 0]
+    },
+    {
+      "id": "p09-long-neck",
+      "attempts": 3,
+      "validAt": 0,
+      "passed": true,
+      "errorsPerAttempt": [0, 0, 0]
+    },
+    {
+      "id": "p10-scorpion",
+      "attempts": 2,
+      "validAt": 0,
+      "passed": true,
+      "errorsPerAttempt": [0, 0]
+    },
+    {
+      "id": "p11-sea-serpent",
+      "attempts": 3,
+      "validAt": 0,
+      "passed": true,
+      "errorsPerAttempt": [0, 0, 0]
+    },
+    {
+      "id": "p12-raptor",
+      "attempts": 5,
+      "validAt": 0,
+      "passed": true,
+      "errorsPerAttempt": [0, 0, 0, 0, 0]
+    },
+    {
+      "id": "p13-cave-bear",
+      "attempts": 4,
+      "validAt": 0,
+      "passed": true,
+      "errorsPerAttempt": [0, 0, 0, 0]
+    },
+    {
+      "id": "p14-leopard-stalker",
+      "attempts": 5,
+      "validAt": 0,
+      "passed": true,
+      "errorsPerAttempt": [0, 0, 0, 0, 0]
+    },
+    {
+      "id": "p15-gecko",
+      "attempts": 2,
+      "validAt": 0,
+      "passed": true,
+      "errorsPerAttempt": [0, 0]
+    },
+    {
+      "id": "p16-ant-soldier",
+      "attempts": 2,
+      "validAt": 0,
+      "passed": true,
+      "errorsPerAttempt": [0, 0]
+    },
+    {
+      "id": "p17-goblin",
+      "attempts": 4,
+      "validAt": 0,
+      "passed": true,
+      "errorsPerAttempt": [0, 0, 0, 0]
+    },
+    {
+      "id": "p18-cobra",
+      "attempts": 4,
+      "validAt": 0,
+      "passed": true,
+      "errorsPerAttempt": [0, 0, 0, 0]
+    },
+    {
+      "id": "p19-rhino",
+      "attempts": 5,
+      "validAt": 0,
+      "passed": true,
+      "errorsPerAttempt": [0, 0, 0, 0, 0]
+    },
+    {
+      "id": "p20-nightmare-hound",
+      "attempts": 4,
+      "validAt": 0,
+      "passed": true,
+      "errorsPerAttempt": [0, 0, 0, 0]
+    }
+  ]
+}

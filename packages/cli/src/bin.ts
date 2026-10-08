@@ -79,7 +79,8 @@ Commands:
   export <file|-> [--out f.glb] [--quality low|medium|high] [--clips idle,walk,bite] [--fps n]
          [--stats id] [--textures 512|1024|2048|none] [--lods none]
                                         A .glb for game engines: skinned mesh with texture maps
-                                        baked from the live material (or vertex colours with
+                                        baked from the live material (the skin's size; colour
+                                        maps turn JPEG past 8 MB; vertex colours with
                                         --textures none) and levels of detail (skin_LOD1 to 3;
                                         --lods none leaves them out), skeleton, baked clips (idle,
                                         gaits, actions), sockets as nodes, the blueprint and stats

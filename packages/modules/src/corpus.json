@@ -2394,5 +2394,21 @@
   "eval/runs/2026-10-07-phase9-variation/v12.json": {
     "ok": true,
     "errors": []
+  },
+  "eval/runs/2026-10-08-gate11-export/x02-blueprint.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate11-export/x03-blueprint.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate11-export/x07-blueprint.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-08-gate11-export/x10-blueprint.json": {
+    "ok": true,
+    "errors": []
   }
 }
