@@ -1,0 +1,64 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Spotted Stilt Grazer",
+  "seed": 909,
+  "extends": "quadruped",
+  "scale": 1.5,
+  "body": {
+    "torso": { "radius": [0.13, 0.19, 0.17, 0.12], "arch": 0.06 },
+    "neck": { "length": 1.3, "radius": [0.045, 0.1], "pitch": 72, "segments": 6, "curve": 20 },
+    "head": {
+      "shape": "wedge",
+      "length": 0.3,
+      "radius": 0.07,
+      "pitch": -10,
+      "lips": 0.2,
+      "tongue": "forked"
+    },
+    "tail": { "length": 1.3, "radius": [0.06, 0.01], "pitch": -12, "segments": 10 }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "attach": { "at": 0.12, "angle": 105 },
+      "length": 1.1,
+      "radius": [0.06, 0.03],
+      "foot": { "type": "foot.hoof", "cloven": true }
+    },
+    {
+      "id": "hindleg",
+      "attach": { "at": 0.88, "angle": 105 },
+      "length": 1.05,
+      "radius": [0.065, 0.03],
+      "foot": { "type": "foot.hoof", "cloven": true }
+    }
+  ],
+  "parts": [
+    {
+      "id": "eyes",
+      "attach": { "on": "head", "at": 0.4, "angle": 60 },
+      "params": { "scale": 1.5, "irisColor": "#7a4a18" }
+    },
+    {
+      "id": "horns",
+      "type": "horn.curved",
+      "attach": { "on": "head", "at": 0.85, "angle": 30 },
+      "params": { "length": 0.08, "width": 0.025, "curve": 0, "aim": "up" }
+    },
+    {
+      "id": "ears",
+      "type": "ear.pointed",
+      "attach": { "on": "head", "at": 0.9, "angle": 70 },
+      "params": { "length": 0.1, "width": 0.04, "droop": 0.5 }
+    }
+  ],
+  "skin": {
+    "palette": { "base": "#d8b068", "belly": "#f0e0b0", "accent": "#5a3418" },
+    "material": "scales",
+    "layers": [
+      { "type": "countershade", "softness": 0.3 },
+      { "type": "spots", "color": "accent", "size": 0.06, "density": 0.85, "jitter": 0.5 }
+    ]
+  },
+  "motion": { "temperament": "calm", "actions": ["look", "idle"] }
+}

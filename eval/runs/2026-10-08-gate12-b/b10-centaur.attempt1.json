@@ -1,0 +1,73 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Centaur",
+  "seed": 1010,
+  "extends": "centaur",
+  "scale": 1.2,
+  "body": {
+    "muscle": 0.7,
+    "torso": { "radius": [0.17, 0.23, 0.22, 0.2] },
+    "head": { "brow": 0.5 },
+    "tail": { "length": 0.8, "radius": [0.06, 0.04, 0.03] }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "length": 0.85,
+      "radius": [0.075, 0.03],
+      "foot": { "type": "foot.hoof", "size": 1.4 }
+    },
+    {
+      "id": "hindleg",
+      "length": 0.9,
+      "radius": [0.09, 0.03],
+      "foot": { "type": "foot.hoof", "size": 1.4 }
+    },
+    {
+      "id": "arm",
+      "length": 0.7,
+      "radius": [0.06, 0.045, 0.035],
+      "lift": 12,
+      "splay": 12,
+      "foot": "hand.grasp"
+    }
+  ],
+  "parts": [
+    {
+      "id": "horns",
+      "type": "horn.curved",
+      "attach": { "on": "head", "at": 0.7, "angle": 35, "side": "both" },
+      "params": {
+        "length": 0.28,
+        "width": 0.035,
+        "curve": 70,
+        "turn": -20,
+        "lean": -15,
+        "ridges": 6
+      }
+    },
+    {
+      "id": "ears",
+      "type": "ear.pointed",
+      "attach": { "on": "head", "at": 0.85, "angle": 80, "side": "both" },
+      "params": { "length": 0.08, "curve": 30 }
+    },
+    {
+      "id": "mane",
+      "type": "spikes.row",
+      "attach": { "on": "neck", "from": 0.55, "to": 1, "angle": 0 },
+      "params": {
+        "count": 10,
+        "height": [0.06, 0.1, 0.06],
+        "color": "#2e1c10",
+        "tipColor": "#2e1c10"
+      }
+    }
+  ],
+  "skin": {
+    "material": "skin",
+    "palette": { "base": "#7a5030", "belly": "#c8a078", "accent": "#2e1c10" },
+    "layers": [{ "type": "countershade", "softness": 0.4 }]
+  },
+  "motion": { "temperament": "calm" }
+}

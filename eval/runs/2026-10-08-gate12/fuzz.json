@@ -1,0 +1,16 @@
+{
+  "count": 1000,
+  "quality": "medium",
+  "valid": 976,
+  "compiled": 976,
+  "failures": 0,
+  "compileMs": {
+    "median": 346.7,
+    "p95": 794.5,
+    "max": 1524.8
+  },
+  "maxSkinTriangles": 31780,
+  "seconds": 390.2,
+  "failed": [],
+  "invalid": 24
+}

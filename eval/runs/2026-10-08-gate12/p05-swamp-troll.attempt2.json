@@ -1,0 +1,124 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Mire Troll",
+  "seed": 505,
+  "extends": "biped",
+  "scale": 0.9,
+  "body": {
+    "torso": {
+      "radius": [0.18, 0.22, 0.2, 0.18],
+      "arch": 0.1,
+      "pitch": 76
+    },
+    "neck": {
+      "length": 0.18,
+      "pitch": 76
+    },
+    "head": {
+      "shape": "flat",
+      "crossSection": "wide",
+      "length": 0.34,
+      "radius": 0.18,
+      "pitch": -5,
+      "brow": 0.7
+    }
+  },
+  "limbs": [
+    {
+      "id": "leg",
+      "length": 1.0,
+      "radius": [0.12, 0.07],
+      "foot": {
+        "type": "foot.pad",
+        "width": 1.4,
+        "nails": 3
+      },
+      "attach": {
+        "angle": 115
+      }
+    },
+    {
+      "id": "arm",
+      "length": 1.55,
+      "radius": [0.1, 0.06],
+      "foot": {
+        "type": "hand.grasp",
+        "fingers": 4,
+        "fingerLength": 0.2,
+        "claws": 0.04
+      }
+    }
+  ],
+  "parts": [
+    {
+      "id": "tusks",
+      "type": "horn.curved",
+      "attach": {
+        "on": "jaw",
+        "at": 0.3,
+        "angle": 55
+      },
+      "params": {
+        "length": 0.15,
+        "curve": -50,
+        "width": 0.025,
+        "color": "#e8dcc0",
+        "tipColor": "#b8a888"
+      }
+    },
+    {
+      "id": "teeth",
+      "type": "teeth.row",
+      "params": {
+        "fangs": 0,
+        "scale": 1.3,
+        "spacing": 0.5
+      }
+    },
+    {
+      "id": "eyes",
+      "params": {
+        "squint": 0.5,
+        "irisColor": "#d8c030"
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#5d7a45",
+      "belly": "#a5ad74",
+      "accent": "#2f4a2a"
+    },
+    "material": "hide",
+    "layers": [
+      {
+        "type": "countershade"
+      },
+      {
+        "type": "mottle",
+        "color": "accent",
+        "scale": 0.12,
+        "contrast": 0.55,
+        "coverage": 0.55
+      },
+      {
+        "type": "mottle",
+        "color": "#8a9a4a",
+        "scale": 0.2,
+        "contrast": 0.4,
+        "coverage": 0.35
+      },
+      {
+        "type": "warts",
+        "color": "#6f8a4e",
+        "size": 0.02,
+        "density": 0.5,
+        "region": "back"
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "lumbering",
+    "actions": ["bite", "roar", "look", "idle"]
+  }
+}

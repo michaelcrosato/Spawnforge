@@ -1,0 +1,117 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Timber Wolf",
+  "seed": 31,
+  "extends": "quadruped",
+  "scale": 0.8,
+  "body": {
+    "torso": {
+      "radius": [0.13, 0.17, 0.15, 0.11],
+      "arch": 0.05
+    },
+    "neck": {
+      "length": 0.32,
+      "radius": [0.085, 0.12],
+      "pitch": 35
+    },
+    "head": {
+      "shape": "snout",
+      "length": 0.46,
+      "radius": 0.095,
+      "pitch": -8
+    },
+    "tail": {
+      "length": 0.8,
+      "radius": [0.07, 0.15, 0.14, 0.06],
+      "pitch": -25,
+      "curl": 15
+    }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "length": 0.85,
+      "radius": [0.06, 0.03],
+      "splay": 10,
+      "foot": {
+        "type": "foot.paw",
+        "claws": "short"
+      }
+    },
+    {
+      "id": "hindleg",
+      "length": 0.88,
+      "radius": [0.07, 0.03],
+      "foot": {
+        "type": "foot.paw",
+        "claws": "short"
+      }
+    }
+  ],
+  "parts": [
+    {
+      "id": "ears",
+      "type": "ear.pointed",
+      "attach": {
+        "on": "head",
+        "at": 0.85,
+        "angle": 45
+      },
+      "params": {
+        "length": 0.11,
+        "width": 0.04
+      }
+    },
+    {
+      "id": "teeth",
+      "type": "teeth.row",
+      "params": {
+        "fangs": 1
+      }
+    },
+    {
+      "id": "eyes",
+      "params": {
+        "irisColor": "#d9a030",
+        "squint": 0.3
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#7d8083",
+      "belly": "#e2dfd6",
+      "accent": "#4a4d50"
+    },
+    "fur": {
+      "length": 0.03
+    },
+    "layers": [
+      {
+        "type": "countershade",
+        "height": 0.4,
+        "softness": 0.2
+      },
+      {
+        "type": "mottle",
+        "scale": 0.08,
+        "contrast": 0.25,
+        "coverage": 0.5,
+        "strength": 0.7,
+        "region": "back"
+      },
+      {
+        "type": "mottle",
+        "color": "#35383b",
+        "scale": 0.22,
+        "coverage": 0.3,
+        "contrast": 0.2,
+        "region": "back",
+        "strength": 0.5
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "stalking"
+  }
+}

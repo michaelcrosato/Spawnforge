@@ -16,6 +16,7 @@ import {
 import { type Sdf, SdfEvaluator } from './sdf.ts';
 import { aroundDirection, type PathSegment, samplePath } from './skeleton.ts';
 import { type WeightOptions, weightsAt } from './skin.ts';
+import type { PrimCulling } from './surface-nets.ts';
 import type { BoneDef, DrivenChain } from './types.ts';
 import { bindRotation as bindRotationOf, type WingHooks } from './wings.ts';
 
@@ -384,6 +385,8 @@ export interface PartsInput {
   readonly bones: BoneDef[];
   readonly paths: Map<string, readonly PathSegment[]>;
   readonly sdf: Sdf;
+  /** The skin grid's primitives per block, which reach every point near the skin. */
+  readonly culling: PrimCulling;
   readonly weightOptions: WeightOptions;
   /** Every head with its jaw (-1 without) and mouth line; `main` indexes the main one. */
   readonly heads: readonly {
@@ -466,6 +469,10 @@ export function buildParts(
   sink: PartSink,
 ): { eyeBones: number[]; notes: PartNote[] } {
   const evaluator = new SdfEvaluator(input.sdf);
+  // The field from the primitives of the skin grid's block around the point: the others are too
+  // far to bring the skin near it. For tests of which side of the skin a point is on.
+  const skinField = (x: number, y: number, z: number) =>
+    evaluator.eval(x, y, z, input.culling.primsOf(input.culling.blockAt(x, y, z)));
   const eyeBones: number[] = [];
   const notes: PartNote[] = [];
   /** Per part instance: sampled vertices, and how many of them are outside the skin. */
@@ -890,7 +897,7 @@ export function buildParts(
       const x = sink.parts.positions[v] as number;
       const y = sink.parts.positions[v + 1] as number;
       const z = sink.parts.positions[v + 2] as number;
-      if (evaluator.eval(x, y, z) > 0.002 * input.scale) seen.outside++;
+      if (skinField(x, y, z) > 0.002 * input.scale) seen.outside++;
     }
   };
 
@@ -1074,20 +1081,19 @@ export function buildParts(
     },
     skinAlong: (from, dir, reach) => {
       const steps = 32;
-      let prev = evaluator.eval(from.x, from.y, from.z);
+      const field = (t: number) =>
+        skinField(from.x + dir.x * t, from.y + dir.y * t, from.z + dir.z * t);
+      let prev = field(0);
       if (prev < 0) return from.clone();
       for (let i = 1; i <= steps; i++) {
         const t = (reach * i) / steps;
-        const v = evaluator.eval(from.x + dir.x * t, from.y + dir.y * t, from.z + dir.z * t);
+        const v = field(t);
         if (v < 0) {
           let lo = (reach * (i - 1)) / steps;
           let hi = t;
           for (let k = 0; k < 14; k++) {
             const mid = (lo + hi) / 2;
-            if (
-              evaluator.eval(from.x + dir.x * mid, from.y + dir.y * mid, from.z + dir.z * mid) < 0
-            )
-              hi = mid;
+            if (field(mid) < 0) hi = mid;
             else lo = mid;
           }
           return from.clone().addScaledVector(dir, (lo + hi) / 2);

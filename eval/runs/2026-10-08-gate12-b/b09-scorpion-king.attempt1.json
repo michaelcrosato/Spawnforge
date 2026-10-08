@@ -1,0 +1,64 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Scorpion King",
+  "seed": 909,
+  "extends": "octopod",
+  "scale": 0.8,
+  "body": {
+    "torso": { "radius": [0.11, 0.14, 0.15, 0.15, 0.13, 0.1, 0.07], "segments": 8 },
+    "head": { "shape": "round", "length": 0.2, "radius": 0.11, "jaw": true, "pitch": -5 },
+    "tail": { "length": 1.3, "radius": [0.07, 0.035], "pitch": 60, "curl": 170, "segments": 8 }
+  },
+  "limbs": [
+    { "id": "leg1", "remove": true },
+    { "id": "leg2", "attach": { "on": "torso", "at": 0.3 } },
+    { "id": "leg3", "attach": { "on": "torso", "at": 0.45 } },
+    { "id": "leg4", "attach": { "on": "torso", "at": 0.6 } },
+    {
+      "id": "claw",
+      "role": "arm",
+      "attach": { "on": "torso", "at": 0, "side": "both", "angle": 100 },
+      "length": 0.7,
+      "segments": 3,
+      "radius": [0.05, 0.05],
+      "lift": 80,
+      "foot": { "type": "hand.pincer", "size": 0.35, "width": 0.9 }
+    }
+  ],
+  "parts": [
+    {
+      "id": "stinger",
+      "type": "horn.curved",
+      "attach": { "on": "tail", "at": 1, "angle": 180 },
+      "params": { "length": 0.2, "curve": -80, "width": 0.05, "color": "#e0b050" }
+    },
+    {
+      "id": "armor",
+      "type": "armor.bands",
+      "attach": { "on": "torso", "area": "back", "from": 0.15, "to": 0.95 },
+      "params": { "bands": 9, "overlap": 0.35, "thickness": 0.03 }
+    },
+    {
+      "id": "crown",
+      "type": "spikes.row",
+      "attach": { "on": "head", "from": 0.35, "to": 0.9, "angle": 0 },
+      "params": {
+        "count": 5,
+        "height": [0.05, 0.1, 0.05],
+        "color": "#e0b050",
+        "tipColor": "#f0d070"
+      }
+    },
+    { "id": "eyes", "params": { "irisColor": "#101010", "scale": 1 } },
+    { "id": "side-eyes", "params": { "irisColor": "#101010" } }
+  ],
+  "skin": {
+    "palette": { "base": "#2e2620", "belly": "#5a4a3a", "accent": "#b8863a" },
+    "material": "chitin",
+    "layers": [
+      { "type": "countershade", "softness": 0.3 },
+      { "type": "bands", "color": "accent", "count": 14, "width": 0.15, "region": "torso" }
+    ]
+  },
+  "motion": { "temperament": "aggressive", "actions": ["pinch", "lash"] }
+}

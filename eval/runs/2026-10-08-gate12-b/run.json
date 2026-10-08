@@ -1,0 +1,11 @@
+{
+  "phase": 12,
+  "suite": "b",
+  "kind": "gate 12: suite B full run with renders, filmstrips, analyze and patch, plus blind review, at the release commit",
+  "date": "2026-10-08",
+  "model": "Claude Sonnet (Claude Code subagent, model alias \"sonnet\")",
+  "commit": "802cac3",
+  "tools": "spawnforge CLI: validate, list-modules, describe-module, render (contact sheets, labels, head views, poses, gait and action filmstrips), analyze, patch",
+  "docs": ["docs/blueprint.md", "docs/catalog.md", "examples/"],
+  "agents": "4 independent agents, 5 prompts each, no shared context; a separate blind reviewer"
+}

@@ -1,0 +1,4262 @@
+{
+  "textures": 1024,
+  "bars": {
+    "overlap": 0.99,
+    "mean": 0.035,
+    "off": 0.05,
+    "correlation": 0.7,
+    "ratio": [0.7, 1.4]
+  },
+  "examples": {
+    "ash-dragon": {
+      "pass": true,
+      "failed": [],
+      "validator": {
+        "errors": [],
+        "warnings": ["NODE_SKINNED_MESH_NON_ROOT"]
+      },
+      "bytes": 6584436,
+      "exportMs": 6795,
+      "worst": {
+        "mean": 0.016,
+        "off": 0.0122,
+        "overlap": 1
+      },
+      "views": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.011211989832446078,
+          "off": 0.004106819649226796,
+          "px": 1268,
+          "perTexel": 1
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.009232482455027929,
+          "off": 0.00013734219953532556,
+          "px": 1290,
+          "perTexel": 1
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.01600518553773493,
+          "off": 0.012241252495534307,
+          "px": 419,
+          "perTexel": 1
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.015293553311885331,
+          "off": 0.008714772209261791,
+          "px": 572,
+          "perTexel": 1
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.009841740504175033,
+          "off": 0.00003862681666747139,
+          "px": 1290,
+          "perTexel": 1
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.011871889047966672,
+          "off": 0.0015837897307557458,
+          "px": 1268,
+          "perTexel": 1
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.01600518553773493,
+          "off": 0.012241252495534307,
+          "px": 419,
+          "perTexel": 1
+        },
+        {
+          "view": "spread",
+          "overlap": 1,
+          "mean": 0.011092299363932773,
+          "off": 0.0034348355663824603,
+          "px": 2048,
+          "perTexel": 0.96
+        }
+      ],
+      "withoutTangents": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.01119520669035805,
+          "off": 0.004085650475777173
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.009281857574201857,
+          "off": 0.00013734219953532556
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.01602616050215488,
+          "off": 0.012241252495534307
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.015286970131772482,
+          "off": 0.008687957525540987
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.009848168839595925,
+          "off": 0.00003862681666747139
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.011872215003793665,
+          "off": 0.0015716997328110453
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.01602616050215488,
+          "off": 0.012241252495534307
+        },
+        {
+          "view": "spread",
+          "overlap": 1,
+          "mean": 0.011094153272365832,
+          "off": 0.003507917174177832
+        }
+      ]
+    },
+    "bog-troll": {
+      "pass": true,
+      "failed": [],
+      "validator": {
+        "errors": [],
+        "warnings": ["NODE_SKINNED_MESH_NON_ROOT"]
+      },
+      "bytes": 5723236,
+      "exportMs": 6786,
+      "worst": {
+        "mean": 0.0062,
+        "off": 0.0001,
+        "overlap": 1
+      },
+      "views": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.005294948143025293,
+          "off": 0,
+          "px": 825,
+          "perTexel": 1
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.004527645182082924,
+          "off": 0,
+          "px": 839,
+          "perTexel": 1
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.003884984769567626,
+          "off": 0.00010904332654841524,
+          "px": 358,
+          "perTexel": 1
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.006186698032111897,
+          "off": 0,
+          "px": 839,
+          "perTexel": 1
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.002943143746003274,
+          "off": 0,
+          "px": 364,
+          "perTexel": 1
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.0025112881106400826,
+          "off": 0,
+          "px": 825,
+          "perTexel": 1
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.003884984769567626,
+          "off": 0.00010904332654841524,
+          "px": 358,
+          "perTexel": 1
+        }
+      ],
+      "withoutTangents": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.005300261638247456,
+          "off": 0
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.004541306618359462,
+          "off": 0
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.003957692198957862,
+          "off": 0.00010904332654841524
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.00618712629374719,
+          "off": 0
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.002943973265360717,
+          "off": 0
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.0025152701882486645,
+          "off": 0
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.003957692198957862,
+          "off": 0.00010904332654841524
+        }
+      ]
+    },
+    "cave-bat": {
+      "pass": true,
+      "failed": [],
+      "validator": {
+        "errors": [],
+        "warnings": ["NODE_SKINNED_MESH_NON_ROOT"]
+      },
+      "bytes": 3625872,
+      "exportMs": 5161,
+      "worst": {
+        "mean": 0.0008,
+        "off": 0,
+        "overlap": 1
+      },
+      "views": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.0007282109674347795,
+          "off": 0,
+          "px": 733,
+          "perTexel": 1
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.0007078806003427138,
+          "off": 0,
+          "px": 746,
+          "perTexel": 1
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.000673655055176115,
+          "off": 0,
+          "px": 419,
+          "perTexel": 1
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.0008311725230093988,
+          "off": 0,
+          "px": 367,
+          "perTexel": 1
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.0007372105689820319,
+          "off": 0,
+          "px": 746,
+          "perTexel": 1
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.0006786976440269864,
+          "off": 0,
+          "px": 733,
+          "perTexel": 1
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.000673655055176115,
+          "off": 0,
+          "px": 419,
+          "perTexel": 1
+        },
+        {
+          "view": "spread",
+          "overlap": 1,
+          "mean": 0.0008024332650090563,
+          "off": 0,
+          "px": 2048,
+          "perTexel": 0.88
+        }
+      ],
+      "withoutTangents": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.0007267593623832738,
+          "off": 0
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.0007073880061081389,
+          "off": 0
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.0006707258760923301,
+          "off": 0
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.0008247274962107456,
+          "off": 0
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.0007347950549728166,
+          "off": 0
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.0006734661488716543,
+          "off": 0
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.0006707258760923301,
+          "off": 0
+        },
+        {
+          "view": "spread",
+          "overlap": 1,
+          "mean": 0.0008030228290585613,
+          "off": 0
+        }
+      ]
+    },
+    "cerberus": {
+      "pass": true,
+      "failed": [],
+      "validator": {
+        "errors": [],
+        "warnings": ["NODE_SKINNED_MESH_NON_ROOT"]
+      },
+      "bytes": 5266924,
+      "exportMs": 8700,
+      "worst": {
+        "mean": 0.0023,
+        "off": 0,
+        "overlap": 1
+      },
+      "views": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.0016948665554098474,
+          "off": 0.000012190067532974132,
+          "px": 834,
+          "perTexel": 1
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.001753450301592933,
+          "off": 0,
+          "px": 848,
+          "perTexel": 1
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.0022977585100992137,
+          "off": 0,
+          "px": 314,
+          "perTexel": 1
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.002001996764397121,
+          "off": 0,
+          "px": 474,
+          "perTexel": 1
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.0013330827197808256,
+          "off": 0,
+          "px": 848,
+          "perTexel": 1
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.0016350161601467413,
+          "off": 0,
+          "px": 834,
+          "perTexel": 1
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.0022977585100992137,
+          "off": 0,
+          "px": 314,
+          "perTexel": 1
+        }
+      ],
+      "withoutTangents": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.00169517031117763,
+          "off": 0.000012190067532974132
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.001752495632523845,
+          "off": 0
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.0022997230045456968,
+          "off": 0
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.0019991565578880662,
+          "off": 0
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.0013311562910998187,
+          "off": 0
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.0016297597581567008,
+          "off": 0
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.0022997230045456968,
+          "off": 0
+        }
+      ]
+    },
+    "dune-scorpion": {
+      "pass": true,
+      "failed": [],
+      "validator": {
+        "errors": [],
+        "warnings": ["NODE_SKINNED_MESH_NON_ROOT"]
+      },
+      "bytes": 4361264,
+      "exportMs": 5208,
+      "worst": {
+        "mean": 0.0052,
+        "off": 0.003,
+        "overlap": 1
+      },
+      "views": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.004671221346286287,
+          "off": 0.0026395879091115028,
+          "px": 946,
+          "perTexel": 1
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.003139997134369234,
+          "off": 0.00041715214545663774,
+          "px": 962,
+          "perTexel": 1
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.003969116578118519,
+          "off": 0.0017647953750190171,
+          "px": 205,
+          "perTexel": 1
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.003746003488711098,
+          "off": 0.0002313877480187424,
+          "px": 851,
+          "perTexel": 1
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.0030253543890356943,
+          "off": 0.0007837611729998679,
+          "px": 962,
+          "perTexel": 1
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.005164135143560354,
+          "off": 0.003006041846483526,
+          "px": 946,
+          "perTexel": 1
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.003969116578118519,
+          "off": 0.0017647953750190171,
+          "px": 205,
+          "perTexel": 1
+        }
+      ],
+      "withoutTangents": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.0045093475105287125,
+          "off": 0.002334262442012784
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.0031431760744003766,
+          "off": 0.0003596139184971015
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.004140137062989667,
+          "off": 0.001977787920279933
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.0037433033348432715,
+          "off": 0.00032779930969321843
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.003187116288987603,
+          "off": 0.0012857205759323675
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.005568597850303642,
+          "off": 0.005317618579918053
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.004140137062989667,
+          "off": 0.001977787920279933
+        }
+      ]
+    },
+    "ember-beetle": {
+      "pass": true,
+      "failed": [],
+      "validator": {
+        "errors": [],
+        "warnings": ["NODE_SKINNED_MESH_NON_ROOT"]
+      },
+      "bytes": 4226880,
+      "exportMs": 5883,
+      "worst": {
+        "mean": 0.01,
+        "off": 0.0089,
+        "overlap": 1
+      },
+      "views": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.009836665450599594,
+          "off": 0.00888363088836309,
+          "px": 874,
+          "perTexel": 1
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.0053933849521234775,
+          "off": 0.0019750691865553375,
+          "px": 889,
+          "perTexel": 1
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.007111593533278336,
+          "off": 0.006339434954543602,
+          "px": 419,
+          "perTexel": 1
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.009863109633461396,
+          "off": 0.00630570035311922,
+          "px": 668,
+          "perTexel": 1
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.0058334427605531095,
+          "off": 0.0035799004859986116,
+          "px": 889,
+          "perTexel": 1
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.010021545498637202,
+          "off": 0.008457551528787818,
+          "px": 874,
+          "perTexel": 1
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.007111593533278336,
+          "off": 0.006339434954543602,
+          "px": 419,
+          "perTexel": 1
+        }
+      ],
+      "withoutTangents": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.009535814505073141,
+          "off": 0.008786835878683587
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.005406666869190587,
+          "off": 0.0021524706104974335
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.008066150923930336,
+          "off": 0.008500142688246566
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.009736126703637651,
+          "off": 0.006557928367243989
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.006520236754167904,
+          "off": 0.004852753992131451
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.0108101514843688,
+          "off": 0.011249949777009924
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.008066150923930336,
+          "off": 0.008500142688246566
+        }
+      ]
+    },
+    "frilled-lizard": {
+      "pass": true,
+      "failed": [],
+      "validator": {
+        "errors": [],
+        "warnings": ["NODE_SKINNED_MESH_NON_ROOT"]
+      },
+      "bytes": 5016976,
+      "exportMs": 4594,
+      "worst": {
+        "mean": 0.0105,
+        "off": 0.0104,
+        "overlap": 1
+      },
+      "views": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.008864875891993737,
+          "off": 0.00198670162784246,
+          "px": 1615,
+          "perTexel": 1
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.008310596125098976,
+          "off": 0.000048077847650916364,
+          "px": 1642,
+          "perTexel": 1
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.01006487189561138,
+          "off": 0.01037912642352602,
+          "px": 263,
+          "perTexel": 1
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.010520593247406273,
+          "off": 0.007639922170081264,
+          "px": 482,
+          "perTexel": 1
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.00631124068744905,
+          "off": 0,
+          "px": 1642,
+          "perTexel": 1
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.008893007407711487,
+          "off": 0.0006585091353176408,
+          "px": 1615,
+          "perTexel": 1
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.01006487189561138,
+          "off": 0.01037912642352602,
+          "px": 263,
+          "perTexel": 1
+        }
+      ],
+      "withoutTangents": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.008882363206343055,
+          "off": 0.00198670162784246
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.008327300820400474,
+          "off": 0.000048077847650916364
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.010055317535690451,
+          "off": 0.010343087790110998
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.01054372986270252,
+          "off": 0.0076685361107931786
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.006317881312848692,
+          "off": 0
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.008907496173772636,
+          "off": 0.0006704820286870525
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.010055317535690451,
+          "off": 0.010343087790110998
+        }
+      ]
+    },
+    "grey-wolf": {
+      "pass": true,
+      "failed": [],
+      "validator": {
+        "errors": [],
+        "warnings": ["NODE_SKINNED_MESH_NON_ROOT"]
+      },
+      "bytes": 4406748,
+      "exportMs": 4856,
+      "worst": {
+        "mean": 0.002,
+        "off": 0.0001,
+        "overlap": 1
+      },
+      "views": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.0014119314484369295,
+          "off": 0.0000393925666226783,
+          "px": 1015,
+          "perTexel": 1
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.0013802551309692894,
+          "off": 0,
+          "px": 1032,
+          "perTexel": 1
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.001035818194722082,
+          "off": 0.00010325422912113442,
+          "px": 416,
+          "perTexel": 1
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.001979391045941197,
+          "off": 0,
+          "px": 412,
+          "perTexel": 1
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.0012243230364850418,
+          "off": 0,
+          "px": 1032,
+          "perTexel": 1
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.0011068175226678155,
+          "off": 0,
+          "px": 1015,
+          "perTexel": 1
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.001035818194722082,
+          "off": 0.00010325422912113442,
+          "px": 416,
+          "perTexel": 1
+        }
+      ],
+      "withoutTangents": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.0014061883083112754,
+          "off": 0.0000393925666226783
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.001372557423048415,
+          "off": 0
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.0010267131513153776,
+          "off": 0.00010325422912113442
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.0019747133003342548,
+          "off": 0
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.001221326201376527,
+          "off": 0
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.0011025131531873023,
+          "off": 0
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.0010267131513153776,
+          "off": 0.00010325422912113442
+        }
+      ]
+    },
+    "griffin": {
+      "pass": true,
+      "failed": [],
+      "validator": {
+        "errors": [],
+        "warnings": ["NODE_SKINNED_MESH_NON_ROOT"]
+      },
+      "bytes": 6160648,
+      "exportMs": 5348,
+      "worst": {
+        "mean": 0.0054,
+        "off": 0.0001,
+        "overlap": 1
+      },
+      "views": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.004063677549294001,
+          "off": 0.00012824153376874388,
+          "px": 1005,
+          "perTexel": 1
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.003740507266826951,
+          "off": 0,
+          "px": 1022,
+          "perTexel": 1
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.005388965255606092,
+          "off": 0.00004434196523589925,
+          "px": 330,
+          "perTexel": 1
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.004824215640028577,
+          "off": 0.000019122652694381765,
+          "px": 452,
+          "perTexel": 1
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.002869813356135008,
+          "off": 0.00003203126251221192,
+          "px": 1022,
+          "perTexel": 1
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.002579148879523903,
+          "off": 0,
+          "px": 1005,
+          "perTexel": 1
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.005388965255606092,
+          "off": 0.00004434196523589925,
+          "px": 330,
+          "perTexel": 1
+        },
+        {
+          "view": "spread",
+          "overlap": 1,
+          "mean": 0.003811474902591851,
+          "off": 0,
+          "px": 1942,
+          "perTexel": 1
+        }
+      ],
+      "withoutTangents": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.004070487013088148,
+          "off": 0.00012824153376874388
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.00374442489731283,
+          "off": 0
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.00541281355275868,
+          "off": 0.00004434196523589925
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.004831672537194469,
+          "off": 0.000019122652694381765
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.0028695516628138053,
+          "off": 0.00003203126251221192
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.0025800556644037854,
+          "off": 0
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.00541281355275868,
+          "off": 0.00004434196523589925
+        },
+        {
+          "view": "spread",
+          "overlap": 1,
+          "mean": 0.0038114133429637603,
+          "off": 0
+        }
+      ]
+    },
+    "grove-centaur": {
+      "pass": true,
+      "failed": [],
+      "validator": {
+        "errors": [],
+        "warnings": ["NODE_SKINNED_MESH_NON_ROOT"]
+      },
+      "bytes": 5658728,
+      "exportMs": 6089,
+      "worst": {
+        "mean": 0.0061,
+        "off": 0.0001,
+        "overlap": 1
+      },
+      "views": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.004582454321391451,
+          "off": 0,
+          "px": 772,
+          "perTexel": 1
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.005388318851748637,
+          "off": 0,
+          "px": 785,
+          "perTexel": 1
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.003733160885528636,
+          "off": 0.0001145409770345341,
+          "px": 338,
+          "perTexel": 1
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.006073590970140758,
+          "off": 0,
+          "px": 764,
+          "perTexel": 1
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.00248089656312115,
+          "off": 0,
+          "px": 785,
+          "perTexel": 1
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.0026177319603443465,
+          "off": 0,
+          "px": 772,
+          "perTexel": 1
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.003733160885528636,
+          "off": 0.0001145409770345341,
+          "px": 338,
+          "perTexel": 1
+        }
+      ],
+      "withoutTangents": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.004585742176172175,
+          "off": 0
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.005390343404586544,
+          "off": 0
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.0037521644875803508,
+          "off": 0.0001145409770345341
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.006074282490205188,
+          "off": 0
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.0024813649228468924,
+          "off": 0
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.0026186384063042493,
+          "off": 0
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.0037521644875803508,
+          "off": 0.0001145409770345341
+        }
+      ]
+    },
+    "hooded-cobra": {
+      "pass": true,
+      "failed": [],
+      "validator": {
+        "errors": [],
+        "warnings": ["NODE_SKINNED_MESH_NON_ROOT"]
+      },
+      "bytes": 4597356,
+      "exportMs": 3443,
+      "worst": {
+        "mean": 0.0199,
+        "off": 0.017,
+        "overlap": 1
+      },
+      "views": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.019884870878011482,
+          "off": 0.01696471263268624,
+          "px": 2048,
+          "perTexel": 0.61
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.013833125614467373,
+          "off": 0.0002153316106804479,
+          "px": 2048,
+          "perTexel": 0.6
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.016910307555100538,
+          "off": 0.012250827213299975,
+          "px": 442,
+          "perTexel": 1
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.015256362264113083,
+          "off": 0.005335238413716579,
+          "px": 684,
+          "perTexel": 1
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.013318546013859671,
+          "off": 0.0004389858451453043,
+          "px": 2048,
+          "perTexel": 0.6
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.016918018559873762,
+          "off": 0.0031500401240852306,
+          "px": 2048,
+          "perTexel": 0.61
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.016910307555100538,
+          "off": 0.012250827213299975,
+          "px": 442,
+          "perTexel": 1
+        }
+      ],
+      "withoutTangents": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.0199572260130462,
+          "off": 0.017098594243090754
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.013871871390359499,
+          "off": 0.000205543810194973
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.017372960186700363,
+          "off": 0.012283108707933177
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.0153611709925924,
+          "off": 0.005441639179802095
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.013349533249987588,
+          "off": 0.0004487410861485333
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.017023744017503843,
+          "off": 0.003173994801834928
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.017372960186700363,
+          "off": 0.012283108707933177
+        }
+      ]
+    },
+    "hydra": {
+      "pass": true,
+      "failed": [],
+      "validator": {
+        "errors": [],
+        "warnings": ["NODE_SKINNED_MESH_NON_ROOT"]
+      },
+      "bytes": 6740408,
+      "exportMs": 9581,
+      "worst": {
+        "mean": 0.0135,
+        "off": 0.0056,
+        "overlap": 1
+      },
+      "views": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.010965356782403091,
+          "off": 0.003398300849575212,
+          "px": 868,
+          "perTexel": 1
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.011453965419151852,
+          "off": 0.00043354628106550376,
+          "px": 883,
+          "perTexel": 1
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.013505835463219061,
+          "off": 0.005581700777060304,
+          "px": 183,
+          "perTexel": 1
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.010401109545614321,
+          "off": 0.0015423698058428597,
+          "px": 489,
+          "perTexel": 1
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.009045599336504919,
+          "off": 0.00007146138532999847,
+          "px": 883,
+          "perTexel": 1
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.011507829337230383,
+          "off": 0.0026188820307745807,
+          "px": 868,
+          "perTexel": 1
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.013505835463219061,
+          "off": 0.005581700777060304,
+          "px": 183,
+          "perTexel": 1
+        }
+      ],
+      "withoutTangents": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.010974171819329175,
+          "off": 0.0034107946026986505
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.011458729469380782,
+          "off": 0.00044629764227331267
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.013593740276014303,
+          "off": 0.005472255663784612
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.010410300907394745,
+          "off": 0.0015423698058428597
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.009049435131452694,
+          "off": 0.00006125261599714155
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.011520069501631912,
+          "off": 0.0026297487611927324
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.013593740276014303,
+          "off": 0.005472255663784612
+        }
+      ]
+    },
+    "kraken": {
+      "pass": true,
+      "failed": [],
+      "validator": {
+        "errors": [],
+        "warnings": ["NODE_SKINNED_MESH_NON_ROOT"]
+      },
+      "bytes": 4014312,
+      "exportMs": 4233,
+      "worst": {
+        "mean": 0.0048,
+        "off": 0.0002,
+        "overlap": 1
+      },
+      "views": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.0030682174968175322,
+          "off": 0,
+          "px": 959,
+          "perTexel": 1
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.0025243096954346883,
+          "off": 0.00008392899606932536,
+          "px": 975,
+          "perTexel": 1
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.001833456102822922,
+          "off": 0.00006799541030980409,
+          "px": 404,
+          "perTexel": 1
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.004832129457494894,
+          "off": 0,
+          "px": 752,
+          "perTexel": 1
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.0024210570446403924,
+          "off": 0.00020405752274167392,
+          "px": 975,
+          "perTexel": 1
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.0028298234512239666,
+          "off": 0.00002354825036499788,
+          "px": 959,
+          "perTexel": 1
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.001833456102822922,
+          "off": 0.00006799541030980409,
+          "px": 404,
+          "perTexel": 1
+        }
+      ],
+      "withoutTangents": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.003064341774765201,
+          "off": 0
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.002516275642570219,
+          "off": 0.00008392899606932536
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.001828735588124319,
+          "off": 0.00006799541030980409
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.004829120604856191,
+          "off": 0
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.0024181737757217165,
+          "off": 0.00020405752274167392
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.002824496236741913,
+          "off": 0.00002354825036499788
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.001828735588124319,
+          "off": 0.00006799541030980409
+        }
+      ]
+    },
+    "luna-moth": {
+      "pass": true,
+      "failed": [],
+      "validator": {
+        "errors": [],
+        "warnings": ["NODE_SKINNED_MESH_NON_ROOT"]
+      },
+      "bytes": 3952468,
+      "exportMs": 6489,
+      "worst": {
+        "mean": 0.0025,
+        "off": 0,
+        "overlap": 1
+      },
+      "views": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.0013217582144996636,
+          "off": 0,
+          "px": 1007,
+          "perTexel": 1
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.0010198421989523988,
+          "off": 0,
+          "px": 1024,
+          "perTexel": 1
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.0010300526773001587,
+          "off": 0,
+          "px": 240,
+          "perTexel": 1
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.0025220018075131335,
+          "off": 0,
+          "px": 969,
+          "perTexel": 1
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.0023824497138513214,
+          "off": 0,
+          "px": 1024,
+          "perTexel": 1
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.0018435889935232638,
+          "off": 0,
+          "px": 1007,
+          "perTexel": 1
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.0010300526773001587,
+          "off": 0,
+          "px": 240,
+          "perTexel": 1
+        },
+        {
+          "view": "spread",
+          "overlap": 1,
+          "mean": 0.0013624601881054043,
+          "off": 0,
+          "px": 1243,
+          "perTexel": 1
+        }
+      ],
+      "withoutTangents": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.0013178623264879375,
+          "off": 0
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.0010147984733338777,
+          "off": 0
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.0010105168631225207,
+          "off": 0
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.0025152434619266587,
+          "off": 0
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.0023814350121603503,
+          "off": 0
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.0018421471873136933,
+          "off": 0
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.0010105168631225207,
+          "off": 0
+        },
+        {
+          "view": "spread",
+          "overlap": 1,
+          "mean": 0.001358865648419228,
+          "off": 0
+        }
+      ]
+    },
+    "plated-stegosaur": {
+      "pass": true,
+      "failed": [],
+      "validator": {
+        "errors": [],
+        "warnings": ["NODE_SKINNED_MESH_NON_ROOT"]
+      },
+      "bytes": 4889168,
+      "exportMs": 4598,
+      "worst": {
+        "mean": 0.0049,
+        "off": 0,
+        "overlap": 1
+      },
+      "views": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.0030144980193201193,
+          "off": 0,
+          "px": 1133,
+          "perTexel": 1
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.004020330020647751,
+          "off": 0,
+          "px": 1152,
+          "perTexel": 1
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.00487082754500761,
+          "off": 0,
+          "px": 134,
+          "perTexel": 1
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.003891004637989807,
+          "off": 0,
+          "px": 560,
+          "perTexel": 1
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.002013209504695506,
+          "off": 0,
+          "px": 1152,
+          "perTexel": 1
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.0022487057122832724,
+          "off": 0,
+          "px": 1133,
+          "perTexel": 1
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.00487082754500761,
+          "off": 0,
+          "px": 134,
+          "perTexel": 1
+        }
+      ],
+      "withoutTangents": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.0030170227483767745,
+          "off": 0
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.004022603780716644,
+          "off": 0
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.004929921490860685,
+          "off": 0
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.0038905810888637477,
+          "off": 0
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.002013717314379308,
+          "off": 0
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.0022491220040300134,
+          "off": 0
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.004929921490860685,
+          "off": 0
+        }
+      ]
+    },
+    "porcupine": {
+      "pass": true,
+      "failed": [],
+      "validator": {
+        "errors": [],
+        "warnings": ["NODE_SKINNED_MESH_NON_ROOT"]
+      },
+      "bytes": 3716580,
+      "exportMs": 4609,
+      "worst": {
+        "mean": 0.0008,
+        "off": 0,
+        "overlap": 1
+      },
+      "views": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.0006934758317327666,
+          "off": 0,
+          "px": 937,
+          "perTexel": 1
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.0007060883362740546,
+          "off": 0.00000820714842627929,
+          "px": 953,
+          "perTexel": 1
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.0008431075886312913,
+          "off": 0,
+          "px": 393,
+          "perTexel": 1
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.0007592904633270692,
+          "off": 0.00003832151753209427,
+          "px": 458,
+          "perTexel": 1
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.0005467463938959882,
+          "off": 0,
+          "px": 953,
+          "perTexel": 1
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.0005558497307225867,
+          "off": 0,
+          "px": 937,
+          "perTexel": 1
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.0008431075886312913,
+          "off": 0,
+          "px": 393,
+          "perTexel": 1
+        }
+      ],
+      "withoutTangents": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.0006915894758985128,
+          "off": 0
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.0007042403868408193,
+          "off": 0.00000820714842627929
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.000835989285231263,
+          "off": 0
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.0007583433833390422,
+          "off": 0.00003832151753209427
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.0005459752780672023,
+          "off": 0
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.0005546869992650724,
+          "off": 0
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.000835989285231263,
+          "off": 0
+        }
+      ]
+    },
+    "reed-viper": {
+      "pass": true,
+      "failed": [],
+      "validator": {
+        "errors": [],
+        "warnings": ["NODE_SKINNED_MESH_NON_ROOT"]
+      },
+      "bytes": 4197600,
+      "exportMs": 3233,
+      "worst": {
+        "mean": 0.0262,
+        "off": 0.0212,
+        "overlap": 1
+      },
+      "views": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.02240716624478465,
+          "off": 0.021223218319739376,
+          "px": 2048,
+          "perTexel": 0.58
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.01402091068678187,
+          "off": 0.00009092975676290066,
+          "px": 2048,
+          "perTexel": 0.57
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.01835440733898194,
+          "off": 0.018412425602342533,
+          "px": 479,
+          "perTexel": 1
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.02621892496344754,
+          "off": 0.011347586811474212,
+          "px": 318,
+          "perTexel": 1
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.012092152536461426,
+          "off": 0.0001981807011633207,
+          "px": 2048,
+          "perTexel": 0.57
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.018252547190818827,
+          "off": 0.0027658671505714663,
+          "px": 2048,
+          "perTexel": 0.58
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.01835440733898194,
+          "off": 0.018412425602342533,
+          "px": 479,
+          "perTexel": 1
+        }
+      ],
+      "withoutTangents": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.02257067081861162,
+          "off": 0.021484792999310394
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.014086155944542456,
+          "off": 0.00010229597635826324
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.01877039688321238,
+          "off": 0.01860339285145931
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.026379904467507622,
+          "off": 0.011396288900793843
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.012119717302367723,
+          "off": 0.00020808973622148675
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.018369781143848976,
+          "off": 0.0028975751101224883
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.01877039688321238,
+          "off": 0.01860339285145931
+        }
+      ]
+    },
+    "reef-shark": {
+      "pass": true,
+      "failed": [],
+      "validator": {
+        "errors": [],
+        "warnings": ["NODE_SKINNED_MESH_NON_ROOT"]
+      },
+      "bytes": 2823628,
+      "exportMs": 3370,
+      "worst": {
+        "mean": 0.0074,
+        "off": 0.0001,
+        "overlap": 1
+      },
+      "views": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.0019679453920478755,
+          "off": 0,
+          "px": 1300,
+          "perTexel": 1
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.0022175712681384387,
+          "off": 0.0001200637429326115,
+          "px": 1321,
+          "perTexel": 1
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.001345085305259599,
+          "off": 0.000024978144123891593,
+          "px": 367,
+          "perTexel": 1
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.0074349263666450135,
+          "off": 0,
+          "px": 574,
+          "perTexel": 1
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.0017300638051485433,
+          "off": 0,
+          "px": 1321,
+          "perTexel": 1
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.0017783419249666173,
+          "off": 0,
+          "px": 1300,
+          "perTexel": 1
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.001345085305259599,
+          "off": 0.000024978144123891593,
+          "px": 367,
+          "perTexel": 1
+        }
+      ],
+      "withoutTangents": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.001956123795376634,
+          "off": 0
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.002208327501358594,
+          "off": 0.0001200637429326115
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.0013257639761284695,
+          "off": 0.000024978144123891593
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.007428133679256219,
+          "off": 0
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.0017207097582136828,
+          "off": 0
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.0017663980043503135,
+          "off": 0
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.0013257639761284695,
+          "off": 0.000024978144123891593
+        }
+      ]
+    },
+    "rhino-beetle": {
+      "pass": true,
+      "failed": [],
+      "validator": {
+        "errors": [],
+        "warnings": ["NODE_SKINNED_MESH_NON_ROOT"]
+      },
+      "bytes": 4375804,
+      "exportMs": 5802,
+      "worst": {
+        "mean": 0.0063,
+        "off": 0.0066,
+        "overlap": 1
+      },
+      "views": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.0062505611181419354,
+          "off": 0.006572864097679445,
+          "px": 901,
+          "perTexel": 1
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.004536022844604309,
+          "off": 0.003888090609415941,
+          "px": 916,
+          "perTexel": 1
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.005119472760339888,
+          "off": 0.004170928151367936,
+          "px": 516,
+          "perTexel": 1
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.005932127622089645,
+          "off": 0.003411360728953924,
+          "px": 665,
+          "perTexel": 1
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.00401054220179593,
+          "off": 0.003665802309069581,
+          "px": 916,
+          "perTexel": 1
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.004278519679776639,
+          "off": 0.002721789782978504,
+          "px": 901,
+          "perTexel": 1
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.005119472760339888,
+          "off": 0.004170928151367936,
+          "px": 516,
+          "perTexel": 1
+        },
+        {
+          "view": "spread",
+          "overlap": 1,
+          "mean": 0.006137258397787314,
+          "off": 0.005772037930534972,
+          "px": 901,
+          "perTexel": 1
+        }
+      ],
+      "withoutTangents": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.006420579457651094,
+          "off": 0.007141026926461905
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.004701593820409513,
+          "off": 0.004709178067305022
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.00533181846952667,
+          "off": 0.004890053694707236
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.005735223707723127,
+          "off": 0.003770451332001706
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.004160799743642939,
+          "off": 0.004013088843613015
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.0041736232613574405,
+          "off": 0.002938295788442703
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.00533181846952667,
+          "off": 0.004890053694707236
+        },
+        {
+          "view": "spread",
+          "overlap": 1,
+          "mean": 0.00623702859123859,
+          "off": 0.006306898588190723
+        }
+      ]
+    },
+    "ridgeback-stalker": {
+      "pass": true,
+      "failed": [],
+      "validator": {
+        "errors": [],
+        "warnings": ["NODE_SKINNED_MESH_NON_ROOT"]
+      },
+      "bytes": 5494520,
+      "exportMs": 5353,
+      "worst": {
+        "mean": 0.01,
+        "off": 0.0002,
+        "overlap": 1
+      },
+      "views": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.006907847340026629,
+          "off": 0.00000903122093075763,
+          "px": 1156,
+          "perTexel": 1
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.0069266562469384885,
+          "off": 0,
+          "px": 1175,
+          "perTexel": 1
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.006167865400288286,
+          "off": 0.0002397075567807275,
+          "px": 486,
+          "perTexel": 1
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.010022102690318873,
+          "off": 0,
+          "px": 485,
+          "perTexel": 1
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.004431902521646751,
+          "off": 0,
+          "px": 1175,
+          "perTexel": 1
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.005739344245340588,
+          "off": 0,
+          "px": 1156,
+          "perTexel": 1
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.006167865400288286,
+          "off": 0.0002397075567807275,
+          "px": 486,
+          "perTexel": 1
+        }
+      ],
+      "withoutTangents": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.006937815646343791,
+          "off": 0.00000903122093075763
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.006962134377351228,
+          "off": 0
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.006244509149816308,
+          "off": 0.0002516929346197639
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.010047485518283283,
+          "off": 0
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.004446714177588417,
+          "off": 0
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.005753057626457418,
+          "off": 0
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.006244509149816308,
+          "off": 0.0002516929346197639
+        }
+      ]
+    },
+    "river-crocodile": {
+      "pass": true,
+      "failed": [],
+      "validator": {
+        "errors": [],
+        "warnings": ["NODE_SKINNED_MESH_NON_ROOT"]
+      },
+      "bytes": 5889548,
+      "exportMs": 4909,
+      "worst": {
+        "mean": 0.0246,
+        "off": 0.0339,
+        "overlap": 1
+      },
+      "views": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.015299280042364399,
+          "off": 0.00854171694806762,
+          "px": 1329,
+          "perTexel": 1
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.010218956638370278,
+          "off": 0.00004179073290497832,
+          "px": 1351,
+          "perTexel": 1
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.024636655779028127,
+          "off": 0.03391223923543315,
+          "px": 290,
+          "perTexel": 1
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.020416615796699403,
+          "off": 0.020710551726434257,
+          "px": 435,
+          "perTexel": 1
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.008980825663613249,
+          "off": 0.000008503401360544217,
+          "px": 1351,
+          "perTexel": 1
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.01193498419790573,
+          "off": 0.0014987822394304628,
+          "px": 1329,
+          "perTexel": 1
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.024636655779028127,
+          "off": 0.03391223923543315,
+          "px": 290,
+          "perTexel": 1
+        }
+      ],
+      "withoutTangents": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.015377018603221639,
+          "off": 0.008699119594530782
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.010282232553831323,
+          "off": 0.00004179073290497832
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.024931420460954368,
+          "off": 0.03394649402253965
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.020496258581792968,
+          "off": 0.020843738554256985
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.009007760048478223,
+          "off": 0.000008503401360544217
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.011993407929604323,
+          "off": 0.0015987010553924937
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.024931420460954368,
+          "off": 0.03394649402253965
+        }
+      ]
+    },
+    "rust-raptor": {
+      "pass": true,
+      "failed": [],
+      "validator": {
+        "errors": [],
+        "warnings": ["NODE_SKINNED_MESH_NON_ROOT"]
+      },
+      "bytes": 5724192,
+      "exportMs": 5094,
+      "worst": {
+        "mean": 0.0181,
+        "off": 0.011,
+        "overlap": 1
+      },
+      "views": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.013703429622664763,
+          "off": 0.005896558491982899,
+          "px": 1360,
+          "perTexel": 1
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.013400301071736835,
+          "off": 0.000508839845153051,
+          "px": 1382,
+          "perTexel": 1
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.016087169272838202,
+          "off": 0.010474751159518474,
+          "px": 321,
+          "perTexel": 1
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.018053415983343386,
+          "off": 0.010996525467583352,
+          "px": 661,
+          "perTexel": 1
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.009225233644726527,
+          "off": 0.00009179154140945912,
+          "px": 1382,
+          "perTexel": 1
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.013501197558351247,
+          "off": 0.0031635903477767596,
+          "px": 1360,
+          "perTexel": 1
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.016087169272838202,
+          "off": 0.010474751159518474,
+          "px": 321,
+          "perTexel": 1
+        }
+      ],
+      "withoutTangents": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.013734953591589577,
+          "off": 0.005870958382755766
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.013435875191501787,
+          "off": 0.0005287943488845433
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.01617872286580416,
+          "off": 0.01050080775444265
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.018084922203534363,
+          "off": 0.011015007022991056
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.009246386383001603,
+          "off": 0.00009179154140945912
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.013530403015897589,
+          "off": 0.0031744992800104726
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.01617872286580416,
+          "off": 0.01050080775444265
+        }
+      ]
+    },
+    "sail-back": {
+      "pass": true,
+      "failed": [],
+      "validator": {
+        "errors": [],
+        "warnings": ["NODE_SKINNED_MESH_NON_ROOT"]
+      },
+      "bytes": 5275008,
+      "exportMs": 4187,
+      "worst": {
+        "mean": 0.0143,
+        "off": 0.011,
+        "overlap": 1
+      },
+      "views": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.006775656288540001,
+          "off": 0.0009022484982311181,
+          "px": 1308,
+          "perTexel": 1
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.007437150976498323,
+          "off": 0.000039927172836745776,
+          "px": 1330,
+          "perTexel": 1
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.011015191154337392,
+          "off": 0.0096377334295103,
+          "px": 348,
+          "perTexel": 1
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.014266371881786399,
+          "off": 0.010954815355793351,
+          "px": 515,
+          "perTexel": 1
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.00711300351562143,
+          "off": 0.000027108597039741202,
+          "px": 1330,
+          "perTexel": 1
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.003669314033241917,
+          "off": 0,
+          "px": 1308,
+          "perTexel": 1
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.011015191154337392,
+          "off": 0.0096377334295103,
+          "px": 348,
+          "perTexel": 1
+        }
+      ],
+      "withoutTangents": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.006791530471999147,
+          "off": 0.0008705906561879209
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.0074460987081233975,
+          "off": 0.00003194173826939662
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.011071361501240011,
+          "off": 0.009697844033020759
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.014280710061305261,
+          "off": 0.010923062267805544
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.007135150323970924,
+          "off": 0.000027108597039741202
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.0036730284213933296,
+          "off": 0
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.011071361501240011,
+          "off": 0.009697844033020759
+        }
+      ]
+    },
+    "sand-cheetah": {
+      "pass": true,
+      "failed": [],
+      "validator": {
+        "errors": [],
+        "warnings": ["NODE_SKINNED_MESH_NON_ROOT"]
+      },
+      "bytes": 3834400,
+      "exportMs": 4065,
+      "worst": {
+        "mean": 0.0053,
+        "off": 0.0001,
+        "overlap": 1
+      },
+      "views": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.003962698118718876,
+          "off": 0,
+          "px": 1318,
+          "perTexel": 1
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.003199275089135402,
+          "off": 0,
+          "px": 1340,
+          "perTexel": 1
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.0026944381356140312,
+          "off": 0,
+          "px": 345,
+          "perTexel": 1
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.005282837085449778,
+          "off": 0.00009876543209876543,
+          "px": 614,
+          "perTexel": 1
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.0041442231639124555,
+          "off": 0.000025913449080072558,
+          "px": 1340,
+          "perTexel": 1
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.0034680937664365134,
+          "off": 0,
+          "px": 1318,
+          "perTexel": 1
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.0026944381356140312,
+          "off": 0,
+          "px": 345,
+          "perTexel": 1
+        }
+      ],
+      "withoutTangents": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.003953154816935964,
+          "off": 0
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.003188423597412478,
+          "off": 0
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.0026778169266239915,
+          "off": 0
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.005273255063340541,
+          "off": 0.00009876543209876543
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.004142045714371695,
+          "off": 0.000025913449080072558
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.0034638716998882622,
+          "off": 0
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.0026778169266239915,
+          "off": 0
+        }
+      ]
+    },
+    "sea-turtle": {
+      "pass": true,
+      "failed": [],
+      "validator": {
+        "errors": [],
+        "warnings": ["NODE_SKINNED_MESH_NON_ROOT"]
+      },
+      "bytes": 5725508,
+      "exportMs": 5916,
+      "worst": {
+        "mean": 0.0057,
+        "off": 0.0017,
+        "overlap": 1
+      },
+      "views": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.005555934591227028,
+          "off": 0.0016989339656105894,
+          "px": 972,
+          "perTexel": 1
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.0022804740156648034,
+          "off": 0,
+          "px": 799,
+          "perTexel": 1
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.005670953603093682,
+          "off": 0.001680451621373244,
+          "px": 295,
+          "perTexel": 1
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.0034639086939163895,
+          "off": 0.00021577512308989976,
+          "px": 988,
+          "perTexel": 1
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.00329696446821348,
+          "off": 0,
+          "px": 988,
+          "perTexel": 1
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.005128542989805777,
+          "off": 0.0006531735525674075,
+          "px": 972,
+          "perTexel": 1
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.005670953603093682,
+          "off": 0.001680451621373244,
+          "px": 295,
+          "perTexel": 1
+        }
+      ],
+      "withoutTangents": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.005552662834640623,
+          "off": 0.0016802643615928907
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.00228743751005861,
+          "off": 0
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.005654120341409529,
+          "off": 0.001680451621373244
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.0034606650155954498,
+          "off": 0.00021577512308989976
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.0033044439691047897,
+          "off": 0
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.005129174106299434,
+          "off": 0.0006531735525674075
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.005654120341409529,
+          "off": 0.001680451621373244
+        }
+      ]
+    },
+    "stone-tortoise": {
+      "pass": true,
+      "failed": [],
+      "validator": {
+        "errors": [],
+        "warnings": ["NODE_SKINNED_MESH_NON_ROOT"]
+      },
+      "bytes": 5967772,
+      "exportMs": 5771,
+      "worst": {
+        "mean": 0.0047,
+        "off": 0,
+        "overlap": 1
+      },
+      "views": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.0015825610454266227,
+          "off": 0,
+          "px": 800,
+          "perTexel": 1
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.0021374935948213045,
+          "off": 0,
+          "px": 813,
+          "perTexel": 1
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.004707347628481076,
+          "off": 0,
+          "px": 246,
+          "perTexel": 1
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.002794205020123855,
+          "off": 0,
+          "px": 437,
+          "perTexel": 1
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.000359400048839036,
+          "off": 0,
+          "px": 813,
+          "perTexel": 1
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.0007966492203383816,
+          "off": 0,
+          "px": 800,
+          "perTexel": 1
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.004707347628481076,
+          "off": 0,
+          "px": 246,
+          "perTexel": 1
+        }
+      ],
+      "withoutTangents": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.0015858143347992255,
+          "off": 0
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.0021399097546264266,
+          "off": 0
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.004719001281901416,
+          "off": 0
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.0027954315610087053,
+          "off": 0
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.0003600770479942305,
+          "off": 0
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.0007968698485521756,
+          "off": 0
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.004719001281901416,
+          "off": 0
+        }
+      ]
+    },
+    "storm-wyvern": {
+      "pass": true,
+      "failed": [],
+      "validator": {
+        "errors": [],
+        "warnings": ["NODE_SKINNED_MESH_NON_ROOT"]
+      },
+      "bytes": 5437336,
+      "exportMs": 4810,
+      "worst": {
+        "mean": 0.0121,
+        "off": 0.004,
+        "overlap": 1
+      },
+      "views": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.009403135415591025,
+          "off": 0.001902091719211708,
+          "px": 1827,
+          "perTexel": 1
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.009143896884997255,
+          "off": 0.00020552212252972042,
+          "px": 1857,
+          "perTexel": 1
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.011854800779928627,
+          "off": 0.0039779212593059506,
+          "px": 655,
+          "perTexel": 1
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.01206726041140524,
+          "off": 0.002773201537616694,
+          "px": 842,
+          "perTexel": 1
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.007034253853979637,
+          "off": 0.0000208041858021834,
+          "px": 1857,
+          "perTexel": 1
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.00972799224849365,
+          "off": 0.001272886840359892,
+          "px": 1827,
+          "perTexel": 1
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.011854800779928627,
+          "off": 0.0039779212593059506,
+          "px": 655,
+          "perTexel": 1
+        },
+        {
+          "view": "spread",
+          "overlap": 1,
+          "mean": 0.009030751261338236,
+          "off": 0.0008241111372733694,
+          "px": 2048,
+          "perTexel": 0.6
+        }
+      ],
+      "withoutTangents": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.00939350491432933,
+          "off": 0.0019137253077084158
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.009161962451675502,
+          "off": 0.00021194468885877418
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.01186714148854203,
+          "off": 0.004011993390006644
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.012084397757831948,
+          "off": 0.002773201537616694
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.007044228900174555,
+          "off": 0.0000208041858021834
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.009744101469978518,
+          "off": 0.0012795862447828388
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.01186714148854203,
+          "off": 0.004011993390006644
+        },
+        {
+          "view": "spread",
+          "overlap": 1,
+          "mean": 0.009018877938113592,
+          "off": 0.0008241111372733694
+        }
+      ]
+    },
+    "terror-bird": {
+      "pass": true,
+      "failed": [],
+      "validator": {
+        "errors": [],
+        "warnings": ["NODE_SKINNED_MESH_NON_ROOT"]
+      },
+      "bytes": 4062956,
+      "exportMs": 4902,
+      "worst": {
+        "mean": 0.0019,
+        "off": 0.0001,
+        "overlap": 1
+      },
+      "views": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.0014770131362350153,
+          "off": 0.000011148396303191787,
+          "px": 854,
+          "perTexel": 1
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.0012749374036220345,
+          "off": 0.000011735023176670774,
+          "px": 868,
+          "perTexel": 1
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.0013715214815884548,
+          "off": 0.00009864364981504316,
+          "px": 452,
+          "perTexel": 1
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.001890451749936275,
+          "off": 0.00008342092530490348,
+          "px": 759,
+          "perTexel": 1
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.0012341381356130055,
+          "off": 0,
+          "px": 868,
+          "perTexel": 1
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.0010063017036256291,
+          "off": 0,
+          "px": 854,
+          "perTexel": 1
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.0013715214815884548,
+          "off": 0.00009864364981504316,
+          "px": 452,
+          "perTexel": 1
+        }
+      ],
+      "withoutTangents": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.0014674067525904456,
+          "off": 0.000011148396303191787
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.0012671811668982327,
+          "off": 0.000011735023176670774
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.0013539861759194098,
+          "off": 0.00009864364981504316
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.0018845482200752371,
+          "off": 0.00008342092530490348
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.0012311327373799317,
+          "off": 0
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.001002176753500729,
+          "off": 0
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.0013539861759194098,
+          "off": 0.00009864364981504316
+        }
+      ]
+    },
+    "tomb-spider": {
+      "pass": true,
+      "failed": [],
+      "validator": {
+        "errors": [],
+        "warnings": ["NODE_SKINNED_MESH_NON_ROOT"]
+      },
+      "bytes": 3835272,
+      "exportMs": 5307,
+      "worst": {
+        "mean": 0.0061,
+        "off": 0.0043,
+        "overlap": 1
+      },
+      "views": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.005878745153242627,
+          "off": 0.003084694133297345,
+          "px": 927,
+          "perTexel": 1
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.0035599488313321917,
+          "off": 0.0006700354560428823,
+          "px": 807,
+          "perTexel": 1
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.005495828011918576,
+          "off": 0.001471264367816092,
+          "px": 209,
+          "perTexel": 1
+        },
+        {
+          "view": "front",
+          "overlap": 0.9999854223155195,
+          "mean": 0.00396327641950679,
+          "off": 0.00043733690977739554,
+          "px": 942,
+          "perTexel": 1
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.0053774803439999,
+          "off": 0.0031315539977590716,
+          "px": 942,
+          "perTexel": 1
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.0060769640220902305,
+          "off": 0.004257327693916649,
+          "px": 927,
+          "perTexel": 1
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.005495828011918576,
+          "off": 0.001471264367816092,
+          "px": 209,
+          "perTexel": 1
+        }
+      ],
+      "withoutTangents": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.006052667151562478,
+          "off": 0.003547398253291947
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.0037269182638840497,
+          "off": 0.001284234624082191
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.005473054866900713,
+          "off": 0.0017164750957854406
+        },
+        {
+          "view": "front",
+          "overlap": 0.9999854223155195,
+          "mean": 0.003941394090957369,
+          "off": 0.0006268495706809336
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.005881690441098158,
+          "off": 0.004345390295055592
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.006021528933542125,
+          "off": 0.004553489620449981
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.005473054866900713,
+          "off": 0.0017164750957854406
+        }
+      ]
+    },
+    "tusk-boar": {
+      "pass": true,
+      "failed": [],
+      "validator": {
+        "errors": [],
+        "warnings": ["NODE_SKINNED_MESH_NON_ROOT"]
+      },
+      "bytes": 5459584,
+      "exportMs": 7062,
+      "worst": {
+        "mean": 0.0054,
+        "off": 0.0002,
+        "overlap": 1
+      },
+      "views": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.004190854877330991,
+          "off": 0.00006230296686728222,
+          "px": 677,
+          "perTexel": 1
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.005399498714916789,
+          "off": 0.00020204901471392237,
+          "px": 689,
+          "perTexel": 1
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.004931526963738804,
+          "off": 0.0002009189859706134,
+          "px": 544,
+          "perTexel": 1
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.005096055657637877,
+          "off": 0.00002487067250298448,
+          "px": 326,
+          "perTexel": 1
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.0027363964660753613,
+          "off": 0,
+          "px": 689,
+          "perTexel": 1
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.0030985645251834465,
+          "off": 0,
+          "px": 677,
+          "perTexel": 1
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.004931526963738804,
+          "off": 0.0002009189859706134,
+          "px": 544,
+          "perTexel": 1
+        }
+      ],
+      "withoutTangents": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.004204984009310582,
+          "off": 0.00006230296686728222
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.005407529017452777,
+          "off": 0.00020204901471392237
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.004963398373075669,
+          "off": 0.0002009189859706134
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.005094476857594207,
+          "off": 0.00002487067250298448
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.0027387486491381578,
+          "off": 0
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.003100145225606703,
+          "off": 0
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.004963398373075669,
+          "off": 0.0002009189859706134
+        }
+      ]
+    },
+    "two-tailed-fox": {
+      "pass": true,
+      "failed": [],
+      "validator": {
+        "errors": [],
+        "warnings": ["NODE_SKINNED_MESH_NON_ROOT"]
+      },
+      "bytes": 3945724,
+      "exportMs": 5019,
+      "worst": {
+        "mean": 0.0022,
+        "off": 0.0001,
+        "overlap": 1
+      },
+      "views": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.0014353701725211448,
+          "off": 0,
+          "px": 1018,
+          "perTexel": 1
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.00159237231739924,
+          "off": 0.000011186182826972124,
+          "px": 1035,
+          "perTexel": 1
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.001169080769123747,
+          "off": 0.00006831417689956108,
+          "px": 438,
+          "perTexel": 1
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.0022101614487629122,
+          "off": 0,
+          "px": 472,
+          "perTexel": 1
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.001228263585196266,
+          "off": 0,
+          "px": 1035,
+          "perTexel": 1
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.0011119413867621117,
+          "off": 0,
+          "px": 1018,
+          "perTexel": 1
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.001169080769123747,
+          "off": 0.00006831417689956108,
+          "px": 438,
+          "perTexel": 1
+        }
+      ],
+      "withoutTangents": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.0014280352531411303,
+          "off": 0
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.0015845164001132485,
+          "off": 0.000011186182826972124
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.0011516324688351635,
+          "off": 0.00006831417689956108
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.0022008158433510835,
+          "off": 0
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.001226720921113457,
+          "off": 0
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.0011087264305077544,
+          "off": 0
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.0011516324688351635,
+          "off": 0.00006831417689956108
+        }
+      ]
+    },
+    "wild-horse": {
+      "pass": true,
+      "failed": [],
+      "validator": {
+        "errors": [],
+        "warnings": ["NODE_SKINNED_MESH_NON_ROOT"]
+      },
+      "bytes": 5122240,
+      "exportMs": 5365,
+      "worst": {
+        "mean": 0.006,
+        "off": 0,
+        "overlap": 1
+      },
+      "views": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.004852548623887271,
+          "off": 0,
+          "px": 915,
+          "perTexel": 1
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.00573192227289182,
+          "off": 0,
+          "px": 931,
+          "perTexel": 1
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.005115045261653456,
+          "off": 0,
+          "px": 441,
+          "perTexel": 1
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.006012483615392975,
+          "off": 0,
+          "px": 669,
+          "perTexel": 1
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.0027688410326241427,
+          "off": 0,
+          "px": 931,
+          "perTexel": 1
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.0026975351408951836,
+          "off": 0,
+          "px": 915,
+          "perTexel": 1
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.005115045261653456,
+          "off": 0,
+          "px": 441,
+          "perTexel": 1
+        }
+      ],
+      "withoutTangents": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.004869240780080592,
+          "off": 0
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.005744119256817152,
+          "off": 0
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.005178890817091322,
+          "off": 0
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.006013092026679008,
+          "off": 0
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.002768226137402277,
+          "off": 0
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.0026997401905254634,
+          "off": 0
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.005178890817091322,
+          "off": 0
+        }
+      ]
+    }
+  },
+  "probes": {
+    "relief": {
+      "pass": true,
+      "failed": [],
+      "correlation": 0.913,
+      "ratioOk": true,
+      "bytes": 5447740,
+      "exportMs": 5395,
+      "worst": {
+        "mean": 0.0228,
+        "off": 0.0102,
+        "overlap": 1
+      },
+      "views": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.015960797372113852,
+          "off": 0.0020581709386263466,
+          "px": 1057,
+          "perTexel": 1
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.0142577760934086,
+          "off": 0.00005225261001787039,
+          "px": 1074,
+          "perTexel": 1
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.017132189298768915,
+          "off": 0.010227999147666738,
+          "px": 350,
+          "perTexel": 1
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.022797595380698685,
+          "off": 0.007376656554366917,
+          "px": 410,
+          "perTexel": 1
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.011191709345562472,
+          "off": 0,
+          "px": 1074,
+          "perTexel": 1
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.013526033668211984,
+          "off": 0.00033243207304640754,
+          "px": 1057,
+          "perTexel": 1
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.017132189298768915,
+          "off": 0.010227999147666738,
+          "px": 350,
+          "perTexel": 1
+        }
+      ],
+      "withoutTangents": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.016256985493859358,
+          "off": 0.0020882905133379516
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.014500147092814091,
+          "off": 0.00005225261001787039
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.017692041338170972,
+          "off": 0.010334540805454933
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.022983104945640237,
+          "off": 0.0073127893980520515
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.011293790327047143,
+          "off": 0
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.013606817740036923,
+          "off": 0.00035459421124950136
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.017692041338170972,
+          "off": 0.010334540805454933
+        }
+      ],
+      "probe": {
+        "effect": "relief",
+        "views": [
+          {
+            "view": "three-quarter",
+            "correlation": 0.8806349560862274,
+            "ratio": 0.8817822010550598
+          },
+          {
+            "view": "side",
+            "correlation": 0.9189360307121094,
+            "ratio": 0.910163670587876
+          },
+          {
+            "view": "head",
+            "correlation": 0.8983906288354906,
+            "ratio": 0.9351414681651192
+          },
+          {
+            "view": "close",
+            "correlation": 0.9548717162002572,
+            "ratio": 0.9615053051265018
+          }
+        ]
+      }
+    },
+    "roughness": {
+      "pass": true,
+      "failed": [],
+      "correlation": 0.808,
+      "ratioOk": true,
+      "bytes": 4929112,
+      "exportMs": 4359,
+      "worst": {
+        "mean": 0.0072,
+        "off": 0.0036,
+        "overlap": 1
+      },
+      "views": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.005145285443338389,
+          "off": 0.0019276527815427246,
+          "px": 1057,
+          "perTexel": 1
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.005978336375255557,
+          "off": 0.0009927995903395374,
+          "px": 1074,
+          "perTexel": 1
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.006345224217961033,
+          "off": 0.0036437246963562753,
+          "px": 350,
+          "perTexel": 1
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.007214945853798556,
+          "off": 0.0025227526744371707,
+          "px": 410,
+          "perTexel": 1
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.0043018653026261474,
+          "off": 0.0017153322327692943,
+          "px": 1074,
+          "perTexel": 1
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.004007704928075889,
+          "off": 0.0015181064669119277,
+          "px": 1057,
+          "perTexel": 1
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.006345224217961033,
+          "off": 0.0036437246963562753,
+          "px": 350,
+          "perTexel": 1
+        }
+      ],
+      "withoutTangents": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.00515246673082756,
+          "off": 0.0019276527815427246
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.005991442217800998,
+          "off": 0.0009927995903395374
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.006369089897480891,
+          "off": 0.0036437246963562753
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.00721961848766131,
+          "off": 0.0025227526744371707
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.004303196120240021,
+          "off": 0.0017153322327692943
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.004007159927781853,
+          "off": 0.0015181064669119277
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.006369089897480891,
+          "off": 0.0036437246963562753
+        }
+      ],
+      "probe": {
+        "effect": "roughness",
+        "views": [
+          {
+            "view": "three-quarter",
+            "correlation": 0.7665733045681812,
+            "ratio": 1.072221785820578
+          },
+          {
+            "view": "side",
+            "correlation": 0.9257835588593983,
+            "ratio": 1.0109976358827553
+          },
+          {
+            "view": "head",
+            "correlation": 0.905400932526788,
+            "ratio": 1.0243361909460043
+          },
+          {
+            "view": "close",
+            "correlation": 0.633126391621365,
+            "ratio": 0.9074610404994014
+          }
+        ]
+      }
+    },
+    "glow": {
+      "pass": true,
+      "failed": [],
+      "correlation": 1,
+      "ratioOk": true,
+      "bytes": 3906092,
+      "exportMs": 4915,
+      "worst": {
+        "mean": 0.0057,
+        "off": 0.0003,
+        "overlap": 1
+      },
+      "views": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.0022339168525180152,
+          "off": 0.000060239149423210144,
+          "px": 1057,
+          "perTexel": 1
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.002197143701575482,
+          "off": 0.000010450522003574079,
+          "px": 1074,
+          "perTexel": 1
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.0020160675961552214,
+          "off": 0,
+          "px": 350,
+          "perTexel": 1
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.005672042674112551,
+          "off": 0.0003193357815743254,
+          "px": 410,
+          "perTexel": 1
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.0020958512377294023,
+          "off": 0,
+          "px": 1074,
+          "perTexel": 1
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.002479003546810035,
+          "off": 0.0001994592438278445,
+          "px": 1057,
+          "perTexel": 1
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.0020160675961552214,
+          "off": 0,
+          "px": 350,
+          "perTexel": 1
+        }
+      ],
+      "withoutTangents": [
+        {
+          "view": "three-quarter",
+          "overlap": 1,
+          "mean": 0.0022317407296501,
+          "off": 0.000060239149423210144
+        },
+        {
+          "view": "side",
+          "overlap": 1,
+          "mean": 0.002193584205968227,
+          "off": 0.000010450522003574079
+        },
+        {
+          "view": "head",
+          "overlap": 1,
+          "mean": 0.002013010616562473,
+          "off": 0
+        },
+        {
+          "view": "front",
+          "overlap": 1,
+          "mean": 0.005670427732537435,
+          "off": 0.0003193357815743254
+        },
+        {
+          "view": "top",
+          "overlap": 1,
+          "mean": 0.002094656346855185,
+          "off": 0
+        },
+        {
+          "view": "rear",
+          "overlap": 1,
+          "mean": 0.0024751278885728045,
+          "off": 0.0001994592438278445
+        },
+        {
+          "view": "jaw",
+          "overlap": 1,
+          "mean": 0.002013010616562473,
+          "off": 0
+        }
+      ],
+      "probe": {
+        "effect": "glow",
+        "views": [
+          {
+            "view": "three-quarter",
+            "correlation": 0.9997111097322681,
+            "ratio": 1.00195264245028
+          },
+          {
+            "view": "side",
+            "correlation": 0.9995486666922061,
+            "ratio": 1.0020174052263824
+          },
+          {
+            "view": "head",
+            "correlation": 0.9999474113557243,
+            "ratio": 1.0003439927920572
+          },
+          {
+            "view": "close",
+            "correlation": 0.9999866797423593,
+            "ratio": 0.9999119979886368
+          }
+        ]
+      }
+    }
+  }
+}

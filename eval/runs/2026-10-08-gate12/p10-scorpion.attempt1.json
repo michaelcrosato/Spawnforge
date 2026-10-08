@@ -1,0 +1,92 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Sand Scorpion",
+  "seed": 1010,
+  "extends": "hexapod",
+  "scale": 0.5,
+  "body": {
+    "torso": {
+      "radius": [0.1, 0.15, 0.14, 0.18, 0.17, 0.1],
+      "segments": 8
+    },
+    "head": {
+      "length": 0.2,
+      "radius": 0.08
+    },
+    "tail": {
+      "length": 1.9,
+      "radius": [0.08, 0.045, 0.035],
+      "pitch": 55,
+      "curl": 185,
+      "segments": 10
+    }
+  },
+  "limbs": [
+    {
+      "id": "frontleg",
+      "length": 0.7,
+      "splay": 55
+    },
+    {
+      "id": "midleg",
+      "length": 0.75,
+      "splay": 55
+    },
+    {
+      "id": "hindleg",
+      "length": 0.8,
+      "splay": 55
+    }
+  ],
+  "parts": [
+    {
+      "id": "stinger",
+      "type": "horn.curved",
+      "attach": {
+        "on": "tail",
+        "at": 0.97,
+        "angle": 0
+      },
+      "params": {
+        "length": 0.14,
+        "width": 0.025,
+        "curve": 60,
+        "color": "#3a2410",
+        "tipColor": "#1a0e06"
+      }
+    },
+    {
+      "id": "jaws",
+      "type": "mandible",
+      "params": {
+        "length": 0.12,
+        "color": "#6a4a24"
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#dcc48c",
+      "belly": "#efdfb4",
+      "accent": "#a8884a"
+    },
+    "material": "chitin",
+    "layers": [
+      {
+        "type": "countershade",
+        "softness": 0.3
+      },
+      {
+        "type": "bands",
+        "color": "accent",
+        "count": 14,
+        "width": 0.25,
+        "region": "torso"
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "stalking",
+    "actions": ["bite", "lash", "idle"]
+  }
+}

@@ -10,6 +10,7 @@ outputs (including renders and reports) flow back to whoever asked. The full rea
 flowchart LR
   subgraph frontends[Front-ends]
     sandbox[apps/sandbox]
+    gallery[apps/gallery]
     mcp[packages/mcp]
     cli[packages/cli]
     games[games]
@@ -30,6 +31,9 @@ flowchart LR
   sandbox --> modules
   sandbox --> core
   sandbox --> bake
+  gallery --> three
+  gallery --> modules
+  gallery --> core
   three --> bake
   bake --> core
   games --> three
@@ -45,8 +49,10 @@ flowchart LR
 | `three`   | Skinned mesh assembly, TSL materials, pose sync, glTF export                               | Browser (and headless Chromium) |
 | `bake`    | Export processing: UV atlases, texture maps baked per texel, tangents; levels of detail (`bake/lod`) | Browser, Web Workers, Node |
 | `cli`     | Commands as plain functions returning JSON, plus the `spawnforge` binary                   | Node                            |
-| `mcp`     | MCP tools wrapping the CLI functions                                                       | Node                            |
-| `sandbox` | Live view and editing UI                                                                   | Browser                         |
+| `render`  | Headless renders, exports, the texture round trip and the GPU bench through a Vite-served page | Node, driving headless Chromium |
+| `mcp`     | MCP tools wrapping the CLI functions, and the docs as resources                            | Node                            |
+| `sandbox` | Live view and editing UI: sliders, JSON, breeding, placing parts                           | Browser                         |
+| `gallery` | Static site of curated creatures: thumbnails, viewer, downloads                            | Browser                         |
 
 ## Principles
 
@@ -270,6 +276,12 @@ flat ground, draws a gait cycle and reports cycle time, stride, duty per leg and
 - **Normalization** runs in two steps before validation: `normalizeBlueprint` rewrites the
   core's friendly forms (colour names, `{ "type": "walk" }`), then, after merging with the
   preset, `normalizeModules` runs each module's `normalize` hook on its own parameters.
+- **`anchorAt`** (`packages/core/src/compile/anchor.ts`, [design](design/12.1-placing.md)) inverts
+  part placement: a point on the skin, in the bind pose, gives the `on`, `at`, `angle` and `side`
+  that place a part there, from the section centrelines the compiled creature keeps
+  (`sections`). `placeOnSkin` is the placement itself, sharing `buildParts`' march to the skin
+  (`marchToSurface`); with the distance field, a point inside a bend takes the bone whose
+  placement reaches it. The sandbox's place tab clicks, drags and saves through it and `patch`.
 - **`randomBlueprint`** draws blueprints from the JSON Schema and the module registry; the fuzz
   harness (`pnpm fuzz`, and a slice in the tests) compiles them.
 - **`fingerprint`** hashes a compiled creature's quantized meshes and skeleton. The golden test
@@ -336,12 +348,21 @@ See [runtime.md](runtime.md) for how games use them.
   without maps also relief, glow and membranes' veins and light). Bones are bound at
   the bind pose and default to rest, so a winged creature's nodes rest folded; a clip writes a
   track for every bone that differs from its node default. The render page writes it with `GLTFExporter` in headless
-  Chromium (`Renderer.export`), as the sandbox does in the browser.
+  Chromium (`Renderer.export`); in a browser, `exportGlb` (`@spawnforge/three/glb`, an entry
+  point of its own so games that never export load no bake) does the same, as the sandbox and
+  the gallery use it. [engines.md](engines.md) covers importing the file into Godot, Unity,
+  Unreal and Blender, with a script per engine that reads the extras.
 - **Runtime** (`packages/three/src/runtime.ts`): `createBestiary` compiles through workers or on
   the calling thread with an LRU cache keyed by stable JSON, format and packs. A `Creature` wraps
   the Three.js object, a `MotionController`, sockets and events. Its baked level of detail steers
   with simple kinematics and samples baked gait cycles at the speed's rate, and hides fur; going back to full
   motion calls `MotionController.place`, which plants the feet around the creature's spot.
+- **Crowds** (`packages/three/src/crowd.ts`, [design](design/11.3-crowds.md)): with
+  `createBestiary({ crowds: true })`, creatures at the baked level of detail are drawn by their
+  species' `CrowdDraw`, instanced per level and mesh, skinned on the GPU by a TSL position node
+  from a float texture of the baked clips' bone matrices (`clipRows`); on a frame each member is
+  posed exactly as its own skeleton would pose it. `pnpm bench` measures frame times, draw
+  calls and GPU time with and without them (`Renderer.bench`).
 
 ## Runtime conventions
 

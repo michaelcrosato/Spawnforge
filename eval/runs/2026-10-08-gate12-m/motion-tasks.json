@@ -1,0 +1,62 @@
+[
+  {
+    "id": "m01-horse-gallop",
+    "task": "A horse galloping across flat ground at about 12 m/s.",
+    "blueprint": "/home/user/sf-release/eval/runs/2026-10-08-gate12-m/m01-horse-gallop.attempt1.json",
+    "scenario": "/home/user/sf-release/eval/runs/2026-10-08-gate12-m/m01-horse-gallop.scenario.json"
+  },
+  {
+    "id": "m02-raptor-run",
+    "task": "A two-legged raptor running at about 8 m/s.",
+    "blueprint": "/home/user/sf-release/eval/runs/2026-10-08-gate12-m/m02-raptor-run.attempt0.json",
+    "scenario": "/home/user/sf-release/eval/runs/2026-10-08-gate12-m/m02-raptor-run.scenario.json"
+  },
+  {
+    "id": "m03-cat-pounce",
+    "task": "A big cat pouncing on a target 4 m ahead of it.",
+    "blueprint": "/home/user/sf-release/eval/runs/2026-10-08-gate12-m/m03-cat-pounce.attempt3.json",
+    "scenario": "/home/user/sf-release/eval/runs/2026-10-08-gate12-m/m03-cat-pounce.scenario.json"
+  },
+  {
+    "id": "m04-shark-turn",
+    "task": "A shark cruising through open water, then turning to swim off to one side.",
+    "blueprint": "/home/user/sf-release/eval/runs/2026-10-08-gate12-m/m04-shark-turn.attempt1.json",
+    "scenario": "/home/user/sf-release/eval/runs/2026-10-08-gate12-m/m04-shark-turn.scenario.json"
+  },
+  {
+    "id": "m05-crocodile-lake",
+    "task": "A crocodile walking into a lake, swimming across it and climbing out on the far side.",
+    "blueprint": "/home/user/sf-release/eval/runs/2026-10-08-gate12-m/m05-crocodile-lake.attempt1.json",
+    "scenario": "/home/user/sf-release/eval/runs/2026-10-08-gate12-m/m05-crocodile-lake.scenario.json"
+  },
+  {
+    "id": "m06-dragon-flight",
+    "task": "A dragon taking off, circling, gliding and landing on a slope.",
+    "blueprint": "/home/user/sf-release/eval/runs/2026-10-08-gate12-m/m06-dragon-flight.attempt0.json",
+    "scenario": "/home/user/sf-release/eval/runs/2026-10-08-gate12-m/m06-dragon-flight.scenario.json"
+  },
+  {
+    "id": "m07-moth-hover",
+    "task": "A moth taking off and hovering in place.",
+    "blueprint": "/home/user/sf-release/eval/runs/2026-10-08-gate12-m/m07-moth-hover.attempt0.json",
+    "scenario": "/home/user/sf-release/eval/runs/2026-10-08-gate12-m/m07-moth-hover.scenario.json"
+  },
+  {
+    "id": "m08-hydra-bite-left",
+    "task": "A many-headed hydra biting a target on its left side with its nearest head.",
+    "blueprint": "/home/user/sf-release/eval/runs/2026-10-08-gate12-m/m08-hydra-bite-left.attempt0.json",
+    "scenario": "/home/user/sf-release/eval/runs/2026-10-08-gate12-m/m08-hydra-bite-left.scenario.json"
+  },
+  {
+    "id": "m09-bear-hit-die",
+    "task": "A bear that is hit hard from its left, staggers, and later dies.",
+    "blueprint": "/home/user/sf-release/eval/runs/2026-10-08-gate12-m/m09-bear-hit-die.attempt2.json",
+    "scenario": "/home/user/sf-release/eval/runs/2026-10-08-gate12-m/m09-bear-hit-die.scenario.json"
+  },
+  {
+    "id": "m10-turtle-dive",
+    "task": "A sea turtle diving to 3 m below the surface and coming back up to it.",
+    "blueprint": "/home/user/sf-release/eval/runs/2026-10-08-gate12-m/m10-turtle-dive.attempt1.json",
+    "scenario": "/home/user/sf-release/eval/runs/2026-10-08-gate12-m/m10-turtle-dive.scenario.json"
+  }
+]

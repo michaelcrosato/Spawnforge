@@ -50,11 +50,13 @@ All seven phases of [the plan](docs/plan.md) are done, and the proof of concept 
   sockets and stats, and `createBestiary` runs creatures live in a Three.js game
   ([docs/runtime.md](docs/runtime.md)).
 
-At every gate a model using only the docs and tools did the prompt suite: 20/20 valid blueprints
-and 20/20 renders matched in blind review, then 8/8 variation tasks ([eval/runs](eval/runs)).
-What comes next is [plan 2](docs/plan-2.md): better anatomy and surfaces, wings, fins, tentacles,
-shells and extra heads, running, swimming and flight, texture maps for game engines, and
-installable packages.
+At every gate a model using only the docs and tools did the prompt suites, and its creatures were
+matched to their prompts in blind review ([eval/runs](eval/runs)). Release 0.2 completes
+[plan 2](docs/plan-2.md): muscled anatomy, feet, heads and materials; wings, fins, tentacles,
+shells, coverings and several heads and tails; running, jumping, swimming, flight, hits and
+death; texture maps, levels of detail, crowds and guides for Godot, Unity, Unreal and Blender;
+placing parts by clicking, and a gallery. Format `spawnforge/0.2` is frozen, and the packages
+are ready to publish once the owner chooses a license.
 
 ![Ridgeback stalker](examples/ridgeback-stalker.png)
 

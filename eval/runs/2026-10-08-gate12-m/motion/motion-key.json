@@ -1,0 +1,15 @@
+{
+  "tasks": "eval/runs/2026-10-08-gate12-m/motion-tasks.json",
+  "key": {
+    "m01": "m09-bear-hit-die",
+    "m02": "m01-horse-gallop",
+    "m03": "m02-raptor-run",
+    "m04": "m03-cat-pounce",
+    "m05": "m07-moth-hover",
+    "m06": "m08-hydra-bite-left",
+    "m07": "m04-shark-turn",
+    "m08": "m10-turtle-dive",
+    "m09": "m06-dragon-flight",
+    "m10": "m05-crocodile-lake"
+  }
+}

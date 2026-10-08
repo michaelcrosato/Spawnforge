@@ -1,0 +1,114 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Glow Slug",
+  "seed": 2020,
+  "extends": "serpent",
+  "scale": 1.0,
+  "body": {
+    "muscle": 0.3,
+    "torso": {
+      "radius": [0.14, 0.2, 0.24, 0.2, 0.12],
+      "pitch": 0
+    },
+    "neck": {
+      "length": 0.15,
+      "radius": [0.12, 0.15],
+      "pitch": 8
+    },
+    "head": {
+      "shape": "round",
+      "length": 0.22,
+      "radius": 0.12,
+      "pitch": -5,
+      "lips": 0.5,
+      "tongue": "none",
+      "brow": 0
+    },
+    "tail": {
+      "length": 0.7,
+      "radius": [0.12, 0.08, 0.02],
+      "pitch": 0,
+      "segments": 10
+    }
+  },
+  "limbs": [
+    {
+      "id": "stalk",
+      "role": "tentacle",
+      "attach": {
+        "on": "head",
+        "at": 0.5,
+        "angle": 22,
+        "side": "both"
+      },
+      "length": 0.5,
+      "segments": 5,
+      "radius": [0.04, 0.025],
+      "curl": -45,
+      "curlStart": 0.3
+    }
+  ],
+  "parts": [
+    {
+      "id": "eyes",
+      "attach": {
+        "on": "stalk",
+        "at": 1
+      },
+      "params": {
+        "size": 0.06,
+        "lids": false,
+        "irisColor": "#e8ff80",
+        "scleraColor": "#f0f0d0",
+        "pupil": "round"
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#6f8a3a",
+      "belly": "#cdd49a",
+      "accent": "#2c3a18"
+    },
+    "material": "skin",
+    "layers": [
+      {
+        "type": "countershade",
+        "height": -0.3
+      },
+      {
+        "type": "mottle",
+        "color": "#3c5420",
+        "scale": 0.18,
+        "coverage": 0.45
+      },
+      {
+        "type": "bioluminescence",
+        "color": "#7fffd0",
+        "shape": "spots",
+        "size": 0.03,
+        "density": 0.5,
+        "brightness": 2,
+        "pulse": 0.3,
+        "region": "all"
+      },
+      {
+        "type": "slime",
+        "wetness": 0.9,
+        "drips": 0.5,
+        "color": "#c8e8a0"
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "calm",
+    "gaits": [
+      {
+        "type": "slither",
+        "amplitude": 0.04,
+        "waves": 0.7
+      }
+    ],
+    "actions": ["look", "idle"]
+  }
+}

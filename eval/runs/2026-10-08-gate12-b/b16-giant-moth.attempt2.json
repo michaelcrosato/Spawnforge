@@ -1,0 +1,120 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Giant Moth",
+  "seed": 1606,
+  "extends": "hexapod",
+  "scale": 0.7,
+  "body": {
+    "torso": {
+      "radius": [0.15, 0.19, 0.17, 0.14, 0.11, 0.08]
+    },
+    "head": {
+      "jaw": false,
+      "radius": 0.1
+    }
+  },
+  "limbs": [
+    {
+      "id": "forewing",
+      "role": "wing",
+      "attach": {
+        "on": "torso",
+        "at": 0.15,
+        "side": "both",
+        "angle": 25
+      },
+      "length": 1.4,
+      "segments": 2,
+      "membrane": {
+        "type": "membrane.insect",
+        "shape": "broad",
+        "width": 0.8,
+        "veins": 0.6,
+        "color": "#a8683a",
+        "translucency": 0.25
+      },
+      "radius": [0.014, 0.006]
+    },
+    {
+      "id": "hindwing",
+      "role": "wing",
+      "attach": {
+        "on": "torso",
+        "at": 0.34,
+        "side": "both",
+        "angle": 30
+      },
+      "length": 1.2,
+      "segments": 2,
+      "membrane": {
+        "type": "membrane.insect",
+        "shape": "round",
+        "width": 0.85,
+        "veins": 0.6,
+        "color": "#e2b070",
+        "translucency": 0.25
+      },
+      "radius": [0.014, 0.006]
+    }
+  ],
+  "parts": [
+    {
+      "id": "antennae",
+      "type": "antenna",
+      "attach": {
+        "on": "head",
+        "at": 0.35,
+        "angle": 25,
+        "side": "both"
+      },
+      "params": {
+        "length": 0.5,
+        "shape": "feather",
+        "curve": 50,
+        "color": "#8a6a40"
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#8a6a48",
+      "belly": "#d8c4a0",
+      "accent": "#4a2a18"
+    },
+    "fur": {
+      "length": 0.05,
+      "density": 0.9,
+      "region": ["torso", "head"]
+    },
+    "layers": [
+      {
+        "type": "stripes",
+        "color": "#5a3820",
+        "region": "wings",
+        "count": 6,
+        "width": 0.2,
+        "jitter": 0.4
+      },
+      {
+        "type": "spots",
+        "color": "#2a1a10",
+        "region": "wings",
+        "size": 0.15,
+        "density": 0.4,
+        "ring": 0.7
+      },
+      {
+        "type": "mottle",
+        "color": "#f0d8a8",
+        "region": "wings",
+        "scale": 0.12,
+        "coverage": 0.3,
+        "contrast": 0.4,
+        "strength": 0.6
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "skittish"
+  }
+}

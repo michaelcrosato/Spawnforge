@@ -1,0 +1,68 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Fen Hydra",
+  "seed": 8808,
+  "extends": "quadruped",
+  "scale": 1.5,
+  "body": {
+    "muscle": 0.6,
+    "torso": { "radius": [0.2, 0.27, 0.26, 0.18], "arch": 0.03 },
+    "neck": {
+      "count": 5,
+      "length": 0.8,
+      "radius": [0.06, 0.1],
+      "pitch": 50,
+      "curve": 30,
+      "spread": 110
+    },
+    "head": {
+      "shape": "wedge",
+      "length": 0.26,
+      "radius": 0.07,
+      "jaw": true,
+      "pitch": -15,
+      "brow": 0.5,
+      "tongue": "forked",
+      "lips": 0.1
+    },
+    "tail": { "length": 0.9, "radius": [0.13, 0.15, 0.08, 0.02], "pitch": -20, "curl": 10 }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "length": 0.5,
+      "radius": [0.09, 0.05],
+      "attach": { "angle": 118 },
+      "splay": 30,
+      "foot": { "type": "foot.claw", "toes": 4 }
+    },
+    {
+      "id": "hindleg",
+      "length": 0.52,
+      "radius": [0.1, 0.05],
+      "attach": { "angle": 118 },
+      "splay": 22,
+      "foot": { "type": "foot.claw", "toes": 4 }
+    }
+  ],
+  "parts": [
+    { "id": "teeth", "type": "teeth.row", "params": { "fangs": 2, "scale": 1.2 } },
+    { "id": "eyes", "params": { "irisColor": "#d8e830", "pupil": "slit", "lids": false } },
+    {
+      "id": "crest",
+      "type": "spikes.row",
+      "attach": { "on": "spine", "from": 0.35, "to": 0.9 },
+      "params": { "height": [0.04, 0.07, 0.03] }
+    }
+  ],
+  "skin": {
+    "palette": { "base": "#34503a", "belly": "#b8b07a", "accent": "#1a2a1a" },
+    "material": "scales",
+    "layers": [
+      { "type": "countershade", "softness": 0.25 },
+      { "type": "mottle", "scale": 0.2, "coverage": 0.45, "strength": 0.7 },
+      { "type": "scales", "size": 0.03, "bump": 0.5 }
+    ]
+  },
+  "motion": { "temperament": "lumbering", "actions": ["bite", "roar", "look", "idle"] }
+}

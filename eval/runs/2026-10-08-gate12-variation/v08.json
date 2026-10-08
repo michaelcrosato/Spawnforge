@@ -1,0 +1,130 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Serdrak",
+  "seed": 1419331183,
+  "extends": "biped",
+  "scale": 1.08,
+  "body": {
+    "torso": {
+      "radius": [0.125, 0.164, 0.17, 0.119],
+      "pitch": 7,
+      "crossSection": "round",
+      "segments": 6
+    },
+    "neck": {
+      "length": 0.267,
+      "radius": [0.06, 0.09],
+      "pitch": 55
+    },
+    "head": {
+      "shape": "snout",
+      "length": 0.349,
+      "radius": 0.095,
+      "pitch": -5
+    },
+    "tail": {
+      "length": 1.53,
+      "radius": [0.0992, 0.012],
+      "pitch": 0,
+      "segments": 10
+    }
+  },
+  "limbs": [
+    {
+      "id": "leg",
+      "attach": {
+        "at": 0.6,
+        "angle": 104
+      },
+      "length": 1.21,
+      "segments": 3,
+      "radius": [0.115, 0.055, 0.03],
+      "splay": 8,
+      "foot": {
+        "toeLength": 0.12,
+        "clawLength": 0.05,
+        "spread": 40
+      }
+    },
+    {
+      "id": "arm",
+      "attach": {
+        "at": 0.1,
+        "angle": 100
+      },
+      "length": 0.437,
+      "radius": [0.04, 0.022],
+      "lift": 45,
+      "foot": {
+        "toes": 3,
+        "toeLength": 0.05,
+        "clawLength": 0.04
+      }
+    }
+  ],
+  "parts": [
+    {
+      "id": "eyes",
+      "params": {
+        "pupil": "slit",
+        "scale": 0.811
+      }
+    },
+    {
+      "id": "teeth",
+      "type": "teeth.row",
+      "params": {
+        "fangs": 0,
+        "scale": 0.86,
+        "spacing": 0.2
+      }
+    },
+    {
+      "id": "dorsal",
+      "type": "spikes.row",
+      "attach": {
+        "on": "spine",
+        "from": 0.1,
+        "to": 0.9,
+        "angle": 0
+      },
+      "params": {
+        "count": 12,
+        "height": [0.0663, 0.168, 0.0963],
+        "width": 0.0426,
+        "curve": 16,
+        "jitter": 0.0342
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#7b854b",
+      "belly": "#a6b395",
+      "accent": "#444026"
+    },
+    "material": "scales",
+    "layers": [
+      {
+        "type": "countershade"
+      },
+      {
+        "type": "scales",
+        "size": 0.0312
+      },
+      {
+        "type": "stripes",
+        "region": "back",
+        "count": 15,
+        "width": 0.346
+      },
+      {
+        "type": "mottle",
+        "scale": 0.156
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "stalking"
+  }
+}

@@ -1,6 +1,6 @@
 {
   "name": "@spawnforge/cli",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Spawnforge command line and headless renderer. Every command prints JSON.",
   "license": "UNLICENSED",

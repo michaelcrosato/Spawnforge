@@ -1,0 +1,153 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Grey Rhino",
+  "seed": 1901,
+  "extends": "quadruped",
+  "scale": 1.7,
+  "body": {
+    "muscle": 0.6,
+    "torso": {
+      "radius": [0.19, 0.25, 0.24, 0.2],
+      "arch": 0.05
+    },
+    "neck": {
+      "length": 0.2,
+      "radius": [0.18, 0.23],
+      "pitch": 10
+    },
+    "head": {
+      "shape": "wedge",
+      "length": 0.55,
+      "radius": 0.18,
+      "pitch": -15
+    },
+    "tail": {
+      "length": 0.4,
+      "radius": [0.045, 0.012],
+      "pitch": -30,
+      "curl": 0
+    }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "length": 0.56,
+      "radius": [0.1, 0.06],
+      "attach": {
+        "at": 0.15,
+        "angle": 112
+      },
+      "foot": {
+        "type": "foot.pad",
+        "nails": 3
+      },
+      "splay": 20
+    },
+    {
+      "id": "hindleg",
+      "length": 0.58,
+      "radius": [0.115, 0.06],
+      "attach": {
+        "at": 0.85,
+        "angle": 112
+      },
+      "foot": {
+        "type": "foot.pad",
+        "nails": 3
+      },
+      "splay": 16
+    }
+  ],
+  "parts": [
+    {
+      "id": "horn-big",
+      "type": "horn.curved",
+      "attach": {
+        "on": "head",
+        "at": 0.2,
+        "angle": 0
+      },
+      "params": {
+        "length": 0.42,
+        "width": 0.085,
+        "curve": 35,
+        "color": "#7a7268",
+        "tipColor": "#3a342e",
+        "lean": -30
+      }
+    },
+    {
+      "id": "horn-small",
+      "type": "horn.curved",
+      "attach": {
+        "on": "head",
+        "at": 0.62,
+        "angle": 0
+      },
+      "params": {
+        "length": 0.13,
+        "width": 0.05,
+        "curve": 25,
+        "color": "#7a7268",
+        "tipColor": "#3a342e",
+        "lean": -5
+      }
+    },
+    {
+      "id": "ears",
+      "type": "ear.pointed",
+      "attach": {
+        "on": "head",
+        "at": 0.9,
+        "angle": 55,
+        "side": "both"
+      },
+      "params": {
+        "length": 0.1,
+        "width": 0.05,
+        "curve": 10
+      }
+    },
+    {
+      "id": "eyes",
+      "attach": {
+        "on": "head",
+        "at": 0.5,
+        "angle": 75
+      },
+      "params": {
+        "scale": 0.6,
+        "squint": 0.3
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#7d8083",
+      "belly": "#a2a4a6",
+      "accent": "#4a4d50"
+    },
+    "material": "hide",
+    "layers": [
+      {
+        "type": "countershade",
+        "strength": 0.5
+      },
+      {
+        "type": "scales",
+        "size": 0.05,
+        "bump": 0.5,
+        "gap": 0.4
+      },
+      {
+        "type": "grime",
+        "color": "#5a5448",
+        "amount": 0.4
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "lumbering",
+    "actions": ["bite", "roar", "look", "idle"]
+  }
+}

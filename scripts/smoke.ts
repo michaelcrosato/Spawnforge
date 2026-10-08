@@ -2,7 +2,8 @@
  * Smoke test for the published packages: builds every package's dist/, packs the game-facing
  * ones (core, modules, bake, three), installs the tarballs into a copy of scripts/smoke-game/ in a
  * temporary folder outside the workspace, typechecks and builds it with Vite, and runs it in
- * headless Chromium, which must spawn a creature, walk it and draw triangles.
+ * headless Chromium, which must spawn a creature, walk it and draw triangles. The tool packages
+ * (cli, mcp, render) are packed too, and must carry their binary, docs and page.
  *
  *   node scripts/smoke.ts [--keep]     # --keep leaves the temporary folder for a look
  */
@@ -59,6 +60,36 @@ try {
     if (!existsSync(file)) throw new Error(`pnpm pack did not write ${file}`);
     files[`@spawnforge/${name}`] = `file:${file}`;
   }
+
+  // The tool packages are not installed here, but they must carry what they read at run time:
+  // the MCP server its docs, the renderer its page, the CLI its binary, three its glb entry.
+  const carries: Record<string, string[]> = {
+    cli: ['package/dist/bin.js'],
+    mcp: ['package/dist/bin.js', 'package/dist/docs/blueprint.md', 'package/dist/docs/catalog.md'],
+    render: ['package/dist/index.js', 'package/page/index.html', 'package/page/main.ts'],
+  };
+  for (const [name, needed] of Object.entries(carries)) {
+    const dir = join(root, 'packages', name);
+    const { version } = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')) as {
+      version: string;
+    };
+    run('pnpm', ['pack', '--pack-destination', tarballs], dir);
+    const listed = execFileSync(
+      'tar',
+      ['-tzf', join(tarballs, `spawnforge-${name}-${version}.tgz`)],
+      {
+        encoding: 'utf8',
+      },
+    ).split('\n');
+    const missing = needed.filter((f) => !listed.includes(f));
+    if (missing.length > 0)
+      throw new Error(`@spawnforge/${name} is packed without ${missing.join(', ')}`);
+  }
+  const threeFiles = execFileSync('tar', ['-tzf', (files['@spawnforge/three'] ?? '').slice(5)], {
+    encoding: 'utf8',
+  });
+  if (!threeFiles.includes('package/dist/glb.js'))
+    throw new Error('@spawnforge/three is packed without dist/glb.js');
 
   const game = join(tmp, 'game');
   cpSync(join(root, 'scripts', 'smoke-game'), game, { recursive: true });

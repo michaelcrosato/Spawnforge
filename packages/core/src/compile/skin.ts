@@ -174,17 +174,26 @@ export function computeWeights(
         (neighbours[a] as number[]).push(b);
       }
     }
+    // Half of vertex `u`'s weights, shared among `share` neighbours, onto vertex `v` of `to`.
+    // It reads the slots in place, as `entries` lists them, without building lists.
+    const spread = (to: WeightTable, v: number, from: WeightTable, u: number, share: number) => {
+      const o = u * SLOTS;
+      for (let s = 0; s < SLOTS; s++) {
+        const b = from.bones[o + s] as number;
+        const w = from.weights[o + s] as number;
+        if (b >= 0 && w > 0) to.add(v, b, (w * 0.5) / share);
+      }
+    };
     for (let it = 0; it < smoothing; it++) {
       const next = new WeightTable(n);
       for (let v = 0; v < n; v++) {
-        for (const [b, w] of table.entries(v)) next.add(v, b, w * 0.5);
+        spread(next, v, table, v, 1);
         const nb = neighbours[v] as number[];
         if (nb.length === 0) {
-          for (const [b, w] of table.entries(v)) next.add(v, b, w * 0.5);
+          spread(next, v, table, v, 1);
           continue;
         }
-        for (const u of nb)
-          for (const [b, w] of table.entries(u)) next.add(v, b, (w * 0.5) / nb.length);
+        for (const u of nb) spread(next, v, table, u, nb.length);
         next.normalize(v);
       }
       table.bones.set(next.bones);
@@ -204,7 +213,14 @@ export function applyHelpers(
   helpers: readonly (readonly [number, number, number])[],
 ): void {
   if (helpers.length === 0) return;
+  // Bones that are the upper bone of some joint: a vertex weighted to none of them is left alone,
+  // without listing its weights.
+  const uppers = new Set(helpers.map(([, upper]) => upper));
   for (let v = 0; v < table.count; v++) {
+    let any = false;
+    for (let s = v * SLOTS; s < (v + 1) * SLOTS && !any; s++)
+      if ((table.weights[s] as number) > 0 && uppers.has(table.bones[s] as number)) any = true;
+    if (!any) continue;
     const entries = table.entries(v);
     let changed = false;
     for (const [helper, upper, lower] of helpers) {

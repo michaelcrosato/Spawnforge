@@ -1,0 +1,11 @@
+{
+  "ground": "flat",
+  "water": "sea",
+  "duration": 22,
+  "frames": 16,
+  "start": { "x": 0, "z": 0, "heading": 0, "y": -3 },
+  "calls": [
+    { "at": 0, "do": "moveTo", "to": [0, -3, 200], "speed": 1.5 },
+    { "at": 10, "do": "moveTo", "to": [200, -3, 20], "speed": 1.5 }
+  ]
+}

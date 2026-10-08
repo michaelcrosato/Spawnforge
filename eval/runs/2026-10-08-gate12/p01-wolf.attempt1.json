@@ -1,0 +1,47 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Timber Wolf",
+  "seed": 31,
+  "extends": "quadruped",
+  "scale": 0.95,
+  "body": {
+    "torso": { "radius": [0.14, 0.19, 0.16, 0.12], "arch": 0.05 },
+    "neck": { "length": 0.3, "radius": [0.09, 0.13], "pitch": 25 },
+    "head": { "shape": "snout", "length": 0.46, "radius": 0.1, "pitch": -12 },
+    "tail": { "length": 0.75, "radius": [0.08, 0.16, 0.15, 0.06], "pitch": -25, "curl": 15 }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "length": 0.62,
+      "radius": [0.06, 0.03],
+      "splay": 17,
+      "foot": { "type": "foot.paw", "claws": "short" }
+    },
+    {
+      "id": "hindleg",
+      "length": 0.64,
+      "radius": [0.075, 0.03],
+      "foot": { "type": "foot.paw", "claws": "short" }
+    }
+  ],
+  "parts": [
+    {
+      "id": "ears",
+      "type": "ear.pointed",
+      "attach": { "on": "head", "at": 0.85, "angle": 45 },
+      "params": { "length": 0.11, "width": 0.04 }
+    },
+    { "id": "teeth", "type": "teeth.row", "params": { "fangs": 1 } },
+    { "id": "eyes", "params": { "irisColor": "#d9a030", "squint": 0.3 } }
+  ],
+  "skin": {
+    "palette": { "base": "#7d8083", "belly": "#e2dfd6", "accent": "#4a4d50" },
+    "fur": { "length": 0.03 },
+    "layers": [
+      { "type": "countershade", "height": 0.4, "softness": 0.2 },
+      { "type": "mottle", "scale": 0.08, "contrast": 0.25, "coverage": 0.5, "strength": 0.6 }
+    ]
+  },
+  "motion": { "temperament": "stalking" }
+}

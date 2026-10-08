@@ -1,0 +1,69 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Chestnut Stallion",
+  "seed": 211,
+  "extends": "quadruped",
+  "scale": 1.5,
+  "body": {
+    "muscle": 0.5,
+    "torso": { "radius": [0.17, 0.23, 0.22, 0.2], "arch": 0.03 },
+    "neck": { "length": 0.52, "radius": [0.07, 0.16], "pitch": 58, "crossSection": "tall" },
+    "head": {
+      "shape": "snout",
+      "length": 0.46,
+      "radius": 0.085,
+      "pitch": -50,
+      "crossSection": "tall",
+      "brow": 0.1
+    },
+    "tail": { "length": 0.6, "radius": [0.06, 0.07, 0.04], "pitch": -45, "curl": -10 }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "length": 0.92,
+      "radius": [0.08, 0.03, 0.025],
+      "attach": { "at": 0.12, "angle": 110 },
+      "foot": { "type": "foot.hoof", "cloven": false, "color": "#2a2420" }
+    },
+    {
+      "id": "hindleg",
+      "length": 0.98,
+      "radius": [0.1, 0.03, 0.025],
+      "attach": { "at": 0.9, "angle": 110 },
+      "foot": { "type": "foot.hoof", "cloven": false, "color": "#2a2420" }
+    }
+  ],
+  "parts": [
+    {
+      "id": "ears",
+      "type": "ear.pointed",
+      "attach": { "on": "head", "at": 0.88, "angle": 40 },
+      "params": { "length": 0.12, "width": 0.04 }
+    },
+    { "id": "eyes", "params": { "irisColor": "#3a2414" } },
+    {
+      "id": "mane",
+      "type": "spikes.row",
+      "attach": { "on": "neck", "from": 0, "to": 1, "angle": 0 },
+      "params": {
+        "count": 26,
+        "height": 0.13,
+        "width": 0.04,
+        "curve": 60,
+        "color": "#2a1c14",
+        "tipColor": "#2a1c14"
+      }
+    }
+  ],
+  "skin": {
+    "palette": { "base": "#8a4a28", "belly": "#b88a62", "accent": "#2a1c14" },
+    "material": "hide",
+    "fur": { "length": 0.01, "density": 0.9 },
+    "layers": [{ "type": "countershade", "height": 0.3, "strength": 0.5 }]
+  },
+  "motion": {
+    "temperament": "skittish",
+    "actions": ["bite", "look", "idle"]
+  }
+}

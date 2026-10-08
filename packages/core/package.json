@@ -1,6 +1,6 @@
 {
   "name": "@spawnforge/core",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Blueprint schema, module registry, seeded RNG, compile pipeline, motion controller and analysis. No DOM or renderer.",
   "license": "UNLICENSED",

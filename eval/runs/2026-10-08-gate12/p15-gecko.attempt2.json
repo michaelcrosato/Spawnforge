@@ -1,0 +1,130 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Wall Gecko",
+  "seed": 1505,
+  "extends": "quadruped",
+  "scale": 0.35,
+  "body": {
+    "muscle": 0.3,
+    "torso": {
+      "radius": [0.11, 0.17, 0.16, 0.11],
+      "crossSection": "wide",
+      "arch": 0
+    },
+    "neck": {
+      "length": 0.08,
+      "radius": [0.09, 0.11],
+      "pitch": 5,
+      "crossSection": "wide"
+    },
+    "head": {
+      "shape": "flat",
+      "length": 0.3,
+      "radius": 0.11,
+      "pitch": 0,
+      "crossSection": "wide",
+      "lips": 0,
+      "tongue": "flat"
+    },
+    "tail": {
+      "length": 1.1,
+      "radius": [0.1, 0.075, 0.04, 0.01],
+      "pitch": 0,
+      "curl": 0,
+      "crossSection": "wide"
+    }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "length": 0.42,
+      "attach": {
+        "at": 0.12,
+        "angle": 115
+      },
+      "radius": [0.045, 0.04],
+      "splay": 60,
+      "foot": {
+        "type": "foot.claw",
+        "toes": 5,
+        "toeLength": 0.19,
+        "spread": 130,
+        "clawLength": 0.02,
+        "clawCurve": 50,
+        "clawWidth": 1.5
+      }
+    },
+    {
+      "id": "hindleg",
+      "length": 0.46,
+      "attach": {
+        "at": 0.85,
+        "angle": 115
+      },
+      "radius": [0.055, 0.045],
+      "splay": 60,
+      "foot": {
+        "type": "foot.claw",
+        "toes": 5,
+        "toeLength": 0.2,
+        "spread": 130,
+        "clawLength": 0.02,
+        "clawCurve": 50,
+        "clawWidth": 1.5
+      }
+    }
+  ],
+  "parts": [
+    {
+      "id": "eyes",
+      "attach": {
+        "on": "head",
+        "at": 0.5,
+        "angle": 60
+      },
+      "params": {
+        "scale": 1.9,
+        "bulge": 0.8,
+        "pupil": "slit",
+        "lids": false,
+        "irisColor": "#c8b040"
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#9c9272",
+      "belly": "#e8e0c8",
+      "accent": "#5a4c36"
+    },
+    "material": "scales",
+    "layers": [
+      {
+        "type": "countershade",
+        "height": 0
+      },
+      {
+        "type": "mottle",
+        "color": "accent",
+        "scale": 0.12,
+        "coverage": 0.4
+      },
+      {
+        "type": "bands",
+        "color": "accent",
+        "count": 10,
+        "width": 0.4,
+        "region": "tail"
+      },
+      {
+        "type": "scales",
+        "size": 0.012,
+        "bump": 0.3
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "skittish",
+    "actions": ["bite", "look", "idle"]
+  }
+}

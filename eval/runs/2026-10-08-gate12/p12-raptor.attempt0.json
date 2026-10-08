@@ -1,0 +1,55 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Raptor",
+  "seed": 1202,
+  "extends": "biped",
+  "scale": 0.9,
+  "body": {
+    "torso": {
+      "radius": [0.1, 0.17, 0.17, 0.1],
+      "pitch": 8,
+      "arch": 0.02,
+      "crossSection": "round"
+    },
+    "neck": { "length": 0.3, "radius": [0.06, 0.09], "pitch": 45, "segments": 3 },
+    "head": { "shape": "snout", "length": 0.32, "radius": 0.09, "pitch": -8 },
+    "tail": { "length": 1.8, "radius": [0.1, 0.012], "pitch": 0, "curl": 0, "segments": 6 }
+  },
+  "limbs": [
+    {
+      "id": "leg",
+      "attach": { "on": "torso", "at": 0.6, "angle": 104 },
+      "length": 1.15,
+      "segments": 3,
+      "radius": [0.11, 0.05, 0.03],
+      "splay": 6,
+      "foot": { "type": "foot.talon", "toeLength": 0.18, "talonLength": 0.06 }
+    },
+    {
+      "id": "arm",
+      "attach": { "on": "torso", "at": 0.1, "angle": 100 },
+      "length": 0.3,
+      "segments": 2,
+      "radius": [0.035, 0.02],
+      "lift": 40,
+      "foot": { "type": "foot.claw", "toes": 3, "toeLength": 0.045, "clawLength": 0.04 }
+    }
+  ],
+  "parts": [
+    {
+      "id": "eyes",
+      "attach": { "on": "head", "at": 0.35, "angle": 65 },
+      "params": { "pupil": "slit", "irisColor": "#e0a020", "squint": 0.3 }
+    },
+    { "id": "teeth", "type": "teeth.row", "params": { "fangs": 0, "scale": 1.1 } }
+  ],
+  "skin": {
+    "palette": { "base": "#5f6e34", "belly": "#d9d0a2", "accent": "#2a3014" },
+    "material": "scales",
+    "layers": [
+      { "type": "countershade" },
+      { "type": "stripes", "count": 12, "width": 0.3, "jitter": 0.3, "region": "back" }
+    ]
+  },
+  "motion": { "temperament": "aggressive", "actions": ["bite", "roar", "look", "idle"] }
+}

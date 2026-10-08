@@ -1,0 +1,63 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Sail-back Reptile",
+  "seed": 15,
+  "extends": "quadruped",
+  "scale": 1.2,
+  "body": {
+    "torso": { "radius": [0.12, 0.16, 0.15, 0.1], "arch": 0.04 },
+    "neck": { "length": 0.22, "radius": [0.07, 0.1], "pitch": 15 },
+    "head": {
+      "shape": "wedge",
+      "length": 0.34,
+      "radius": 0.09,
+      "pitch": -5,
+      "lips": 0.1,
+      "tongue": "forked",
+      "brow": 0.4
+    },
+    "tail": { "length": 1.1, "radius": [0.08, 0.01], "pitch": -3, "curl": 8, "segments": 10 }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "length": 0.5,
+      "splay": 50,
+      "attach": { "angle": 112 },
+      "radius": [0.06, 0.03],
+      "foot": { "type": "foot.claw", "toes": 5 }
+    },
+    {
+      "id": "hindleg",
+      "length": 0.56,
+      "splay": 50,
+      "attach": { "angle": 112 },
+      "radius": [0.07, 0.03],
+      "foot": { "type": "foot.claw", "toes": 5 }
+    }
+  ],
+  "parts": [
+    {
+      "id": "sail",
+      "type": "sail",
+      "attach": { "on": "spine", "from": 0.15, "to": 0.55 },
+      "params": {
+        "height": [0.1, 0.5, 0.1],
+        "spines": 14,
+        "color": "#b8502a",
+        "spineColor": "#d8c8a0"
+      }
+    },
+    { "id": "teeth", "type": "teeth.row", "params": { "fangs": 1, "fangScale": 1.4 } }
+  ],
+  "skin": {
+    "palette": { "base": "#6a5a3a", "belly": "#c8b88a", "accent": "#b8502a" },
+    "material": "scales",
+    "layers": [
+      { "type": "countershade" },
+      { "type": "stripes", "color": "#3a2e1c", "count": 12, "region": "back", "width": 0.3 },
+      { "type": "mottle", "color": "#4a3c24", "scale": 0.12, "coverage": 0.3, "strength": 0.5 }
+    ]
+  },
+  "motion": { "temperament": "stalking" }
+}

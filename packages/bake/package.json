@@ -1,6 +1,6 @@
 {
   "name": "@spawnforge/bake",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Export-time mesh work: UV atlases and texture maps baked from the pattern stack, and level-of-detail chains.",
   "license": "UNLICENSED",

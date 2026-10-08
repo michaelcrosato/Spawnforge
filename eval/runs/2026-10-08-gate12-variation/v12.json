@@ -1,0 +1,132 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Zhulgoth",
+  "seed": 538962081,
+  "extends": "quadruped",
+  "scale": 0.971,
+  "body": {
+    "muscle": 0.306,
+    "torso": {
+      "radius": [0.178, 0.25, 0.207, 0.13],
+      "arch": 0.0488
+    },
+    "neck": {
+      "count": 3,
+      "spread": 57,
+      "length": 0.425,
+      "radius": [0.06, 0.1],
+      "pitch": 36,
+      "curve": 15
+    },
+    "head": {
+      "length": 0.335,
+      "radius": 0.0918
+    },
+    "tail": {
+      "length": 0.755,
+      "radius": [0.08, 0.012]
+    }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "length": 0.529,
+      "splay": 10
+    },
+    {
+      "id": "hindleg",
+      "length": 0.537
+    }
+  ],
+  "parts": [
+    {
+      "id": "eyes",
+      "params": {
+        "scale": 1.94,
+        "pupil": "slit",
+        "irisColor": "#c4d129",
+        "lids": false
+      }
+    },
+    {
+      "id": "eyes2",
+      "type": "eye.basic",
+      "attach": {
+        "on": "head",
+        "at": 0.72,
+        "angle": 33,
+        "side": "both"
+      },
+      "params": {
+        "scale": 0.509,
+        "pupil": "slit",
+        "lids": false
+      }
+    },
+    {
+      "id": "eyes3",
+      "type": "eye.basic",
+      "attach": {
+        "on": "head",
+        "at": 0.5,
+        "angle": 70,
+        "side": "both"
+      },
+      "params": {
+        "scale": 0.521,
+        "lids": false
+      }
+    },
+    {
+      "id": "teeth",
+      "type": "teeth.row",
+      "params": {
+        "fangs": 2,
+        "count": 15,
+        "spacing": 0.2
+      }
+    },
+    {
+      "id": "spines",
+      "type": "spikes.row",
+      "attach": {
+        "on": "spine",
+        "from": 0.3,
+        "to": 0.9,
+        "angle": 0
+      },
+      "params": {
+        "count": 8,
+        "height": [0.03, 0.08, 0.03],
+        "jitter": 0.5
+      }
+    },
+    {
+      "id": "shell",
+      "type": "shell",
+      "params": {
+        "dome": 0.5,
+        "scutes": 9
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#3e3341",
+      "belly": "#8f8495",
+      "accent": "#0b090b"
+    },
+    "material": "hide",
+    "layers": [
+      {
+        "type": "countershade",
+        "softness": 0.4,
+        "strength": 0.6
+      },
+      {
+        "type": "slime",
+        "wetness": 0.794
+      }
+    ]
+  }
+}

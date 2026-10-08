@@ -1,0 +1,121 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Gorgoth",
+  "seed": 288778759,
+  "extends": "biped",
+  "scale": 0.4799,
+  "body": {
+    "torso": {
+      "radius": [0.141, 0.259, 0.199, 0.154]
+    },
+    "neck": {
+      "length": 0.239,
+      "radius": [0.09, 0.12]
+    },
+    "head": {
+      "shape": "wedge",
+      "length": 0.326,
+      "radius": 0.131
+    },
+    "tail": {
+      "length": 0.712,
+      "pitch": -35,
+      "radius": [0.07, 0.012]
+    }
+  },
+  "limbs": [
+    {
+      "id": "leg",
+      "length": 1.21,
+      "radius": [0.12, 0.07],
+      "segments": 3,
+      "splay": 4,
+      "attach": {
+        "angle": 105
+      },
+      "foot": {
+        "clawLength": 0.05
+      }
+    },
+    {
+      "id": "arm",
+      "length": 1.13,
+      "radius": [0.09, 0.05]
+    }
+  ],
+  "parts": [
+    {
+      "id": "eyes",
+      "params": {
+        "scale": 1.15,
+        "pupil": "goat",
+        "irisColor": "#ffcc00"
+      }
+    },
+    {
+      "id": "teeth",
+      "type": "teeth.row",
+      "params": {
+        "fangs": 2,
+        "fangScale": 1.39,
+        "spacing": 0.133
+      }
+    },
+    {
+      "id": "horns",
+      "type": "horn.curved",
+      "attach": {
+        "on": "head",
+        "at": 0.6,
+        "angle": 79,
+        "side": "both"
+      },
+      "params": {
+        "length": 0.397,
+        "width": 0.0574,
+        "curve": 365,
+        "turn": -18,
+        "ridges": 3,
+        "color": "#2a1a14",
+        "tipColor": "#d8c8a0"
+      }
+    },
+    {
+      "id": "ears",
+      "type": "ear.pointed",
+      "attach": {
+        "on": "head",
+        "at": 0.85,
+        "angle": 45
+      },
+      "params": {
+        "length": 0.157
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#8d3b31",
+      "belly": "#b8957f",
+      "accent": "#0c0908"
+    },
+    "layers": [
+      {
+        "type": "countershade",
+        "strength": 0.5
+      },
+      {
+        "type": "grime",
+        "amount": 0.672
+      },
+      {
+        "type": "mottle",
+        "scale": 0.115,
+        "strength": 0.6
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "aggressive"
+  }
+}

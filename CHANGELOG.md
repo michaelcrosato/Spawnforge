@@ -1,14 +1,19 @@
 # Changelog
 
-Versions of the packages (`@spawnforge/core`, `modules`, `three`, `cli`, `mcp`, `render`), which
-move together. Nothing is published yet: the packages stay `private` until release 0.2
-(milestone 12.3 of [plan 2](docs/plan-2.md)) and the owner's go-ahead, and their license is the
-owner's choice (`UNLICENSED` until then). Blueprint format changes are in
-[docs/blueprint.md](docs/blueprint.md#format-versions); every command reads older formats.
+Versions of the packages (`@spawnforge/core`, `modules`, `bake`, `three`, `cli`, `mcp`,
+`render`), which move together. Nothing is published yet: the packages stay `private` until the
+owner's go-ahead, and their license is the owner's choice (`UNLICENSED` until then). Blueprint
+format changes are in [docs/blueprint.md](docs/blueprint.md#format-versions); every command reads
+older formats.
 
-## Unreleased
+## 0.2.0
 
-Work in progress toward 0.2, phase by phase (see the plan's status table).
+Plan 2 ([docs/plan-2.md](docs/plan-2.md)), phases 7 to 12: anatomy and surfaces; wings, fins,
+tentacles, shells, coverings and several heads and tails; running, jumping, swimming, flight,
+hits and death; texture maps, levels of detail, crowds and engine guides; placing parts by
+clicking, and the gallery. Format `spawnforge/0.2` is frozen: from here any change to what a
+blueprint may say comes with a new format and a migration. Ready to publish; publishing waits for
+the owner's go-ahead and license.
 
 - **Anatomy (8.1):** `body.muscle` and `limbs[].muscle` are drawn: limbs fill out and taper into
   narrower joints, the torso gets a chest, hips and waist from its limbs, the neck a muscle and a
@@ -351,6 +356,27 @@ Work in progress toward 0.2, phase by phase (see the plan's status table).
   `@spawnforge/three/glb`, with JPEG colour maps past 8 MB as the CLI writes them. A headless test
   builds and serves the site and walks its pages; CI uploads the build. Publishing waits for the
   owner.
+- **Release 0.2 (12.3):** format 0.2 is frozen: a test pins its JSON Schema's hash
+  (`packages/cli/src/frozen.json`), so a change to what a blueprint may say fails until it comes
+  with a new format and a migration. `@spawnforge/mcp` ships the docs it serves as resources and
+  `@spawnforge/render` its page, and the smoke test checks the CLI, MCP and render tarballs. The
+  packages are 0.2.0. README, AGENTS.md, architecture.md, blueprint.md, runtime.md and
+  scenarios.md are brought up to date.
+- **Faster compiles:** parts test points against the skin with the grid's nearby primitives
+  instead of the whole field, and skin weights are smoothed and read without building lists, so
+  multi-headed creatures and wing cases compile about 10–15% faster (best of 20 runs; the rhino
+  beetle's parts take 17 ms instead of 55). Every example and fuzzed blueprint compiles to the
+  same bytes as before.
+- **From gate 12's feedback:** `analyze --summary` keeps `bodyHeight`; a swimmer's filmstrip says
+  it is in the water rather than slithering, and scenario strips say how far the creature
+  "covered" rather than "walked". The docs fix the wolf's and horse's sizes, the bushy-tail,
+  stinger and moth recipes, and say what `fur`, `--expanded`, `lookAt` on several heads,
+  mutation of parts, crossbreed locks, `media.land`, `follow` in water, `after_end`, gait clip
+  frame rates, `--quality` with `--textures`, `extras.stats` and flight events do.
+- **Gate 12:** passed (suites A and B in full, 20/20 valid and matched blind, suite B 20/20
+  meeting `expects`; suite M 10/10 and 10/10 blind; variation 12/12; export 11/11; the fuzz;
+  every budget; the round trip and validator; the smoke test). See
+  `eval/runs/2026-10-08-gate12/notes.md`.
 
 ## 0.1.0
 

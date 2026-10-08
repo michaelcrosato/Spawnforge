@@ -1,0 +1,147 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Grey Wolf Pack",
+  "seed": 101,
+  "extends": "quadruped",
+  "scale": {
+    "min": 0.9,
+    "max": 1.3
+  },
+  "body": {
+    "torso": {
+      "radius": [0.15, 0.2, 0.17, 0.12],
+      "arch": 0.05
+    },
+    "neck": {
+      "length": 0.3,
+      "radius": [0.09, 0.14],
+      "pitch": 25
+    },
+    "head": {
+      "shape": "snout",
+      "length": 0.4,
+      "radius": 0.105,
+      "jaw": true,
+      "pitch": -12
+    },
+    "tail": {
+      "length": 0.65,
+      "radius": [0.07, 0.13, 0.1, 0.02],
+      "pitch": -25,
+      "curl": 15
+    }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "length": {
+        "min": 0.58,
+        "max": 0.7
+      },
+      "radius": [0.06, 0.03],
+      "attach": {
+        "angle": 122
+      },
+      "splay": 22,
+      "foot": {
+        "type": "foot.paw",
+        "toes": 4,
+        "claws": "short",
+        "padColor": "#2a2624"
+      }
+    },
+    {
+      "id": "hindleg",
+      "length": {
+        "min": 0.6,
+        "max": 0.72
+      },
+      "radius": [0.075, 0.03],
+      "attach": {
+        "angle": 120
+      },
+      "foot": {
+        "type": "foot.paw",
+        "toes": 4,
+        "claws": "short",
+        "padColor": "#2a2624"
+      },
+      "splay": 10
+    }
+  ],
+  "parts": [
+    {
+      "id": "ears",
+      "type": "ear.pointed",
+      "attach": {
+        "on": "head",
+        "at": 0.85,
+        "angle": 45
+      },
+      "params": {
+        "length": {
+          "min": 0.08,
+          "max": 0.15
+        },
+        "width": {
+          "min": 0.03,
+          "max": 0.055
+        }
+      }
+    },
+    {
+      "id": "teeth",
+      "type": "teeth.row",
+      "params": {
+        "fangs": 1
+      }
+    },
+    {
+      "id": "eyes",
+      "params": {
+        "irisColor": "#d9a030",
+        "squint": 0.3
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": {
+        "min": "#5c5f62",
+        "max": "#a3a5a7"
+      },
+      "belly": "#d6d3cb",
+      "accent": "#4a4d50"
+    },
+    "fur": {
+      "length": 0.028
+    },
+    "layers": [
+      {
+        "type": "countershade",
+        "height": 0.4,
+        "softness": 0.2
+      },
+      {
+        "type": "mottle",
+        "scale": 0.07,
+        "contrast": 0.25,
+        "coverage": 0.5,
+        "strength": 0.7
+      },
+      {
+        "type": "mottle",
+        "color": "#35383b",
+        "scale": 0.22,
+        "coverage": 0.35,
+        "contrast": 0.2,
+        "region": "back",
+        "strength": 0.6
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "stalking",
+    "actions": ["bite", "roar", "look", "idle"]
+  }
+}
