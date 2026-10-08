@@ -333,6 +333,15 @@ Work in progress toward 0.2, phase by phase (see the plan's status table).
   where to add its action or gait; runtime.md documents the JPEG colour maps of big files, when a
   level of detail is under a pixel, `MSFT_screencoverage`, and the units of `fur.length`,
   `glow[].pulse` and a leap's `distance`; blueprint.md no longer says glow stays out of exports.
+- **Click-to-place (12.1):** the sandbox's place tab: pick a part, click the creature to put it
+  there, drag a part (or its root) to move it, sliders for its lengths and angles, undo and redo,
+  and save to `creatures/` (`POST /__creatures/<name>` on the dev server;
+  `$SPAWNFORGE_CREATURES` points it elsewhere). Every edit is a `patch`. Core's `anchorAt` is the
+  inverse of part placement: a point on the skin gives the `on`, `at`, `angle` and `side` that
+  place a part there, round-tripping within 1 mm on every section and limb of the examples;
+  `placeOnSkin` is the placement, sharing `buildParts`' march to the skin (`marchToSurface`);
+  `CompiledCreature.sections` holds the centrelines. The worker compiler takes `{ field }`. A
+  Playwright test places, moves, removes and saves a horn (`apps/sandbox/src/place.test.ts`).
 
 ## 0.1.0
 

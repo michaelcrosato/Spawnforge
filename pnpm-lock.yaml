@@ -78,6 +78,9 @@ importers:
         specifier: 'catalog:'
         version: 0.186.1
     devDependencies:
+      '@spawnforge/render':
+        specifier: workspace:*
+        version: link:../../packages/render
       '@types/three':
         specifier: 'catalog:'
         version: 0.186.0

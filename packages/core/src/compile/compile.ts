@@ -163,6 +163,31 @@ export interface GameSocket {
   readonly offset: Vec3;
 }
 
+/** One bone's stretch of a section's centreline, in the bind pose (metres, model space). */
+export interface SectionSegment {
+  readonly bone: number;
+  /** The section's `at` at the bone's head and tail. */
+  readonly t0: number;
+  readonly t1: number;
+  readonly head: Vec3;
+  readonly tail: Vec3;
+  /** Perpendicular to the bone: dorsal on the body, the front face on limbs. */
+  readonly up: Vec3;
+  readonly r0: number;
+  readonly r1: number;
+  /** Cross-section scale across and up the bone. */
+  readonly cross: readonly [number, number];
+}
+
+/** A body section's or limb's centreline, as part placement samples it. */
+export interface SectionData {
+  /** A body section (`torso`, `head`, …) or a limb (`foreleg.L`), whose angle 90 faces out. */
+  readonly kind: 'body' | 'limb';
+  /** A limb's mirror (1 left, -1 right, 0 centre); 0 for body sections. */
+  readonly mirror: 1 | -1 | 0;
+  readonly segments: readonly SectionSegment[];
+}
+
 export interface CompiledCreature {
   readonly name: string;
   readonly seed: number;
@@ -179,6 +204,11 @@ export interface CompiledCreature {
   /** Gait timing and temperament for the motion controller. */
   readonly motion: MotionData;
   readonly sockets: readonly GameSocket[];
+  /**
+   * What parts attach to, by name (`torso`, `head`, `foreleg.L`, …): each body section's and
+   * limb's centreline, for placing parts by a point on the skin (`anchorAt`, 12.1).
+   */
+  readonly sections: Readonly<Record<string, SectionData>>;
   readonly bounds: { readonly min: Vec3; readonly max: Vec3 };
   /**
    * Labelled points for debug renders: every part and limb by id, and the body sections, in the
@@ -1001,6 +1031,7 @@ export function compileCreature(
         : {}),
     },
     sockets,
+    sections: sectionsOf(skeleton.paths, bones, limbMirror),
     markers,
     bounds: { min: v3(min), max: v3(max) },
     ...(spreadBounds ? { spreadBounds } : {}),
@@ -1140,6 +1171,37 @@ function posedBounds(
     }
   }
   return { min, max };
+}
+
+/** The skeleton's paths that parts attach to, as plain data (toes, digits and the spine left out). */
+function sectionsOf(
+  paths: ReadonlyMap<string, readonly { bone: number; t0: number; t1: number }[]>,
+  bones: readonly BoneDef[],
+  limbMirror: ReadonlyMap<string, number>,
+): Record<string, SectionData> {
+  const sections: Record<string, SectionData> = {};
+  for (const [name, path] of [...paths].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) {
+    if (name === 'spine' || /\.(toe|d)\d+$/.test(name)) continue;
+    sections[name] = {
+      kind: limbMirror.has(name) ? 'limb' : 'body',
+      mirror: (limbMirror.get(name) ?? 0) as 1 | -1 | 0,
+      segments: path.map((seg) => {
+        const b = bones[seg.bone] as BoneDef;
+        return {
+          bone: seg.bone,
+          t0: seg.t0,
+          t1: seg.t1,
+          head: v3(b.head),
+          tail: v3(b.tail),
+          up: v3(b.up),
+          r0: b.r0,
+          r1: b.r1,
+          cross: [b.cross[0], b.cross[1]] as const,
+        };
+      }),
+    };
+  }
+  return sections;
 }
 
 function bonesToData(bones: readonly BoneDef[]): BonesData {

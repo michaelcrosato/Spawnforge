@@ -10,5 +10,11 @@ export default defineConfig({
   build: { chunkSizeWarningLimit: 1600 },
   // watlas finds its WASM beside itself (`new URL(…, import.meta.url)`), which pre-bundling breaks.
   optimizeDeps: { exclude: ['watlas'] },
-  plugins: [creaturesFolder(fileURLToPath(new URL('../../creatures/', import.meta.url)))],
+  // The creatures folder: the repository's, or $SPAWNFORGE_CREATURES (the place test's).
+  plugins: [
+    creaturesFolder(
+      process.env.SPAWNFORGE_CREATURES ??
+        fileURLToPath(new URL('../../creatures/', import.meta.url)),
+    ),
+  ],
 });

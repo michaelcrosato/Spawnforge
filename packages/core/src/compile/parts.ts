@@ -413,6 +413,44 @@ export interface PartsInput {
 
 const Y = new Vector3(0, 1, 0);
 
+/**
+ * March from the axis point along `dir` to the skin (or the section radius for thin bones):
+ * where a part on a section sits (and, inverted, `anchorAt` in anchor.ts).
+ */
+export function marchToSurface(
+  evaluator: SdfEvaluator,
+  point: Vector3,
+  dir: Vector3,
+  radius: number,
+): { position: Vector3; normal: Vector3 } {
+  const reach = radius * 3 + 1e-4;
+  const f = (s: number) =>
+    evaluator.eval(point.x + dir.x * s, point.y + dir.y * s, point.z + dir.z * s);
+  let lo = 0;
+  let hi = -1;
+  const steps = 30;
+  for (let i = 1; i <= steps; i++) {
+    const s = (reach * i) / steps;
+    if (f(s) >= 0) {
+      hi = s;
+      lo = (reach * (i - 1)) / steps;
+      break;
+    }
+  }
+  if (hi < 0 || f(0) >= 0) {
+    return { position: point.clone().addScaledVector(dir, radius), normal: dir.clone() };
+  }
+  for (let i = 0; i < 24; i++) {
+    const mid = (lo + hi) / 2;
+    if (f(mid) >= 0) hi = mid;
+    else lo = mid;
+  }
+  const position = point.clone().addScaledVector(dir, hi);
+  const normal = evaluator.gradient(position.x, position.y, position.z, radius * 0.05);
+  if (normal.dot(dir) < 0.2) normal.copy(dir);
+  return { position, normal };
+}
+
 /** Builds every part and foot, appending eye bones to `input.bones`. Returns eye bone ids. */
 export function buildParts(
   parts: readonly PartSpec[],
@@ -454,35 +492,8 @@ export function buildParts(
     return fallback;
   };
 
-  /** March from the axis point along `dir` to the skin (or the section radius for thin bones). */
-  const toSurface = (point: Vector3, dir: Vector3, radius: number) => {
-    const reach = radius * 3 + 1e-4;
-    const f = (s: number) =>
-      evaluator.eval(point.x + dir.x * s, point.y + dir.y * s, point.z + dir.z * s);
-    let lo = 0;
-    let hi = -1;
-    const steps = 30;
-    for (let i = 1; i <= steps; i++) {
-      const s = (reach * i) / steps;
-      if (f(s) >= 0) {
-        hi = s;
-        lo = (reach * (i - 1)) / steps;
-        break;
-      }
-    }
-    if (hi < 0 || f(0) >= 0) {
-      return { position: point.clone().addScaledVector(dir, radius), normal: dir.clone() };
-    }
-    for (let i = 0; i < 24; i++) {
-      const mid = (lo + hi) / 2;
-      if (f(mid) >= 0) hi = mid;
-      else lo = mid;
-    }
-    const position = point.clone().addScaledVector(dir, hi);
-    const normal = evaluator.gradient(position.x, position.y, position.z, radius * 0.05);
-    if (normal.dot(dir) < 0.2) normal.copy(dir);
-    return { position, normal };
-  };
+  const toSurface = (point: Vector3, dir: Vector3, radius: number) =>
+    marchToSurface(evaluator, point, dir, radius);
 
   /**
    * `toSurface` near a known hit: neighbouring points on a grid lie at about the same depth, so a

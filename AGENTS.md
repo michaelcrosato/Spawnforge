@@ -114,8 +114,10 @@ skeletons on a frame; `pnpm bench`, whose laptop numbers await the owner;
 Blender, with an extras reader per engine; the Python reader and Blender's import are tested in
 CI). Gate 11 passed: suites A and B re-scored 20/20, the export eval 11/11 with its new tasks
 (levels of detail, root motion, engine notes), the round trip 32/32 and the validator clean, the
-smoke test passing, the bench pending the owner's laptop (`eval/runs/2026-10-08-gate11/`). Next
-is phase 12.
+smoke test passing, the bench pending the owner's laptop (`eval/runs/2026-10-08-gate11/`).
+Then 12.1 (the sandbox's place tab: click the creature to place a part, drag to move it,
+undo, save to `creatures/`; core's `anchorAt` inverts part placement, round-tripping on every
+section and limb; `docs/design/12.1-placing.md`).
 
 ## Repo map
 
@@ -128,7 +130,7 @@ is phase 12.
 | `packages/cli`     | The `spawnforge` command. Every command prints JSON. Headless renderer later                     | core, modules                    |
 | `packages/mcp`     | MCP server: a thin wrapper over the CLI command functions                                        | cli, render                      |
 | `packages/render`  | Headless contact sheets, exports and the texture round trip through Chromium (Playwright) and a Vite-served page, WebGL 2 backend | core, modules, three, bake |
-| `apps/sandbox`     | Vite app: terrain course, walking creatures, actions, sliders, JSON panel, gallery, `creatures/` watch | core, modules, three, bake |
+| `apps/sandbox`     | Vite app: terrain course, walking creatures, actions, sliders, JSON panel, gallery, breeding, placing parts, `creatures/` watch and save | core, modules, three, bake; render (its test) |
 | `examples/`        | Blueprints beside their renders; also the golden test set                                        |                                  |
 | `eval/`            | The 20-prompt agent eval: prompts, scorer and one folder per run                                  |                                  |
 | `scripts/`         | `generate.ts`: writes every generated file (pack index, catalogue, JSON Schema)                  |                                  |

@@ -64,6 +64,12 @@ export {
   type ValidationResult,
   validateBlueprint,
 } from './blueprint/validate.ts';
+export {
+  type Anchor,
+  type AnchorResult,
+  anchorAt,
+  placeOnSkin,
+} from './compile/anchor.ts';
 export * from './compile/compile.ts';
 export { type LimbIkSetup, solveLimb } from './compile/ik.ts';
 export type { MembraneLook, Spar } from './compile/membranes.ts';

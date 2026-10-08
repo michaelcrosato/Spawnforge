@@ -5,6 +5,8 @@ export interface CompileRequest {
   readonly id: number;
   readonly blueprint: unknown;
   readonly quality: Quality;
+  /** Keep the distance field (`compile` with `field`), for placing parts on the skin. */
+  readonly field?: boolean;
 }
 export type CompileReply =
   | {
@@ -19,6 +21,7 @@ export interface WorkerCompiler {
   compile(
     blueprint: unknown,
     quality?: Quality,
+    options?: { readonly field?: boolean },
   ): Promise<{ compiled: CompiledCreature; ms: number }>;
   terminate(): void;
 }
@@ -45,12 +48,17 @@ export function createWorkerCompiler(workers: readonly Worker[]): WorkerCompiler
     };
   }
   return {
-    compile(blueprint, quality = 'medium') {
+    compile(blueprint, quality = 'medium', options = {}) {
       const id = next++;
       const worker = workers[round++ % workers.length] as Worker;
       return new Promise((resolve, reject) => {
         pending.set(id, { resolve, reject });
-        worker.postMessage({ id, blueprint, quality } satisfies CompileRequest);
+        worker.postMessage({
+          id,
+          blueprint,
+          quality,
+          ...(options.field ? { field: true } : {}),
+        } satisfies CompileRequest);
       });
     },
     terminate() {
