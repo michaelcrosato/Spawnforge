@@ -1,5 +1,5 @@
 {
-  "description": "Phase 6 export eval: tasks that need export, stats and reading a .glb. Each names the files to save in the run folder; eval/export.ts checks them.",
+  "description": "Export eval (phase 6, extended in 11.1): tasks that need export, stats, texture maps and reading a .glb. Each names the files to save in the run folder; eval/export.ts checks them.",
   "tasks": [
     {
       "id": "x01-clip-subset",
@@ -16,6 +16,22 @@
     {
       "id": "x04-read-export",
       "task": "A game needs three things about examples/ridgeback-stalker.json once exported: which node in the .glb a fire-breath effect should be attached to, how long the bite animation lasts in seconds, and at what time in the bite the jaw snaps shut (the moment to deal damage). Export it as x04.glb and write x04.json as { \"node\": …, \"biteSeconds\": …, \"contactSeconds\": … } with what you read from the file."
+    },
+    {
+      "id": "x05-sharp-maps",
+      "task": "Export examples/grey-wolf.json as x05.glb with the sharpest texture maps the exporter offers, for a close-up cutscene."
+    },
+    {
+      "id": "x06-vertex-colours",
+      "task": "A mobile game cannot afford texture maps. Export examples/cave-bat.json as x06.glb with its colours in the vertices only, and no images in the file."
+    },
+    {
+      "id": "x07-glow",
+      "task": "Make a creature whose skin glows in the dark with a pulsing pattern, export it as x07.glb so the glow shows in a game engine, and write x07.json as { \"pulseHz\": … } with how many times a second its glow pulses, read from the exported file (the game animates the pulse itself)."
+    },
+    {
+      "id": "x08-live-only",
+      "task": "Export examples/sand-cheetah.json as x08.glb. Its artist asks what will look different in the game engine than in the Spawnforge sandbox. Write x08.json as { \"differences\": [ … ] }, one short string per live effect the file leaves out or approximates, and { \"furLengthMetres\": … } in the same object with the fur length the file gives for the engine's own fur."
     }
   ]
 }

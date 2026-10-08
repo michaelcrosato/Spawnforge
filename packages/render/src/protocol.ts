@@ -110,6 +110,11 @@ export interface ExportRequest {
   readonly fps?: number;
   /** JSON stored in the file's extras (`extras.spawnforge`), e.g. the blueprint and stats. */
   readonly extras?: Record<string, unknown>;
+  /**
+   * Texture maps (docs/design/11.1-textures.md): the skin's map size (512, 1024 or 2048; the
+   * others follow), or "none" for vertex colours only. Default: by quality.
+   */
+  readonly textures?: number | 'none';
 }
 
 export interface ExportInfo {
@@ -126,12 +131,91 @@ export interface ExportInfo {
   /** Things worth knowing about the file, e.g. an idle that is only a standing pose. */
   readonly notes: readonly string[];
   readonly exportMs: number;
+  /** The maps written: the skin's size, which meshes have which maps, and the bake's time. */
+  readonly textures?: {
+    readonly size: number;
+    readonly maps: Readonly<Record<string, readonly string[]>>;
+    readonly ms: number;
+    readonly timings: Readonly<Record<string, number>>;
+  };
 }
 
 export interface ExportResponse {
   /** The .glb, base64. */
   readonly glb: string;
   readonly info: ExportInfo;
+}
+
+/** A deliberate mistake in the bake, which the round trip must catch (its mutation test). */
+export type Mutation =
+  | 'green'
+  | 'tangent-sign'
+  | 'normal-srgb'
+  | 'orm-swap'
+  | 'glow-clip'
+  | 'v-flip'
+  | 'shift';
+
+/**
+ * The round trip (docs/design/11.1-textures.md, decision 13): the page exports the blueprint,
+ * loads the `.glb` back and compares it with the live creature, view by view.
+ */
+export interface RoundTripRequest {
+  readonly blueprint: unknown;
+  readonly quality?: 'low' | 'medium' | 'high';
+  /** The skin's map size (default by quality). */
+  readonly textures?: number;
+  /**
+   * The most pixels a view is drawn across (default 2048, in tiles of 1024); views take about one
+   * pixel a texel.
+   */
+  readonly size?: number;
+  /** Also compare with the tangents taken out (default true). */
+  readonly withoutTangents?: boolean;
+  /** Return each view's two images as PNG data URLs. */
+  readonly images?: boolean;
+  readonly mutate?: Mutation;
+  /**
+   * Also score one effect's own contribution (with it minus without it) on each side, under a
+   * grazing key light: its correlation and its size, loaded over live.
+   */
+  readonly probe?: 'relief' | 'roughness' | 'glow';
+  /** Also return the exported file (base64), e.g. for the glTF validator. */
+  readonly glb?: boolean;
+}
+
+export interface RoundTripView {
+  readonly view: string;
+  /** Silhouettes' intersection over union. */
+  readonly overlap: number;
+  /** Mean absolute difference within the shared silhouette, 0 to 1. */
+  readonly mean: number;
+  /** Share of those pixels off by more than 20% in some channel. */
+  readonly off: number;
+  /** The view's width and height in pixels. */
+  readonly px?: number;
+  /** Pixels per texel of the skin's map across the view (the head's map is twice as dense). */
+  readonly perTexel?: number;
+  /** Live, then loaded, as PNG data URLs. */
+  readonly images?: readonly [string, string];
+}
+
+export interface RoundTripResponse {
+  readonly bytes: number;
+  /** The exported `.glb` in base64, if asked for. */
+  readonly glb?: string;
+  readonly exportMs: number;
+  readonly textures?: ExportInfo['textures'];
+  readonly views: readonly RoundTripView[];
+  readonly withoutTangents?: readonly RoundTripView[];
+  readonly probe?: {
+    readonly effect: 'relief' | 'roughness' | 'glow';
+    readonly views: readonly {
+      readonly view: string;
+      readonly correlation: number;
+      readonly ratio: number;
+    }[];
+  };
 }
 
 /**

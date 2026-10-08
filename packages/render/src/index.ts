@@ -6,21 +6,31 @@ import type {
   ExportInfo,
   ExportRequest,
   ExportResponse,
+  Mutation,
   ParityRequest,
   ParityResponse,
   RenderInfo,
   RenderRequest,
   RenderResponse,
+  RoundTripRequest,
+  RoundTripResponse,
+  RoundTripView,
   View,
 } from './protocol.ts';
 
+export { PROBES } from './probes.ts';
+export { ROUND_TRIP_BARS, type RoundTripVerdict, roundTripVerdict } from './verdict.ts';
 export type {
   ExportInfo,
   ExportRequest,
+  Mutation,
   ParityRequest,
   ParityResponse,
   RenderInfo,
   RenderRequest,
+  RoundTripRequest,
+  RoundTripResponse,
+  RoundTripView,
   View,
 };
 
@@ -149,8 +159,8 @@ export class Renderer {
   }
 
   /**
-   * Exports a blueprint as binary glTF (.glb): skinned mesh with baked vertex colours, skeleton,
-   * baked clips, sockets as nodes, and `extras` stored in the file.
+   * Exports a blueprint as binary glTF (.glb): skinned meshes with texture maps (or vertex
+   * colours), skeleton, baked clips, sockets as nodes, and `extras` stored in the file.
    */
   async export(request: ExportRequest): Promise<{ glb: Buffer; info: ExportInfo }> {
     const response = (await this.page.evaluate(
@@ -163,6 +173,22 @@ export class Renderer {
       request,
     )) as ExportResponse;
     return { glb: Buffer.from(response.glb, 'base64'), info: response.info };
+  }
+
+  /**
+   * The texture round trip (docs/design/11.1-textures.md): exports the blueprint with its maps,
+   * loads the `.glb` back in the page and compares it with the live creature, view by view.
+   */
+  async roundTrip(request: RoundTripRequest): Promise<RoundTripResponse> {
+    return (await this.page.evaluate(
+      (req) =>
+        (
+          (globalThis as PageGlobals).spawnforgeRoundTrip as (
+            r: RoundTripRequest,
+          ) => Promise<RoundTripResponse>
+        )(req),
+      request,
+    )) as RoundTripResponse;
   }
 
   /**
@@ -242,6 +268,7 @@ interface PageGlobals {
   spawnforgeRender?: (request: RenderRequest) => Promise<RenderResponse>;
   spawnforgeFingerprint?: (blueprint: unknown, quality: 'low' | 'medium' | 'high') => string;
   spawnforgeExport?: (request: ExportRequest) => Promise<ExportResponse>;
+  spawnforgeRoundTrip?: (request: RoundTripRequest) => Promise<RoundTripResponse>;
   spawnforgeParity?: (request: ParityRequest) => Promise<ParityResponse>;
   spawnforgeDiff?: (a: string, b: string, threshold: number) => Promise<unknown>;
 }

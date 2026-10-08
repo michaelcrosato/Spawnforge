@@ -272,6 +272,32 @@ Work in progress toward 0.2, phase by phase (see the plan's status table).
   - Docs: what a blow's strength does to each build, `fly`'s height, the views scenario
     filmstrips use, `pnpm -s` for JSON, recipes for a horse, a big cat and a bear, and the shark's
     and crocodile's recipes fixed.
+- **Texture maps (11.1):** exports carry texture maps baked from the live material: a new
+  package, `@spawnforge/bake`, unwraps skin, parts, eyes and membranes into one atlas each with
+  xatlas (`watlas`, WASM) and runs the pattern stack per texel through the CPU kit, on Web
+  Workers in the render page and the sandbox. The skin gets colour, a normal map from its relief
+  against MikkTSpace-compatible tangents (meshoptimizer), occlusion from its distance field and
+  roughness in one map, and emissive for glow (above 1 through
+  `KHR_materials_emissive_strength`); chitin's clearcoat is perturbed by the same normal map;
+  membranes bake their veins and their light-through into colour, opacity and emissive. Maps
+  are 512, 1024 or 2048 texels by quality; `export --textures <size>` sets the size and
+  `--textures none` keeps vertex colours (the MCP `export` tool takes `textures` too). What glTF
+  cannot carry is listed in the notes and in `docs/runtime.md`: fur shells (the skin's maps take
+  the coat's colour; the extras keep `fur`), the glow's pulse (the extras give each layer's
+  `pulse`), the light wrapping round soft skin, and breathing. The live creature can show the
+  export's simplifications (`SkinLook`: the coat look, no wrap, a fixed pixel size). Bone and
+  clip rotations are normalized, so every export passes the Khronos glTF validator.
+  `compileCreature(…, { field: true })` keeps the skin's distance field; `Surface.reliefPixel`
+  fades relief apart from colour.
+- **Round trip:** `pnpm roundtrip` exports each example with its maps, loads it back with
+  `GLTFLoader` and renders it beside the live creature from the contact sheet's views, the open
+  mouth and the spread wings, with its tangents and without them; three probe creatures score
+  relief, roughness and glow on their own, and the round trip is checked to fail for broken
+  bakes. `Renderer.roundTrip`, `roundTripVerdict` and `ROUND_TRIP_BARS` in `@spawnforge/render`.
+  The render page frees each shot's shadow map and each loaded file, which a full run ran out
+  of memory without.
+- **Export eval:** four texture tasks (x05–x08): the sharpest maps, vertex colours only, a
+  pulsing glow read back from the file, and what a furred creature's export leaves out.
 
 ## 0.1.0
 

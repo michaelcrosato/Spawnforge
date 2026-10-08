@@ -1,13 +1,15 @@
 import type {
+  FurEye,
   FurSpec,
   Quality,
-  Region,
   Registry,
   SkinMaterialSpec,
   Surface,
 } from '@spawnforge/core';
 import {
+  COAT,
   EYE_ROUGHNESS,
+  furReach,
   hasWingLayers,
   MATERIAL_LOOK,
   shadeMembrane,
@@ -130,6 +132,8 @@ export interface SurfaceInputs {
   readonly region: N;
   /** Screen pixel size on the skin in torso lengths (0 for none). */
   readonly pixel?: N;
+  /** The size relief fades by, when it differs from `pixel` (a bake's, decision 4 of 11.1). */
+  readonly reliefPixel?: N;
   readonly time?: N;
 }
 
@@ -158,6 +162,7 @@ export function skinSurface(scale: N, inputs: SurfaceInputs): Surface<N> {
     wings: region.z.mul(wing),
     ground: p.y,
     pixel: inputs.pixel ?? length(fwidth(p)),
+    ...(inputs.reliefPixel ? { reliefPixel: inputs.reliefPixel } : {}),
     time: inputs.time ?? float(0),
   };
 }
@@ -175,6 +180,23 @@ function breathing(scale: N, region: N, breath: N | undefined): N | null {
   return (normalLocal as N).normalize().mul(swell);
 }
 
+/** How the skin is drawn when it is checked against an export (docs/design/11.1-textures.md). */
+export interface SkinLook {
+  /** Under fur, the coat's mean look rather than the shadowed skin beneath its shells. */
+  readonly coat?: boolean;
+  /** No wrapped light: what glTF's lighting gives. */
+  readonly noWrap?: boolean;
+  /**
+   * A fixed size for detail to fade by (torso lengths), as a bake's texels give, for every pixel;
+   * views are then drawn at about one pixel a texel (docs/design/11.1-textures.md, decision 13).
+   */
+  readonly pixel?: number;
+  /** For the round trip's probes: leave out the relief, or the glow, or fix the roughness. */
+  readonly noRelief?: boolean;
+  readonly noGlow?: boolean;
+  readonly roughness?: number;
+}
+
 /** The skin: base material, pattern layers, relief and glow, all from the material spec. */
 export function skinMaterial(
   spec: SkinMaterialSpec,
@@ -182,11 +204,12 @@ export function skinMaterial(
   registry: Registry,
   signals: SkinSignals = {},
   eyes: readonly FurEye[] = [],
+  look: SkinLook = {},
 ): MeshPhysicalNodeMaterial {
-  const look = MATERIAL_LOOK[spec.material];
+  const lit = MATERIAL_LOOK[spec.material];
   const material = new WrapMaterial();
-  material.wrap = look.wrap;
-  material.scatter = look.scatter;
+  material.wrap = look.noWrap ? 0 : lit.wrap;
+  material.scatter = lit.scatter;
   const s = uniform(scale);
   const body = attribute('body', 'vec4') as N;
   const region = attribute('region', 'vec4') as N;
@@ -195,6 +218,10 @@ export function skinMaterial(
     normal: normalGeometry,
     body,
     region,
+    // Relief as the bake keeps it: slopes over texels resolve features 0.4 of a texel across.
+    ...(look.pixel !== undefined
+      ? { pixel: float(look.pixel), reliefPixel: float(look.pixel * 0.4) }
+      : {}),
     ...(signals.time ? { time: signals.time } : {}),
   });
   const shade = shadeSkin(tslKit, surface, spec, registry);
@@ -206,22 +233,27 @@ export function skinMaterial(
   let skin: N = linear(srgb.clamp(0, 1));
   let roughness: N = shade.roughness;
   if (spec.fur) {
-    // Under fur, the skin is the coat's shadowed base: darker and matte.
-    const furred = smoothstep(float(0.02), float(0.1), furReach(spec.fur, body, region, eyes));
-    skin = skin.mul(float(1).sub(furred.mul(0.5)));
-    roughness = mix(roughness, float(0.95), furred);
+    // Under fur, the skin is the coat's shadowed base: darker and matte. Without its shells (an
+    // export's check), it takes the coat's mean look instead.
+    const reach = furReach(tslKit, spec.fur, { body, region, position: positionGeometry }, eyes);
+    const furred = smoothstep(float(0.02), float(0.1), reach as N);
+    skin = skin.mul(float(1).sub(furred.mul(look.coat ? 1 - COAT.shade : 0.5)));
+    roughness = mix(roughness, float(look.coat ? COAT.roughness : 0.95), furred);
   }
   const albedo: N = mix(skin, vec3(mouth.r, mouth.g, mouth.b), inside);
   material.colorNode = albedo;
-  material.roughnessNode = mix(roughness, mouth.roughness as N, inside);
+  material.roughnessNode =
+    look.roughness !== undefined
+      ? float(look.roughness)
+      : mix(roughness, mouth.roughness as N, inside);
   material.metalnessNode = float(0);
-  material.emissiveNode = vec3(shade.er, shade.eg, shade.eb).mul(outside);
-  if (look.clearcoat > 0) {
-    material.clearcoat = look.clearcoat;
-    material.clearcoatRoughness = look.clearcoatRoughness;
+  if (!look.noGlow) material.emissiveNode = vec3(shade.er, shade.eg, shade.eb).mul(outside);
+  if (lit.clearcoat > 0) {
+    material.clearcoat = lit.clearcoat;
+    material.clearcoatRoughness = lit.clearcoatRoughness;
   }
   // No skin relief inside the mouth: wet surfaces are smooth.
-  material.normalNode = bumpNormal((shade.height as N).mul(s).mul(outside));
+  if (!look.noRelief) material.normalNode = bumpNormal((shade.height as N).mul(s).mul(outside));
   const swell = breathing(s, region, signals.breath);
   if (swell) material.positionNode = (positionLocal as N).add(swell);
   return material;
@@ -230,67 +262,8 @@ export function skinMaterial(
 /** Shells of fur over the skin, by quality: none at low (docs/design/8.4-materials.md). */
 export const FUR_SHELLS: Readonly<Record<Quality, number>> = { low: 0, medium: 12, high: 16 };
 
-/** Where fur grows, 0 to 1, from a layer region's mask. */
-function furRegion(region: Region, body: N, regions: N): N {
-  const height = body.y;
-  const notLimb = float(1).sub(regions.z);
-  switch (region) {
-    case 'all':
-      return float(1);
-    case 'back':
-      return smoothstep(float(-0.15), float(0.35), height).mul(notLimb);
-    case 'belly':
-      return float(1)
-        .sub(smoothstep(float(-0.35), float(0.15), height))
-        .mul(notLimb);
-    case 'head':
-      return regions.x;
-    case 'torso':
-      return regions.y;
-    case 'limbs':
-      return regions.z;
-    case 'tail':
-      return regions.w;
-    case 'wings':
-      return float(0);
-  }
-}
-
 /** Strands per hair length: the lattice spacing is `length / FUR_STRANDS`. */
 const FUR_STRANDS = 14;
-
-/**
- * How long the fur is at a skin vertex, relative to `length`: its regions, shorter in creases
- * (and so along the lip line) and on the head, and none inside the mouth.
- */
-function furReach(fur: FurSpec, body: N, region: N, eyes: readonly FurEye[] = []): N {
-  let where: N = float(0);
-  for (const r of fur.region) where = max(where, furRegion(r, body, region));
-  const inMouth = float(1).sub(step(float(-0.5), body.z));
-  // Short on the toes, as on a paw; none on wing and fin tubes (`limb + 2`).
-  const wing = step(float(1.5), body.z);
-  const toes = float(1).sub(smoothstep(float(0.8), float(1), body.z.sub(wing.mul(2))).mul(0.7));
-  let reach: N = where
-    .mul(float(1).sub(body.w.clamp(0, 1).mul(0.8)))
-    .mul(float(1).sub(region.x.mul(0.4)))
-    .mul(float(1).sub(inMouth))
-    .mul(toes)
-    .mul(float(1).sub(wing));
-  // Clear round each eye, so the lids and the eye show.
-  for (const eye of eyes) {
-    const d = length((positionGeometry as N).sub(vec3(eye.x, eye.y, eye.z)));
-    reach = reach.mul(smoothstep(float(eye.radius * 1.15), float(eye.radius * 2), d));
-  }
-  return reach;
-}
-
-/** An eye the fur keeps clear of: its rest centre and radius, in metres. */
-export interface FurEye {
-  readonly x: number;
-  readonly y: number;
-  readonly z: number;
-  readonly radius: number;
-}
 
 /**
  * Shell fur: drawn as `shells` instances of the skin's geometry, each pushed out along the
@@ -314,7 +287,7 @@ export function furMaterial(
   const region = attribute('region', 'vec4') as N;
   // Strands sit on a lattice `spacing` torso lengths apart.
   const spacing = fur.length / FUR_STRANDS;
-  const reach = furReach(fur, body, region, eyes);
+  const reach = furReach(tslKit, fur, { body, region, position: positionGeometry }, eyes) as N;
   // This shell's height, 0 at the skin to 1 at the longest hair's tip.
   const level: N = float(instanceIndex).add(1).div(shells);
   const out: N = level.mul(reach).mul(s).mul(fur.length);
@@ -422,6 +395,8 @@ export interface MembranePatterns {
   readonly front: number;
   readonly back: number;
   readonly time?: N;
+  /** A fixed size for detail to fade by (torso lengths), as an export's texels give. */
+  readonly pixel?: number;
 }
 
 /**
@@ -464,7 +439,7 @@ export function membraneMaterial(
       tail: float(0),
       wings: float(1),
       ground: p.y,
-      pixel: length(fwidth(p)),
+      pixel: patterns.pixel !== undefined ? float(patterns.pixel) : length(fwidth(p)),
       time: patterns.time ?? float(0),
     };
     const shade = shadeMembrane(

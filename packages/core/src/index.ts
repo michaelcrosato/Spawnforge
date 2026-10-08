@@ -100,9 +100,13 @@ export {
   bakeSkinColors,
   bakeVertexColors,
   EYE_ROUGHNESS,
+  eyeColor,
+  limbAndWings,
+  membraneSurfaceAt,
   srgbToLinear,
   surfaceAt,
 } from './export/bake.ts';
+export type { BakedMap, BakedTextures, TexturedMesh } from './export/textures.ts';
 export { FORMAT } from './format.ts';
 export * from './geometry/kit.ts';
 export {
@@ -144,6 +148,7 @@ export * from './registry.ts';
 export { createRng, deriveSeed, type Rng } from './rng.ts';
 export * from './shading/compose.ts';
 export { cpuKit, hash3u } from './shading/cpu.ts';
+export { COAT, type FurEye, type FurInputs, furEyes, furReach } from './shading/fur.ts';
 export type { Kit, LayerOutput, PatternHooks, Surface } from './shading/kit.ts';
 export { cells, fbm, valueNoise } from './shading/noise.ts';
 export {

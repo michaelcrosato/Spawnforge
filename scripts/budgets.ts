@@ -1,6 +1,7 @@
 /**
  * Measures the plan's budgets: compile time (Node, and Chromium as in the sandbox), skin
- * triangles, draw calls and motion update time for one and for 50 creatures.
+ * triangles, draw calls, the size and export time of a medium `.glb` with texture maps (11.1),
+ * and motion update time for one and for 50 creatures.
  *
  *   node scripts/budgets.ts [name …] [--out report.json]
  *
@@ -41,6 +42,8 @@ const perExample: Record<string, unknown>[] = [];
 const compiled: CompiledCreature[] = [];
 const renderer = await Renderer.launch();
 try {
+  // The first export loads xatlas and starts the bake workers: not part of any example's time.
+  if (examples[0]) await renderer.export({ blueprint: examples[0].blueprint, textures: 512 });
   for (const { name, lines, blueprint } of examples) {
     const spec = resolveBlueprint(blueprint, registry);
     // Warm up, then take the median of five compiles.
@@ -60,6 +63,8 @@ try {
         (await renderer.render({ blueprint, size: 64, views: ['side'] })).info.compileMs,
       );
     const chrome = median(chromeTimes);
+    // A medium .glb with its maps, as `spawnforge export` writes it.
+    const { info } = await renderer.export({ blueprint, quality: 'medium' });
     perExample.push({
       name,
       lines,
@@ -72,6 +77,8 @@ try {
       drawCalls:
         [c.skin, c.parts, c.eyes, c.membranes].filter((m) => m.indices.length > 0).length +
         (c.material.fur && c.quality !== 'low' ? 1 : 0),
+      glbMB: Number((info.bytes / 1e6).toFixed(2)),
+      exportMs: Math.round(info.exportMs),
     });
   }
 } finally {
@@ -129,6 +136,8 @@ const report = {
     drawCalls: 3,
     furDrawCalls: 1,
     membraneDrawCalls: 1,
+    glbMB: 8,
+    exportMs: 10000,
     motionMsPerCreature: 0.1,
     flyingMsPerCreature: 0.15,
     motionMsFor50: 5,

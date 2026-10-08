@@ -1,5 +1,4 @@
 import {
-  bakeClips,
   type CompiledCreature,
   createRegistry,
   createRng,
@@ -12,7 +11,6 @@ import {
 import { basicPack } from '@spawnforge/modules';
 import {
   applyPose,
-  buildExportScene,
   type CreatureObject,
   createCreatureObject,
   createRenderer,
@@ -20,7 +18,6 @@ import {
 } from '@spawnforge/three';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 import { createBreeder } from './breed.ts';
 import { createEditor } from './editor.ts';
 import { FootstepRings, terrainMesh, waterMesh } from './terrain.ts';
@@ -335,29 +332,22 @@ async function main(): Promise<void> {
     },
   );
 
-  // Export the focused creature as a .glb, as `spawnforge export` would: baked clips, vertex
-  // colours, sockets and the blueprint in the extras.
+  // Export the focused creature as a .glb, as `spawnforge export` would: baked clips, texture
+  // maps baked on workers, sockets and the blueprint in the extras.
   $<HTMLButtonElement>('#export').addEventListener('click', async () => {
     const walker = focus;
     if (!walker) return;
     status.textContent = `Exporting ${walker.name}…`;
-    const blueprint = byName.get(walker.name);
-    const clips = bakeClips(walker.compiled, registry);
-    const { scene: out, animations } = buildExportScene(walker.compiled, registry, {
-      clips,
-      extras: { blueprint },
-    });
-    const glb = (await new GLTFExporter().parseAsync(out, {
-      binary: true,
-      animations,
-    })) as ArrayBuffer;
+    // The exporter, the bake and the validator load on the first export, not with the page.
+    const { exportGlb } = await import('./export.ts');
+    const { glb, clips } = await exportGlb(byName.get(walker.name), walker.compiled, registry);
     const link = document.createElement('a');
     link.href = URL.createObjectURL(new Blob([glb], { type: 'model/gltf-binary' }));
     link.download = `${walker.name}.glb`;
     link.click();
     URL.revokeObjectURL(link.href);
     logEvent(
-      `exported ${walker.name}.glb (${Math.round(glb.byteLength / 1024)} KB, ${clips.length} clips)`,
+      `exported ${walker.name}.glb (${Math.round(glb.byteLength / 1024)} KB, ${clips} clips)`,
     );
   });
 

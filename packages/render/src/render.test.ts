@@ -123,6 +123,7 @@ describe('headless renders', () => {
       quality: 'low',
       clips: ['idle', 'walk', 'bite'],
       extras: { blueprint },
+      textures: 'none',
     });
     expect(glb.subarray(0, 4).toString()).toBe('glTF');
     expect(glb.readUInt32LE(8)).toBe(glb.length);

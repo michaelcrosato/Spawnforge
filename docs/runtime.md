@@ -191,21 +191,28 @@ spawnforge export creature.json --clips idle,walk,bite --quality low --fps 24
 ```
 
 (MCP: the `export` tool. The sandbox's "export .glb" button does the same in the browser.) The
-output lists the clips, sockets and stats, and `notes` such as an idle that is only a standing
-pose (the blueprint lists `motion.actions` without `idle`), or what the file leaves out: fur (its
-shells need the live shader; the skin under it is exported) and glow (it needs an emissive
-texture, milestone 11.1).
+output lists the clips, sockets, stats and maps (with the bake's time), and `notes` such as an
+idle that is only a standing pose (the blueprint lists `motion.actions` without `idle`), or what
+the file leaves out (see [below](#what-the-file-leaves-out)). An export at medium quality is about
+3–5 MB and takes 5–8 s, most of it baking the maps.
 
 A `.glb` holds:
 
-- **Three skinned meshes** sharing one skeleton: `skin`, `parts` and `eyes`. The pattern stack is
-  baked into vertex colours (`COLOR_0`, linear, albedo only); each material has one roughness,
-  the mesh's average, and no textures. Chitin keeps its lacquer as a clearcoat
-  (`KHR_materials_clearcoat`); the live skin's soft wrap lighting has no glTF form.
-- **A fourth, `membranes`,** with wings or fins: double-sided, its colours under the `wings`
-  layers, its veins and the light through it approximated in the vertex colours (veins alias on
-  small wings), and blended by the vertex colour's alpha where it is see-through (insect
-  wings).
+- **Skinned meshes** sharing one skeleton: `skin`, `parts`, `eyes`, and `membranes` with wings
+  or fins. Each has its own **texture maps** in its own UV atlas (`TEXCOORD_0`), baked from the
+  live material by `@spawnforge/bake` (docs/design/11.1-textures.md):
+  - base colour (sRGB), with the membranes' opacity in its alpha where they are see-through
+    (alpha mode `BLEND`); membranes are always double-sided;
+  - a tangent-space normal map for the skin's relief, with MikkTSpace tangents (`TANGENT`) in
+    glTF's handedness, so every engine decodes it in the frame it was baked in; chitin's
+    lacquer is a clearcoat (`KHR_materials_clearcoat`) with the same normal map;
+  - one ORM image: occlusion (R, from the distance field: creases and the joins of legs and
+    body), roughness (G) and metalness (B, always 0);
+  - glow, where anything glows, with `KHR_materials_emissive_strength` when it is brighter
+    than 1; on membranes this map also carries the light through them.
+  Maps are 1024 texels at medium quality (512 at low, 2048 at high) for the skin, half that for
+  parts and membranes, 256 for eyes; `--textures 2048` picks the skin's size, and
+  `--textures none` writes vertex colours (`COLOR_0`, albedo only) instead, as before 11.1.
 - **Wings rest folded.** The skeleton is bound with the wings spread and every node defaults to
   the rest pose, so a winged creature stands folded with no clip playing; a clip carries a track
   for every bone that leaves its rest.
@@ -244,6 +251,21 @@ A `.glb` holds:
   `distance` one cycle covers, `rootMotion` for clips whose root track moves, and `events` with
   their times), and `stats` when asked for.
 
+### What the file leaves out
+
+What the live creature shows that glTF cannot carry as such, and what it becomes in the file
+(the export's `notes` list the ones that apply):
+
+| Live | In the `.glb` |
+| --- | --- |
+| Shell fur | Left out: glTF has no shells. Under the fur the skin's maps carry the coat's mean colour and roughness, and `extras.fur` (length in metres, density, regions) describes it for an engine's own fur |
+| Glow that pulses | The glow as it is at time 0, each light at its own brightness; `extras.glow` lists each layer's `pulse` (a second) for a game that animates `emissiveIntensity` |
+| Light wrapping round the skin (`skin`, `hide`, fur) | Left out: engines show a harder edge between light and shadow |
+| Light through membranes | Baked into the membranes' emissive map, as the live shader adds it |
+| Breathing | Left out (a 1% swell of the chest) |
+| Detail that fades with distance | Baked at the texel's size; mipmaps fade it further away |
+| — | Occlusion is the file's own: the live creature has none |
+
 ### Playing a .glb in Three.js
 
 ```ts
@@ -277,10 +299,11 @@ const mouth = gltf.scene.getObjectByName('socket_mouth'); // parent a fire-breat
 
 ### Other engines
 
-Unity, Godot and Unreal import the skeleton, skinned meshes, animations and socket nodes. Colour
-lives only in vertex colours, which their default materials ignore: in Godot enable "Vertex
-Color > Use as Albedo" on the material; in Unity and Unreal use a material or shader that reads
-vertex colour. The extras are glTF `extras` on the root node; some importers keep them as
+Unity, Godot and Unreal import the skeleton, skinned meshes, animations, socket nodes and the
+texture maps (glTF's metallic-roughness materials: base colour, normal, occlusion-roughness-metal
+and emissive). An export with `--textures none` keeps its colour only in vertex colours, which
+their default materials ignore: in Godot enable "Vertex Color > Use as Albedo" on the material;
+in Unity and Unreal use a material or shader that reads vertex colour. The extras are glTF `extras` on the root node; some importers keep them as
 metadata or custom properties, and where yours does not, read them from the file's JSON chunk
 (bytes 12–15 hold its length; it starts at byte 20).
 

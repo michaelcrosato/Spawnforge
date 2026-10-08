@@ -1,6 +1,9 @@
+import { type BandJob, type BandResult, bakeTextures } from '@spawnforge/bake';
 import {
   applyRest,
+  type BakedTextures,
   bakeClips,
+  type CompiledCreature,
   compileCreature,
   createRegistry,
   fingerprint,
@@ -22,6 +25,7 @@ import {
 import * as THREE from 'three';
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 import type {
+  ExportInfo,
   ExportRequest,
   ExportResponse,
   MotionInfo,
@@ -29,9 +33,12 @@ import type {
   ParityResponse,
   RenderRequest,
   RenderResponse,
+  RoundTripRequest,
+  RoundTripResponse,
   View,
 } from '../src/protocol.ts';
 import { diagramHeight, drawFilmstrip } from './filmstrip.ts';
+import { roundTrip } from './roundtrip.ts';
 
 const registry = createRegistry([basicPack]);
 const ALL_VIEWS: View[] = ['three-quarter', 'side', 'head', 'front', 'top', 'rear'];
@@ -51,6 +58,7 @@ declare global {
     spawnforgeRender?: (request: RenderRequest) => Promise<RenderResponse>;
     spawnforgeFingerprint?: (blueprint: unknown, quality: 'low' | 'medium' | 'high') => string;
     spawnforgeExport?: (request: ExportRequest) => Promise<ExportResponse>;
+    spawnforgeRoundTrip?: (request: RoundTripRequest) => Promise<RoundTripResponse>;
     spawnforgeParity?: (request: ParityRequest) => Promise<ParityResponse>;
     spawnforgeDiff?: (
       a: string,
@@ -94,35 +102,100 @@ window.spawnforgeDiff = async (a, b, threshold) => {
 window.spawnforgeFingerprint = (blueprint, quality) =>
   fingerprint(compileCreature(resolveBlueprint(blueprint, registry), registry, { quality }));
 
+/** Workers that shade texel bands for texture bakes, kept across exports (decision 5). */
+let bakers: Worker[] | undefined;
+let nextJob = 0;
+const pending = new Map<number, (result: BandResult) => void>();
+
+function bakeWorkers(): Worker[] {
+  if (!bakers) {
+    const count = Math.max(1, Math.min(4, navigator.hardwareConcurrency || 2));
+    bakers = Array.from({ length: count }, () => {
+      const worker = new Worker(new URL('./bake-worker.ts', import.meta.url), { type: 'module' });
+      worker.onmessage = (event: MessageEvent<{ id: number; result: BandResult }>) => {
+        pending.get(event.data.id)?.(event.data.result);
+        pending.delete(event.data.id);
+      };
+      return worker;
+    });
+  }
+  return bakers;
+}
+
+/** Shades bands on the workers, one band per worker at a time. */
+function runBands(jobs: readonly BandJob[]): Promise<BandResult[]> {
+  const workers = bakeWorkers();
+  return Promise.all(
+    jobs.map(
+      (job, i) =>
+        new Promise<BandResult>((resolve) => {
+          const id = nextJob++;
+          pending.set(id, resolve);
+          (workers[i % workers.length] as Worker).postMessage({ id, job });
+        }),
+    ),
+  );
+}
+
 /**
- * Builds a .glb: compiles, bakes clips and vertex colours, and writes binary glTF with Three.js's
- * GLTFExporter (which needs browser APIs, hence the page).
+ * Builds a .glb: compiles, bakes clips and texture maps (or vertex colours), and writes binary
+ * glTF with Three.js's GLTFExporter (which needs browser APIs, hence the page).
  */
-window.spawnforgeExport = async (request) => {
+async function buildGlb(
+  request: ExportRequest,
+  mutate?: (maps: BakedTextures) => BakedTextures,
+): Promise<{
+  bytes: Uint8Array;
+  info: ExportInfo;
+  compiled: CompiledCreature;
+  maps?: BakedTextures;
+}> {
   const started = performance.now();
+  const textures = request.textures ?? 'default';
   const compiled = compileCreature(resolveBlueprint(request.blueprint, registry), registry, {
     quality: request.quality ?? 'medium',
+    field: textures !== 'none',
   });
   const clips = bakeClips(compiled, registry, {
     ...(request.clips ? { clips: request.clips } : {}),
     ...(request.fps ? { fps: request.fps } : {}),
   });
-  const { scene, animations, notes } = buildExportScene(compiled, registry, {
-    clips,
-    ...(request.extras ? { extras: request.extras } : {}),
-  });
-  const glb = (await new GLTFExporter().parseAsync(scene, {
-    binary: true,
-    animations,
-  })) as ArrayBuffer;
-  // Base64 in chunks: String.fromCharCode cannot take a whole buffer at once.
-  const bytes = new Uint8Array(glb);
-  let binary = '';
-  for (let i = 0; i < bytes.length; i += 0x8000)
-    binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  const bakeStarted = performance.now();
+  const baked =
+    textures === 'none'
+      ? undefined
+      : await bakeTextures(compiled, registry, {
+          ...(typeof textures === 'number' ? { size: textures } : {}),
+          run: runBands,
+          bands: bakeWorkers().length * 2,
+        });
+  const bakeMs = performance.now() - bakeStarted;
+  const maps = baked && mutate ? mutate(baked) : baked;
+  const write = async (colorImages: 'image/png' | 'image/jpeg') => {
+    const built = buildExportScene(compiled, registry, {
+      clips,
+      ...(request.extras ? { extras: request.extras } : {}),
+      ...(maps ? { textures: maps, colorImages } : {}),
+    });
+    const glb = (await new GLTFExporter().parseAsync(built.scene, {
+      binary: true,
+      animations: built.animations,
+    })) as ArrayBuffer;
+    return { ...built, bytes: new Uint8Array(glb) };
+  };
+  // Colour and glow as JPEG only if PNG would take the file past 8 MB (decision 10).
+  let written = await write('image/png');
+  if (maps && written.bytes.length > MAX_GLB_BYTES) {
+    written = await write('image/jpeg');
+    written.notes.push('colour and glow maps are JPEG, to keep the file under 8 MB');
+  }
+  const { scene, notes, bytes } = written;
   const t = compiled.stats.triangles;
+  const extras = scene.userData.spawnforge as { textures?: { maps: Record<string, string[]> } };
   return {
-    glb: btoa(binary),
+    bytes,
+    compiled,
+    ...(maps ? { maps } : {}),
     info: {
       name: compiled.name,
       bytes: bytes.length,
@@ -139,8 +212,47 @@ window.spawnforgeExport = async (request) => {
         ...notes,
       ],
       exportMs: performance.now() - started,
+      ...(maps
+        ? {
+            textures: {
+              size: maps.size,
+              maps: extras.textures?.maps ?? {},
+              ms: bakeMs,
+              timings: Object.fromEntries(
+                Object.entries(maps.timings ?? {}).map(([k, v]) => [k, Math.round(v)]),
+              ),
+            },
+          }
+        : {}),
     },
   };
+}
+
+/** The size a textured export aims to stay under (plan 2's budget for a medium `.glb`). */
+const MAX_GLB_BYTES = 8_000_000;
+
+/** Base64 in chunks: String.fromCharCode cannot take a whole buffer at once. */
+function base64(bytes: Uint8Array): string {
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += 0x8000)
+    binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(binary);
+}
+
+window.spawnforgeExport = async (request) => {
+  const { bytes, info } = await buildGlb(request);
+  return { glb: base64(bytes), info };
+};
+
+window.spawnforgeRoundTrip = async (request) => {
+  let glb: Uint8Array | undefined;
+  const keep: typeof buildGlb = async (r, mutate) => {
+    const built = await buildGlb(r, mutate);
+    glb = built.bytes;
+    return built;
+  };
+  const response = await roundTrip({ renderer, registry, buildGlb: keep, viewCamera }, request);
+  return request.glb && glb ? { ...response, glb: base64(glb) } : response;
 };
 
 /**
@@ -233,6 +345,68 @@ window.spawnforgeParity = async (request) => {
   geometry.dispose();
   return { passes, precision };
 };
+
+/** The camera for one view of a creature framed by its bounds (and its head, for `head`). */
+export function viewCamera(
+  view: View,
+  frame: {
+    readonly centre: THREE.Vector3;
+    readonly extent: THREE.Vector3;
+    readonly span: number;
+    readonly min: THREE.Vector3;
+    readonly max: THREE.Vector3;
+  },
+  head: { readonly headCentre: THREE.Vector3; readonly headSize: number },
+): { camera: THREE.Camera; half: number } {
+  const { centre, extent, span, min, max } = frame;
+  let camera: THREE.Camera;
+  let half = span * 0.6;
+  if (view === 'three-quarter' || view === 'rear' || view === 'head') {
+    const persp = new THREE.PerspectiveCamera(30, 1, span * 0.002, span * 20);
+    if (view === 'head') {
+      const reach = Math.max((head.headSize * 1.02) / Math.sin((15 * Math.PI) / 180), span * 0.08);
+      persp.position
+        .copy(head.headCentre)
+        .addScaledVector(new THREE.Vector3(0.75, 0.35, 0.95).normalize(), reach);
+      persp.lookAt(head.headCentre);
+      half = reach * Math.tan((15 * Math.PI) / 180);
+    } else {
+      const dir =
+        view === 'rear'
+          ? new THREE.Vector3(-1.25, 0.75, -1.55)
+          : new THREE.Vector3(1.25, 0.7, 1.55);
+      persp.position.copy(centre).addScaledVector(dir, span);
+      persp.lookAt(centre);
+    }
+    camera = persp;
+  } else {
+    // Fit each orthographic view to the creature's extent in that view.
+    const axis =
+      view === 'front'
+        ? ([0, 1] as const)
+        : view === 'side'
+          ? ([2, 1] as const)
+          : ([0, 2] as const);
+    const ext = [extent.x, extent.y, extent.z];
+    half = (Math.max(ext[axis[0]] as number, ext[axis[1]] as number) / 2) * 1.18 + span * 0.02;
+    const ortho = new THREE.OrthographicCamera(-half, half, half, -half, span * 0.01, span * 20);
+    if (view === 'front') ortho.position.set(centre.x, centre.y, max.z + span * 2);
+    if (view === 'side') ortho.position.set(max.x + span * 2, centre.y, centre.z);
+    if (view === 'top') {
+      ortho.position.set(centre.x, max.y + span * 2, centre.z);
+      ortho.up.set(0, 0, 1);
+    }
+    if (view === 'underside') {
+      // Looking up at the belly, head at the top of the panel.
+      ortho.position.set(centre.x, min.y - span * 2, centre.z);
+      ortho.up.set(0, 0, 1);
+    }
+    ortho.lookAt(centre);
+    camera = ortho;
+  }
+  camera.updateMatrixWorld();
+  return { camera, half };
+}
 
 const canvas = document.createElement('canvas');
 document.body.append(canvas);
@@ -427,51 +601,11 @@ window.spawnforgeRender = async (request) => {
   const headSize = headSphere.radius;
 
   for (const [index, view] of (film ? [] : views).entries()) {
-    let camera: THREE.Camera;
-    let half = span * 0.6;
-    if (view === 'three-quarter' || view === 'rear' || view === 'head') {
-      const persp = new THREE.PerspectiveCamera(30, 1, span * 0.002, span * 20);
-      if (view === 'head') {
-        const reach = Math.max((headSize * 1.02) / Math.sin((15 * Math.PI) / 180), span * 0.08);
-        persp.position
-          .copy(headCentre)
-          .addScaledVector(new THREE.Vector3(0.75, 0.35, 0.95).normalize(), reach);
-        persp.lookAt(headCentre);
-        half = reach * Math.tan((15 * Math.PI) / 180);
-      } else {
-        const dir =
-          view === 'rear'
-            ? new THREE.Vector3(-1.25, 0.75, -1.55)
-            : new THREE.Vector3(1.25, 0.7, 1.55);
-        persp.position.copy(centre).addScaledVector(dir, span);
-        persp.lookAt(centre);
-      }
-      camera = persp;
-    } else {
-      // Fit each orthographic view to the creature's extent in that view.
-      const axis =
-        view === 'front'
-          ? ([0, 1] as const)
-          : view === 'side'
-            ? ([2, 1] as const)
-            : ([0, 2] as const);
-      const ext = [extent.x, extent.y, extent.z];
-      half = (Math.max(ext[axis[0]] as number, ext[axis[1]] as number) / 2) * 1.18 + span * 0.02;
-      const ortho = new THREE.OrthographicCamera(-half, half, half, -half, span * 0.01, span * 20);
-      if (view === 'front') ortho.position.set(centre.x, centre.y, max.z + span * 2);
-      if (view === 'side') ortho.position.set(max.x + span * 2, centre.y, centre.z);
-      if (view === 'top') {
-        ortho.position.set(centre.x, max.y + span * 2, centre.z);
-        ortho.up.set(0, 0, 1);
-      }
-      if (view === 'underside') {
-        // Looking up at the belly, head at the top of the panel.
-        ortho.position.set(centre.x, min.y - span * 2, centre.z);
-        ortho.up.set(0, 0, 1);
-      }
-      ortho.lookAt(centre);
-      camera = ortho;
-    }
+    const { camera, half } = viewCamera(
+      view,
+      { centre, extent, span, min, max },
+      { headCentre, headSize },
+    );
     const below = view === 'underside';
     ground.visible = view !== 'top' && view !== 'front' && view !== 'head' && !below;
     grid.visible = view !== 'front' && view !== 'head' && !below;
@@ -551,6 +685,9 @@ window.spawnforgeRender = async (request) => {
   }
   const renderMs = performance.now() - r0;
   creature.dispose();
+  // The key's shadow map, new each render.
+  key.dispose();
+  rim.dispose();
   ground.geometry.dispose();
   grid.geometry.dispose();
   const t = compiled.stats.triangles;
