@@ -545,10 +545,13 @@ when the creature moves.
 - **Script motion with a scenario**: `render` and `analyze` take `--scenario s.json` (MCP:
   `filmstrip.scenario` and `scenario`): ground (flat or the uneven course), named targets and
   timed calls (`moveTo`, `follow` a course, `act` at a target, `lookAt`, `stop`, `drive`,
-  `gait`). `analyze` reports the events, the distance walked, how close a snout came to each
-  target and foot slide; `render` draws it. See [scenarios](scenarios.md).
+  `gait`, `fly`, `land`, `hit`, `die`). `analyze` reports the events, the distance walked, how
+  high and low the body went, how far it turned, how close a snout came to each target and foot
+  slide; `render` draws it. See [scenarios](scenarios.md).
 - **Check everything else with `analyze`**: its warnings and description come first, and
-  `--summary` (MCP `summary`) leaves out the detailed motion numbers. It measures the creature (size, mass, centre of mass,
+  `--summary` (MCP `summary`) leaves out the detailed motion numbers (it keeps the sizes,
+  speeds and `reach`: each head's bite lunge and height, and with several heads which side each
+  is on). It measures the creature (size, mass, centre of mass,
   hip height, speeds per gait, bite reach, balance over the feet), runs two gait cycles on flat
   and rough ground, and warns, with a path and a fix, about sliding feet, a body or tail in the
   ground, legs stretched past their reach, limbs passing through each other or the body, parts
@@ -556,9 +559,10 @@ when the creature moves.
   fast (`fast_cadence`: `cadence` lists each gait's steps a second, per foot, at its usual
   speed; above 8 a second legs read as jitter at 30 frames a second, which happens to creatures
   with a torso under about 20 cm; make them bigger or, if they are meant to be that small,
-  skittish). Fixes give
-  amounts where they can (`about 10° more splay`); a leg that hits the body during the swing also
-  clears with a smaller gait `stride` or `stepHeight`. It also writes a one-paragraph description
+  skittish). Every pair of limbs that meet is listed at once, each where it was deepest (flat
+  or rough ground), and fixes give amounts where they can (`about 10° more splay`); a leg that
+  hits the body during the swing also clears with a smaller gait `stride` or `stepHeight`. One
+  leg's change can move the others in the stride, so analyze again after each. It also writes a one-paragraph description
   (size, proportions, parts, colours, gaits): read it to check the creature is what you meant.
 
 What the body model does not do yet: a section bends only as a whole, so a neck raised steeply
@@ -735,8 +739,8 @@ milestones land.
 | Bat | `wyvern` with bat proportions: a short neck and tail, a big `snout` head, legs under the middle (`at` 0.45), wings `length` 1.9 with `"membrane": { "type": "membrane.bat", "fingers": 5, "trailing": "leg" }`, big `ear.pointed` and fur on the head and torso (see `examples/cave-bat.json`) |
 | Hydra or cerberus | `quadruped` with `"neck": { "count": 5, "length": 0.75 }` and a small head (examples/hydra.json), or 3 with `length` 0.45 and `spread` 90 for a cerberus (examples/cerberus.json); parts on `head` appear on every head |
 | Kraken | `serpent` with a short, thick torso (the mantle), no tail, a big `round` head and four `tentacle` entries on the `head` with `side` "both" at `angle`s 25 to 155, plus two long feeding tentacles with a club in their `radius`; `suckers` on the limbs (see `examples/kraken.json`). Tentacles on the torso trail behind instead, like a squid's |
-| Crocodile | `quadruped` with a `wide` torso, a long low `wedge` head, legs `splay` 60 with `foot.claw`, a long `tall` tail, a `spikes.row` of low scutes, `"media": { "water": true }` (see `examples/river-crocodile.json`): it walks in, swims with its back awash and climbs out |
-| Shark or fish | `fish`, whose preset already has the fins: override its parts `dorsal` (`fin.dorsal`) and `tailfin` (`fin.tail`, `"shape": "forked"`) and its limbs `pectoral` and `pelvic` by id (`"remove": true` drops the pelvic pair), and add `teeth.row` (see `examples/reef-shark.json`). Its fins already make it a swimmer, so it needs no `media`. Paired fins hold out flat, so check them in the `top` and `front` views |
+| Crocodile | `quadruped` with a `wide` torso, a long low `wedge` head, legs `splay` 60 with `foot.claw` (forelegs `length` 0.36, hindlegs 0.42: shorter ones overstretch), a long `tall` tail, a `spikes.row` of low scutes, `"media": { "water": true }` (see `examples/river-crocodile.json`): it walks in, swims with its back awash and climbs out. Its pace is slow (about 0.4 m/s), so give `moveTo` a `speed` to cross water quickly |
+| Shark or fish | `fish`, whose preset already has the fins: override its parts `dorsal` (`fin.dorsal`) and `tailfin` (`fin.tail`, `"shape": "forked"`) and its limbs `pectoral` and `pelvic` by id (`"remove": true` drops the pelvic pair), and add `teeth.row` (see `examples/reef-shark.json`). Its fins already make it a swimmer, so it needs no `media`. Keep the torso and head `tall` (a `round` fish reads as a plank from the side) and the pectorals shorter than 0.4: from 0.4 on, fins beat as flippers (`swim.flap`) like a turtle's. Paired fins hold out flat, so check them in the `top` and `front` views |
 | Spider or scorpion | `octopod`; `mandible` (`"shape": "fang"`) for a spider (see `examples/tomb-spider.json`); for a scorpion a slimmer even torso, `arm`s at `at` 0 with `lift` 80 and `"foot": "hand.pincer"`, a tail with `pitch` 60 and `curl` 160, a `horn.curved` stinger on its tip, and `pinch` and `lash` (see `examples/dune-scorpion.json`) |
 | Centaur | `centaur`; give its legs `foreleg` and `hindleg` `"foot": "foot.hoof"`, its `arm`s `"foot": "hand.grasp"`, and the head horns |
 | Turtle or tortoise | `quadruped` with a `wide` torso and `{ "id": "shell", "type": "shell", "params": { "dome": 0.95, "overhang": 0.28 } }`, short legs with `foot.pad` (see `examples/stone-tortoise.json`); for a sea turtle remove `foreleg` and `hindleg` (`"remove": true`) and add fin limbs with `"membrane": null` (flippers; `length` 0.4 or more so they beat), which make it a swimmer (see `examples/sea-turtle.json`) |
@@ -747,6 +751,14 @@ milestones land.
 | Slug or snail | `serpent` with a short tail, a thicker torso (the preset is a thin snake) and `"material": "skin"`; eyes on stalks: a tentacle pair on the `head` (`length` 0.3, 4 segments, `radius` 0.025 or more) with `eye.basic` on it at `at` 1 and a `size` of about 0.05 (`scale` is relative to what it sits on, so on a thin stalk the eyes come out as dots); `slime` |
 | Stegosaur, sail-back, porcupine | `plates.row`, `sail` or `quills` along the `spine` (see `examples/plated-stegosaur.json`, `sail-back.json`, `porcupine.json`) |
 | Frilled lizard or cobra | `frill` or `hood` on the `neck`, and `display` in `motion.actions` (it needs one of them; see `examples/frilled-lizard.json`, `hooded-cobra.json`) |
+
+Big mammals, from what agents found by render at gate 10 (all on `quadruped`):
+
+| Creature | Blueprint |
+| --- | --- |
+| Horse | `scale` 1.5; a deep `round` barrel, torso `radius` `[0.17, 0.23, 0.22, 0.2]` (a `tall` torso reads as a deer); neck `length` 0.52, `radius` `[0.07, 0.16]`, `pitch` 58, `tall`; a long `snout` head (`length` 0.46, `pitch` -50); legs `length` 0.92 and 0.98 with root `radius` 0.08 and 0.1 and `foot.hoof` (`cloven` false); a mane of `spikes.row` (`height` 0.13, `width` 0.04, `count` 26); `muscle` 0.7 makes it heavy (750 kg), 0.5 is nearer a horse's 500 |
+| Big cat | `scale` 1.3; torso `radius` `[0.13, 0.19, 0.17, 0.11]`; a short thick neck (`length` 0.22, `radius` `[0.11, 0.16]`); a `round` head (`length` 0.28, `radius` 0.12); legs `length` 0.7 and 0.74 with `foot.paw` (`claws` "hidden"), forelegs `splay` 18; a long tail (`length` 0.85, `curl` 15); `stalking`, with `pounce` |
+| Bear | `scale` 1.25; torso `radius` `[0.17, 0.24, 0.2, 0.18]` with `arch` 0.12; a thick neck held up (`length` 0.3, `radius` `[0.14, 0.22]`, `pitch` 32: lower and the head sinks into the chest), head `pitch` -18; short thick legs (`length` 0.52, root `radius` 0.12) with `"stance": "plantigrade"`, forelegs `splay` 32, `foot.paw` with 5 `long` claws; a stub tail; `lumbering` |
 
 ## Format versions
 

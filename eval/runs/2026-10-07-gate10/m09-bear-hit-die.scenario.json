@@ -1,0 +1,9 @@
+{
+  "ground": "flat",
+  "duration": 8,
+  "frames": 16,
+  "calls": [
+    { "at": 1, "do": "hit", "from": "left", "strength": 1 },
+    { "at": 5, "do": "die", "from": "left" }
+  ]
+}

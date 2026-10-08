@@ -8,9 +8,13 @@
  *       key in <out>/motion-key.json
  *   node eval/motion.ts score <out> [--threshold n]
  *       compares <out>/motion-answers.json ({ "m01": "quadruped-trot", … }) with the key
+ *   node eval/motion.ts check <run> [--prompts eval/prompts-m.json] [--threshold n]
+ *       suite M (gate 10): runs each task's last valid blueprint (`<id>.attemptN.json`) with its
+ *       scenario (`<id>.scenario.json`) and checks what happened against the task's checks;
+ *       writes <run>/check-score.json, and <run>/motion-tasks.json for `prepare --tasks`
  *
  * A task is { id, task, blueprint (a path), and filmstrip ({ gait, action, speed, view }) or
- * scenario (a path to a scenario file) }. Gate 10's suite M adds per-task checks on top.
+ * scenario (a path to a scenario file) }.
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -29,20 +33,25 @@ const { positionals, values } = parseArgs({
   allowPositionals: true,
   options: {
     tasks: { type: 'string', default: 'eval/motion-dry.json' },
+    prompts: { type: 'string', default: 'eval/prompts-m.json' },
     threshold: { type: 'string' },
   },
 });
 const [mode, outArg] = positionals;
-if (!outArg || (mode !== 'prepare' && mode !== 'score')) {
+if (!outArg || (mode !== 'prepare' && mode !== 'score' && mode !== 'check')) {
   console.error(
     'usage: node eval/motion.ts prepare <out> [--tasks <tasks.json>]\n' +
-      '       node eval/motion.ts score <out> [--threshold n]',
+      '       node eval/motion.ts score <out> [--threshold n]\n' +
+      '       node eval/motion.ts check <run> [--prompts eval/prompts-m.json] [--threshold n]',
   );
   process.exit(2);
 }
 const out = resolve(outArg);
 
-if (mode === 'prepare') {
+if (mode === 'check') {
+  const { check } = await import('./checks.ts');
+  await check(out, resolve(values.prompts as string), values.threshold);
+} else if (mode === 'prepare') {
   const tasksPath = resolve(values.tasks as string);
   const tasks = JSON.parse(readFileSync(tasksPath, 'utf8')) as Task[];
   // Paths in the task list are from the repository root (or the list's folder).

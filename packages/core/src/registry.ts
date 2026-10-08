@@ -114,8 +114,14 @@ export interface PatternModule<P extends z.ZodType = z.ZodType> extends ModuleBa
   readonly example: Record<string, unknown>;
   /** The shader function, written once for CPU and GPU. */
   readonly hooks?: PatternHooks;
-  /** A short phrase for the creature's description, e.g. "dark stripes". */
-  readonly describe?: (params: Readonly<Record<string, unknown>>) => string;
+  /**
+   * A short phrase for the creature's description, e.g. "dark stripes". The description adds
+   * where it shows ("on the wings") when its `region` is not `all`.
+   */
+  readonly describe?: (
+    params: Readonly<Record<string, unknown>>,
+    info?: { readonly region: string },
+  ) => string;
 }
 
 /** One leg, as a gait's `offsets` sees it. */

@@ -124,12 +124,25 @@ export class Pose {
     this.solveBone(i);
     // Leaves (most part bones: quills, a frill's spines) have nothing below them.
     if (!this.parent[i]) return;
-    for (let j = i + 1; j < this.count; j++) {
-      let p = this.parents[j] as number;
-      while (p > i) p = this.parents[p] as number;
-      if (p === i) this.solveBone(j);
-    }
+    for (const j of this.descendants(i)) this.solveBone(j);
   }
+
+  /** A bone's descendants in order, found once. */
+  private descendants(i: number): Int32Array {
+    let list = this.subtrees[i];
+    if (!list) {
+      const out: number[] = [];
+      for (let j = i + 1; j < this.count; j++) {
+        let p = this.parents[j] as number;
+        while (p > i) p = this.parents[p] as number;
+        if (p === i) out.push(j);
+      }
+      list = Int32Array.from(out);
+      this.subtrees[i] = list;
+    }
+    return list;
+  }
+  private readonly subtrees: (Int32Array | undefined)[] = [];
 
   /** Bone direction in world space (its +Y axis). */
   direction(i: number, out = new Vector3()): Vector3 {

@@ -1,0 +1,68 @@
+{
+  "correct": 10,
+  "total": 10,
+  "threshold": 8,
+  "gate": true,
+  "rows": [
+    {
+      "film": "m01",
+      "truth": "m09-bear-hit-die",
+      "answer": "m09-bear-hit-die",
+      "correct": true
+    },
+    {
+      "film": "m02",
+      "truth": "m01-horse-gallop",
+      "answer": "m01-horse-gallop",
+      "correct": true
+    },
+    {
+      "film": "m03",
+      "truth": "m02-raptor-run",
+      "answer": "m02-raptor-run",
+      "correct": true
+    },
+    {
+      "film": "m04",
+      "truth": "m03-cat-pounce",
+      "answer": "m03-cat-pounce",
+      "correct": true
+    },
+    {
+      "film": "m05",
+      "truth": "m07-moth-hover",
+      "answer": "m07-moth-hover",
+      "correct": true
+    },
+    {
+      "film": "m06",
+      "truth": "m08-hydra-bite-left",
+      "answer": "m08-hydra-bite-left",
+      "correct": true
+    },
+    {
+      "film": "m07",
+      "truth": "m04-shark-turn",
+      "answer": "m04-shark-turn",
+      "correct": true
+    },
+    {
+      "film": "m08",
+      "truth": "m10-turtle-dive",
+      "answer": "m10-turtle-dive",
+      "correct": true
+    },
+    {
+      "film": "m09",
+      "truth": "m06-dragon-flight",
+      "answer": "m06-dragon-flight",
+      "correct": true
+    },
+    {
+      "film": "m10",
+      "truth": "m05-crocodile-lake",
+      "answer": "m05-crocodile-lake",
+      "correct": true
+    }
+  ]
+}

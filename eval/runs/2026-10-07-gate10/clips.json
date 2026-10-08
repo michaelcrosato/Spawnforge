@@ -1,0 +1,356 @@
+{
+  "examples": 32,
+  "clips": 233,
+  "problems": 0,
+  "rows": [
+    {
+      "name": "ash-dragon",
+      "clips": [
+        "idle",
+        "walk",
+        "trot",
+        "fly",
+        "glide",
+        "gallop",
+        "bite",
+        "roar",
+        "takeoff",
+        "land",
+        "death"
+      ],
+      "seams": {
+        "idle": 0,
+        "walk": 0,
+        "trot": 0,
+        "fly": 0,
+        "glide": 0,
+        "gallop": 0
+      }
+    },
+    {
+      "name": "bog-troll",
+      "clips": ["idle", "walk", "run", "roar", "death"],
+      "seams": {
+        "idle": 0,
+        "walk": 0,
+        "run": 0
+      }
+    },
+    {
+      "name": "cave-bat",
+      "clips": ["idle", "walk", "fly", "glide", "run", "bite", "roar", "takeoff", "land", "death"],
+      "seams": {
+        "idle": 0,
+        "walk": 0,
+        "fly": 0,
+        "glide": 0,
+        "run": 0
+      }
+    },
+    {
+      "name": "cerberus",
+      "clips": ["idle", "walk", "trot", "gallop", "bite", "roar", "look", "death"],
+      "seams": {
+        "idle": 0,
+        "walk": 0,
+        "trot": 0,
+        "gallop": 0
+      }
+    },
+    {
+      "name": "dune-scorpion",
+      "clips": ["idle", "walk", "tripod", "pinch", "lash", "death"],
+      "seams": {
+        "idle": 0,
+        "walk": 0,
+        "tripod": 0
+      }
+    },
+    {
+      "name": "ember-beetle",
+      "clips": ["idle", "walk", "tripod", "bite", "death"],
+      "seams": {
+        "idle": 0,
+        "walk": 0,
+        "tripod": 0
+      }
+    },
+    {
+      "name": "frilled-lizard",
+      "clips": ["idle", "walk", "trot", "display", "bite", "death"],
+      "seams": {
+        "idle": 0,
+        "walk": 0,
+        "trot": 0
+      }
+    },
+    {
+      "name": "grey-wolf",
+      "clips": ["idle", "walk", "trot", "gallop", "bite", "roar", "look", "death"],
+      "seams": {
+        "idle": 0,
+        "walk": 0,
+        "trot": 0,
+        "gallop": 0
+      }
+    },
+    {
+      "name": "griffin",
+      "clips": [
+        "idle",
+        "walk",
+        "trot",
+        "fly",
+        "glide",
+        "gallop",
+        "bite",
+        "roar",
+        "takeoff",
+        "land",
+        "death"
+      ],
+      "seams": {
+        "idle": 0,
+        "walk": 0,
+        "trot": 0,
+        "fly": 0,
+        "glide": 0,
+        "gallop": 0
+      }
+    },
+    {
+      "name": "grove-centaur",
+      "clips": ["idle", "walk", "trot", "gallop", "bite", "roar", "death"],
+      "seams": {
+        "idle": 0,
+        "walk": 0,
+        "trot": 0,
+        "gallop": 0
+      }
+    },
+    {
+      "name": "hooded-cobra",
+      "clips": ["idle", "slither", "display", "bite", "look", "death"],
+      "seams": {
+        "idle": 0,
+        "slither": 0
+      }
+    },
+    {
+      "name": "hydra",
+      "clips": ["idle", "walk", "trot", "gallop", "bite", "roar", "look", "death"],
+      "seams": {
+        "idle": 0,
+        "walk": 0,
+        "trot": 0,
+        "gallop": 0
+      }
+    },
+    {
+      "name": "kraken",
+      "clips": ["idle", "slither", "swim.undulate", "bite", "lash", "death"],
+      "seams": {
+        "idle": 0,
+        "slither": 0,
+        "swim.undulate": 0
+      }
+    },
+    {
+      "name": "luna-moth",
+      "clips": [
+        "idle",
+        "hover",
+        "walk",
+        "tripod",
+        "fly",
+        "glide",
+        "bite",
+        "jump",
+        "look",
+        "pounce",
+        "roar",
+        "takeoff",
+        "land",
+        "death"
+      ],
+      "seams": {
+        "idle": 0,
+        "hover": 0,
+        "walk": 0,
+        "tripod": 0,
+        "fly": 0,
+        "glide": 0
+      }
+    },
+    {
+      "name": "plated-stegosaur",
+      "clips": ["idle", "walk", "trot", "gallop", "roar", "look", "death"],
+      "seams": {
+        "idle": 0,
+        "walk": 0,
+        "trot": 0,
+        "gallop": 0
+      }
+    },
+    {
+      "name": "porcupine",
+      "clips": ["idle", "walk", "trot", "bound", "display", "bite", "death"],
+      "seams": {
+        "idle": 0,
+        "walk": 0,
+        "trot": 0,
+        "bound": 0
+      }
+    },
+    {
+      "name": "reed-viper",
+      "clips": ["idle", "slither", "swim.undulate", "bite", "look", "death"],
+      "seams": {
+        "idle": 0,
+        "slither": 0,
+        "swim.undulate": 0
+      }
+    },
+    {
+      "name": "reef-shark",
+      "clips": ["idle", "swim.undulate", "bite", "death"],
+      "seams": {
+        "idle": 0,
+        "swim.undulate": 0
+      }
+    },
+    {
+      "name": "rhino-beetle",
+      "clips": ["idle", "walk", "tripod", "bite", "jump", "look", "pounce", "roar", "death"],
+      "seams": {
+        "idle": 0,
+        "walk": 0,
+        "tripod": 0
+      }
+    },
+    {
+      "name": "ridgeback-stalker",
+      "clips": ["idle", "walk", "trot", "bite", "roar", "death"],
+      "seams": {
+        "idle": 0,
+        "walk": 0,
+        "trot": 0
+      }
+    },
+    {
+      "name": "river-crocodile",
+      "clips": ["idle", "swim.paddle", "walk", "swim.undulate", "trot", "bite", "death"],
+      "seams": {
+        "idle": 0,
+        "swim.paddle": 0,
+        "walk": 0,
+        "swim.undulate": 0,
+        "trot": 0
+      }
+    },
+    {
+      "name": "rust-raptor",
+      "clips": ["idle", "walk", "run", "bite", "roar", "look", "death"],
+      "seams": {
+        "idle": 0,
+        "walk": 0,
+        "run": 0
+      }
+    },
+    {
+      "name": "sail-back",
+      "clips": ["idle", "walk", "trot", "display", "bite", "roar", "death"],
+      "seams": {
+        "idle": 0,
+        "walk": 0,
+        "trot": 0
+      }
+    },
+    {
+      "name": "sand-cheetah",
+      "clips": ["idle", "walk", "trot", "gallop", "bite", "look", "death"],
+      "seams": {
+        "idle": 0,
+        "walk": 0,
+        "trot": 0,
+        "gallop": 0
+      }
+    },
+    {
+      "name": "sea-turtle",
+      "clips": ["idle", "swim.flap", "bite", "look", "death"],
+      "seams": {
+        "idle": 0,
+        "swim.flap": 0
+      }
+    },
+    {
+      "name": "stone-tortoise",
+      "clips": ["idle", "walk", "trot", "bite", "look", "death"],
+      "seams": {
+        "idle": 0,
+        "walk": 0,
+        "trot": 0
+      }
+    },
+    {
+      "name": "storm-wyvern",
+      "clips": ["idle", "walk", "fly", "glide", "run", "bite", "roar", "takeoff", "land", "death"],
+      "seams": {
+        "idle": 0,
+        "walk": 0,
+        "fly": 0,
+        "glide": 0,
+        "run": 0
+      }
+    },
+    {
+      "name": "terror-bird",
+      "clips": ["idle", "walk", "run", "bite", "roar", "look", "death"],
+      "seams": {
+        "idle": 0,
+        "walk": 0,
+        "run": 0
+      }
+    },
+    {
+      "name": "tomb-spider",
+      "clips": ["idle", "walk", "tripod", "bite", "death"],
+      "seams": {
+        "idle": 0,
+        "walk": 0,
+        "tripod": 0
+      }
+    },
+    {
+      "name": "tusk-boar",
+      "clips": ["idle", "walk", "trot", "gallop", "bite", "roar", "look", "death"],
+      "seams": {
+        "idle": 0,
+        "walk": 0,
+        "trot": 0,
+        "gallop": 0
+      }
+    },
+    {
+      "name": "two-tailed-fox",
+      "clips": ["idle", "walk", "trot", "bound", "bite", "look", "death"],
+      "seams": {
+        "idle": 0,
+        "walk": 0,
+        "trot": 0,
+        "bound": 0
+      }
+    },
+    {
+      "name": "wild-horse",
+      "clips": ["idle", "walk", "trot", "gallop", "bite", "look", "death"],
+      "seams": {
+        "idle": 0,
+        "walk": 0,
+        "trot": 0,
+        "gallop": 0
+      }
+    }
+  ]
+}

@@ -1699,6 +1699,154 @@
     "ok": true,
     "errors": []
   },
+  "eval/runs/2026-10-07-gate10/m01-horse-gallop.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-07-gate10/m01-horse-gallop.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-07-gate10/m01-horse-gallop.attempt2.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-07-gate10/m02-raptor-run.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-07-gate10/m02-raptor-run.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-07-gate10/m03-cat-pounce.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-07-gate10/m03-cat-pounce.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-07-gate10/m03-cat-pounce.attempt2.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-07-gate10/m03-cat-pounce.attempt3.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-07-gate10/m03-cat-pounce.attempt4.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-07-gate10/m04-shark-turn.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-07-gate10/m04-shark-turn.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-07-gate10/m04-shark-turn.attempt2.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-07-gate10/m04-shark-turn.attempt3.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-07-gate10/m05-crocodile-lake.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-07-gate10/m05-crocodile-lake.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-07-gate10/m05-crocodile-lake.attempt2.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-07-gate10/m06-dragon-flight.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-07-gate10/m06-dragon-flight.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-07-gate10/m06-dragon-flight.attempt2.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-07-gate10/m06-dragon-flight.attempt3.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-07-gate10/m06-dragon-flight.attempt4.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-07-gate10/m06-dragon-flight.attempt5.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-07-gate10/m06-dragon-flight.attempt6.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-07-gate10/m07-moth-hover.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-07-gate10/m07-moth-hover.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-07-gate10/m08-hydra-bite-left.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-07-gate10/m08-hydra-bite-left.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-07-gate10/m08-hydra-bite-left.attempt2.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-07-gate10/m09-bear-hit-die.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-07-gate10/m09-bear-hit-die.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-07-gate10/m09-bear-hit-die.attempt2.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-07-gate10/m09-bear-hit-die.attempt3.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-07-gate10/m09-bear-hit-die.attempt4.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-07-gate10/m09-bear-hit-die.attempt5.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-07-gate10/m10-turtle-dive.attempt0.json": {
+    "ok": true,
+    "errors": []
+  },
+  "eval/runs/2026-10-07-gate10/m10-turtle-dive.attempt1.json": {
+    "ok": true,
+    "errors": []
+  },
   "eval/runs/2026-10-07-gate9-b/b01-dragon.attempt0.json": {
     "ok": true,
     "errors": []

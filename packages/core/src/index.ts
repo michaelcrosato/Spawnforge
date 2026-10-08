@@ -3,6 +3,7 @@ export {
   type AnalyzeOptions,
   analyzeCreature,
   describeCreature,
+  type LimbHit,
   type MotionCheck,
 } from './analysis/analyze.ts';
 export {

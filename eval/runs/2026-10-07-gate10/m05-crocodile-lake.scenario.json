@@ -1,0 +1,7 @@
+{
+  "ground": "flat",
+  "water": { "x": 0, "z": 12, "radius": 6, "depth": 2 },
+  "duration": 26,
+  "frames": 12,
+  "calls": [{ "at": 0, "do": "moveTo", "to": [0, 24], "speed": 1 }]
+}

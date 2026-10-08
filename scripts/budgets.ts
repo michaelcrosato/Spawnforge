@@ -44,13 +44,14 @@ try {
   for (const { name, lines, blueprint } of examples) {
     const spec = resolveBlueprint(blueprint, registry);
     // Warm up, then take the median of five compiles.
-    compileCreature(spec, registry, { quality: 'medium' });
+    let c = compileCreature(spec, registry, { quality: 'medium' });
     const times = Array.from({ length: 5 }, () => {
       const t = performance.now();
-      compiled.push(compileCreature(spec, registry, { quality: 'medium' }));
+      c = compileCreature(spec, registry, { quality: 'medium' });
       return performance.now() - t;
     });
-    const c = compiled.at(-1) as CompiledCreature;
+    // One kept per example: the rest are garbage, not a heap the motion timing works around.
+    compiled.push(c);
     // In Chromium, through the render page: the median of three warm compiles.
     await renderer.render({ blueprint, size: 64, views: ['side'] });
     const chromeTimes: number[] = [];
@@ -59,28 +60,6 @@ try {
         (await renderer.render({ blueprint, size: 64, views: ['side'] })).info.compileMs,
       );
     const chrome = median(chromeTimes);
-    const controller = new MotionController(c, { registry });
-    // A body that only swims is timed swimming in open water (10.3).
-    const swims = !c.motion.gaits.some((g) => (g.medium ?? 'land') === 'land');
-    const sea = swims ? openSea(c.scale) : undefined;
-    const input = sea ?? { ground };
-    if (sea) controller.place(0, 0, 0, sea.ground, sea.water);
-    controller.drive(controller.paceSpeed(), 0.3);
-    for (let i = 0; i < 600; i++) controller.update(1 / 60, input);
-    const t = performance.now();
-    for (let i = 0; i < 3000; i++) controller.update(1 / 60, input);
-    const walking = (performance.now() - t) / 3000;
-    // A flyer is also timed flying, circling over the course (10.4).
-    let flying: number | undefined;
-    const flyer = new MotionController(c, { registry });
-    if (flyer.canFly) {
-      flyer.place(0, 0, 0, ground, undefined, { flying: true });
-      flyer.fly();
-      for (let i = 0; i < 600; i++) flyer.update(1 / 60, { ground });
-      const tf = performance.now();
-      for (let i = 0; i < 3000; i++) flyer.update(1 / 60, { ground });
-      flying = (performance.now() - tf) / 3000;
-    }
     perExample.push({
       name,
       lines,
@@ -93,17 +72,41 @@ try {
       drawCalls:
         [c.skin, c.parts, c.eyes, c.membranes].filter((m) => m.indices.length > 0).length +
         (c.material.fur && c.quality !== 'low' ? 1 : 0),
-      motionMsPerFrame: Number(walking.toFixed(3)),
-      ...(flying !== undefined ? { flyingMsPerFrame: Number(flying.toFixed(3)) } : {}),
     });
   }
 } finally {
   await renderer.close();
 }
 
+// Motion is timed with Chromium closed, so its processes do not share the CPU (gate 10).
+for (const [k, row] of perExample.entries()) {
+  const c = compiled[k] as CompiledCreature;
+  const controller = new MotionController(c, { registry });
+  // A body that only swims is timed swimming in open water (10.3).
+  const swims = !c.motion.gaits.some((g) => (g.medium ?? 'land') === 'land');
+  const sea = swims ? openSea(c.scale) : undefined;
+  const input = sea ?? { ground };
+  if (sea) controller.place(0, 0, 0, sea.ground, sea.water);
+  controller.drive(controller.paceSpeed(), 0.3);
+  for (let i = 0; i < 600; i++) controller.update(1 / 60, input);
+  const t = performance.now();
+  for (let i = 0; i < 3000; i++) controller.update(1 / 60, input);
+  row.motionMsPerFrame = Number(((performance.now() - t) / 3000).toFixed(3));
+  // A flyer is also timed flying, circling over the course (10.4).
+  const flyer = new MotionController(c, { registry });
+  if (flyer.canFly) {
+    flyer.place(0, 0, 0, ground, undefined, { flying: true });
+    flyer.fly();
+    for (let i = 0; i < 600; i++) flyer.update(1 / 60, { ground });
+    const tf = performance.now();
+    for (let i = 0; i < 3000; i++) flyer.update(1 / 60, { ground });
+    row.flyingMsPerFrame = Number(((performance.now() - tf) / 3000).toFixed(3));
+  }
+}
+
 // Fifty creatures walking at once, one 60 Hz frame each.
 const herd = Array.from({ length: 50 }, (_, i) => {
-  const c = new MotionController(compiled[(i * 5) % compiled.length] as CompiledCreature, {
+  const c = new MotionController(compiled[i % compiled.length] as CompiledCreature, {
     registry,
   });
   c.position.set((i % 10) * 3, 0, Math.floor(i / 10) * 3);

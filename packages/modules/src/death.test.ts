@@ -257,6 +257,8 @@ describe('death (10.5)', () => {
     expect(types.filter((t) => t === 'hit')).toHaveLength(2);
     expect(types).toContain('death');
     expect(result.failed).toEqual([]);
+    // Staggering and dying feet are not sliding ones (gate 10).
+    expect(result.footSlide).toBeLessThan(0.02 * c.scale);
     const bad = parseScenario({ calls: [{ at: 0, do: 'hit', from: 'above' }] });
     expect(bad.scenario).toBeUndefined();
   });

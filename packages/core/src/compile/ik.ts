@@ -29,9 +29,19 @@ function chain2d(setup: LimbIkSetup, c: number): { xs: number[]; ys: number[] } 
   return { xs, ys };
 }
 
+/** Root-to-tip distance for bend factor `c`: `chain2d`'s end, without allocating. */
 function reachAt(setup: LimbIkSetup, c: number): number {
-  const { xs, ys } = chain2d(setup, c);
-  return Math.hypot(xs.at(-1) ?? 0, ys.at(-1) ?? 0);
+  let x = 0;
+  let y = 0;
+  let angle = 0;
+  const { lengths, bends } = setup;
+  for (let i = 0; i < lengths.length; i++) {
+    if (i > 0) angle += c * (bends[i - 1] ?? 0);
+    const len = lengths[i] as number;
+    x += Math.cos(angle) * len;
+    y += Math.sin(angle) * len;
+  }
+  return Math.hypot(x, y);
 }
 
 /** No joint folds past this many radians (about 160°). */

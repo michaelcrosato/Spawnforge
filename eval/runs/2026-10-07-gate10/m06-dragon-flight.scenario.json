@@ -1,0 +1,11 @@
+{
+  "ground": { "slope": 15, "toward": 0, "from": 60 },
+  "duration": 55,
+  "frames": 14,
+  "calls": [
+    { "at": 0, "do": "fly" },
+    { "at": 16, "do": "gait", "gait": "glide" },
+    { "at": 26, "do": "gait", "gait": null },
+    { "at": 28, "do": "land", "to": [0, 85] }
+  ]
+}

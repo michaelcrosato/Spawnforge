@@ -80,6 +80,12 @@ describe('analyze', () => {
     const hit = a.warnings.find((w) => w.code === 'limb_intersection');
     expect(hit?.message).toMatch(/(fore|hind)leg\.[LR] .* into (fore|hind)leg\.[LR]/);
     expect(hit?.fix).toMatch(/attach both higher/);
+    // Both pairs meet, and both are named at once, each pair once (gate 10).
+    const pairs = a.warnings
+      .filter((w) => w.code === 'limb_intersection' && / into (fore|hind)leg/.test(w.message))
+      .map((w) => w.path)
+      .sort();
+    expect(pairs).toEqual(['limbs[id=foreleg]', 'limbs[id=hindleg]']);
   });
 
   it('says which way an unbalanced body tips, and the fix it names clears it (gate 9)', () => {
@@ -146,5 +152,26 @@ describe('analyze', () => {
     expect(description('jaw')).toContain('curved tusks on its jaw');
     expect(description('tail', 0)).toContain('a curved stinger on its tail');
     expect(description('head')).toContain('curved horns on its head');
+  });
+
+  it('says where a layer shows, and which side each head is on (gate 10)', () => {
+    const a = analyze({
+      extends: 'quadruped',
+      skin: {
+        layers: [
+          { type: 'countershade' },
+          { type: 'countershade', color: '#101010', region: 'limbs' },
+          { type: 'spots', region: 'tail' },
+        ],
+      },
+    });
+    expect(a.description).toMatch(/a \w[\w ]* belly, a \w[\w ]* underside on the limbs/);
+    expect(a.description).toMatch(/spots on the tail/);
+    const hydra = analyze({ extends: 'quadruped', body: { neck: { count: 3 } } });
+    expect(hydra.reach.heads?.map((h) => [h.id, h.side])).toEqual([
+      ['head', 'middle'],
+      ['head.L1', 'left'],
+      ['head.R1', 'right'],
+    ]);
   });
 });

@@ -97,7 +97,11 @@ phases, `takeoff` and `land` clips; distant flyers keep flying; `cannot_fly`, `h
 flight course in `analyze`; scenarios' slopes and `fly`/`land`; `docs/design/10.4-flight.md`)
 and 10.5 (`hit` flinches and staggers, `die` collapses any body onto the ground on support hulls,
 necks droop, springs go limp; `dead`/`dying`, a `death` clip, scenarios' `hit` and `die`;
-`docs/design/10.5-hits-death.md`).
+`docs/design/10.5-hits-death.md`). Gate 10 passed: suites A and B re-scored 20/20, suite M's ten
+motion tasks 10/10 meet their checks and 10/10 filmstrips matched blind, every clip bakes and
+gait clips loop without a seam, motion budgets met (`eval/runs/2026-10-07-gate10/`). Scenario
+results' `body` and `turned`, and `analyze` naming every pair of limbs that meet at once, came
+from its feedback. Next is phase 11.
 
 ## Repo map
 
@@ -130,6 +134,7 @@ pnpm build:packages           # each package's dist/ (for publishing; the worksp
 pnpm smoke                    # pack the packages, install them into scripts/smoke-game, build and run it
 pnpm spawnforge <command>     # the CLI from source: list-modules, describe-module, validate (--quiet), analyze, patch, diff,
                               # migrate, render, generate, mutate, crossbreed, instantiate, export, schema
+                              # (`pnpm -s spawnforge …` leaves out pnpm's banner, for JSON you can pipe)
 pnpm spawnforge generate --theme reptile --seed 4 --out creatures/lizard.json   # a new creature from a theme
 pnpm spawnforge export examples/bog-troll.json --stats rpg   # a .glb with baked clips, for any engine
 pnpm spawnforge render examples/ridgeback-stalker.json --labels   # PNG contact sheet next to the file
@@ -145,6 +150,7 @@ node packages/mcp/src/bin.ts  # the MCP server over stdio
 node eval/score.ts <run>      # score an eval run from its saved attempts
 node eval/quality.ts prepare <out> --base <commit>   # the same blueprints at two commits, blind pairs
 node eval/motion.ts prepare <out>                    # filmstrips shown blind, matched to their tasks
+node eval/motion.ts check <run>                      # suite M: each task's scenario run against its checks
 ```
 
 To use the MCP server from Claude Code: `claude mcp add spawnforge -- node packages/mcp/src/bin.ts`.
