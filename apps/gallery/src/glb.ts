@@ -1,33 +1,30 @@
 /**
- * The sandbox's "export .glb", as `spawnforge export` writes it (`exportGlb` from
- * `@spawnforge/three/glb`), with the texture bake shaded on workers. Loaded on the first export,
- * so the page does not carry xatlas or the exporter until then.
+ * The `.glb` download, as `spawnforge export` writes it (`exportGlb`), with the texture bake
+ * shaded on workers. Loaded on the first download.
  */
 import type { BandJob, BandResult } from '@spawnforge/bake';
-import type { CompiledCreature, Registry } from '@spawnforge/core';
+import type { Registry } from '@spawnforge/core';
 import { exportGlb } from '@spawnforge/three/glb';
 
 let bakers: Worker[] | undefined;
 const pending = new Map<number, (result: BandResult) => void>();
 let nextJob = 0;
 
-/** Workers that shade bands of texels, started on the first export and kept. */
 function bakeWorkers(): Worker[] {
-  if (!bakers) {
-    const count = Math.max(1, Math.min(4, navigator.hardwareConcurrency || 2));
-    bakers = Array.from({ length: count }, () => {
+  bakers ??= Array.from(
+    { length: Math.max(1, Math.min(4, navigator.hardwareConcurrency || 2)) },
+    () => {
       const worker = new Worker(new URL('./bake.worker.ts', import.meta.url), { type: 'module' });
       worker.onmessage = (event: MessageEvent<{ id: number; result: BandResult }>) => {
         pending.get(event.data.id)?.(event.data.result);
         pending.delete(event.data.id);
       };
       return worker;
-    });
-  }
+    },
+  );
   return bakers;
 }
 
-/** Shades bands on the workers, one band per worker at a time. */
 function runBands(jobs: readonly BandJob[]): Promise<BandResult[]> {
   const workers = bakeWorkers();
   return Promise.all(
@@ -42,15 +39,20 @@ function runBands(jobs: readonly BandJob[]): Promise<BandResult[]> {
   );
 }
 
-/** A creature as a binary glTF, with the clip count for the log. */
-export function exportSandboxGlb(
+/** Exports and saves the file; resolves with its size and clip count. */
+export async function downloadGlb(
   blueprint: unknown,
-  compiled: CompiledCreature,
   registry: Registry,
-): Promise<{ glb: Uint8Array<ArrayBuffer>; clips: number; notes: string[] }> {
-  return exportGlb(blueprint, registry, {
-    quality: compiled.quality,
+  name: string,
+): Promise<{ bytes: number; clips: number }> {
+  const { glb, clips } = await exportGlb(blueprint, registry, {
     run: runBands,
     bands: bakeWorkers().length * 2,
   });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(new Blob([glb], { type: 'model/gltf-binary' }));
+  link.download = name;
+  link.click();
+  URL.revokeObjectURL(link.href);
+  return { bytes: glb.byteLength, clips };
 }

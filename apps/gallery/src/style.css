@@ -1,0 +1,127 @@
+:root {
+  color-scheme: dark;
+  --bg: #15171b;
+  --panel: #1f2228;
+  --text: #e6e8ec;
+  --muted: #9aa1ad;
+  --accent: #e0b24a;
+  font-family: system-ui, sans-serif;
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+}
+header {
+  display: flex;
+  gap: 1rem;
+  align-items: baseline;
+  padding: 0.8rem 1.2rem;
+  border-bottom: 1px solid #2b2f37;
+}
+header .title {
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: var(--accent);
+  text-decoration: none;
+}
+header span {
+  color: var(--muted);
+}
+main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem 1.2rem 3rem;
+}
+a {
+  color: var(--accent);
+}
+.filters {
+  display: flex;
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+}
+.filters a {
+  text-decoration: none;
+  color: var(--muted);
+}
+.filters a.active {
+  color: var(--text);
+  font-weight: 600;
+}
+.group h2 small {
+  color: var(--muted);
+  font-weight: 400;
+}
+.about,
+.note {
+  color: var(--muted);
+}
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 0.8rem;
+}
+.card {
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border-radius: 8px;
+  padding: 0.4rem;
+  text-decoration: none;
+  color: var(--text);
+}
+.card img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  background: #191b20;
+  border-radius: 6px;
+}
+.card .name {
+  padding: 0.3rem 0.2rem 0.1rem;
+  text-transform: capitalize;
+}
+.stage {
+  position: relative;
+}
+.viewer {
+  width: 100%;
+  height: 60vh;
+  display: block;
+  border-radius: 8px;
+}
+.actions {
+  position: absolute;
+  left: 0.6rem;
+  bottom: 0.6rem;
+  display: flex;
+  gap: 0.4rem;
+}
+.links {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  margin: 0.8rem 0;
+  flex-wrap: wrap;
+}
+button {
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid #3a3f49;
+  border-radius: 6px;
+  padding: 0.35rem 0.7rem;
+  cursor: pointer;
+}
+.sheet {
+  width: 100%;
+  border-radius: 8px;
+  margin: 0.6rem 0;
+}
+pre {
+  background: var(--panel);
+  padding: 0.8rem;
+  border-radius: 8px;
+  overflow: auto;
+  max-height: 60vh;
+}

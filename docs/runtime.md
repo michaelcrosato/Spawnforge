@@ -208,7 +208,9 @@ spawnforge export creature.json --out creature.glb --stats rpg
 spawnforge export creature.json --clips idle,walk,bite --quality low --fps 24
 ```
 
-(MCP: the `export` tool. The sandbox's "export .glb" button does the same in the browser.) The
+(MCP: the `export` tool. In the browser, `exportGlb(blueprint, registry, { run })` from
+`@spawnforge/three/glb` writes the same file, its texture bake on your workers if you pass `run`;
+the sandbox's "export .glb" button and the gallery's download use it.) The
 output lists the clips, sockets, stats and maps (with the bake's time), and `notes` such as an
 idle that is only a standing pose (the blueprint lists `motion.actions` without `idle`), or what
 the file leaves out (see [below](#what-the-file-leaves-out)). An export at medium quality is about

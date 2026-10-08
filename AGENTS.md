@@ -117,7 +117,9 @@ CI). Gate 11 passed: suites A and B re-scored 20/20, the export eval 11/11 with 
 smoke test passing, the bench pending the owner's laptop (`eval/runs/2026-10-08-gate11/`).
 Then 12.1 (the sandbox's place tab: click the creature to place a part, drag to move it,
 undo, save to `creatures/`; core's `anchorAt` inverts part placement, round-tripping on every
-section and limb; `docs/design/12.1-placing.md`).
+section and limb; `docs/design/12.1-placing.md`) and 12.2 (`apps/gallery`: the examples, every theme
+at six seeds and the agents' creatures, with live thumbnails, a viewer, blueprint and `.glb`
+downloads and a link into the sandbox; CI builds it as an artifact; `docs/design/12.2-gallery.md`).
 
 ## Repo map
 
@@ -130,6 +132,7 @@ section and limb; `docs/design/12.1-placing.md`).
 | `packages/cli`     | The `spawnforge` command. Every command prints JSON. Headless renderer later                     | core, modules                    |
 | `packages/mcp`     | MCP server: a thin wrapper over the CLI command functions                                        | cli, render                      |
 | `packages/render`  | Headless contact sheets, exports and the texture round trip through Chromium (Playwright) and a Vite-served page, WebGL 2 backend | core, modules, three, bake |
+| `apps/gallery`     | Static site of curated creatures: examples, themes across seeds, the agents' creatures; live thumbnails and viewer, blueprint and `.glb` downloads, open in sandbox | core, modules, three, bake; render (its test) |
 | `apps/sandbox`     | Vite app: terrain course, walking creatures, actions, sliders, JSON panel, gallery, breeding, placing parts, `creatures/` watch and save | core, modules, three, bake; render (its test) |
 | `examples/`        | Blueprints beside their renders; also the golden test set                                        |                                  |
 | `eval/`            | The 20-prompt agent eval: prompts, scorer and one folder per run                                  |                                  |
@@ -147,6 +150,7 @@ pnpm typecheck                # tsc on the root, the tests and every package
 pnpm format                   # Biome: format, sort imports, apply safe lint fixes
 pnpm generate                 # rewrite generated files after adding or changing a module
 pnpm dev                      # sandbox at http://localhost:5173 (add ?webgl to force the WebGL 2 backend)
+pnpm gallery                  # gallery at http://localhost:5174 (`pnpm build` writes it to apps/gallery/dist)
 pnpm build                    # production build of the sandbox
 pnpm build:packages           # each package's dist/ (for publishing; the workspace runs src/)
 pnpm smoke                    # pack the packages, install them into scripts/smoke-game, build and run it

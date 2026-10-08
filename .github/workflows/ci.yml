@@ -38,6 +38,11 @@ jobs:
         env:
           SPAWNFORGE_BPY_PYTHON: python
       - run: pnpm build
+      - name: The gallery as an artifact (publishing waits for the owner; docs/design/12.2-gallery.md)
+        uses: actions/upload-artifact@v4
+        with:
+          name: gallery
+          path: apps/gallery/dist
       - name: Smoke test the packed packages in a small game
         run: pnpm smoke
       - name: GPU bench, small (recorded, not gated; docs/design/11.3-crowds.md)

@@ -1,0 +1,4952 @@
+[
+  {
+    "theme": "aquatic",
+    "seed": 1,
+    "blueprint": {
+      "format": "spawnforge/0.2",
+      "name": "Pelrin",
+      "seed": 60269202,
+      "extends": "fish",
+      "scale": 0.992,
+      "body": {
+        "torso": {
+          "radius": [
+            0.099,
+            0.161,
+            0.151,
+            0.0702
+          ]
+        },
+        "head": {
+          "length": 0.274,
+          "radius": 0.0928
+        },
+        "tail": {
+          "length": 0.739,
+          "radius": [
+            0.0886,
+            0.025
+          ]
+        }
+      },
+      "limbs": [
+        {
+          "id": "pectoral",
+          "length": 0.224,
+          "membrane": {
+            "rays": 5,
+            "width": 0.794
+          }
+        },
+        {
+          "id": "pelvic",
+          "length": 0.175
+        }
+      ],
+      "parts": [
+        {
+          "id": "eyes",
+          "params": {
+            "scale": 1.28,
+            "irisColor": "#101010"
+          }
+        },
+        {
+          "id": "teeth",
+          "type": "teeth.row",
+          "params": {
+            "count": 15,
+            "scale": 0.804
+          }
+        },
+        {
+          "id": "dorsal",
+          "params": {
+            "height": 0.239,
+            "length": 0.23,
+            "sweep": 45
+          }
+        },
+        {
+          "id": "tailfin",
+          "params": {
+            "size": 0.441
+          }
+        }
+      ],
+      "skin": {
+        "palette": {
+          "base": "#377154",
+          "belly": "#82ada6",
+          "accent": "#0e1c10"
+        },
+        "material": "skin",
+        "layers": [
+          {
+            "type": "countershade",
+            "height": 0.261,
+            "softness": 0.2
+          },
+          {
+            "type": "mottle",
+            "scale": 0.215
+          }
+        ]
+      }
+    }
+  },
+  {
+    "theme": "aquatic",
+    "seed": 2,
+    "blueprint": {
+      "format": "spawnforge/0.2",
+      "name": "Kaira",
+      "seed": 9686688,
+      "extends": "fish",
+      "scale": 1.56,
+      "body": {
+        "torso": {
+          "radius": [
+            0.114,
+            0.136,
+            0.133,
+            0.104
+          ]
+        },
+        "head": {
+          "length": 0.32,
+          "radius": 0.11
+        },
+        "tail": {
+          "length": 0.767,
+          "radius": [
+            0.0781,
+            0.025
+          ]
+        }
+      },
+      "limbs": [
+        {
+          "id": "pectoral",
+          "length": 0.35,
+          "membrane": {
+            "rays": 5,
+            "width": 0.599
+          }
+        },
+        {
+          "id": "pelvic",
+          "length": 0.173
+        }
+      ],
+      "parts": [
+        {
+          "id": "eyes",
+          "params": {
+            "scale": 0.903,
+            "irisColor": "#101010"
+          }
+        },
+        {
+          "id": "teeth",
+          "type": "teeth.row",
+          "params": {
+            "count": 10,
+            "scale": 1.09
+          }
+        },
+        {
+          "id": "dorsal",
+          "params": {
+            "height": 0.241,
+            "length": 0.287,
+            "sweep": 27
+          }
+        }
+      ],
+      "skin": {
+        "palette": {
+          "base": "#465b5f",
+          "belly": "#839098",
+          "accent": "#181e21"
+        },
+        "layers": [
+          {
+            "type": "countershade",
+            "height": 0.13,
+            "softness": 0.2
+          }
+        ]
+      }
+    }
+  },
+  {
+    "theme": "aquatic",
+    "seed": 3,
+    "blueprint": {
+      "format": "spawnforge/0.2",
+      "name": "Sylrin",
+      "seed": 723850762,
+      "extends": "quadruped",
+      "scale": 1.15,
+      "body": {
+        "torso": {
+          "radius": [
+            0.128,
+            0.159,
+            0.159,
+            0.124
+          ],
+          "crossSection": "wide"
+        },
+        "neck": {
+          "length": 0.121,
+          "pitch": 12
+        },
+        "head": {
+          "length": 0.467,
+          "radius": 0.0822,
+          "pitch": -5,
+          "crossSection": "wide"
+        },
+        "tail": {
+          "length": 1.15,
+          "radius": [
+            0.115,
+            0.015
+          ],
+          "pitch": -5,
+          "crossSection": "tall",
+          "segments": 10
+        }
+      },
+      "limbs": [
+        {
+          "id": "foreleg",
+          "length": 0.33,
+          "radius": [
+            0.06,
+            0.035
+          ],
+          "splay": 40,
+          "foot": {
+            "toes": 5,
+            "clawLength": 0.03
+          }
+        },
+        {
+          "id": "hindleg",
+          "length": 0.376,
+          "radius": [
+            0.07,
+            0.04
+          ],
+          "splay": 35,
+          "foot": {
+            "toes": 5,
+            "clawLength": 0.03
+          }
+        }
+      ],
+      "motion": {
+        "media": {
+          "water": true
+        },
+        "temperament": "skittish"
+      },
+      "parts": [
+        {
+          "id": "eyes",
+          "params": {
+            "scale": 1.14,
+            "irisColor": "#101010"
+          }
+        },
+        {
+          "id": "teeth",
+          "type": "teeth.row",
+          "params": {
+            "count": 12,
+            "scale": 1.15
+          }
+        }
+      ],
+      "skin": {
+        "palette": {
+          "base": "#356c60",
+          "belly": "#82ac9f",
+          "accent": "#070e0c"
+        },
+        "material": "scales",
+        "layers": [
+          {
+            "type": "countershade",
+            "height": 0.116,
+            "softness": 0.2
+          },
+          {
+            "type": "spots",
+            "size": 0.0259,
+            "density": 0.464
+          },
+          {
+            "type": "bioluminescence",
+            "size": 0.0159,
+            "density": 0.451
+          }
+        ]
+      }
+    }
+  },
+  {
+    "theme": "aquatic",
+    "seed": 4,
+    "blueprint": {
+      "format": "spawnforge/0.2",
+      "name": "Marra",
+      "seed": 70931893,
+      "extends": "serpent",
+      "scale": 1.29,
+      "body": {
+        "torso": {
+          "radius": [
+            0.105,
+            0.12,
+            0.129,
+            0.102
+          ],
+          "crossSection": "tall"
+        },
+        "head": {
+          "length": 0.26,
+          "radius": 0.0807
+        },
+        "tail": {
+          "length": 2,
+          "radius": [
+            0.119,
+            0.02
+          ],
+          "crossSection": "tall"
+        }
+      },
+      "limbs": [
+        {
+          "id": "pectoral",
+          "role": "fin",
+          "attach": {
+            "at": 0.12
+          },
+          "length": 0.156,
+          "membrane": {
+            "rays": 5
+          }
+        }
+      ],
+      "parts": [
+        {
+          "id": "eyes",
+          "params": {
+            "scale": 1.09,
+            "irisColor": "#101010"
+          }
+        },
+        {
+          "id": "teeth",
+          "type": "teeth.row",
+          "params": {
+            "count": 13,
+            "scale": 1.09
+          }
+        },
+        {
+          "id": "dorsal",
+          "type": "fin.dorsal",
+          "attach": {
+            "on": "torso",
+            "at": 0.5,
+            "angle": 0
+          },
+          "params": {
+            "height": 0.154,
+            "length": 0.705,
+            "shape": "sail"
+          }
+        }
+      ],
+      "skin": {
+        "palette": {
+          "base": "#374b86",
+          "belly": "#8983b5",
+          "accent": "#192c3e"
+        },
+        "material": "skin",
+        "layers": [
+          {
+            "type": "countershade",
+            "height": 0.155,
+            "softness": 0.2
+          }
+        ]
+      },
+      "motion": {
+        "temperament": "skittish"
+      }
+    }
+  },
+  {
+    "theme": "aquatic",
+    "seed": 5,
+    "blueprint": {
+      "format": "spawnforge/0.2",
+      "name": "Peltide",
+      "seed": 42292249,
+      "extends": "fish",
+      "scale": 0.644,
+      "body": {
+        "torso": {
+          "radius": [
+            0.13,
+            0.153,
+            0.154,
+            0.0848
+          ]
+        },
+        "head": {
+          "length": 0.288,
+          "radius": 0.0964
+        },
+        "tail": {
+          "length": 0.89,
+          "radius": [
+            0.0783,
+            0.025
+          ]
+        }
+      },
+      "limbs": [
+        {
+          "id": "pectoral",
+          "length": 0.249,
+          "membrane": {
+            "rays": 5,
+            "width": 0.706
+          }
+        },
+        {
+          "id": "pelvic",
+          "length": 0.158
+        }
+      ],
+      "parts": [
+        {
+          "id": "eyes",
+          "params": {
+            "scale": 0.872,
+            "irisColor": "#101010"
+          }
+        },
+        {
+          "id": "teeth",
+          "type": "teeth.row",
+          "params": {
+            "count": 13,
+            "scale": 1.1
+          }
+        },
+        {
+          "id": "dorsal",
+          "params": {
+            "height": 0.166,
+            "length": 0.251,
+            "sweep": 45
+          }
+        }
+      ],
+      "skin": {
+        "palette": {
+          "base": "#3a4679",
+          "belly": "#808fac",
+          "accent": "#0d101b"
+        },
+        "layers": [
+          {
+            "type": "countershade",
+            "height": 0.0774,
+            "softness": 0.2
+          },
+          {
+            "type": "stripes",
+            "region": "back",
+            "count": 11,
+            "width": 0.3
+          },
+          {
+            "type": "spots",
+            "size": 0.0245,
+            "density": 0.264
+          }
+        ]
+      }
+    }
+  },
+  {
+    "theme": "aquatic",
+    "seed": 6,
+    "blueprint": {
+      "format": "spawnforge/0.2",
+      "name": "Naufin",
+      "seed": 2079627193,
+      "extends": "fish",
+      "scale": 1.58,
+      "body": {
+        "torso": {
+          "radius": [
+            0.113,
+            0.154,
+            0.166,
+            0.093
+          ]
+        },
+        "head": {
+          "length": 0.34,
+          "radius": 0.111
+        },
+        "tail": {
+          "length": 0.765,
+          "radius": [
+            0.0765,
+            0.025
+          ]
+        }
+      },
+      "limbs": [
+        {
+          "id": "pectoral",
+          "length": 0.332,
+          "membrane": {
+            "rays": 5,
+            "width": 0.721
+          }
+        },
+        {
+          "id": "pelvic",
+          "length": 0.184
+        }
+      ],
+      "parts": [
+        {
+          "id": "eyes",
+          "params": {
+            "scale": 0.962,
+            "irisColor": "#101010"
+          }
+        },
+        {
+          "id": "dorsal",
+          "params": {
+            "height": 0.175,
+            "length": 0.241,
+            "sweep": 41
+          }
+        },
+        {
+          "id": "tailfin",
+          "params": {
+            "size": 0.342
+          }
+        }
+      ],
+      "skin": {
+        "palette": {
+          "base": "#3d9577",
+          "belly": "#96c0ad",
+          "accent": "#1c442a"
+        },
+        "layers": [
+          {
+            "type": "countershade",
+            "height": 0.22,
+            "softness": 0.2
+          },
+          {
+            "type": "stripes",
+            "region": "back",
+            "count": 13,
+            "width": 0.3
+          },
+          {
+            "type": "mottle",
+            "scale": 0.167
+          }
+        ]
+      },
+      "motion": {
+        "temperament": "skittish"
+      }
+    }
+  },
+  {
+    "theme": "beast",
+    "seed": 1,
+    "blueprint": {
+      "format": "spawnforge/0.2",
+      "name": "Volgan",
+      "seed": 1212835154,
+      "extends": "quadruped",
+      "scale": 1.47,
+      "body": {
+        "muscle": 0.556,
+        "torso": {
+          "radius": [
+            0.147,
+            0.2,
+            0.146,
+            0.123
+          ],
+          "arch": 0.0747
+        },
+        "neck": {
+          "length": 0.213,
+          "radius": [
+            0.109,
+            0.151
+          ],
+          "pitch": 22
+        },
+        "head": {
+          "length": 0.418,
+          "pitch": -15
+        },
+        "tail": {
+          "length": 0.698,
+          "radius": [
+            0.0598,
+            0.02
+          ],
+          "pitch": -22,
+          "curl": 16
+        }
+      },
+      "limbs": [
+        {
+          "id": "foreleg",
+          "length": 0.573,
+          "radius": [
+            0.0701,
+            0.032
+          ],
+          "foot": {
+            "type": "foot.paw"
+          }
+        },
+        {
+          "id": "hindleg",
+          "length": 0.681,
+          "radius": [
+            0.0832,
+            0.032
+          ],
+          "foot": {
+            "type": "foot.paw"
+          }
+        }
+      ],
+      "parts": [
+        {
+          "id": "eyes",
+          "params": {
+            "scale": 1.13
+          }
+        },
+        {
+          "id": "ears",
+          "type": "ear.pointed",
+          "attach": {
+            "on": "head",
+            "at": 0.85,
+            "angle": 45
+          },
+          "params": {
+            "length": 0.0763,
+            "width": 0.0654,
+            "droop": 0.252
+          }
+        },
+        {
+          "id": "teeth",
+          "type": "teeth.row",
+          "params": {
+            "scale": 0.981
+          }
+        },
+        {
+          "id": "tusks",
+          "type": "horn.curved",
+          "attach": {
+            "on": "jaw",
+            "at": 0.25,
+            "angle": 60
+          },
+          "params": {
+            "length": 0.173,
+            "width": 0.03,
+            "curve": -52,
+            "color": "#efe6cc",
+            "tipColor": "#d8ccaa"
+          }
+        }
+      ],
+      "skin": {
+        "fur": {
+          "length": 0.0495,
+          "density": 0.787
+        },
+        "palette": {
+          "base": "#a26e53",
+          "belly": "#cdc4b5",
+          "accent": "#594e2e"
+        },
+        "material": "hide",
+        "layers": [
+          {
+            "type": "countershade",
+            "strength": 0.503
+          },
+          {
+            "type": "rosettes",
+            "size": 0.0588,
+            "density": 0.629
+          }
+        ]
+      },
+      "motion": {
+        "temperament": "lumbering"
+      }
+    }
+  },
+  {
+    "theme": "beast",
+    "seed": 2,
+    "blueprint": {
+      "format": "spawnforge/0.2",
+      "name": "Karik",
+      "seed": 1456963903,
+      "extends": "quadruped",
+      "scale": 1.09,
+      "body": {
+        "muscle": 0.755,
+        "torso": {
+          "radius": [
+            0.139,
+            0.165,
+            0.181,
+            0.109
+          ],
+          "arch": 0.0886
+        },
+        "neck": {
+          "length": 0.235,
+          "radius": [
+            0.0903,
+            0.145
+          ],
+          "pitch": 16
+        },
+        "head": {
+          "length": 0.368,
+          "radius": 0.108,
+          "pitch": -14
+        },
+        "tail": {
+          "length": 0.439,
+          "radius": [
+            0.0771,
+            0.02
+          ],
+          "pitch": -30,
+          "curl": 19
+        }
+      },
+      "limbs": [
+        {
+          "id": "foreleg",
+          "length": 0.556,
+          "radius": [
+            0.0735,
+            0.032
+          ],
+          "foot": {
+            "type": "foot.hoof",
+            "cloven": true
+          }
+        },
+        {
+          "id": "hindleg",
+          "length": 0.651,
+          "radius": [
+            0.0812,
+            0.032
+          ],
+          "foot": {
+            "type": "foot.hoof",
+            "cloven": true
+          }
+        }
+      ],
+      "parts": [
+        {
+          "id": "eyes",
+          "params": {
+            "scale": 0.993
+          }
+        },
+        {
+          "id": "ears",
+          "type": "ear.pointed",
+          "attach": {
+            "on": "head",
+            "at": 0.85,
+            "angle": 45
+          },
+          "params": {
+            "length": 0.121,
+            "width": 0.0611,
+            "droop": 0.15
+          }
+        },
+        {
+          "id": "teeth",
+          "type": "teeth.row",
+          "params": {
+            "scale": 0.923
+          }
+        },
+        {
+          "id": "horns",
+          "type": "horn.curved",
+          "attach": {
+            "on": "head",
+            "at": 0.8,
+            "angle": 62,
+            "side": "both"
+          },
+          "params": {
+            "length": 0.283,
+            "width": 0.0448,
+            "curve": 40,
+            "aim": "out",
+            "color": "#d8ccb0"
+          }
+        }
+      ],
+      "skin": {
+        "fur": {
+          "length": 0.043,
+          "density": 0.703
+        },
+        "palette": {
+          "base": "#5d5347",
+          "belly": "#a19b90",
+          "accent": "#191813"
+        },
+        "material": "hide",
+        "layers": [
+          {
+            "type": "countershade",
+            "strength": 0.778
+          }
+        ]
+      },
+      "motion": {
+        "temperament": "aggressive"
+      }
+    }
+  },
+  {
+    "theme": "beast",
+    "seed": 3,
+    "blueprint": {
+      "format": "spawnforge/0.2",
+      "name": "Tordur",
+      "seed": 354909939,
+      "extends": "quadruped",
+      "scale": 1.44,
+      "body": {
+        "muscle": 0.755,
+        "torso": {
+          "radius": [
+            0.168,
+            0.165,
+            0.145,
+            0.118
+          ],
+          "arch": 0.0658
+        },
+        "neck": {
+          "length": 0.285,
+          "radius": [
+            0.101,
+            0.166
+          ],
+          "pitch": 20
+        },
+        "head": {
+          "length": 0.353,
+          "radius": 0.112,
+          "pitch": -13
+        },
+        "tail": {
+          "length": 0.701,
+          "radius": [
+            0.0731,
+            0.02
+          ],
+          "pitch": -26,
+          "curl": 8
+        }
+      },
+      "limbs": [
+        {
+          "id": "foreleg",
+          "length": 0.66,
+          "radius": [
+            0.073,
+            0.032
+          ],
+          "foot": {
+            "type": "foot.hoof",
+            "cloven": true
+          }
+        },
+        {
+          "id": "hindleg",
+          "length": 0.636,
+          "radius": [
+            0.083,
+            0.032
+          ],
+          "foot": {
+            "type": "foot.hoof",
+            "cloven": true
+          }
+        }
+      ],
+      "parts": [
+        {
+          "id": "eyes",
+          "params": {
+            "scale": 0.945
+          }
+        },
+        {
+          "id": "teeth",
+          "type": "teeth.row",
+          "params": {
+            "scale": 1.29
+          }
+        }
+      ],
+      "skin": {
+        "fur": {
+          "length": 0.0338,
+          "density": 0.901
+        },
+        "palette": {
+          "base": "#9d6c3f",
+          "belly": "#bea691",
+          "accent": "#4d2c1f"
+        },
+        "material": "hide",
+        "layers": [
+          {
+            "type": "countershade",
+            "strength": 0.525
+          },
+          {
+            "type": "stripes",
+            "color": "accent",
+            "count": 13,
+            "width": 0.3
+          }
+        ]
+      },
+      "motion": {
+        "temperament": "stalking"
+      }
+    }
+  },
+  {
+    "theme": "beast",
+    "seed": 4,
+    "blueprint": {
+      "format": "spawnforge/0.2",
+      "name": "Morok",
+      "seed": 1858760876,
+      "extends": "quadruped",
+      "scale": 1.38,
+      "body": {
+        "muscle": 0.682,
+        "torso": {
+          "radius": [
+            0.138,
+            0.202,
+            0.171,
+            0.108
+          ],
+          "arch": 0.036
+        },
+        "neck": {
+          "length": 0.323,
+          "radius": [
+            0.118,
+            0.18
+          ],
+          "pitch": 25
+        },
+        "head": {
+          "length": 0.44,
+          "radius": 0.129,
+          "pitch": -13
+        },
+        "tail": {
+          "length": 0.244,
+          "radius": [
+            0.0663,
+            0.02
+          ],
+          "pitch": -23,
+          "curl": 19
+        }
+      },
+      "limbs": [
+        {
+          "id": "foreleg",
+          "length": 0.603,
+          "radius": [
+            0.0701,
+            0.032
+          ],
+          "foot": {
+            "type": "foot.paw"
+          }
+        },
+        {
+          "id": "hindleg",
+          "length": 0.621,
+          "radius": [
+            0.0778,
+            0.032
+          ],
+          "foot": {
+            "type": "foot.paw"
+          }
+        }
+      ],
+      "parts": [
+        {
+          "id": "eyes",
+          "params": {
+            "scale": 0.91
+          }
+        },
+        {
+          "id": "ears",
+          "type": "ear.pointed",
+          "attach": {
+            "on": "head",
+            "at": 0.85,
+            "angle": 45
+          },
+          "params": {
+            "length": 0.127,
+            "width": 0.0562,
+            "droop": 0.0238
+          }
+        },
+        {
+          "id": "teeth",
+          "type": "teeth.row",
+          "params": {
+            "scale": 1.21
+          }
+        },
+        {
+          "id": "horns",
+          "type": "horn.curved",
+          "attach": {
+            "on": "head",
+            "at": 0.8,
+            "angle": 68,
+            "side": "both"
+          },
+          "params": {
+            "length": 0.249,
+            "width": 0.0419,
+            "curve": 70,
+            "aim": "out",
+            "color": "#d8ccb0"
+          }
+        }
+      ],
+      "skin": {
+        "fur": {
+          "length": 0.0449,
+          "density": 0.866
+        },
+        "palette": {
+          "base": "#585046",
+          "belly": "#a8a49b",
+          "accent": "#2b2422"
+        },
+        "material": "hide",
+        "layers": [
+          {
+            "type": "countershade",
+            "strength": 0.699
+          },
+          {
+            "type": "scars",
+            "count": 3,
+            "region": "torso"
+          },
+          {
+            "type": "stripes",
+            "color": "accent",
+            "count": 18,
+            "width": 0.3
+          }
+        ]
+      },
+      "motion": {
+        "temperament": "stalking"
+      }
+    }
+  },
+  {
+    "theme": "beast",
+    "seed": 5,
+    "blueprint": {
+      "format": "spawnforge/0.2",
+      "name": "Tormar",
+      "seed": 195756415,
+      "extends": "quadruped",
+      "scale": 1.58,
+      "body": {
+        "muscle": 0.552,
+        "torso": {
+          "radius": [
+            0.146,
+            0.211,
+            0.171,
+            0.111
+          ],
+          "arch": 0.0611
+        },
+        "neck": {
+          "length": 0.274,
+          "radius": [
+            0.1,
+            0.141
+          ],
+          "pitch": 18
+        },
+        "head": {
+          "length": 0.358,
+          "radius": 0.11,
+          "pitch": -9
+        },
+        "tail": {
+          "length": 0.422,
+          "radius": [
+            0.0563,
+            0.02
+          ],
+          "pitch": -29,
+          "curl": 4
+        }
+      },
+      "limbs": [
+        {
+          "id": "foreleg",
+          "length": 0.575,
+          "radius": [
+            0.073,
+            0.032
+          ],
+          "foot": {
+            "type": "foot.hoof",
+            "cloven": true
+          }
+        },
+        {
+          "id": "hindleg",
+          "length": 0.63,
+          "radius": [
+            0.081,
+            0.032
+          ],
+          "foot": {
+            "type": "foot.hoof",
+            "cloven": true
+          }
+        }
+      ],
+      "parts": [
+        {
+          "id": "eyes",
+          "params": {
+            "scale": 1.03
+          }
+        },
+        {
+          "id": "ears",
+          "type": "ear.pointed",
+          "attach": {
+            "on": "head",
+            "at": 0.85,
+            "angle": 45
+          },
+          "params": {
+            "length": 0.0772,
+            "width": 0.0515,
+            "droop": 0.185
+          }
+        },
+        {
+          "id": "teeth",
+          "type": "teeth.row",
+          "params": {
+            "scale": 1.19
+          }
+        },
+        {
+          "id": "horns",
+          "type": "horn.curved",
+          "attach": {
+            "on": "head",
+            "at": 0.8,
+            "angle": 52,
+            "side": "both"
+          },
+          "params": {
+            "length": 0.19,
+            "width": 0.0463,
+            "curve": 48,
+            "aim": "out",
+            "color": "#d8ccb0"
+          }
+        }
+      ],
+      "skin": {
+        "fur": {
+          "length": 0.0331,
+          "density": 0.679
+        },
+        "palette": {
+          "base": "#846750",
+          "belly": "#c7bcb4",
+          "accent": "#3a3023"
+        },
+        "layers": [
+          {
+            "type": "countershade",
+            "strength": 0.546
+          },
+          {
+            "type": "rosettes",
+            "size": 0.0365,
+            "density": 0.447
+          }
+        ]
+      },
+      "motion": {
+        "temperament": "stalking"
+      }
+    }
+  },
+  {
+    "theme": "beast",
+    "seed": 6,
+    "blueprint": {
+      "format": "spawnforge/0.2",
+      "name": "Grok",
+      "seed": 681079609,
+      "extends": "quadruped",
+      "scale": 0.789,
+      "body": {
+        "muscle": 0.55,
+        "torso": {
+          "radius": [
+            0.16,
+            0.194,
+            0.161,
+            0.102
+          ],
+          "arch": 0.0855
+        },
+        "neck": {
+          "length": 0.292,
+          "radius": [
+            0.117,
+            0.157
+          ],
+          "pitch": 15
+        },
+        "head": {
+          "length": 0.348,
+          "radius": 0.121
+        },
+        "tail": {
+          "length": 0.599,
+          "radius": [
+            0.0877,
+            0.02
+          ],
+          "pitch": -32,
+          "curl": 12
+        }
+      },
+      "limbs": [
+        {
+          "id": "foreleg",
+          "length": 0.607,
+          "radius": [
+            0.0667,
+            0.032
+          ],
+          "foot": {
+            "type": "foot.hoof",
+            "cloven": true
+          }
+        },
+        {
+          "id": "hindleg",
+          "length": 0.683,
+          "radius": [
+            0.0803,
+            0.032
+          ],
+          "foot": {
+            "type": "foot.hoof",
+            "cloven": true
+          }
+        }
+      ],
+      "parts": [
+        {
+          "id": "eyes",
+          "params": {
+            "scale": 1.09
+          }
+        },
+        {
+          "id": "ears",
+          "type": "ear.pointed",
+          "attach": {
+            "on": "head",
+            "at": 0.85,
+            "angle": 45
+          },
+          "params": {
+            "length": 0.102,
+            "width": 0.0588,
+            "droop": 0.373
+          }
+        },
+        {
+          "id": "teeth",
+          "type": "teeth.row",
+          "params": {
+            "scale": 1.21
+          }
+        }
+      ],
+      "skin": {
+        "fur": {
+          "length": 0.0357,
+          "density": 0.88
+        },
+        "palette": {
+          "base": "#5f4420",
+          "belly": "#ae8b6a",
+          "accent": "#0f0d05"
+        },
+        "layers": [
+          {
+            "type": "countershade",
+            "strength": 0.68
+          },
+          {
+            "type": "spots",
+            "size": 0.0393
+          },
+          {
+            "type": "mottle",
+            "scale": 0.107,
+            "coverage": 0.31,
+            "contrast": 0.25
+          }
+        ]
+      },
+      "motion": {
+        "temperament": "skittish"
+      }
+    }
+  },
+  {
+    "theme": "demon",
+    "seed": 1,
+    "blueprint": {
+      "format": "spawnforge/0.2",
+      "name": "Khagash",
+      "seed": 777716753,
+      "extends": "quadruped",
+      "scale": 1.02,
+      "body": {
+        "torso": {
+          "radius": [
+            0.148,
+            0.203,
+            0.168,
+            0.118
+          ],
+          "arch": 0.139
+        },
+        "neck": {
+          "length": 0.311,
+          "pitch": 25,
+          "radius": [
+            0.08,
+            0.12
+          ]
+        },
+        "head": {
+          "length": 0.353,
+          "radius": 0.115,
+          "pitch": -15
+        },
+        "tail": {
+          "length": 0.734,
+          "radius": [
+            0.07,
+            0.01
+          ],
+          "curl": 22
+        }
+      },
+      "limbs": [
+        {
+          "id": "foreleg",
+          "length": 0.653,
+          "radius": [
+            0.055,
+            0.03
+          ]
+        },
+        {
+          "id": "hindleg",
+          "length": 0.674
+        }
+      ],
+      "parts": [
+        {
+          "id": "eyes",
+          "params": {
+            "scale": 1.12,
+            "pupil": "goat",
+            "irisColor": "#ffcc00"
+          }
+        },
+        {
+          "id": "teeth",
+          "type": "teeth.row",
+          "params": {
+            "fangs": 2,
+            "fangScale": 1.48,
+            "spacing": 0.053
+          }
+        },
+        {
+          "id": "spines",
+          "type": "spikes.row",
+          "attach": {
+            "on": "spine",
+            "from": 0.18,
+            "to": 0.82,
+            "angle": 0
+          },
+          "params": {
+            "count": 13,
+            "height": [
+              0.08,
+              0.199,
+              0.12,
+              0.05
+            ],
+            "width": 0.022,
+            "curve": 30,
+            "jitter": 0.893,
+            "color": "#3a2a26",
+            "tipColor": "#a82020"
+          }
+        }
+      ],
+      "skin": {
+        "palette": {
+          "base": "#7a1813",
+          "belly": "#b77b49",
+          "accent": "#121010"
+        },
+        "layers": [
+          {
+            "type": "countershade",
+            "strength": 0.5
+          },
+          {
+            "type": "grime",
+            "amount": 0.634
+          },
+          {
+            "type": "mottle",
+            "scale": 0.147,
+            "strength": 0.6
+          }
+        ]
+      },
+      "motion": {
+        "temperament": "aggressive"
+      }
+    }
+  },
+  {
+    "theme": "demon",
+    "seed": 2,
+    "blueprint": {
+      "format": "spawnforge/0.2",
+      "name": "Zulror",
+      "seed": 2021409843,
+      "extends": "biped",
+      "scale": 0.84,
+      "body": {
+        "torso": {
+          "radius": [
+            0.143,
+            0.271,
+            0.199,
+            0.169
+          ]
+        },
+        "neck": {
+          "length": 0.226,
+          "radius": [
+            0.09,
+            0.12
+          ]
+        },
+        "head": {
+          "shape": "wedge",
+          "length": 0.352,
+          "radius": 0.143
+        },
+        "tail": {
+          "length": 0.41,
+          "pitch": -35,
+          "radius": [
+            0.07,
+            0.012
+          ]
+        }
+      },
+      "limbs": [
+        {
+          "id": "leg",
+          "length": 1.25,
+          "radius": [
+            0.12,
+            0.07
+          ],
+          "segments": 3,
+          "splay": 4,
+          "attach": {
+            "angle": 105
+          },
+          "foot": {
+            "clawLength": 0.05
+          }
+        },
+        {
+          "id": "arm",
+          "length": 1.09,
+          "radius": [
+            0.09,
+            0.05
+          ]
+        }
+      ],
+      "parts": [
+        {
+          "id": "eyes",
+          "params": {
+            "scale": 1.38,
+            "pupil": "goat",
+            "irisColor": "#ffcc00"
+          }
+        },
+        {
+          "id": "teeth",
+          "type": "teeth.row",
+          "params": {
+            "fangs": 2,
+            "fangScale": 1.14,
+            "spacing": 0.147
+          }
+        },
+        {
+          "id": "horns",
+          "type": "horn.curved",
+          "attach": {
+            "on": "head",
+            "at": 0.6,
+            "angle": 70,
+            "side": "both"
+          },
+          "params": {
+            "length": 0.697,
+            "width": 0.0603,
+            "curve": 277,
+            "turn": -36,
+            "ridges": 7,
+            "color": "#2a1a14",
+            "tipColor": "#d8c8a0"
+          }
+        }
+      ],
+      "skin": {
+        "palette": {
+          "base": "#724332",
+          "belly": "#b8978d",
+          "accent": "#160f0f"
+        },
+        "layers": [
+          {
+            "type": "countershade",
+            "strength": 0.5
+          },
+          {
+            "type": "stripes",
+            "count": 10,
+            "width": 0.3
+          }
+        ]
+      },
+      "motion": {
+        "temperament": "stalking"
+      }
+    }
+  },
+  {
+    "theme": "demon",
+    "seed": 3,
+    "blueprint": {
+      "format": "spawnforge/0.2",
+      "name": "Zulvor",
+      "seed": 1279869499,
+      "extends": "biped",
+      "scale": 0.835,
+      "body": {
+        "torso": {
+          "radius": [
+            0.146,
+            0.27,
+            0.204,
+            0.155
+          ]
+        },
+        "neck": {
+          "length": 0.242,
+          "radius": [
+            0.09,
+            0.12
+          ]
+        },
+        "head": {
+          "shape": "wedge",
+          "length": 0.313,
+          "radius": 0.142
+        },
+        "tail": {
+          "length": 0.587,
+          "pitch": -35,
+          "radius": [
+            0.07,
+            0.012
+          ]
+        }
+      },
+      "limbs": [
+        {
+          "id": "leg",
+          "length": 1.29,
+          "radius": [
+            0.12,
+            0.07
+          ],
+          "segments": 3,
+          "splay": 4,
+          "attach": {
+            "angle": 105
+          },
+          "foot": {
+            "clawLength": 0.05
+          }
+        },
+        {
+          "id": "arm",
+          "length": 1.14,
+          "radius": [
+            0.09,
+            0.05
+          ]
+        }
+      ],
+      "parts": [
+        {
+          "id": "eyes",
+          "params": {
+            "scale": 1.17,
+            "pupil": "goat",
+            "irisColor": "#ffcc00"
+          }
+        },
+        {
+          "id": "teeth",
+          "type": "teeth.row",
+          "params": {
+            "fangs": 2,
+            "fangScale": 1.01,
+            "spacing": 0.0371
+          }
+        }
+      ],
+      "skin": {
+        "palette": {
+          "base": "#5b0e12",
+          "belly": "#b55a46",
+          "accent": "#0f0d0d"
+        },
+        "layers": [
+          {
+            "type": "countershade",
+            "strength": 0.5
+          },
+          {
+            "type": "stripes",
+            "count": 13,
+            "width": 0.3
+          }
+        ]
+      },
+      "motion": {
+        "temperament": "stalking"
+      }
+    }
+  },
+  {
+    "theme": "demon",
+    "seed": 4,
+    "blueprint": {
+      "format": "spawnforge/0.2",
+      "name": "Khaxis",
+      "seed": 1794900987,
+      "extends": "quadruped",
+      "scale": 1.16,
+      "body": {
+        "torso": {
+          "radius": [
+            0.148,
+            0.207,
+            0.154,
+            0.116
+          ],
+          "arch": 0.0794
+        },
+        "neck": {
+          "length": 0.321,
+          "pitch": 25,
+          "radius": [
+            0.08,
+            0.12
+          ]
+        },
+        "head": {
+          "length": 0.4,
+          "radius": 0.115,
+          "pitch": -15
+        },
+        "tail": {
+          "length": 0.711,
+          "radius": [
+            0.07,
+            0.01
+          ],
+          "curl": 11
+        }
+      },
+      "limbs": [
+        {
+          "id": "foreleg",
+          "length": 0.597,
+          "radius": [
+            0.055,
+            0.03
+          ]
+        },
+        {
+          "id": "hindleg",
+          "length": 0.682
+        }
+      ],
+      "parts": [
+        {
+          "id": "eyes",
+          "params": {
+            "scale": 1.43,
+            "pupil": "goat",
+            "irisColor": "#ffcc00"
+          }
+        },
+        {
+          "id": "teeth",
+          "type": "teeth.row",
+          "params": {
+            "fangs": 2,
+            "fangScale": 1.47,
+            "spacing": 0.0579
+          }
+        },
+        {
+          "id": "horns",
+          "type": "horn.curved",
+          "attach": {
+            "on": "head",
+            "at": 0.6,
+            "angle": 85,
+            "side": "both"
+          },
+          "params": {
+            "length": 0.592,
+            "width": 0.0626,
+            "curve": 301,
+            "turn": -1,
+            "ridges": 8,
+            "color": "#2a1a14",
+            "tipColor": "#d8c8a0"
+          }
+        }
+      ],
+      "skin": {
+        "palette": {
+          "base": "#4f1c1f",
+          "belly": "#a45c65",
+          "accent": "#110e0d"
+        },
+        "layers": [
+          {
+            "type": "countershade",
+            "strength": 0.5
+          },
+          {
+            "type": "stripes",
+            "count": 13,
+            "width": 0.3
+          }
+        ]
+      },
+      "motion": {
+        "temperament": "aggressive"
+      }
+    }
+  },
+  {
+    "theme": "demon",
+    "seed": 5,
+    "blueprint": {
+      "format": "spawnforge/0.2",
+      "name": "Vexgash",
+      "seed": 526081486,
+      "extends": "quadruped",
+      "scale": 0.922,
+      "body": {
+        "torso": {
+          "radius": [
+            0.132,
+            0.18,
+            0.156,
+            0.116
+          ],
+          "arch": 0.0984
+        },
+        "neck": {
+          "length": 0.329,
+          "pitch": 25,
+          "radius": [
+            0.08,
+            0.12
+          ]
+        },
+        "head": {
+          "length": 0.393,
+          "radius": 0.115,
+          "pitch": -15
+        },
+        "tail": {
+          "length": 0.554,
+          "radius": [
+            0.07,
+            0.01
+          ],
+          "curl": 13
+        }
+      },
+      "limbs": [
+        {
+          "id": "foreleg",
+          "length": 0.658,
+          "radius": [
+            0.055,
+            0.03
+          ]
+        },
+        {
+          "id": "hindleg",
+          "length": 0.684
+        }
+      ],
+      "parts": [
+        {
+          "id": "eyes",
+          "params": {
+            "scale": 1.36,
+            "pupil": "goat",
+            "irisColor": "#ffcc00"
+          }
+        },
+        {
+          "id": "teeth",
+          "type": "teeth.row",
+          "params": {
+            "fangs": 2,
+            "fangScale": 1.09,
+            "spacing": 0.268
+          }
+        },
+        {
+          "id": "horns",
+          "type": "horn.curved",
+          "attach": {
+            "on": "head",
+            "at": 0.6,
+            "angle": 85,
+            "side": "both"
+          },
+          "params": {
+            "length": 0.67,
+            "width": 0.0457,
+            "curve": 255,
+            "turn": -27,
+            "ridges": 3,
+            "color": "#2a1a14",
+            "tipColor": "#d8c8a0"
+          }
+        }
+      ],
+      "skin": {
+        "palette": {
+          "base": "#55231f",
+          "belly": "#7b4647",
+          "accent": "#19100f"
+        },
+        "layers": [
+          {
+            "type": "countershade",
+            "strength": 0.5
+          },
+          {
+            "type": "grime",
+            "amount": 0.765
+          }
+        ]
+      },
+      "motion": {
+        "temperament": "aggressive"
+      }
+    }
+  },
+  {
+    "theme": "demon",
+    "seed": 6,
+    "blueprint": {
+      "format": "spawnforge/0.2",
+      "name": "Balror",
+      "seed": 1504273113,
+      "extends": "biped",
+      "scale": 0.751,
+      "body": {
+        "torso": {
+          "radius": [
+            0.155,
+            0.233,
+            0.191,
+            0.163
+          ]
+        },
+        "neck": {
+          "length": 0.247,
+          "radius": [
+            0.09,
+            0.12
+          ]
+        },
+        "head": {
+          "shape": "wedge",
+          "length": 0.36,
+          "radius": 0.139
+        },
+        "tail": {
+          "length": 0.557,
+          "pitch": -35,
+          "radius": [
+            0.07,
+            0.012
+          ]
+        }
+      },
+      "limbs": [
+        {
+          "id": "leg",
+          "length": 1.35,
+          "radius": [
+            0.12,
+            0.07
+          ],
+          "segments": 3,
+          "splay": 4,
+          "attach": {
+            "angle": 105
+          },
+          "foot": {
+            "clawLength": 0.05
+          }
+        },
+        {
+          "id": "arm",
+          "length": 1,
+          "radius": [
+            0.09,
+            0.05
+          ]
+        }
+      ],
+      "parts": [
+        {
+          "id": "eyes",
+          "params": {
+            "scale": 1.34,
+            "pupil": "goat",
+            "irisColor": "#ffcc00"
+          }
+        },
+        {
+          "id": "teeth",
+          "type": "teeth.row",
+          "params": {
+            "fangs": 2,
+            "fangScale": 1.16,
+            "spacing": 0.0773
+          }
+        },
+        {
+          "id": "horns",
+          "type": "horn.curved",
+          "attach": {
+            "on": "head",
+            "at": 0.6,
+            "angle": 85,
+            "side": "both"
+          },
+          "params": {
+            "length": 0.353,
+            "width": 0.0592,
+            "curve": 138,
+            "turn": -40,
+            "ridges": 5,
+            "color": "#2a1a14",
+            "tipColor": "#d8c8a0"
+          }
+        }
+      ],
+      "skin": {
+        "palette": {
+          "base": "#76391c",
+          "belly": "#c4967e",
+          "accent": "#0b0a09"
+        },
+        "material": "scales",
+        "layers": [
+          {
+            "type": "countershade",
+            "strength": 0.5
+          },
+          {
+            "type": "mottle",
+            "scale": 0.197,
+            "strength": 0.6
+          },
+          {
+            "type": "stripes",
+            "count": 12,
+            "width": 0.3
+          }
+        ]
+      },
+      "motion": {
+        "temperament": "stalking"
+      }
+    }
+  },
+  {
+    "theme": "dragon",
+    "seed": 1,
+    "blueprint": {
+      "format": "spawnforge/0.2",
+      "name": "Draleth",
+      "seed": 1438663725,
+      "extends": "quadruped",
+      "scale": 1.64,
+      "body": {
+        "torso": {
+          "radius": [
+            0.125,
+            0.179,
+            0.174,
+            0.103
+          ],
+          "arch": 0.0948
+        },
+        "neck": {
+          "length": 0.551,
+          "radius": [
+            0.06,
+            0.09
+          ],
+          "pitch": 31,
+          "curve": 29,
+          "segments": 5
+        },
+        "head": {
+          "shape": "wedge",
+          "length": 0.32,
+          "radius": 0.0845,
+          "brow": 0.496
+        },
+        "tail": {
+          "length": 1.79,
+          "radius": [
+            0.0979,
+            0.012
+          ],
+          "curl": 0,
+          "segments": 12
+        }
+      },
+      "limbs": [
+        {
+          "id": "foreleg",
+          "length": 0.524
+        },
+        {
+          "id": "hindleg",
+          "length": 0.502,
+          "radius": [
+            0.075,
+            0.035
+          ]
+        },
+        {
+          "id": "wing",
+          "role": "wing",
+          "attach": {
+            "at": 0.163,
+            "angle": 35
+          },
+          "length": 1.43,
+          "radius": [
+            0.045,
+            0.014
+          ],
+          "membrane": {
+            "type": "membrane.feather",
+            "length": 0.4
+          }
+        }
+      ],
+      "parts": [
+        {
+          "id": "eyes",
+          "params": {
+            "pupil": "slit",
+            "squint": 0.215,
+            "irisColor": "#e6ad31"
+          }
+        },
+        {
+          "id": "teeth",
+          "type": "teeth.row"
+        },
+        {
+          "id": "horns",
+          "type": "horn.curved",
+          "attach": {
+            "on": "head",
+            "at": 0.85,
+            "angle": 32,
+            "side": "both"
+          },
+          "params": {
+            "length": 0.215,
+            "curve": 57,
+            "ridges": 5,
+            "color": "#bcb5a4"
+          }
+        },
+        {
+          "id": "crest",
+          "type": "spikes.row",
+          "attach": {
+            "on": "spine",
+            "from": 0.3,
+            "to": 0.95,
+            "angle": 0
+          },
+          "params": {
+            "count": 14,
+            "height": [
+              0.0638,
+              0.0867,
+              0.0501
+            ],
+            "curve": 19
+          }
+        },
+        {
+          "id": "tailspikes",
+          "type": "spikes.row",
+          "attach": {
+            "on": "tail",
+            "from": 0.7,
+            "to": 1,
+            "angle": 0
+          },
+          "params": {
+            "count": 3,
+            "height": [
+              0.05,
+              0.09
+            ],
+            "curve": 10
+          }
+        }
+      ],
+      "skin": {
+        "palette": {
+          "base": "#1e3342",
+          "belly": "#4f6d7c",
+          "accent": "#060e0e"
+        },
+        "material": "scales",
+        "layers": [
+          {
+            "type": "countershade",
+            "strength": 0.626
+          },
+          {
+            "type": "scales",
+            "size": 0.0245,
+            "bump": 0.592
+          },
+          {
+            "type": "stripes",
+            "region": "back",
+            "count": 14,
+            "jitter": 0.518
+          },
+          {
+            "type": "mottle",
+            "scale": 0.142
+          }
+        ]
+      }
+    }
+  },
+  {
+    "theme": "dragon",
+    "seed": 2,
+    "blueprint": {
+      "format": "spawnforge/0.2",
+      "name": "Zorith",
+      "seed": 188673795,
+      "extends": "quadruped",
+      "scale": 1.97,
+      "body": {
+        "torso": {
+          "radius": [
+            0.142,
+            0.198,
+            0.178,
+            0.114
+          ],
+          "arch": 0.0449
+        },
+        "neck": {
+          "length": 0.573,
+          "radius": [
+            0.06,
+            0.09
+          ],
+          "pitch": 38,
+          "curve": 14,
+          "segments": 5
+        },
+        "head": {
+          "shape": "wedge",
+          "length": 0.279,
+          "radius": 0.0918,
+          "brow": 0.344
+        },
+        "tail": {
+          "length": 1.66,
+          "radius": [
+            0.109,
+            0.012
+          ],
+          "curl": 14,
+          "segments": 12
+        }
+      },
+      "limbs": [
+        {
+          "id": "foreleg",
+          "length": 0.527
+        },
+        {
+          "id": "hindleg",
+          "length": 0.509,
+          "radius": [
+            0.075,
+            0.035
+          ]
+        },
+        {
+          "id": "wing",
+          "role": "wing",
+          "attach": {
+            "at": 0.134,
+            "angle": 35
+          },
+          "length": 1.44,
+          "radius": [
+            0.045,
+            0.014
+          ],
+          "membrane": {
+            "fingers": 3,
+            "span": 1.1,
+            "trailing": "body",
+            "scallop": 0.388,
+            "translucency": 0.328
+          }
+        }
+      ],
+      "parts": [
+        {
+          "id": "eyes",
+          "params": {
+            "pupil": "slit",
+            "squint": 0.447,
+            "irisColor": "#d16512"
+          }
+        },
+        {
+          "id": "teeth",
+          "type": "teeth.row"
+        },
+        {
+          "id": "horns",
+          "type": "horn.curved",
+          "attach": {
+            "on": "head",
+            "at": 0.85,
+            "angle": 38,
+            "side": "both"
+          },
+          "params": {
+            "length": 0.239,
+            "curve": 70,
+            "ridges": 7,
+            "color": "#605a52"
+          }
+        }
+      ],
+      "skin": {
+        "palette": {
+          "base": "#1c5d55",
+          "belly": "#4f959a",
+          "accent": "#0a2016"
+        },
+        "material": "scales",
+        "layers": [
+          {
+            "type": "countershade",
+            "strength": 0.736
+          },
+          {
+            "type": "scales",
+            "size": 0.0217,
+            "bump": 0.479
+          }
+        ]
+      },
+      "motion": {
+        "temperament": "aggressive"
+      }
+    }
+  },
+  {
+    "theme": "dragon",
+    "seed": 3,
+    "blueprint": {
+      "format": "spawnforge/0.2",
+      "name": "Ignmor",
+      "seed": 287307067,
+      "extends": "quadruped",
+      "scale": 1.71,
+      "body": {
+        "torso": {
+          "radius": [
+            0.143,
+            0.169,
+            0.174,
+            0.101
+          ],
+          "arch": 0.0484
+        },
+        "neck": {
+          "length": 0.622,
+          "radius": [
+            0.06,
+            0.09
+          ],
+          "pitch": 34,
+          "curve": 29,
+          "segments": 5
+        },
+        "head": {
+          "shape": "wedge",
+          "length": 0.309,
+          "radius": 0.0914,
+          "brow": 0.407
+        },
+        "tail": {
+          "length": 1.68,
+          "radius": [
+            0.0921,
+            0.012
+          ],
+          "curl": 9,
+          "segments": 12
+        }
+      },
+      "limbs": [
+        {
+          "id": "foreleg",
+          "length": 0.544
+        },
+        {
+          "id": "hindleg",
+          "length": 0.525,
+          "radius": [
+            0.075,
+            0.035
+          ]
+        },
+        {
+          "id": "wing",
+          "role": "wing",
+          "attach": {
+            "at": 0.122,
+            "angle": 35
+          },
+          "length": 1.42,
+          "radius": [
+            0.045,
+            0.014
+          ],
+          "membrane": {
+            "span": 0.988,
+            "trailing": "body",
+            "scallop": 0.655,
+            "translucency": 0.363
+          }
+        }
+      ],
+      "parts": [
+        {
+          "id": "eyes",
+          "params": {
+            "pupil": "slit",
+            "squint": 0.229,
+            "irisColor": "#da8520"
+          }
+        },
+        {
+          "id": "teeth",
+          "type": "teeth.row",
+          "params": {
+            "fangs": 2
+          }
+        },
+        {
+          "id": "horns",
+          "type": "horn.curved",
+          "attach": {
+            "on": "head",
+            "at": 0.85,
+            "angle": 40,
+            "side": "both"
+          },
+          "params": {
+            "length": 0.327,
+            "curve": 62,
+            "ridges": 1,
+            "color": "#9b9486"
+          }
+        },
+        {
+          "id": "crest",
+          "type": "spikes.row",
+          "attach": {
+            "on": "spine",
+            "from": 0.3,
+            "to": 0.95,
+            "angle": 0
+          },
+          "params": {
+            "count": 12,
+            "height": [
+              0.0699,
+              0.0979,
+              0.0394
+            ],
+            "curve": 28
+          }
+        }
+      ],
+      "skin": {
+        "palette": {
+          "base": "#1a413e",
+          "belly": "#4c817c",
+          "accent": "#060f0d"
+        },
+        "material": "scales",
+        "layers": [
+          {
+            "type": "countershade",
+            "strength": 0.603
+          },
+          {
+            "type": "scales",
+            "size": 0.0285,
+            "bump": 0.561
+          },
+          {
+            "type": "veins",
+            "color": "accent",
+            "region": "wings",
+            "strength": 0.48
+          }
+        ]
+      },
+      "motion": {
+        "temperament": "stalking"
+      }
+    }
+  },
+  {
+    "theme": "dragon",
+    "seed": 4,
+    "blueprint": {
+      "format": "spawnforge/0.2",
+      "name": "Aurvyr",
+      "seed": 699369941,
+      "extends": "wyvern",
+      "scale": 1.24,
+      "body": {
+        "neck": {
+          "length": 0.599,
+          "curve": 6
+        },
+        "head": {
+          "length": 0.301,
+          "brow": 0.393
+        },
+        "tail": {
+          "length": 1.51
+        }
+      },
+      "limbs": [
+        {
+          "id": "wing",
+          "length": 1.45,
+          "membrane": {
+            "fingers": 3,
+            "span": 1.17,
+            "scallop": 0.434,
+            "translucency": 0.391
+          }
+        }
+      ],
+      "parts": [
+        {
+          "id": "eyes",
+          "params": {
+            "squint": 0.366,
+            "irisColor": "#d7781a"
+          }
+        },
+        {
+          "id": "teeth",
+          "params": {
+            "fangs": 1
+          }
+        },
+        {
+          "id": "horns",
+          "type": "horn.curved",
+          "attach": {
+            "on": "head",
+            "at": 0.85,
+            "angle": 31,
+            "side": "both"
+          },
+          "params": {
+            "length": 0.291,
+            "curve": 39,
+            "ridges": 4,
+            "color": "#b5ae9d"
+          }
+        },
+        {
+          "id": "crest",
+          "type": "spikes.row",
+          "attach": {
+            "on": "spine",
+            "from": 0.3,
+            "to": 0.95,
+            "angle": 0
+          },
+          "params": {
+            "count": 9,
+            "height": [
+              0.0553,
+              0.0712,
+              0.0488
+            ],
+            "curve": 31
+          }
+        }
+      ],
+      "skin": {
+        "palette": {
+          "base": "#307e68",
+          "belly": "#71ad93",
+          "accent": "#143335"
+        },
+        "layers": [
+          {
+            "type": "countershade",
+            "strength": 0.792
+          },
+          {
+            "type": "scales",
+            "size": 0.0196,
+            "bump": 0.377
+          },
+          {
+            "type": "mottle",
+            "scale": 0.179
+          },
+          {
+            "type": "veins",
+            "color": "accent",
+            "region": "wings",
+            "strength": 0.505
+          }
+        ]
+      },
+      "motion": {
+        "temperament": "calm"
+      }
+    }
+  },
+  {
+    "theme": "dragon",
+    "seed": 5,
+    "blueprint": {
+      "format": "spawnforge/0.2",
+      "name": "Aurdrix",
+      "seed": 1833136724,
+      "extends": "quadruped",
+      "scale": 1.66,
+      "body": {
+        "torso": {
+          "radius": [
+            0.13,
+            0.162,
+            0.151,
+            0.116
+          ],
+          "arch": 0.0553
+        },
+        "neck": {
+          "length": 0.543,
+          "radius": [
+            0.06,
+            0.09
+          ],
+          "pitch": 25,
+          "curve": 13,
+          "segments": 5
+        },
+        "head": {
+          "shape": "wedge",
+          "length": 0.328,
+          "radius": 0.0866,
+          "brow": 0.6
+        },
+        "tail": {
+          "length": 1.4,
+          "radius": [
+            0.0917,
+            0.012
+          ],
+          "curl": 5,
+          "segments": 12
+        }
+      },
+      "limbs": [
+        {
+          "id": "foreleg",
+          "length": 0.478
+        },
+        {
+          "id": "hindleg",
+          "length": 0.533,
+          "radius": [
+            0.075,
+            0.035
+          ]
+        },
+        {
+          "id": "wing",
+          "role": "wing",
+          "attach": {
+            "at": 0.123,
+            "angle": 35
+          },
+          "length": 1.73,
+          "radius": [
+            0.045,
+            0.014
+          ],
+          "membrane": {
+            "fingers": 5,
+            "span": 0.969,
+            "trailing": "body",
+            "scallop": 0.645,
+            "translucency": 0.528
+          }
+        }
+      ],
+      "parts": [
+        {
+          "id": "eyes",
+          "params": {
+            "pupil": "slit",
+            "squint": 0.248,
+            "irisColor": "#f0cf40"
+          }
+        },
+        {
+          "id": "teeth",
+          "type": "teeth.row",
+          "params": {
+            "fangs": 2
+          }
+        },
+        {
+          "id": "horns",
+          "type": "horn.curved",
+          "attach": {
+            "on": "head",
+            "at": 0.85,
+            "angle": 39,
+            "side": "both"
+          },
+          "params": {
+            "length": 0.25,
+            "curve": 47,
+            "ridges": 4,
+            "color": "#8b8478"
+          }
+        },
+        {
+          "id": "crest",
+          "type": "spikes.row",
+          "attach": {
+            "on": "spine",
+            "from": 0.3,
+            "to": 0.95,
+            "angle": 0
+          },
+          "params": {
+            "count": 6,
+            "height": [
+              0.051,
+              0.113,
+              0.0561
+            ],
+            "curve": 34
+          }
+        },
+        {
+          "id": "tailspikes",
+          "type": "spikes.row",
+          "attach": {
+            "on": "tail",
+            "from": 0.7,
+            "to": 1,
+            "angle": 0
+          },
+          "params": {
+            "count": 6,
+            "height": [
+              0.05,
+              0.09
+            ],
+            "curve": 10
+          }
+        }
+      ],
+      "skin": {
+        "palette": {
+          "base": "#3f4868",
+          "belly": "#8488a4",
+          "accent": "#0f1519"
+        },
+        "material": "scales",
+        "layers": [
+          {
+            "type": "countershade",
+            "strength": 0.757
+          },
+          {
+            "type": "scales",
+            "size": 0.0265,
+            "bump": 0.446
+          },
+          {
+            "type": "veins",
+            "color": "accent",
+            "region": "wings",
+            "strength": 0.699
+          }
+        ]
+      },
+      "motion": {
+        "temperament": "stalking"
+      }
+    }
+  },
+  {
+    "theme": "dragon",
+    "seed": 6,
+    "blueprint": {
+      "format": "spawnforge/0.2",
+      "name": "Igndrix",
+      "seed": 1009687588,
+      "extends": "quadruped",
+      "scale": 1.93,
+      "body": {
+        "torso": {
+          "radius": [
+            0.126,
+            0.173,
+            0.171,
+            0.12
+          ],
+          "arch": 0.0823
+        },
+        "neck": {
+          "length": 0.495,
+          "radius": [
+            0.06,
+            0.09
+          ],
+          "pitch": 40,
+          "curve": 19,
+          "segments": 5
+        },
+        "head": {
+          "shape": "wedge",
+          "length": 0.283,
+          "radius": 0.0872,
+          "brow": 0.402
+        },
+        "tail": {
+          "length": 1.61,
+          "radius": [
+            0.098,
+            0.012
+          ],
+          "curl": 17,
+          "segments": 12
+        }
+      },
+      "limbs": [
+        {
+          "id": "foreleg",
+          "length": 0.459
+        },
+        {
+          "id": "hindleg",
+          "length": 0.515,
+          "radius": [
+            0.075,
+            0.035
+          ]
+        },
+        {
+          "id": "wing",
+          "role": "wing",
+          "attach": {
+            "at": 0.193,
+            "angle": 35
+          },
+          "length": 1.63,
+          "radius": [
+            0.045,
+            0.014
+          ],
+          "membrane": {
+            "span": 1.05,
+            "trailing": "body",
+            "scallop": 0.509,
+            "translucency": 0.563
+          }
+        }
+      ],
+      "parts": [
+        {
+          "id": "eyes",
+          "params": {
+            "pupil": "slit",
+            "squint": 0.285,
+            "irisColor": "#e9b635"
+          }
+        },
+        {
+          "id": "teeth",
+          "type": "teeth.row",
+          "params": {
+            "fangs": 2
+          }
+        },
+        {
+          "id": "horns",
+          "type": "horn.curved",
+          "attach": {
+            "on": "head",
+            "at": 0.85,
+            "angle": 27,
+            "side": "both"
+          },
+          "params": {
+            "length": 0.306,
+            "curve": 52,
+            "color": "#35312c"
+          }
+        }
+      ],
+      "skin": {
+        "palette": {
+          "base": "#1f3b1d",
+          "belly": "#4c7354",
+          "accent": "#070e07"
+        },
+        "material": "scales",
+        "layers": [
+          {
+            "type": "countershade",
+            "strength": 0.863
+          },
+          {
+            "type": "scales",
+            "size": 0.0158,
+            "bump": 0.572
+          },
+          {
+            "type": "veins",
+            "color": "accent",
+            "region": "wings",
+            "strength": 0.639
+          }
+        ]
+      },
+      "motion": {
+        "temperament": "stalking"
+      }
+    }
+  },
+  {
+    "theme": "eldritch",
+    "seed": 1,
+    "blueprint": {
+      "format": "spawnforge/0.2",
+      "name": "Dagruk",
+      "seed": 800678801,
+      "extends": "serpent",
+      "scale": 1.45,
+      "body": {
+        "torso": {
+          "radius": [
+            0.194,
+            0.293,
+            0.311,
+            0.255,
+            0.109
+          ]
+        },
+        "neck": {
+          "length": 0.05,
+          "radius": [
+            0.17,
+            0.19
+          ],
+          "pitch": 0,
+          "count": 2
+        },
+        "head": {
+          "shape": "round",
+          "length": 0.287,
+          "radius": 0.176,
+          "tongue": "none"
+        },
+        "tail": {
+          "length": 0
+        }
+      },
+      "limbs": [
+        {
+          "id": "arm1",
+          "role": "tentacle",
+          "attach": {
+            "on": "head",
+            "at": 0.35,
+            "angle": 21
+          },
+          "length": 1.74,
+          "segments": 12,
+          "radius": [
+            0.07,
+            0.03,
+            0.008
+          ],
+          "curl": 106,
+          "curlStart": 0.3
+        },
+        {
+          "id": "arm2",
+          "role": "tentacle",
+          "attach": {
+            "on": "head",
+            "at": 0.35,
+            "angle": 80
+          },
+          "length": 1.89,
+          "segments": 12,
+          "radius": [
+            0.07,
+            0.03,
+            0.008
+          ],
+          "curl": 120,
+          "curlStart": 0.3
+        },
+        {
+          "id": "arm3",
+          "role": "tentacle",
+          "attach": {
+            "on": "head",
+            "at": 0.35,
+            "angle": 145
+          },
+          "length": 1.51,
+          "segments": 12,
+          "radius": [
+            0.06,
+            0.025,
+            0.008
+          ],
+          "curl": 189,
+          "curlStart": 0.3
+        }
+      ],
+      "parts": [
+        {
+          "id": "eyes",
+          "params": {
+            "scale": 1.65,
+            "irisColor": "#c1d023"
+          }
+        },
+        {
+          "id": "eyes2",
+          "type": "eye.basic",
+          "attach": {
+            "on": "head",
+            "at": 0.72,
+            "angle": 31,
+            "side": "both"
+          },
+          "params": {
+            "scale": 0.724,
+            "pupil": "slit",
+            "lids": false
+          }
+        },
+        {
+          "id": "eyes3",
+          "type": "eye.basic",
+          "attach": {
+            "on": "head",
+            "at": 0.5,
+            "angle": 68,
+            "side": "both"
+          },
+          "params": {
+            "scale": 0.555,
+            "lids": false
+          }
+        },
+        {
+          "id": "teeth",
+          "type": "teeth.row",
+          "params": {
+            "fangs": 2,
+            "count": 13,
+            "spacing": 0.2
+          }
+        }
+      ],
+      "skin": {
+        "palette": {
+          "base": "#4a2447",
+          "belly": "#9b6581",
+          "accent": "#100811"
+        },
+        "material": "skin",
+        "layers": [
+          {
+            "type": "countershade",
+            "softness": 0.4,
+            "strength": 0.6
+          },
+          {
+            "type": "slime",
+            "wetness": 0.528
+          }
+        ]
+      }
+    }
+  },
+  {
+    "theme": "eldritch",
+    "seed": 2,
+    "blueprint": {
+      "format": "spawnforge/0.2",
+      "name": "Dagmog",
+      "seed": 1113895504,
+      "extends": "serpent",
+      "scale": 1.48,
+      "body": {
+        "torso": {
+          "radius": [
+            0.207,
+            0.308,
+            0.281,
+            0.24,
+            0.134
+          ]
+        },
+        "neck": {
+          "length": 0.05,
+          "radius": [
+            0.17,
+            0.19
+          ],
+          "pitch": 0,
+          "count": 2
+        },
+        "head": {
+          "shape": "round",
+          "length": 0.302,
+          "radius": 0.204,
+          "tongue": "none"
+        },
+        "tail": {
+          "length": 0
+        }
+      },
+      "limbs": [
+        {
+          "id": "arm1",
+          "role": "tentacle",
+          "attach": {
+            "on": "head",
+            "at": 0.35,
+            "angle": 23
+          },
+          "length": 1.45,
+          "segments": 12,
+          "radius": [
+            0.07,
+            0.03,
+            0.008
+          ],
+          "curl": 143,
+          "curlStart": 0.3
+        },
+        {
+          "id": "arm2",
+          "role": "tentacle",
+          "attach": {
+            "on": "head",
+            "at": 0.35,
+            "angle": 96
+          },
+          "length": 1.62,
+          "segments": 12,
+          "radius": [
+            0.07,
+            0.03,
+            0.008
+          ],
+          "curl": 159,
+          "curlStart": 0.3
+        },
+        {
+          "id": "arm3",
+          "role": "tentacle",
+          "attach": {
+            "on": "head",
+            "at": 0.35,
+            "angle": 146
+          },
+          "length": 1.73,
+          "segments": 12,
+          "radius": [
+            0.06,
+            0.025,
+            0.008
+          ],
+          "curl": 183,
+          "curlStart": 0.3
+        }
+      ],
+      "parts": [
+        {
+          "id": "eyes",
+          "params": {
+            "scale": 1.94,
+            "irisColor": "#e1db63"
+          }
+        },
+        {
+          "id": "teeth",
+          "type": "teeth.row",
+          "params": {
+            "count": 20,
+            "spacing": 0.2
+          }
+        }
+      ],
+      "skin": {
+        "palette": {
+          "base": "#453146",
+          "belly": "#9b8494",
+          "accent": "#0c080c"
+        },
+        "material": "skin",
+        "layers": [
+          {
+            "type": "countershade",
+            "softness": 0.4,
+            "strength": 0.6
+          },
+          {
+            "type": "warts",
+            "size": 0.0233
+          },
+          {
+            "type": "mottle",
+            "color": "accent",
+            "scale": 0.14
+          }
+        ]
+      },
+      "motion": {
+        "temperament": "calm"
+      }
+    }
+  },
+  {
+    "theme": "eldritch",
+    "seed": 3,
+    "blueprint": {
+      "format": "spawnforge/0.2",
+      "name": "Nyarulhu",
+      "seed": 1216042499,
+      "extends": "quadruped",
+      "scale": 1.26,
+      "body": {
+        "muscle": 0.552,
+        "torso": {
+          "radius": [
+            0.172,
+            0.243,
+            0.186,
+            0.158
+          ],
+          "arch": 0.0569
+        },
+        "neck": {
+          "count": 2,
+          "spread": 75,
+          "length": 0.506,
+          "radius": [
+            0.06,
+            0.1
+          ],
+          "pitch": 42,
+          "curve": 16
+        },
+        "head": {
+          "length": 0.337,
+          "radius": 0.0831
+        },
+        "tail": {
+          "length": 0.68,
+          "radius": [
+            0.08,
+            0.012
+          ]
+        }
+      },
+      "limbs": [
+        {
+          "id": "foreleg",
+          "length": 0.545
+        },
+        {
+          "id": "hindleg",
+          "length": 0.531
+        },
+        {
+          "id": "feelers",
+          "role": "tentacle",
+          "attach": {
+            "on": "head",
+            "at": 0.15,
+            "angle": 139
+          },
+          "length": 0.361,
+          "segments": 8,
+          "radius": [
+            0.03,
+            0.006
+          ],
+          "curl": 133
+        }
+      ],
+      "parts": [
+        {
+          "id": "eyes",
+          "params": {
+            "scale": 1.58,
+            "pupil": "slit",
+            "irisColor": "#d0d540",
+            "lids": false
+          }
+        }
+      ],
+      "skin": {
+        "palette": {
+          "base": "#321c35",
+          "belly": "#7f567e",
+          "accent": "#0a070d"
+        },
+        "layers": [
+          {
+            "type": "countershade",
+            "softness": 0.4,
+            "strength": 0.6
+          },
+          {
+            "type": "warts",
+            "size": 0.0295
+          }
+        ]
+      },
+      "motion": {
+        "temperament": "skittish"
+      }
+    }
+  },
+  {
+    "theme": "eldritch",
+    "seed": 4,
+    "blueprint": {
+      "format": "spawnforge/0.2",
+      "name": "Yogmog",
+      "seed": 1720585799,
+      "extends": "serpent",
+      "scale": 1.3,
+      "body": {
+        "torso": {
+          "radius": [
+            0.205,
+            0.271,
+            0.33,
+            0.221,
+            0.126
+          ]
+        },
+        "neck": {
+          "length": 0.05,
+          "radius": [
+            0.17,
+            0.19
+          ],
+          "pitch": 0,
+          "count": 2
+        },
+        "head": {
+          "shape": "round",
+          "length": 0.316,
+          "radius": 0.203,
+          "tongue": "none"
+        },
+        "tail": {
+          "length": 0
+        }
+      },
+      "limbs": [
+        {
+          "id": "arm1",
+          "role": "tentacle",
+          "attach": {
+            "on": "head",
+            "at": 0.35,
+            "angle": 28
+          },
+          "length": 1.76,
+          "segments": 12,
+          "radius": [
+            0.07,
+            0.03,
+            0.008
+          ],
+          "curl": 131,
+          "curlStart": 0.3
+        },
+        {
+          "id": "arm2",
+          "role": "tentacle",
+          "attach": {
+            "on": "head",
+            "at": 0.35,
+            "angle": 84
+          },
+          "length": 1.89,
+          "segments": 12,
+          "radius": [
+            0.07,
+            0.03,
+            0.008
+          ],
+          "curl": 146,
+          "curlStart": 0.3
+        }
+      ],
+      "parts": [
+        {
+          "id": "eyes",
+          "params": {
+            "scale": 1.94,
+            "irisColor": "#e9de72"
+          }
+        },
+        {
+          "id": "eyes2",
+          "type": "eye.basic",
+          "attach": {
+            "on": "head",
+            "at": 0.72,
+            "angle": 29,
+            "side": "both"
+          },
+          "params": {
+            "scale": 0.707,
+            "pupil": "slit",
+            "lids": false
+          }
+        },
+        {
+          "id": "eyes3",
+          "type": "eye.basic",
+          "attach": {
+            "on": "head",
+            "at": 0.5,
+            "angle": 59,
+            "side": "both"
+          },
+          "params": {
+            "scale": 0.494,
+            "lids": false
+          }
+        },
+        {
+          "id": "teeth",
+          "type": "teeth.row",
+          "params": {
+            "count": 22,
+            "spacing": 0.2
+          }
+        }
+      ],
+      "skin": {
+        "palette": {
+          "base": "#522858",
+          "belly": "#ac7c9e",
+          "accent": "#0b070e"
+        },
+        "material": "skin",
+        "layers": [
+          {
+            "type": "countershade",
+            "softness": 0.4,
+            "strength": 0.6
+          },
+          {
+            "type": "bioluminescence",
+            "color": "#9aee66",
+            "size": 0.021
+          },
+          {
+            "type": "veins",
+            "color": "accent",
+            "density": 0.531,
+            "raised": 0.5
+          }
+        ]
+      }
+    }
+  },
+  {
+    "theme": "eldritch",
+    "seed": 5,
+    "blueprint": {
+      "format": "spawnforge/0.2",
+      "name": "Cthmog",
+      "seed": 1698168811,
+      "extends": "serpent",
+      "scale": 1.59,
+      "body": {
+        "torso": {
+          "radius": [
+            0.189,
+            0.291,
+            0.293,
+            0.243,
+            0.102
+          ]
+        },
+        "neck": {
+          "length": 0.05,
+          "radius": [
+            0.17,
+            0.19
+          ],
+          "pitch": 0,
+          "count": 2
+        },
+        "head": {
+          "shape": "round",
+          "length": 0.31,
+          "radius": 0.173,
+          "tongue": "none"
+        },
+        "tail": {
+          "length": 0
+        }
+      },
+      "limbs": [
+        {
+          "id": "arm1",
+          "role": "tentacle",
+          "attach": {
+            "on": "head",
+            "at": 0.35,
+            "angle": 26
+          },
+          "length": 1.66,
+          "segments": 12,
+          "radius": [
+            0.07,
+            0.03,
+            0.008
+          ],
+          "curl": 156,
+          "curlStart": 0.3
+        },
+        {
+          "id": "arm2",
+          "role": "tentacle",
+          "attach": {
+            "on": "head",
+            "at": 0.35,
+            "angle": 107
+          },
+          "length": 1.84,
+          "segments": 12,
+          "radius": [
+            0.07,
+            0.03,
+            0.008
+          ],
+          "curl": 153,
+          "curlStart": 0.3
+        },
+        {
+          "id": "arm3",
+          "role": "tentacle",
+          "attach": {
+            "on": "head",
+            "at": 0.35,
+            "angle": 141
+          },
+          "length": 1.86,
+          "segments": 12,
+          "radius": [
+            0.06,
+            0.025,
+            0.008
+          ],
+          "curl": 212,
+          "curlStart": 0.3
+        }
+      ],
+      "parts": [
+        {
+          "id": "eyes",
+          "params": {
+            "scale": 1.63,
+            "irisColor": "#e1db62"
+          }
+        },
+        {
+          "id": "eyes2",
+          "type": "eye.basic",
+          "attach": {
+            "on": "head",
+            "at": 0.72,
+            "angle": 32,
+            "side": "both"
+          },
+          "params": {
+            "scale": 0.525,
+            "pupil": "slit",
+            "lids": false
+          }
+        },
+        {
+          "id": "teeth",
+          "type": "teeth.row",
+          "params": {
+            "count": 13,
+            "spacing": 0.2
+          }
+        }
+      ],
+      "skin": {
+        "palette": {
+          "base": "#4e285a",
+          "belly": "#8f6fa5",
+          "accent": "#0b060e"
+        },
+        "material": "skin",
+        "layers": [
+          {
+            "type": "countershade",
+            "softness": 0.4,
+            "strength": 0.6
+          },
+          {
+            "type": "slime",
+            "wetness": 0.55
+          },
+          {
+            "type": "bioluminescence",
+            "color": "#52d6ae",
+            "size": 0.0158
+          }
+        ]
+      }
+    }
+  },
+  {
+    "theme": "eldritch",
+    "seed": 6,
+    "blueprint": {
+      "format": "spawnforge/0.2",
+      "name": "Zhulgoth",
+      "seed": 538962081,
+      "extends": "quadruped",
+      "scale": 0.971,
+      "body": {
+        "muscle": 0.306,
+        "torso": {
+          "radius": [
+            0.178,
+            0.25,
+            0.207,
+            0.13
+          ],
+          "arch": 0.0488
+        },
+        "neck": {
+          "count": 3,
+          "spread": 57,
+          "length": 0.425,
+          "radius": [
+            0.06,
+            0.1
+          ],
+          "pitch": 36,
+          "curve": 15
+        },
+        "head": {
+          "length": 0.335,
+          "radius": 0.0918
+        },
+        "tail": {
+          "length": 0.755,
+          "radius": [
+            0.08,
+            0.012
+          ]
+        }
+      },
+      "limbs": [
+        {
+          "id": "foreleg",
+          "length": 0.529
+        },
+        {
+          "id": "hindleg",
+          "length": 0.537
+        }
+      ],
+      "parts": [
+        {
+          "id": "eyes",
+          "params": {
+            "scale": 1.94,
+            "pupil": "slit",
+            "irisColor": "#c4d129",
+            "lids": false
+          }
+        },
+        {
+          "id": "eyes2",
+          "type": "eye.basic",
+          "attach": {
+            "on": "head",
+            "at": 0.72,
+            "angle": 33,
+            "side": "both"
+          },
+          "params": {
+            "scale": 0.509,
+            "pupil": "slit",
+            "lids": false
+          }
+        },
+        {
+          "id": "eyes3",
+          "type": "eye.basic",
+          "attach": {
+            "on": "head",
+            "at": 0.5,
+            "angle": 70,
+            "side": "both"
+          },
+          "params": {
+            "scale": 0.521,
+            "lids": false
+          }
+        },
+        {
+          "id": "teeth",
+          "type": "teeth.row",
+          "params": {
+            "fangs": 2,
+            "count": 15,
+            "spacing": 0.2
+          }
+        },
+        {
+          "id": "spines",
+          "type": "spikes.row",
+          "attach": {
+            "on": "spine",
+            "from": 0.3,
+            "to": 0.9,
+            "angle": 0
+          },
+          "params": {
+            "count": 8,
+            "height": [
+              0.03,
+              0.08,
+              0.03
+            ],
+            "jitter": 0.5
+          }
+        }
+      ],
+      "skin": {
+        "palette": {
+          "base": "#3e3341",
+          "belly": "#8f8495",
+          "accent": "#0b090b"
+        },
+        "material": "hide",
+        "layers": [
+          {
+            "type": "countershade",
+            "softness": 0.4,
+            "strength": 0.6
+          },
+          {
+            "type": "slime",
+            "wetness": 0.794
+          }
+        ]
+      }
+    }
+  },
+  {
+    "theme": "insect",
+    "seed": 1,
+    "blueprint": {
+      "format": "spawnforge/0.2",
+      "name": "Myrcrik",
+      "seed": 1313958611,
+      "extends": "hexapod",
+      "scale": 0.802,
+      "body": {
+        "torso": {
+          "radius": [
+            0.0973,
+            0.145,
+            0.0608,
+            0.188,
+            0.173,
+            0.0818
+          ]
+        },
+        "head": {
+          "length": 0.206,
+          "radius": 0.137
+        }
+      },
+      "limbs": [
+        {
+          "id": "frontleg",
+          "length": 0.697
+        },
+        {
+          "id": "midleg",
+          "length": 0.824
+        },
+        {
+          "id": "hindleg",
+          "length": 0.842
+        }
+      ],
+      "parts": [
+        {
+          "id": "eyes",
+          "params": {
+            "scale": 1.4
+          }
+        },
+        {
+          "id": "horn",
+          "type": "horn.curved",
+          "attach": {
+            "on": "head",
+            "at": 0.2,
+            "angle": 0,
+            "side": "center"
+          },
+          "params": {
+            "length": 0.302,
+            "width": 0.0452,
+            "curve": -78,
+            "ridges": 5
+          }
+        }
+      ],
+      "skin": {
+        "palette": {
+          "base": "#3c122d",
+          "belly": "#84425d",
+          "accent": "#10050e"
+        },
+        "layers": [
+          {
+            "type": "countershade",
+            "softness": 0.2
+          },
+          {
+            "type": "stripes",
+            "region": "back",
+            "count": 8,
+            "width": 0.3
+          }
+        ]
+      }
+    }
+  },
+  {
+    "theme": "insect",
+    "seed": 2,
+    "blueprint": {
+      "format": "spawnforge/0.2",
+      "name": "Kitrix",
+      "seed": 1949478918,
+      "extends": "hexapod",
+      "scale": 0.852,
+      "body": {
+        "torso": {
+          "radius": [
+            0.117,
+            0.143,
+            0.0895,
+            0.197,
+            0.164,
+            0.0988
+          ]
+        },
+        "head": {
+          "length": 0.25,
+          "radius": 0.14
+        }
+      },
+      "limbs": [
+        {
+          "id": "frontleg",
+          "length": 0.633
+        },
+        {
+          "id": "midleg",
+          "length": 0.74
+        },
+        {
+          "id": "hindleg",
+          "length": 0.771
+        }
+      ],
+      "parts": [
+        {
+          "id": "eyes",
+          "params": {
+            "scale": 1.78
+          }
+        },
+        {
+          "id": "horn",
+          "type": "horn.curved",
+          "attach": {
+            "on": "head",
+            "at": 0.2,
+            "angle": 0,
+            "side": "center"
+          },
+          "params": {
+            "length": 0.325,
+            "width": 0.0384,
+            "curve": -69,
+            "ridges": 7
+          }
+        }
+      ],
+      "skin": {
+        "palette": {
+          "base": "#5e442a",
+          "belly": "#9c8f62",
+          "accent": "#0e0d06"
+        }
+      },
+      "motion": {
+        "temperament": "aggressive"
+      }
+    }
+  },
+  {
+    "theme": "insect",
+    "seed": 3,
+    "blueprint": {
+      "format": "spawnforge/0.2",
+      "name": "Zzpod",
+      "seed": 1729809184,
+      "extends": "hexapod",
+      "scale": 0.542,
+      "body": {
+        "torso": {
+          "radius": [
+            0.119,
+            0.13,
+            0.0655,
+            0.188,
+            0.132,
+            0.0796
+          ]
+        },
+        "head": {
+          "length": 0.3,
+          "radius": 0.114
+        }
+      },
+      "limbs": [
+        {
+          "id": "frontleg",
+          "length": 0.783
+        },
+        {
+          "id": "midleg",
+          "length": 0.632
+        },
+        {
+          "id": "hindleg",
+          "length": 0.698
+        }
+      ],
+      "parts": [
+        {
+          "id": "eyes",
+          "params": {
+            "scale": 1.73
+          }
+        }
+      ],
+      "skin": {
+        "palette": {
+          "base": "#35583b",
+          "belly": "#6c9177",
+          "accent": "#131f18"
+        }
+      },
+      "motion": {
+        "temperament": "aggressive"
+      }
+    }
+  },
+  {
+    "theme": "insect",
+    "seed": 4,
+    "blueprint": {
+      "format": "spawnforge/0.2",
+      "name": "Kitzid",
+      "seed": 1778702251,
+      "extends": "hexapod",
+      "body": {
+        "torso": {
+          "radius": [
+            0.0997,
+            0.135,
+            0.0835,
+            0.152,
+            0.161,
+            0.0748
+          ]
+        },
+        "head": {
+          "length": 0.266,
+          "radius": 0.0993
+        }
+      },
+      "limbs": [
+        {
+          "id": "frontleg",
+          "length": 0.614
+        },
+        {
+          "id": "midleg",
+          "length": 0.705
+        },
+        {
+          "id": "hindleg",
+          "length": 0.679
+        }
+      ],
+      "parts": [
+        {
+          "id": "eyes",
+          "params": {
+            "scale": 1.96
+          }
+        }
+      ],
+      "skin": {
+        "palette": {
+          "base": "#50227d",
+          "belly": "#9c7dc0",
+          "accent": "#070410"
+        },
+        "layers": [
+          {
+            "type": "countershade",
+            "softness": 0.2
+          },
+          {
+            "type": "stripes",
+            "region": "back",
+            "count": 8,
+            "width": 0.3
+          }
+        ]
+      },
+      "motion": {
+        "temperament": "calm"
+      }
+    }
+  },
+  {
+    "theme": "insect",
+    "seed": 5,
+    "blueprint": {
+      "format": "spawnforge/0.2",
+      "name": "Vesptin",
+      "seed": 342101609,
+      "extends": "hexapod",
+      "scale": 0.713,
+      "body": {
+        "torso": {
+          "radius": [
+            0.111,
+            0.138,
+            0.0741,
+            0.172,
+            0.144,
+            0.0741
+          ]
+        },
+        "head": {
+          "length": 0.279,
+          "radius": 0.104
+        }
+      },
+      "limbs": [
+        {
+          "id": "frontleg",
+          "length": 0.598
+        },
+        {
+          "id": "midleg",
+          "length": 0.769
+        },
+        {
+          "id": "hindleg",
+          "length": 0.717
+        }
+      ],
+      "parts": [
+        {
+          "id": "eyes",
+          "params": {
+            "scale": 1.96
+          }
+        },
+        {
+          "id": "mandibles",
+          "type": "mandible",
+          "params": {
+            "length": 0.146,
+            "teeth": 0
+          }
+        }
+      ],
+      "skin": {
+        "palette": {
+          "base": "#331a4e",
+          "belly": "#6b4887",
+          "accent": "#08050f"
+        }
+      }
+    }
+  },
+  {
+    "theme": "insect",
+    "seed": 6,
+    "blueprint": {
+      "format": "spawnforge/0.2",
+      "name": "Tiktin",
+      "seed": 508134466,
+      "extends": "hexapod",
+      "scale": 0.734,
+      "body": {
+        "torso": {
+          "radius": [
+            0.0938,
+            0.131,
+            0.0784,
+            0.186,
+            0.172,
+            0.0802
+          ]
+        },
+        "head": {
+          "length": 0.282,
+          "radius": 0.107
+        }
+      },
+      "limbs": [
+        {
+          "id": "frontleg",
+          "length": 0.595
+        },
+        {
+          "id": "midleg",
+          "length": 0.815
+        },
+        {
+          "id": "hindleg",
+          "length": 0.764
+        }
+      ],
+      "parts": [
+        {
+          "id": "eyes",
+          "params": {
+            "scale": 1.71
+          }
+        },
+        {
+          "id": "horn",
+          "type": "horn.curved",
+          "attach": {
+            "on": "head",
+            "at": 0.2,
+            "angle": 0,
+            "side": "center"
+          },
+          "params": {
+            "length": 0.252,
+            "width": 0.038,
+            "curve": -78,
+            "ridges": 6
+          }
+        }
+      ],
+      "skin": {
+        "palette": {
+          "base": "#84168c",
+          "belly": "#cd81b9",
+          "accent": "#340c49"
+        }
+      }
+    }
+  },
+  {
+    "theme": "reptile",
+    "seed": 1,
+    "blueprint": {
+      "format": "spawnforge/0.2",
+      "name": "Vezis",
+      "seed": 2116230419,
+      "extends": "quadruped",
+      "scale": 1.31,
+      "body": {
+        "torso": {
+          "radius": [
+            0.146,
+            0.195,
+            0.166,
+            0.119
+          ],
+          "arch": 0.0223,
+          "crossSection": "wide"
+        },
+        "neck": {
+          "length": 0.195,
+          "pitch": 23
+        },
+        "head": {
+          "shape": "wedge",
+          "length": 0.329,
+          "pitch": -5
+        },
+        "tail": {
+          "length": 1.32,
+          "radius": [
+            0.122,
+            0.012
+          ],
+          "pitch": -8,
+          "curl": 7,
+          "segments": 10
+        }
+      },
+      "limbs": [
+        {
+          "id": "foreleg",
+          "length": 0.463,
+          "radius": [
+            0.0869,
+            0.04
+          ],
+          "splay": 39,
+          "foot": {
+            "toes": 5,
+            "clawLength": 0.0313
+          }
+        },
+        {
+          "id": "hindleg",
+          "length": 0.451,
+          "radius": [
+            0.0788,
+            0.045
+          ],
+          "splay": 29,
+          "foot": {
+            "toes": 5,
+            "clawLength": 0.0457
+          }
+        }
+      ],
+      "parts": [
+        {
+          "id": "eyes",
+          "params": {
+            "pupil": "slit",
+            "scale": 1.13
+          }
+        },
+        {
+          "id": "teeth",
+          "type": "teeth.row",
+          "params": {
+            "fangs": 0,
+            "scale": 0.86,
+            "spacing": 0.252
+          }
+        },
+        {
+          "id": "dorsal",
+          "type": "spikes.row",
+          "attach": {
+            "on": "spine",
+            "from": 0.1,
+            "to": 0.9,
+            "angle": 0
+          },
+          "params": {
+            "count": 11,
+            "height": [
+              0.0894,
+              0.176,
+              0.118
+            ],
+            "width": 0.0427,
+            "curve": 17,
+            "jitter": 0.253
+          }
+        }
+      ],
+      "skin": {
+        "palette": {
+          "base": "#5d8e2f",
+          "belly": "#a1bc82",
+          "accent": "#0e1c09"
+        },
+        "material": "scales",
+        "layers": [
+          {
+            "type": "countershade"
+          },
+          {
+            "type": "scales",
+            "size": 0.0397
+          },
+          {
+            "type": "stripes",
+            "region": "back",
+            "count": 16,
+            "width": 0.395
+          }
+        ]
+      },
+      "motion": {
+        "temperament": "stalking"
+      }
+    }
+  },
+  {
+    "theme": "reptile",
+    "seed": 2,
+    "blueprint": {
+      "format": "spawnforge/0.2",
+      "name": "Sillith",
+      "seed": 719910175,
+      "extends": "quadruped",
+      "scale": 1.6,
+      "body": {
+        "torso": {
+          "radius": [
+            0.133,
+            0.187,
+            0.184,
+            0.128
+          ],
+          "arch": 0.0181,
+          "crossSection": "wide"
+        },
+        "neck": {
+          "length": 0.316,
+          "pitch": 9
+        },
+        "head": {
+          "shape": "wedge",
+          "length": 0.343,
+          "pitch": -5
+        },
+        "tail": {
+          "length": 1.34,
+          "radius": [
+            0.123,
+            0.012
+          ],
+          "pitch": -8,
+          "curl": 5,
+          "segments": 10
+        }
+      },
+      "limbs": [
+        {
+          "id": "foreleg",
+          "length": 0.46,
+          "radius": [
+            0.0862,
+            0.04
+          ],
+          "splay": 40,
+          "foot": {
+            "toes": 5,
+            "clawLength": 0.0354
+          }
+        },
+        {
+          "id": "hindleg",
+          "length": 0.428,
+          "radius": [
+            0.0824,
+            0.045
+          ],
+          "splay": 30,
+          "foot": {
+            "toes": 5,
+            "clawLength": 0.0463
+          }
+        }
+      ],
+      "parts": [
+        {
+          "id": "eyes",
+          "params": {
+            "pupil": "slit",
+            "scale": 1.17
+          }
+        },
+        {
+          "id": "teeth",
+          "type": "teeth.row",
+          "params": {
+            "fangs": 0,
+            "scale": 0.986,
+            "spacing": 0.401
+          }
+        },
+        {
+          "id": "brow",
+          "type": "horn.curved",
+          "attach": {
+            "on": "head",
+            "at": 0.7,
+            "angle": 40
+          },
+          "params": {
+            "length": 0.0745,
+            "curve": 32
+          }
+        }
+      ],
+      "skin": {
+        "palette": {
+          "base": "#887344",
+          "belly": "#cacab0",
+          "accent": "#3d2e1f"
+        },
+        "material": "scales",
+        "layers": [
+          {
+            "type": "countershade"
+          },
+          {
+            "type": "scales",
+            "size": 0.0304
+          },
+          {
+            "type": "grime",
+            "amount": 0.467
+          },
+          {
+            "type": "stripes",
+            "region": "back",
+            "count": 17,
+            "width": 0.32
+          }
+        ]
+      },
+      "motion": {
+        "temperament": "stalking"
+      }
+    }
+  },
+  {
+    "theme": "reptile",
+    "seed": 3,
+    "blueprint": {
+      "format": "spawnforge/0.2",
+      "name": "Ashvex",
+      "seed": 1398543122,
+      "extends": "quadruped",
+      "scale": 1.32,
+      "body": {
+        "torso": {
+          "radius": [
+            0.126,
+            0.208,
+            0.154,
+            0.144
+          ],
+          "arch": 0.0453,
+          "crossSection": "wide"
+        },
+        "neck": {
+          "length": 0.307,
+          "pitch": 9
+        },
+        "head": {
+          "shape": "wedge",
+          "length": 0.354,
+          "pitch": -5
+        },
+        "tail": {
+          "length": 1.34,
+          "radius": [
+            0.129,
+            0.012
+          ],
+          "pitch": -8,
+          "curl": 8,
+          "segments": 10
+        }
+      },
+      "limbs": [
+        {
+          "id": "foreleg",
+          "length": 0.46,
+          "radius": [
+            0.0601,
+            0.04
+          ],
+          "splay": 20,
+          "foot": {
+            "toes": 5,
+            "clawLength": 0.0467
+          }
+        },
+        {
+          "id": "hindleg",
+          "length": 0.536,
+          "radius": [
+            0.0866,
+            0.045
+          ],
+          "splay": 28,
+          "foot": {
+            "toes": 5,
+            "clawLength": 0.0497
+          }
+        }
+      ],
+      "parts": [
+        {
+          "id": "eyes",
+          "params": {
+            "pupil": "slit",
+            "scale": 1.24
+          }
+        },
+        {
+          "id": "teeth",
+          "type": "teeth.row",
+          "params": {
+            "fangs": 0,
+            "scale": 1.09,
+            "spacing": 0.208
+          }
+        },
+        {
+          "id": "dorsal",
+          "type": "spikes.row",
+          "attach": {
+            "on": "spine",
+            "from": 0.1,
+            "to": 0.9,
+            "angle": 0
+          },
+          "params": {
+            "count": 13,
+            "height": [
+              0.0882,
+              0.153,
+              0.083
+            ],
+            "width": 0.0361,
+            "curve": 26,
+            "jitter": 0.224
+          }
+        }
+      ],
+      "skin": {
+        "palette": {
+          "base": "#697b4d",
+          "belly": "#b9c5b3",
+          "accent": "#191e13"
+        },
+        "material": "scales",
+        "layers": [
+          {
+            "type": "countershade"
+          },
+          {
+            "type": "scales",
+            "size": 0.0291
+          }
+        ]
+      },
+      "motion": {
+        "temperament": "stalking"
+      }
+    }
+  },
+  {
+    "theme": "reptile",
+    "seed": 4,
+    "blueprint": {
+      "format": "spawnforge/0.2",
+      "name": "Serdrak",
+      "seed": 1419331183,
+      "extends": "serpent",
+      "scale": 0.602,
+      "body": {
+        "torso": {
+          "radius": [
+            0.115,
+            0.114,
+            0.14,
+            0.138
+          ]
+        },
+        "neck": {
+          "radius": [
+            0.0899,
+            0.0852
+          ]
+        },
+        "head": {
+          "length": 0.269,
+          "radius": 0.101
+        },
+        "tail": {
+          "length": 2.26,
+          "radius": [
+            0.124,
+            0.012
+          ]
+        }
+      },
+      "parts": [
+        {
+          "id": "eyes",
+          "params": {
+            "scale": 0.811
+          }
+        },
+        {
+          "id": "fangs",
+          "type": "teeth.row",
+          "params": {
+            "incisors": 0,
+            "fangScale": 1.08,
+            "lower": false
+          }
+        }
+      ],
+      "skin": {
+        "palette": {
+          "base": "#7b854b",
+          "belly": "#a6b395",
+          "accent": "#444026"
+        },
+        "layers": [
+          {
+            "type": "countershade"
+          },
+          {
+            "type": "scales",
+            "size": 0.0312
+          },
+          {
+            "type": "stripes",
+            "region": "back",
+            "count": 15,
+            "width": 0.346
+          },
+          {
+            "type": "mottle",
+            "scale": 0.156
+          }
+        ]
+      }
+    }
+  },
+  {
+    "theme": "reptile",
+    "seed": 5,
+    "blueprint": {
+      "format": "spawnforge/0.2",
+      "name": "Torssen",
+      "seed": 1538544145,
+      "extends": "serpent",
+      "scale": 0.884,
+      "body": {
+        "torso": {
+          "radius": [
+            0.103,
+            0.116,
+            0.133,
+            0.111
+          ]
+        },
+        "neck": {
+          "radius": [
+            0.0972,
+            0.105
+          ]
+        },
+        "head": {
+          "length": 0.26,
+          "radius": 0.105
+        },
+        "tail": {
+          "length": 2.54,
+          "radius": [
+            0.13,
+            0.012
+          ]
+        }
+      },
+      "parts": [
+        {
+          "id": "eyes",
+          "params": {
+            "scale": 0.903
+          }
+        },
+        {
+          "id": "fangs",
+          "type": "teeth.row",
+          "params": {
+            "incisors": 0,
+            "fangScale": 1.25,
+            "lower": false
+          }
+        }
+      ],
+      "skin": {
+        "palette": {
+          "base": "#7d7927",
+          "belly": "#b2a46d",
+          "accent": "#2e280e"
+        },
+        "layers": [
+          {
+            "type": "countershade"
+          },
+          {
+            "type": "scales",
+            "size": 0.0357
+          }
+        ]
+      },
+      "motion": {
+        "temperament": "aggressive"
+      }
+    }
+  },
+  {
+    "theme": "reptile",
+    "seed": 6,
+    "blueprint": {
+      "format": "spawnforge/0.2",
+      "name": "Scadrak",
+      "seed": 214309017,
+      "extends": "quadruped",
+      "scale": 0.765,
+      "body": {
+        "torso": {
+          "radius": [
+            0.142,
+            0.151,
+            0.156,
+            0.124
+          ],
+          "arch": 0.0267,
+          "crossSection": "wide"
+        },
+        "neck": {
+          "length": 0.314,
+          "pitch": 20
+        },
+        "head": {
+          "shape": "wedge",
+          "length": 0.291,
+          "pitch": -5
+        },
+        "tail": {
+          "length": 1.19,
+          "radius": [
+            0.0984,
+            0.012
+          ],
+          "pitch": -8,
+          "curl": 4,
+          "segments": 10
+        }
+      },
+      "limbs": [
+        {
+          "id": "foreleg",
+          "length": 0.461,
+          "radius": [
+            0.0823,
+            0.04
+          ],
+          "splay": 22,
+          "foot": {
+            "toes": 5,
+            "clawLength": 0.0471
+          }
+        },
+        {
+          "id": "hindleg",
+          "length": 0.512,
+          "radius": [
+            0.093,
+            0.045
+          ],
+          "splay": 39,
+          "foot": {
+            "toes": 5,
+            "clawLength": 0.0383
+          }
+        }
+      ],
+      "parts": [
+        {
+          "id": "eyes",
+          "params": {
+            "pupil": "slit",
+            "scale": 0.842
+          }
+        }
+      ],
+      "skin": {
+        "palette": {
+          "base": "#3a9a35",
+          "belly": "#89be8b",
+          "accent": "#3c6021"
+        },
+        "material": "scales",
+        "layers": [
+          {
+            "type": "countershade"
+          },
+          {
+            "type": "scales",
+            "size": 0.039
+          },
+          {
+            "type": "spots",
+            "size": 0.0617,
+            "density": 0.553
+          },
+          {
+            "type": "mottle",
+            "scale": 0.136
+          }
+        ]
+      },
+      "motion": {
+        "temperament": "aggressive"
+      }
+    }
+  }
+]

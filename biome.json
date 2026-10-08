@@ -11,7 +11,8 @@
       "!**/dist",
       "!**/coverage",
       "!packages/modules/src/index.ts",
-      "!docs/blueprint.schema.json"
+      "!docs/blueprint.schema.json",
+      "!apps/gallery/src/themes.json"
     ]
   },
   "formatter": {

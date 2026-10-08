@@ -133,7 +133,7 @@ since anatomy comes before the new vocabulary.
 | [11.3 GPU cost and crowds](#113-gpu-cost-and-crowds) | xhigh (confirmed) | New TSL skinning; performance only measurable on real hardware | 11.2 | Done ([#35](https://github.com/michaelcrosato/Spawnforge/pull/35)); crowds pose exactly as the creature's own bones on a frame; the laptop numbers await the owner |
 | [11.4 Engine guides](#114-engine-guides) | high (lowered) | Docs plus per-engine scripts and an import test: tooling, not design | 11.1, 11.2 | Done ([#36](https://github.com/michaelcrosato/Spawnforge/pull/36)); Blender, imported in CI, keeps the levels of detail in a hidden collection |
 | [12.1 Click-to-place](#121-click-to-place-editing) | high (lowered) | UI on existing seams, with a round-trip oracle | Gate 9 | Done ([#38](https://github.com/michaelcrosato/Spawnforge/pull/38)); a point inside a bend lies off two bones, and the field picks the one that reaches it |
-| [12.2 Gallery](#122-gallery) | medium (lowered) | Assembles finished pieces into a static site | Gate 11 | Not started |
+| [12.2 Gallery](#122-gallery) | medium (lowered) | Assembles finished pieces into a static site | Gate 11 | Done ([#39](https://github.com/michaelcrosato/Spawnforge/pull/39)); thumbnails render in the page, so nothing goes stale; publishing waits for the owner |
 | [12.3 Release 0.2](#123-release-02) | high (lowered) | Protocol reruns and docs over finished work | All | Not started |
 
 **Rules for effort**
