@@ -326,13 +326,11 @@ const mouth = gltf.scene.getObjectByName('socket_mouth'); // parent a fire-breat
 
 ### Other engines
 
-Unity, Godot and Unreal import the skeleton, skinned meshes, animations, socket nodes and the
-texture maps (glTF's metallic-roughness materials: base colour, normal, occlusion-roughness-metal
-and emissive). An export with `--textures none` keeps its colour only in vertex colours, which
-their default materials ignore: in Godot enable "Vertex Color > Use as Albedo" on the material;
-in Unity and Unreal use a material or shader that reads vertex colour. The extras are glTF `extras` on the root node; some importers keep them as
-metadata or custom properties, and where yours does not, read them from the file's JSON chunk
-(bytes 12–15 hold its length; it starts at byte 20).
+Godot, Unity, Unreal and Blender each import the file with their own glTF importer:
+[engines.md](engines.md) goes engine by engine (materials and colour spaces, looping, speed and
+root motion, sockets, levels of detail) and has a short script for each that reads the extras.
+An export with `--textures none` keeps its colour only in vertex colours, which engines' default
+materials ignore.
 
 ## Stats modules
 

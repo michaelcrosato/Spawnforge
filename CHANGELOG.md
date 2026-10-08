@@ -321,6 +321,11 @@ Work in progress toward 0.2, phase by phase (see the plan's status table).
   triangles as JSON (`Renderer.bench`); `--open` serves the page for a browser on real hardware,
   and CI keeps a small headless run as an artifact. The owner's laptop numbers are awaited
   (`docs/poc.md`).
+- **Engine guides (11.4):** `docs/engines.md` goes through Godot 4, Unity 6, Unreal 5 and
+  Blender: what each importer makes of the file, looping, speed and root motion, sockets, levels
+  of detail, and the live-only effects. `engines/` has a script per engine that reads the
+  extras from the file (GDScript, C#, and Python for Unreal or anything else), and Blender's
+  import check; CI imports an export into Blender (`bpy`) and reads it with the Python script.
 
 ## 0.1.0
 
