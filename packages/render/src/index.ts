@@ -3,6 +3,11 @@ import { fileURLToPath } from 'node:url';
 import { type Browser, chromium, type Page } from 'playwright-core';
 import { createServer, type ViteDevServer } from 'vite';
 import type {
+  BenchRequest,
+  BenchResponse,
+  BenchScene,
+  CrowdRequest,
+  CrowdResponse,
   ExportInfo,
   ExportRequest,
   ExportResponse,
@@ -21,6 +26,11 @@ import type {
 export { PROBES } from './probes.ts';
 export { ROUND_TRIP_BARS, type RoundTripVerdict, roundTripVerdict } from './verdict.ts';
 export type {
+  BenchRequest,
+  BenchResponse,
+  BenchScene,
+  CrowdRequest,
+  CrowdResponse,
   ExportInfo,
   ExportRequest,
   Mutation,
@@ -100,16 +110,7 @@ export class Renderer {
   }
 
   static async launch(): Promise<Renderer> {
-    const server = await createServer({
-      root: pageRoot,
-      configFile: false,
-      logLevel: 'silent',
-      server: { port: 0, strictPort: false, hmr: false },
-      optimizeDeps: { noDiscovery: true, include: [] },
-    });
-    await server.listen();
-    const url = server.resolvedUrls?.local[0];
-    if (!url) throw new Error('render server did not start');
+    const { server, url } = await startServer();
     let browser: Browser;
     try {
       browser = await launchChromium();
@@ -192,6 +193,34 @@ export class Renderer {
   }
 
   /**
+   * The GPU benchmark (docs/design/11.3-crowds.md): headless, on WebGL 2 in SwiftShader, so its
+   * numbers are recorded, not judged; the owner runs `pnpm bench --open` on real hardware.
+   */
+  async bench(request: BenchRequest = {}): Promise<BenchResponse> {
+    return (await this.page.evaluate(
+      (req) =>
+        (
+          (globalThis as PageGlobals).spawnforgeBench as (r: BenchRequest) => Promise<BenchResponse>
+        )(req),
+      { webgl: true, ...request },
+    )) as BenchResponse;
+  }
+
+  /**
+   * The crowd's oracle (docs/design/11.3-crowds.md): a creature posed at a baked clip's frame,
+   * drawn by its own skeleton and by its species' crowd, compared pixel by pixel.
+   */
+  async crowd(request: CrowdRequest): Promise<CrowdResponse> {
+    return (await this.page.evaluate(
+      (req) =>
+        (
+          (globalThis as PageGlobals).spawnforgeCrowd as (r: CrowdRequest) => Promise<CrowdResponse>
+        )(req),
+      request,
+    )) as CrowdResponse;
+  }
+
+  /**
    * The pattern stack's raw outputs at the given skin vertices, computed on the GPU (WebGL 2) for
    * the CPU–GPU parity test.
    */
@@ -262,6 +291,33 @@ export async function renderBlueprint(
   }
 }
 
+/** The render page's Vite server, on a free port. */
+async function startServer(port = 0): Promise<{ server: ViteDevServer; url: string }> {
+  const server = await createServer({
+    root: pageRoot,
+    configFile: false,
+    logLevel: 'silent',
+    server: { port, strictPort: false, hmr: false },
+    optimizeDeps: { noDiscovery: true, include: [] },
+  });
+  await server.listen();
+  const url = server.resolvedUrls?.local[0];
+  if (!url) {
+    await server.close();
+    throw new Error('render server did not start');
+  }
+  return { server, url };
+}
+
+/**
+ * Serves the render page for a browser of your own (`pnpm bench --open` adds `?bench`): the URL,
+ * and a function to stop it.
+ */
+export async function servePage(port = 5180): Promise<{ url: string; close: () => Promise<void> }> {
+  const { server, url } = await startServer(port);
+  return { url, close: () => server.close() };
+}
+
 /** What the render page puts on its global object. */
 interface PageGlobals {
   spawnforgeReady?: boolean;
@@ -269,6 +325,8 @@ interface PageGlobals {
   spawnforgeFingerprint?: (blueprint: unknown, quality: 'low' | 'medium' | 'high') => string;
   spawnforgeExport?: (request: ExportRequest) => Promise<ExportResponse>;
   spawnforgeRoundTrip?: (request: RoundTripRequest) => Promise<RoundTripResponse>;
+  spawnforgeCrowd?: (request: CrowdRequest) => Promise<CrowdResponse>;
+  spawnforgeBench?: (request: BenchRequest) => Promise<BenchResponse>;
   spawnforgeParity?: (request: ParityRequest) => Promise<ParityResponse>;
   spawnforgeDiff?: (a: string, b: string, threshold: number) => Promise<unknown>;
 }

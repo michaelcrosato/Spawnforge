@@ -10,12 +10,17 @@ export interface CreatedRenderer {
 
 export async function createRenderer(
   canvas: HTMLCanvasElement,
-  options: { forceWebGL?: boolean } = {},
+  options: {
+    forceWebGL?: boolean;
+    /** GPU timestamps, for measuring (`renderer.resolveTimestampsAsync()`), where supported. */
+    trackTimestamp?: boolean;
+  } = {},
 ): Promise<CreatedRenderer> {
   const renderer = new WebGPURenderer({
     canvas,
     antialias: true,
     forceWebGL: options.forceWebGL ?? false,
+    trackTimestamp: options.trackTimestamp ?? false,
   });
   await renderer.init();
   const isWebGPU = (renderer.backend as { isWebGPUBackend?: boolean }).isWebGPUBackend === true;

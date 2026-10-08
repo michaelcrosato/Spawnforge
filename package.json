@@ -23,7 +23,8 @@
     "render:examples": "node scripts/render-examples.ts",
     "fuzz": "node scripts/fuzz.ts",
     "budgets": "node scripts/budgets.ts",
-    "roundtrip": "node scripts/roundtrip.ts"
+    "roundtrip": "node scripts/roundtrip.ts",
+    "bench": "node scripts/bench.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.15",

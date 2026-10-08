@@ -21,6 +21,7 @@ import {
   BufferAttribute,
   type Camera,
   Euler,
+  Group,
   Object3D,
   type OrthographicCamera,
   type PerspectiveCamera,
@@ -28,6 +29,7 @@ import {
   Vector3,
 } from 'three';
 import { type CreatureObject, createCreatureObject } from './assemble.ts';
+import { type ClipRows, CrowdDraw, type CrowdMember, clipRows } from './crowd.ts';
 import { applyPose } from './pose-sync.ts';
 import { createWorkerCompiler, type WorkerCompiler } from './worker-client.ts';
 
@@ -54,6 +56,12 @@ export interface BestiaryOptions {
    * the first time a creature is given a camera).
    */
   readonly lods?: boolean;
+  /**
+   * Draw distant creatures as crowds (docs/design/11.3-crowds.md): instanced per species, level
+   * of detail and mesh, posed on the GPU from their baked clips. Add `bestiary.crowd` to the
+   * scene once. Default false.
+   */
+  readonly crowds?: boolean;
 }
 
 /** A species' levels of detail as index buffers its creatures share. */
@@ -127,6 +135,9 @@ export class Creature {
   lod: 'full' | 'baked' = 'full';
   private readonly view: CreatureObject;
   private level = 0;
+  /** Drawn by its species' crowd (`bestiary.update` decides): its own bones wait until asked. */
+  crowded = false;
+  private stale = false;
   private readonly full: {
     readonly skin: BufferAttribute | null;
     readonly parts: BufferAttribute | null;
@@ -471,7 +482,7 @@ export class Creature {
     // Cycles play at the rate the speed calls for; idle plays in real time.
     const rate = clip.speed > 0 ? b.speed / clip.speed : 1;
     b.time = (b.time + dt * rate) % clip.duration;
-    this.applyClip(clip, b.time);
+    this.pose(clip, b.time);
     return [];
   }
 
@@ -497,8 +508,63 @@ export class Creature {
     }
     if (!clip) return events;
     b.time = (b.time + dt) % clip.duration;
-    this.applyClip(clip, b.time);
+    this.pose(clip, b.time);
     return events;
+  }
+
+  /** Poses the bones from a clip, or, in a crowd, leaves them until something reads them. */
+  private pose(clip: BakedClip, time: number): void {
+    if (this.crowded) this.stale = true;
+    else {
+      this.stale = false;
+      this.applyClip(clip, time);
+    }
+  }
+
+  /** Poses a crowd member's bones for sockets and hit volumes. */
+  private ensurePosed(): void {
+    if (!this.stale || !this.baked.clip) return;
+    this.stale = false;
+    this.applyClip(this.baked.clip, this.baked.time);
+  }
+
+  /** Can its species' crowd draw it: playing a baked clip, alive. */
+  get crowdable(): boolean {
+    return this.lod === 'baked' && !this.controller.dead && this.baked.clip !== undefined;
+  }
+
+  /**
+   * Where it stands and which frames it shows in its species' crowd, as the baked level of
+   * detail would pose it (`applyClip`).
+   */
+  crowdMember(rows: ClipRows): CrowdMember | undefined {
+    const clip = this.baked.clip;
+    const first = clip ? rows.first.get(clip) : undefined;
+    if (!clip || first === undefined) return undefined;
+    const f = (this.baked.time / clip.duration) * (clip.frames - 1);
+    const i0 = Math.min(clip.frames - 1, Math.floor(f));
+    const i1 = Math.min(clip.frames - 1, i0 + 1);
+    const rotation = new Quaternion();
+    if (clip.air) {
+      const { pitch, roll } = this.controller.attitude;
+      rotation.setFromEuler(new Euler(clip.air.pitch - pitch, 0, roll, 'YXZ'));
+    }
+    rotation.premultiply(new Quaternion().setFromAxisAngle(UP, this.controller.heading));
+    const p = this.controller.position;
+    return {
+      x: p.x,
+      y: p.y,
+      z: p.z,
+      rotation,
+      row0: first + i0,
+      row1: first + i1,
+      blend: f - i0,
+    };
+  }
+
+  /** The baked clips it plays at a distance (its species'). */
+  bakedClips(): readonly BakedClip[] {
+    return this.clips();
   }
 
   private applyClip(clip: BakedClip, time: number): void {
@@ -540,6 +606,7 @@ export class Creature {
 
   /** Hit volumes in world space for the current pose: one capsule per body bone. */
   hitCapsules(): HitCapsule[] {
+    this.ensurePosed();
     this.object.updateMatrixWorld(true);
     return this.compiled.hitCapsules.map((capsule) => {
       const bone = this.view.bones[capsule.bone] as Object3D;
@@ -555,6 +622,7 @@ export class Creature {
     const node = this.sockets[name];
     if (!node)
       throw new Error(`no socket "${name}"; it has ${Object.keys(this.sockets).join(', ')}`);
+    this.ensurePosed();
     this.object.updateMatrixWorld(true);
     return node.getWorldPosition(out);
   }
@@ -619,6 +687,8 @@ export interface Bestiary {
   /** Updates every live creature, switching distant ones to baked cycles when given a camera. */
   update(dt: number, input?: UpdateInput): void;
   readonly creatures: ReadonlySet<Creature>;
+  /** Distant creatures drawn as crowds, with `crowds: true`: add it to the scene once. */
+  readonly crowd: Group;
   /** Removes a creature from the scene and frees its meshes. */
   remove(creature: Creature): void;
   dispose(): void;
@@ -650,6 +720,57 @@ export async function createBestiary(options: BestiaryOptions): Promise<Bestiary
       : undefined;
   const creatures = new Set<Creature>();
   const lodDistance = options.lodDistance ?? 30;
+  const crowd = new Group();
+  crowd.name = 'crowd';
+  // Per species: its clips as skinning rows, and its crowd draw (every level of detail).
+  const rowsBySpecies = new WeakMap<CompiledCreature, ClipRows>();
+  const draws = new Map<CompiledCreature, CrowdDraw>();
+  let clock = 0;
+  const drawFor = (creature: Creature, needed: number): CrowdDraw => {
+    const compiled = creature.compiled;
+    let draw = draws.get(compiled);
+    if (draw && draw.capacity >= needed) return draw;
+    let rows = rowsBySpecies.get(compiled);
+    if (!rows) {
+      rows = clipRows(compiled, creature.bakedClips());
+      rowsBySpecies.set(compiled, rows);
+    }
+    const live = lods.get(compiled);
+    const chain = live && !(live instanceof Promise) ? live : undefined;
+    draw?.dispose();
+    draw = new CrowdDraw(compiled, registry, rows, {
+      capacity: Math.max(needed * 2, 64),
+      levels: (chain?.skin ?? []).map((skin, k) => ({
+        skin,
+        parts: chain?.parts[k] as BufferAttribute,
+      })),
+    });
+    draws.set(compiled, draw);
+    crowd.add(draw.object);
+    return draw;
+  };
+  /** Draws every crowd member through its species' draw. */
+  const drawCrowds = () => {
+    // How many each species draws, so a draw is made big enough at once.
+    const counts = new Map<CompiledCreature, number>();
+    for (const c of creatures)
+      if (c.crowded) counts.set(c.compiled, (counts.get(c.compiled) ?? 0) + 1);
+    const members = new Map<CrowdDraw, CrowdMember[]>();
+    for (const creature of creatures) {
+      if (!creature.crowded) continue;
+      const draw = drawFor(creature, counts.get(creature.compiled) ?? 1);
+      const member = creature.crowdMember(draw.rows);
+      if (!member) continue;
+      let list = members.get(draw);
+      if (!list) {
+        list = [];
+        members.set(draw, list);
+      }
+      list.push({ ...member, level: creature.detail });
+    }
+    for (const draw of draws.values()) draw.write(members.get(draw) ?? [], clock);
+  };
+
   // Levels of detail per species: absent until asked for, a promise while they are made.
   const lods = new WeakMap<CompiledCreature, LiveLods | Promise<void>>();
   const lodsOf = (compiled: CompiledCreature): LiveLods | undefined => {
@@ -690,6 +811,7 @@ export async function createBestiary(options: BestiaryOptions): Promise<Bestiary
   return {
     registry,
     creatures,
+    crowd,
     async spawn(blueprint, spawn = {}) {
       const withSeed =
         spawn.seed === undefined || typeof blueprint !== 'object' || blueprint === null
@@ -726,8 +848,18 @@ export async function createBestiary(options: BestiaryOptions): Promise<Bestiary
             creature.setDetail(pickLevel(chain.levels, view, input.pixels ?? 1080), chain);
           }
         }
+        // In a crowd, decided before its update, so it leaves its own bones alone; not before
+        // its species' levels of detail are made, so its crowd draws are made once.
+        const crowded =
+          options.crowds === true &&
+          creature.crowdable &&
+          (options.lods === false || lodsOf(creature.compiled) !== undefined);
+        creature.crowded = crowded;
+        creature.object.visible = !crowded;
         creature.update(dt, input);
       }
+      clock += dt;
+      if (options.crowds) drawCrowds();
     },
     stats(creature, module, params = {}) {
       const spec = resolveBlueprint(creature.blueprint, registry);
@@ -740,6 +872,8 @@ export async function createBestiary(options: BestiaryOptions): Promise<Bestiary
     dispose() {
       for (const creature of creatures) creature.dispose();
       creatures.clear();
+      for (const draw of draws.values()) draw.dispose();
+      draws.clear();
       cache.clear();
       workers?.terminate();
     },

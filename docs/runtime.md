@@ -185,6 +185,15 @@ whatever the target is doing, so test hits yourself, with sockets or hit capsule
   triangle. The levels are made once per species, the first time one of its creatures is given
   a camera, by loading `@spawnforge/bake/lod` (meshoptimizer's simplifier, a few milliseconds
   per mesh); creatures of a species share them. Fur shells follow the skin's level.
+- **Crowds** (docs/design/11.3-crowds.md): with `createBestiary({ crowds: true })` and
+  `scene.add(bestiary.crowd)` once, creatures at the baked level of detail are drawn by their
+  species' crowd instead of their own meshes: one instanced draw per species, mesh level and
+  material (skin, parts, eyes, membranes), posed on the GPU from the baked clips, so a member
+  costs its steering and nothing per bone. `creature.crowded` says whether it is drawn so;
+  its own object is hidden meanwhile. Its sockets and hit capsules still work: reading them
+  poses its bones first. A crowd draws no breathing (and no fur, as at the baked level), and its
+  patterns pulse on the crowd's clock. Actions, takeoffs, landings and dying stay at full
+  detail, as before.
 - Mesh detail is per creature (`quality`). Each creature is three draw calls: the skin (with the
   mouth's inside and the eyelids), the hard parts and the eyes. Wings and fins add one for their
   membranes (double-sided). Fur adds another at medium and high quality: the skin's geometry drawn as 12 or 16 instanced shells in one call, which costs

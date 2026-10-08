@@ -244,3 +244,90 @@ export interface ParityResponse {
   /** The render target's texel type: "float" or "half". */
   readonly precision: 'float' | 'half';
 }
+
+/** The crowd's oracle (docs/design/11.3-crowds.md): a creature by its bones and by its crowd. */
+export interface CrowdRequest {
+  readonly blueprint: unknown;
+  readonly quality?: 'low' | 'medium' | 'high';
+  /** The clip to pose (default the first gait) and its frame (default a third of the way). */
+  readonly clip?: string;
+  readonly frame?: number;
+  /** Where it stands and which way it faces (radians). */
+  readonly x?: number;
+  readonly z?: number;
+  readonly heading?: number;
+  readonly size?: number;
+  /** Return both renders as PNG data URLs. */
+  readonly images?: boolean;
+}
+export interface CrowdResponse {
+  readonly clip: string;
+  readonly frame: number;
+  /** Share of pixels that differ by more than 2 of 255 in some channel. */
+  readonly differing: number;
+  /** Mean of each pixel's largest channel difference, 0 to 1. */
+  readonly mean: number;
+  /** Share of the view the creature covers. */
+  readonly covered: number;
+  readonly images?: readonly [string, string];
+}
+
+/** The GPU benchmark (docs/design/11.3-crowds.md). */
+export interface BenchRequest {
+  /** Which scenes (default all): 50 near, 500 distant, 500 distant as crowds. */
+  readonly scenes?: readonly ('near' | 'distant' | 'crowd')[];
+  /** Creatures per scene, to run a smaller bench. */
+  readonly counts?: Readonly<Partial<Record<'near' | 'distant' | 'crowd', number>>>;
+  /** Frames measured per scene (default 300), after 60 to warm up. */
+  readonly frames?: number;
+  readonly quality?: 'low' | 'medium' | 'high';
+  readonly width?: number;
+  readonly height?: number;
+  /** Force the WebGL 2 backend (default: WebGPU where the browser has it). */
+  readonly webgl?: boolean;
+}
+export interface BenchScene {
+  readonly name: string;
+  readonly creatures: number;
+  readonly species: number;
+  readonly quality: string;
+  readonly frames: number;
+  /** Spawning them all: compiles, once per species. */
+  readonly spawnMs: number;
+  /** Update and render, per frame (the render as the CPU submits it). */
+  readonly frameMs: {
+    readonly median: number;
+    readonly p95: number;
+    readonly max: number;
+    readonly slow: number;
+  };
+  /** `bestiary.update` alone. */
+  readonly updateMs: {
+    readonly median: number;
+    readonly p95: number;
+    readonly max: number;
+    readonly slow: number;
+  };
+  /** The GPU's time per frame, from timestamp queries, where the backend has them. */
+  readonly gpuMs?: {
+    readonly median: number;
+    readonly p95: number;
+    readonly max: number;
+    readonly slow: number;
+  };
+  readonly drawCalls: number;
+  readonly triangles: number;
+  /** Creatures at full motion, and drawn by crowds, at the end. */
+  readonly full: number;
+  readonly crowded: number;
+  /** Creatures per mesh level of detail (0 is full), at the end. */
+  readonly detail: readonly number[];
+}
+export interface BenchResponse {
+  readonly backend: string;
+  readonly width: number;
+  readonly height: number;
+  readonly userAgent: string;
+  readonly gpu?: string;
+  readonly scenes: readonly BenchScene[];
+}
