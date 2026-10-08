@@ -77,9 +77,12 @@ Commands:
                                         base picks whose body it is built on, locked paths keep
                                         the base parent's values
   export <file|-> [--out f.glb] [--quality low|medium|high] [--clips idle,walk,bite] [--fps n]
-         [--stats id]                   A .glb for game engines: skinned mesh with baked vertex
-                                        colours, skeleton, baked clips (idle, gaits, actions),
-                                        sockets as nodes, the blueprint and stats as extras
+         [--stats id] [--textures 512|1024|2048|none]
+                                        A .glb for game engines: skinned mesh with texture maps
+                                        baked from the live material (or vertex colours with
+                                        --textures none), skeleton, baked clips (idle, gaits,
+                                        actions), sockets as nodes, the blueprint and stats as
+                                        extras
   instantiate <species|-> [--seed n] [--out file]
                                         One individual of a species (a blueprint whose numbers
                                         may be { "min": 0.5, "max": 0.7 } ranges)
@@ -149,6 +152,7 @@ function parseOptions() {
       scenario: { type: 'string' },
       clips: { type: 'string' },
       fps: { type: 'string' },
+      textures: { type: 'string' },
       summary: { type: 'boolean' },
     },
   });
@@ -190,6 +194,15 @@ function qualityOf(value: string | undefined): 'low' | 'medium' | 'high' | undef
   if (value !== 'low' && value !== 'medium' && value !== 'high')
     throw new CommandError(`unknown quality "${value}"`, 'use low, medium or high');
   return value;
+}
+
+/** `--textures`: a skin map size, or none for vertex colours. */
+function texturesOf(value: string | undefined): 512 | 1024 | 2048 | 'none' | undefined {
+  if (value === undefined) return undefined;
+  if (value === 'none') return 'none';
+  const n = Number(value);
+  if (n === 512 || n === 1024 || n === 2048) return n;
+  throw new CommandError(`--textures must be 512, 1024, 2048 or none, not "${value}"`);
 }
 
 function number(name: string, value: string | undefined): number | undefined {
@@ -471,6 +484,7 @@ const commands: Record<
     if (fps !== undefined && !(Number.isInteger(fps) && fps >= 5 && fps <= 120))
       throw new CommandError(`--fps must be a whole number from 5 to 120, not ${fps}`);
     const quality = qualityOf(values.quality);
+    const textures = texturesOf(values.textures);
     const out = values.out ?? (arg === '-' ? 'creature.glb' : `${arg.replace(/\.json$/i, '')}.glb`);
     const { exportBlueprint } = await import('@spawnforge/render');
     let result: Awaited<ReturnType<typeof exportBlueprint>>;
@@ -481,6 +495,7 @@ const commands: Record<
         ...(quality ? { quality } : {}),
         ...(clips ? { clips } : {}),
         ...(fps !== undefined ? { fps } : {}),
+        ...(textures !== undefined ? { textures } : {}),
       });
     } catch (error) {
       const message = (error as Error).message.replace(/^[\s\S]*?Error: /, '').split('\n')[0];

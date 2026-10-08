@@ -1,4 +1,10 @@
-import { allEyes, type CompiledCreature, type MeshData, type Registry } from '@spawnforge/core';
+import {
+  allEyes,
+  type CompiledCreature,
+  furEyes,
+  type MeshData,
+  type Registry,
+} from '@spawnforge/core';
 import {
   Bone,
   BufferAttribute,
@@ -16,10 +22,10 @@ import { uniform } from 'three/tsl';
 import {
   eyeMaterial,
   FUR_SHELLS,
-  type FurEye,
   furMaterial,
   membraneMaterial,
   partsMaterial,
+  type SkinLook,
   skinMaterial,
 } from './materials.ts';
 
@@ -128,34 +134,17 @@ export function buildBones(compiled: CompiledCreature): {
   return { bones, skeleton, rest: { positions, rotations } };
 }
 
-/** Each eye's rest centre (its bone) and radius (its farthest vertex), for fur to keep clear of. */
-function eyeSpheres(compiled: CompiledCreature): FurEye[] {
-  const { positions, skinIndex } = compiled.eyes;
-  const bones = compiled.bones.positions;
-  return allEyes(compiled.rig).map((bone) => {
-    const x = bones[bone * 3] as number;
-    const y = bones[bone * 3 + 1] as number;
-    const z = bones[bone * 3 + 2] as number;
-    let radius = 0;
-    for (let v = 0; v < positions.length / 3; v++)
-      if (skinIndex[v * 4] === bone)
-        radius = Math.max(
-          radius,
-          Math.hypot(
-            (positions[v * 3] as number) - x,
-            (positions[v * 3 + 1] as number) - y,
-            (positions[v * 3 + 2] as number) - z,
-          ),
-        );
-    return { x, y, z, radius };
-  });
-}
-
-/** Builds the Three.js skeleton and the skinned meshes for a compiled creature. */
+/**
+ * Builds the Three.js skeleton and the skinned meshes for a compiled creature. With `look`, the
+ * creature is drawn as an export shows it (docs/design/11.1-textures.md): no fur shells and the
+ * coat's look under them, no wrapped light, detail faded by a fixed texel size.
+ */
 export function createCreatureObject(
   compiled: CompiledCreature,
   registry: Registry,
+  options: { readonly look?: SkinLook } = {},
 ): CreatureObject {
+  const look = options.look ?? {};
   const { bones, skeleton, rest } = buildBones(compiled);
   const restPositions = rest.positions;
   const restRotations = rest.rotations;
@@ -165,13 +154,13 @@ export function createCreatureObject(
 
   const breath = uniform(0);
   const time = uniform(0);
-  const clear = compiled.material.fur ? eyeSpheres(compiled) : [];
+  const clear = compiled.material.fur ? furEyes(compiled) : [];
   const skin = new SkinnedMesh(
     geometryOf(compiled.skin, { body: [compiled.skin.body, 4], region: [compiled.skin.region, 4] }),
-    skinMaterial(compiled.material, compiled.scale, registry, { breath, time }, clear),
+    skinMaterial(compiled.material, compiled.scale, registry, { breath, time }, clear, look),
   );
   // Fur shares the skin's geometry and draws its shells as instances: one call.
-  const shells = compiled.material.fur ? FUR_SHELLS[compiled.quality] : 0;
+  const shells = compiled.material.fur && !look.coat ? FUR_SHELLS[compiled.quality] : 0;
   const fur =
     compiled.material.fur && shells > 0
       ? new SkinnedMesh(
@@ -220,6 +209,7 @@ export function createCreatureObject(
               front: compiled.bounds.max[2],
               back: compiled.bounds.min[2],
               time,
+              ...(look.pixel !== undefined ? { pixel: look.pixel } : {}),
             },
           ),
         )

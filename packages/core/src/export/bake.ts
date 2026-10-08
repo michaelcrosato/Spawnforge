@@ -195,25 +195,46 @@ export function bakeEyeColors(compiled: CompiledCreature): BakedColors {
       number,
       number,
     ];
-    const r = (iris[i * 4 + 3] as number) * 0.62;
-    const dist = Math.hypot(ex, ey);
-    const irisMask = (1 - smooth(r - 0.04, r, dist)) * (ez >= 0 ? 1 : 0);
-    const round = 1 - smooth(r * 0.42 - 0.03, r * 0.42, dist);
-    const slit =
-      (1 - smooth(r * 0.13 - 0.02, r * 0.13, Math.abs(ex))) *
-      (1 - smooth(r * 0.92 - 0.03, r * 0.92, Math.abs(ey)));
-    const goat =
-      (1 - smooth(r * 0.15 - 0.02, r * 0.15, Math.abs(ey))) *
-      (1 - smooth(r * 0.92 - 0.03, r * 0.92, Math.abs(ex)));
-    const pupil = (kind >= 1.5 ? goat : kind >= 0.5 ? slit : round) * irisMask;
-    const ring = smooth(r * 0.6, r, dist);
-    for (let c = 0; c < 3; c++) {
-      const irisC = (iris[i * 4 + c] as number) * (1.15 - ring * 0.45);
-      const base = (sclera[i * 3 + c] as number) * (1 - irisMask) + irisC * irisMask;
-      color[i * 3 + c] = srgbToLinear(base * (1 - pupil) + 0.02 * pupil);
-    }
+    eyeColor(ex, ey, ez, kind, iris, i * 4, sclera, i * 3, color, i * 3);
   }
   return { color, roughness };
+}
+
+/**
+ * The eye shader's colour at one point (linear light): sclera, iris with a darker rim and a
+ * round, slit or goat pupil, from the point's place on the unit eyeball (`ex`, `ey`, `ez`) and
+ * pupil `kind`; `iris` holds sRGB colour and size from `irisAt`, `sclera` sRGB colour from
+ * `scleraAt`. Writes three values to `out` at `at`.
+ */
+export function eyeColor(
+  ex: number,
+  ey: number,
+  ez: number,
+  kind: number,
+  iris: ArrayLike<number>,
+  irisAt: number,
+  sclera: ArrayLike<number>,
+  scleraAt: number,
+  out: Float32Array,
+  at: number,
+): void {
+  const r = (iris[irisAt + 3] as number) * 0.62;
+  const dist = Math.hypot(ex, ey);
+  const irisMask = (1 - smooth(r - 0.04, r, dist)) * (ez >= 0 ? 1 : 0);
+  const round = 1 - smooth(r * 0.42 - 0.03, r * 0.42, dist);
+  const slit =
+    (1 - smooth(r * 0.13 - 0.02, r * 0.13, Math.abs(ex))) *
+    (1 - smooth(r * 0.92 - 0.03, r * 0.92, Math.abs(ey)));
+  const goat =
+    (1 - smooth(r * 0.15 - 0.02, r * 0.15, Math.abs(ey))) *
+    (1 - smooth(r * 0.92 - 0.03, r * 0.92, Math.abs(ex)));
+  const pupil = (kind >= 1.5 ? goat : kind >= 0.5 ? slit : round) * irisMask;
+  const ring = smooth(r * 0.6, r, dist);
+  for (let c = 0; c < 3; c++) {
+    const irisC = (iris[irisAt + c] as number) * (1.15 - ring * 0.45);
+    const base = (sclera[scleraAt + c] as number) * (1 - irisMask) + irisC * irisMask;
+    out[at + c] = srgbToLinear(base * (1 - pupil) + 0.02 * pupil);
+  }
 }
 
 /** Vertex colours for the skin, the hard parts, the eyes and the membranes. */

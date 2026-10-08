@@ -16,17 +16,21 @@ flowchart LR
   end
   modules[packages/modules]
   three[packages/three]
+  bake[packages/bake]
   core[packages/core]
 
   mcp --> cli
   cli --> core
   cli --> modules
   render[packages/render] --> three
+  render --> bake
   cli --> render
   mcp --> render
   sandbox --> three
   sandbox --> modules
   sandbox --> core
+  sandbox --> bake
+  bake --> core
   games --> three
   games --> core
   three --> core
@@ -38,6 +42,7 @@ flowchart LR
 | `core`    | Blueprint schema, module registry, seeded RNG, compile pipeline, motion controller, analysis | Browser, Web Workers, Node      |
 | `modules` | Module packs: body plans, parts, patterns, gaits, actions, themes                          | Browser, Web Workers, Node      |
 | `three`   | Skinned mesh assembly, TSL materials, pose sync, glTF export                               | Browser (and headless Chromium) |
+| `bake`    | Export processing: UV atlases, texture maps baked per texel, tangents (no renderer)         | Browser, Web Workers, Node      |
 | `cli`     | Commands as plain functions returning JSON, plus the `spawnforge` binary                   | Node                            |
 | `mcp`     | MCP tools wrapping the CLI functions                                                       | Node                            |
 | `sandbox` | Live view and editing UI                                                                   | Browser                         |
@@ -304,14 +309,24 @@ See [runtime.md](runtime.md) for how games use them.
   stay at the origin facing +Z. Plain typed arrays, like everything core produces.
 - **Vertex colours** (`packages/core/src/export/bake.ts`): the skin's pattern stack evaluated
   per vertex through the CPU kit, the same pattern functions the TSL shader runs; parts and eyes
-  convert their own colours. Linear, albedo only: relief and glow wait for texture maps (11.1).
+  convert their own colours. Linear, albedo only: what an export with `--textures none` keeps.
+- **Texture maps** (`packages/bake`, [design](design/11.1-textures.md)): `bakeTextures` unwraps
+  each mesh into its own atlas with xatlas (WASM), rasterizes its triangles in UV space and runs
+  the same CPU kit per texel, in bands that the render page and the sandbox shade on Web Workers:
+  albedo, roughness and occlusion (sampled from the distance field `compileCreature` keeps with
+  `field: true`) in one ORM map, a tangent-space normal map from the relief against
+  MikkTSpace-compatible tangents (meshoptimizer), and emissive for glow and membranes'
+  light-through. Plain data (`BakedTextures` in core), which `buildExportScene` turns into
+  textured materials. The round trip (`pnpm roundtrip`) loads each export back with
+  `GLTFLoader` and compares it with the live creature drawn with the export's simplifications.
 - **Stats** (`packages/core/src/analysis/stats.ts`): `computeStats` gives a stats module a
   `StatsInput` of measured body numbers; modules never see the blueprint.
 - **Export scene** (`packages/three/src/export.ts`): `buildExportScene` assembles the skeleton,
-  three skinned meshes with vertex colours and plain `MeshStandardMaterial`s (chitin's skin a
-  `MeshPhysicalMaterial` with its clearcoat), and a fourth, double-sided, for membranes
-  (blended by vertex alpha when see-through), socket nodes, `AnimationClip`s and the extras, plus
-  notes on what the file leaves out (fur, glow, membranes' veins and light). Bones are bound at
+  three skinned meshes with `MeshStandardMaterial`s (chitin's skin a `MeshPhysicalMaterial` with
+  its clearcoat), textured from the baked maps or else with vertex colours, and a fourth,
+  double-sided, for membranes (blended where see-through), socket nodes, `AnimationClip`s and
+  the extras, plus notes on what the file leaves out (fur shells, glow's pulse, wrapped light;
+  without maps also relief, glow and membranes' veins and light). Bones are bound at
   the bind pose and default to rest, so a winged creature's nodes rest folded; a clip writes a
   track for every bone that differs from its node default. The render page writes it with `GLTFExporter` in headless
   Chromium (`Renderer.export`), as the sandbox does in the browser.

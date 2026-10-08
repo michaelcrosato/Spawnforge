@@ -3,10 +3,10 @@ export { buildExportScene, type ExportSceneOptions, exportName } from './export.
 export {
   eyeMaterial,
   FUR_SHELLS,
-  type FurEye,
   furMaterial,
   partsMaterial,
   placeholderSkinMaterial,
+  type SkinLook,
   type SkinSignals,
   type SurfaceInputs,
   skinMaterial,

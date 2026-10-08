@@ -13,7 +13,7 @@ import { flightOf, lagOf, strokeOf } from './flight.ts';
 import { type MouthShape, refineHeads } from './head.ts';
 import { type CutResult, cutMouth, lineY, type MouthLine, mouthInside } from './mouth.ts';
 import { buildParts, PartSink, type SpanLimb } from './parts.ts';
-import { buildSdf, primBone, SdfEvaluator } from './sdf.ts';
+import { buildSdf, primBone, type Sdf, SdfEvaluator } from './sdf.ts';
 import { buildSkeleton } from './skeleton.ts';
 import {
   applyHelpers,
@@ -212,10 +212,17 @@ export interface CompiledCreature {
     readonly timings: Readonly<Record<string, number>>;
   };
   readonly warnings: readonly Issue[];
+  /** The distance field the skin was meshed from, in metres, when compiled with `field`. */
+  readonly field?: Sdf;
 }
 
 export interface CompileOptions {
   readonly quality?: Quality;
+  /**
+   * Keep the skin's distance field in the result (`field`), for bakes that sample it
+   * (docs/design/11.1-textures.md). Off by default: the live creature never needs it.
+   */
+  readonly field?: boolean;
 }
 
 const v3 = (v: Vector3): Vec3 => [v.x, v.y, v.z];
@@ -1009,6 +1016,7 @@ export function compileCreature(
       timings,
     },
     warnings,
+    ...(options.field ? { field: sdf } : {}),
   };
 }
 

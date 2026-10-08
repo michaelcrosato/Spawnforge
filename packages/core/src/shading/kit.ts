@@ -64,6 +64,12 @@ export interface Surface<F> {
    * bakes). Patterns fade detail smaller than a few pixels so it never aliases into speckle.
    */
   readonly pixel: F;
+  /**
+   * The size relief fades by, when it differs from `pixel`: a bake's normal map takes slopes
+   * over texels, which resolves finer relief than a bump from screen derivatives
+   * (docs/design/11.1-textures.md). Unset, relief fades by `pixel`.
+   */
+  readonly reliefPixel?: F;
   /** Seconds, for pulses: the pose's clock live, 0 in stills and bakes. */
   readonly time: F;
 }

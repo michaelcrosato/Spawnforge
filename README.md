@@ -41,7 +41,8 @@ All seven phases of [the plan](docs/plan.md) are done, and the proof of concept 
   warnings, a description), `patch`, fuzzing, golden determinism and budgets.
 - **Variation** (phase 5): species with ranges, `mutate`, `crossbreed`, and `generate` from a
   theme (`spawnforge generate --theme demon --seed 3`), also in the sandbox's breed tab.
-- **Into games** (phase 6): `spawnforge export` writes a `.glb` with baked clips, vertex colours,
+- **Into games** (phase 6): `spawnforge export` writes a `.glb` with baked clips, texture maps
+  (since 11.1: colour, relief, roughness, occlusion and glow, baked from the live material),
   sockets and stats, and `createBestiary` runs creatures live in a Three.js game
   ([docs/runtime.md](docs/runtime.md)).
 

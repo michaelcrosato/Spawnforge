@@ -53,7 +53,10 @@ export function detail<F>(k: Kit<F>, s: Surface<F>, size: number): F {
  * features about 25 pixels across to look smooth and is gone below about 7.
  */
 export function relief<F>(k: Kit<F>, s: Surface<F>, size: number): F {
-  return k.sub(k.num(1), k.smoothstep(k.num(size * 0.04), k.num(size * 0.15), s.pixel));
+  return k.sub(
+    k.num(1),
+    k.smoothstep(k.num(size * 0.04), k.num(size * 0.15), s.reliefPixel ?? s.pixel),
+  );
 }
 
 function regionMask<F>(k: Kit<F>, s: Surface<F>, region: Region): F {

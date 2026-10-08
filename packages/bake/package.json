@@ -1,41 +1,35 @@
 {
-  "name": "@spawnforge/render",
+  "name": "@spawnforge/bake",
   "version": "0.1.0",
   "private": true,
-  "description": "Headless renders of creatures: contact sheets and filmstrips as PNG, through Chromium.",
+  "description": "Export-time mesh work: UV atlases and texture maps baked from the pattern stack, and level-of-detail chains.",
   "license": "UNLICENSED",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/michaelcrosato/Spawnforge.git",
-    "directory": "packages/render"
+    "directory": "packages/bake"
   },
   "engines": {
     "node": ">=22.18"
   },
   "files": [
-    "dist",
-    "page"
+    "dist"
   ],
   "type": "module",
   "exports": {
     ".": "./src/index.ts"
   },
   "scripts": {
-    "typecheck": "tsc -p tsconfig.json && tsc -p page/tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json",
     "build": "tsc -p tsconfig.build.json"
   },
   "dependencies": {
-    "@spawnforge/bake": "workspace:*",
     "@spawnforge/core": "workspace:*",
-    "@spawnforge/modules": "workspace:*",
-    "@spawnforge/three": "workspace:*",
-    "playwright-core": "1.63.0",
-    "three": "catalog:",
-    "vite": "catalog:"
+    "meshoptimizer": "1.3.0",
+    "watlas": "1.0.1"
   },
   "devDependencies": {
-    "@types/three": "catalog:",
-    "gltf-validator": "2.0.0-dev.3.10"
+    "@spawnforge/modules": "workspace:*"
   },
   "publishConfig": {
     "exports": {

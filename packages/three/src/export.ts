@@ -1,25 +1,37 @@
 import {
   type BakedClip,
   type BakedColors,
+  type BakedMap,
+  type BakedTextures,
   bakeVertexColors,
   type CompiledCreature,
+  EYE_ROUGHNESS,
   MATERIAL_LOOK,
   type MaterialLook,
   type Registry,
+  type TexturedMesh,
 } from '@spawnforge/core';
 import {
   AnimationClip,
   BufferAttribute,
+  ClampToEdgeWrapping,
+  Color,
+  DataTexture,
   DoubleSide,
   Group,
   type KeyframeTrack,
+  LinearFilter,
+  LinearMipmapLinearFilter,
+  LinearSRGBColorSpace,
   Matrix4,
   MeshPhysicalMaterial,
   MeshStandardMaterial,
   Object3D,
   type Quaternion,
   QuaternionKeyframeTrack,
+  RGBAFormat,
   SkinnedMesh,
+  SRGBColorSpace,
   type Vector3,
   VectorKeyframeTrack,
 } from 'three';
@@ -30,6 +42,13 @@ export interface ExportSceneOptions {
   readonly clips?: readonly BakedClip[];
   /** Extra JSON stored with the creature (glTF extras), e.g. the blueprint and stats. */
   readonly extras?: Record<string, unknown>;
+  /**
+   * Texture maps from `@spawnforge/bake` (docs/design/11.1-textures.md): each mesh they cover is
+   * written with UVs, tangents and maps instead of vertex colours.
+   */
+  readonly textures?: BakedTextures;
+  /** How albedo and glow images are encoded: PNG (default) or JPEG, to keep files small. */
+  readonly colorImages?: 'image/png' | 'image/jpeg';
 }
 
 /** Bone names become node names, and animation tracks address nodes as `name.property`. */
@@ -65,6 +84,79 @@ function bakedMesh(
         })
       : new MeshStandardMaterial(settings);
   material.name = name;
+  const mesh = new SkinnedMesh(geometry, material);
+  mesh.name = name;
+  return mesh;
+}
+
+/** A baked image as a texture the exporter writes (v down, as glTF's images are). */
+function mapTexture(map: BakedMap, mimeType: string): DataTexture {
+  const texture = new DataTexture(map.data, map.size, map.size, RGBAFormat);
+  texture.colorSpace = map.srgb ? SRGBColorSpace : LinearSRGBColorSpace;
+  texture.flipY = false;
+  texture.wrapS = ClampToEdgeWrapping;
+  texture.wrapT = ClampToEdgeWrapping;
+  texture.magFilter = LinearFilter;
+  texture.minFilter = LinearMipmapLinearFilter;
+  texture.generateMipmaps = true;
+  texture.userData.mimeType = mimeType;
+  texture.needsUpdate = true;
+  return texture;
+}
+
+/**
+ * A mesh with its baked maps (docs/design/11.1-textures.md, decision 8): base colour, normal map
+ * (and the lacquer's normal), one ORM image for occlusion, roughness and metalness, and glow
+ * scaled by its strength.
+ */
+function texturedMesh(
+  data: TexturedMesh,
+  name: string,
+  options: { look?: MaterialLook; eyes?: boolean; membrane?: boolean; colorImages: string },
+): SkinnedMesh {
+  const geometry = geometryOf(data, {
+    uv: [data.uvs, 2],
+    ...(data.tangents ? { tangent: [data.tangents, 4] } : {}),
+  });
+  const settings = {
+    map: mapTexture(data.albedo, data.blend ? 'image/png' : options.colorImages),
+    metalness: 0,
+    roughness: options.eyes ? EYE_ROUGHNESS : 1,
+  };
+  const look = options.look;
+  const material =
+    look && look.clearcoat > 0
+      ? new MeshPhysicalMaterial({
+          ...settings,
+          clearcoat: look.clearcoat,
+          clearcoatRoughness: look.clearcoatRoughness,
+        })
+      : new MeshStandardMaterial(settings);
+  material.name = name;
+  if (!options.eyes) {
+    // One image for all three, so the exporter writes it once; metalness is its B channel (0).
+    const orm = mapTexture(data.orm, 'image/png');
+    material.aoMap = orm;
+    material.roughnessMap = orm;
+    material.metalnessMap = orm;
+    material.metalness = 1;
+  }
+  if (data.normal) {
+    material.normalMap = mapTexture(data.normal, 'image/png');
+    if (material instanceof MeshPhysicalMaterial && material.clearcoat > 0)
+      material.clearcoatNormalMap = material.normalMap;
+  }
+  if (data.emissive) {
+    material.emissiveMap = mapTexture(data.emissive, options.colorImages);
+    const strength = data.emissiveStrength ?? 1;
+    // Up to 1 in the factor; above it, KHR_materials_emissive_strength.
+    material.emissive = new Color(1, 1, 1).multiplyScalar(Math.min(1, strength));
+    material.emissiveIntensity = Math.max(1, strength);
+  }
+  if (options.membrane) {
+    material.side = DoubleSide;
+    if (data.blend) material.transparent = true;
+  }
   const mesh = new SkinnedMesh(geometry, material);
   mesh.name = name;
   return mesh;
@@ -127,6 +219,14 @@ function clipOf(
         if (Math.abs((rot[f * 4 + j] as number) - (rot[j] as number)) > 1e-5) turns = true;
       }
       if (Math.abs(dot) < 1 - 1e-6) turns = true;
+      // Unit length, as glTF wants (float rounding leaves some a hair over).
+      const len = Math.hypot(
+        rot[f * 4] as number,
+        rot[f * 4 + 1] as number,
+        rot[f * 4 + 2] as number,
+        rot[f * 4 + 3] as number,
+      );
+      if (len > 0) for (let j = 0; j < 4; j++) rot[f * 4 + j] = (rot[f * 4 + j] as number) / len;
       for (let j = 0; j < 3; j++) {
         pos[f * 3 + j] = clip.positions[(f * n + b) * 3 + j] as number;
         if (Math.abs((pos[f * 3 + j] as number) - (pos[j] as number)) > 1e-5) moves = true;
@@ -155,16 +255,31 @@ export function buildExportScene(
   options: ExportSceneOptions = {},
 ): { scene: Group; animations: AnimationClip[]; notes: string[] } {
   const { bones, skeleton, rest } = buildBones(compiled);
-  for (const bone of bones) bone.name = exportName(bone.name);
+  // glTF wants unit rotations; float rounding leaves some a hair over (the validator's error).
+  for (const bone of bones) {
+    bone.name = exportName(bone.name);
+    bone.quaternion.normalize();
+  }
   const scene = new Group();
   scene.name = exportName(compiled.name || 'creature');
   scene.add(bones[0] as Object3D);
   const colors = bakeVertexColors(compiled, registry);
+  const maps = options.textures;
+  const colorImages = options.colorImages ?? 'image/png';
+  const skinLook = MATERIAL_LOOK[compiled.material.material];
   const meshes = [
-    bakedMesh(compiled.skin, colors.skin, 'skin', MATERIAL_LOOK[compiled.material.material]),
-    bakedMesh(compiled.parts, colors.parts, 'parts'),
-    bakedMesh(compiled.eyes, colors.eyes, 'eyes'),
-    membraneMesh(compiled, colors.membranes),
+    maps?.skin
+      ? texturedMesh(maps.skin, 'skin', { look: skinLook, colorImages })
+      : bakedMesh(compiled.skin, colors.skin, 'skin', skinLook),
+    maps?.parts
+      ? texturedMesh(maps.parts, 'parts', { colorImages })
+      : bakedMesh(compiled.parts, colors.parts, 'parts'),
+    maps?.eyes
+      ? texturedMesh(maps.eyes, 'eyes', { eyes: true, colorImages })
+      : bakedMesh(compiled.eyes, colors.eyes, 'eyes'),
+    maps?.membranes
+      ? texturedMesh(maps.membranes, 'membranes', { membrane: true, colorImages })
+      : membraneMesh(compiled, colors.membranes),
   ];
   for (const mesh of meshes) {
     if ((mesh.geometry.index?.count ?? 0) === 0) continue;
@@ -209,10 +324,85 @@ export function buildExportScene(
           ...(e.leg ? { leg: e.leg } : {}),
         })),
       })),
+      ...(maps
+        ? {
+            textures: {
+              size: maps.size,
+              maps: Object.fromEntries(
+                (['skin', 'parts', 'eyes', 'membranes'] as const)
+                  .filter((k) => maps[k])
+                  .map((k) => {
+                    const m = maps[k] as TexturedMesh;
+                    return [
+                      k,
+                      [
+                        'albedo',
+                        ...(m.normal ? ['normal'] : []),
+                        ...(k === 'eyes' ? [] : ['orm']),
+                        ...(m.emissive ? ['emissive'] : []),
+                      ],
+                    ];
+                  }),
+              ),
+            },
+          }
+        : {}),
+      ...(compiled.material.fur
+        ? {
+            fur: {
+              length: compiled.material.fur.length * compiled.scale,
+              density: compiled.material.fur.density,
+              regions: compiled.material.fur.region,
+            },
+          }
+        : {}),
+      ...glowLayers(compiled),
       ...options.extras,
     },
   };
-  return { scene, animations, notes: exportNotes(compiled, colors.skin.glow ?? 0) };
+  return {
+    scene,
+    animations,
+    notes: maps
+      ? texturedNotes(compiled, maps, colors.skin.glow ?? 0)
+      : exportNotes(compiled, colors.skin.glow ?? 0),
+  };
+}
+
+/** Layers that pulse (a `pulse` parameter above 0, in Hz), for a game that animates the glow. */
+function glowLayers(compiled: CompiledCreature): { glow?: { layer: string; pulse: number }[] } {
+  const glow = compiled.material.layers
+    .map((l) => ({ layer: l.id, pulse: (l.params as { pulse?: unknown }).pulse }))
+    .filter(
+      (l): l is { layer: string; pulse: number } => typeof l.pulse === 'number' && l.pulse > 0,
+    );
+  return glow.length > 0 ? { glow } : {};
+}
+
+/**
+ * What a textured export leaves out or approximates (docs/design/11.1-textures.md, the max-step
+ * table), and any mesh the bake could not map.
+ */
+function texturedNotes(compiled: CompiledCreature, maps: BakedTextures, glow: number): string[] {
+  const notes: string[] = [];
+  if (compiled.material.fur)
+    notes.push(
+      "fur is left out (glTF has no shells): the skin's maps carry the coat's colour, and extras.fur describes it for an engine's own fur",
+    );
+  if (glow > 0 && glowLayers(compiled).glow)
+    notes.push(
+      "glow is baked as it is at time 0; its pulse is live-only (extras.glow gives each layer's pulses a second)",
+    );
+  if (MATERIAL_LOOK[compiled.material.material].wrap > 0 || compiled.material.fur)
+    notes.push(
+      'the light wrapping round the skin is live-only: engines show a harder edge between light and shadow',
+    );
+  if (compiled.membranes.indices.length > 0)
+    notes.push(
+      'membranes are double-sided; the light through them is baked into their emissive map',
+    );
+  notes.push(...maps.notes);
+  return notes;
 }
 
 /**

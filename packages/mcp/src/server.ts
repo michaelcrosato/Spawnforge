@@ -594,7 +594,7 @@ export function createServer(): McpServer {
     {
       title: 'Export a .glb',
       description:
-        'Writes the creature as binary glTF (.glb) for game engines: one skinned mesh each for skin, hard parts and eyes, with the pattern stack baked into vertex colours (albedo only); the skeleton; baked animation clips (idle, one in-place cycle of each gait, each action); gameplay sockets (head, mouth, eyes, claw tips, centre of mass) as nodes; and the minimal blueprint, clip timings, events, hit capsules and optional stats as extras. Metres, Y up, facing +Z.',
+        'Writes the creature as binary glTF (.glb) for game engines: one skinned mesh each for skin, hard parts, eyes and membranes, each with texture maps baked from the live material (albedo, a normal map for the relief, occlusion and roughness, glow), or vertex colours with textures "none"; the skeleton; baked animation clips (idle, one in-place cycle of each gait, each action); gameplay sockets (head, mouth, eyes, claw tips, centre of mass) as nodes; and the minimal blueprint, clip timings, events, hit capsules and optional stats as extras. Metres, Y up, facing +Z.',
       inputSchema: z.object({
         blueprint: z
           .record(z.string(), z.unknown())
@@ -615,6 +615,12 @@ export function createServer(): McpServer {
           .describe('Clips to bake: "idle", gait ids, action ids (default all)'),
         fps: z.number().int().min(5).max(120).optional().describe('Frames per second (default 30)'),
         stats: z.string().optional().describe("A stats module id, to store that game's numbers"),
+        textures: z
+          .union([z.literal(512), z.literal(1024), z.literal(2048), z.literal('none')])
+          .optional()
+          .describe(
+            'The skin map size in texels (the other maps follow), or "none" for vertex colours; default by quality',
+          ),
       }),
     },
     async (input) => {
@@ -636,6 +642,7 @@ export function createServer(): McpServer {
           ...(input.quality ? { quality: input.quality } : {}),
           ...(input.clips ? { clips: input.clips } : {}),
           ...(input.fps ? { fps: input.fps } : {}),
+          ...(input.textures !== undefined ? { textures: input.textures } : {}),
         });
         writeFileSync(input.out, result.glb);
         return reply(() => ({

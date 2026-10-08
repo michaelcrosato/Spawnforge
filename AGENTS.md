@@ -101,7 +101,10 @@ necks droop, springs go limp; `dead`/`dying`, a `death` clip, scenarios' `hit` a
 motion tasks 10/10 meet their checks and 10/10 filmstrips matched blind, every clip bakes and
 gait clips loop without a seam, motion budgets met (`eval/runs/2026-10-07-gate10/`). Scenario
 results' `body` and `turned`, and `analyze` naming every pair of limbs that meet at once, came
-from its feedback. Next is phase 11.
+from its feedback. Then 11.1 (texture maps: `@spawnforge/bake` unwraps each mesh with xatlas
+and bakes colour, a normal map, occlusion with roughness, and emissive per texel through the CPU
+kit on workers; `export --textures`; `pnpm roundtrip` loads every export back beside the live
+creature, and the Khronos validator checks it; `docs/design/11.1-textures.md`). Next is 11.2.
 
 ## Repo map
 
@@ -110,10 +113,11 @@ from its feedback. Next is phase 11.
 | `packages/core`    | Blueprint schema, module registry, seeded RNG, compile pipeline, motion controller, analysis     | `zod`, Three.js math classes     |
 | `packages/modules` | First pack: body plans, parts, patterns, gaits, actions                                          | core                             |
 | `packages/three`   | The only layer that renders: skinned mesh assembly, TSL materials, pose sync, export             | core, `three`                    |
+| `packages/bake`    | Export processing: UV atlases (xatlas), texture maps baked per texel, tangents                    | core, `watlas`, `meshoptimizer`  |
 | `packages/cli`     | The `spawnforge` command. Every command prints JSON. Headless renderer later                     | core, modules                    |
 | `packages/mcp`     | MCP server: a thin wrapper over the CLI command functions                                        | cli, render                      |
-| `packages/render`  | Headless contact sheets through Chromium (Playwright) and a Vite-served page, WebGL 2 backend     | core, modules, three             |
-| `apps/sandbox`     | Vite app: terrain course, walking creatures, actions, sliders, JSON panel, gallery, `creatures/` watch | core, modules, three   |
+| `packages/render`  | Headless contact sheets, exports and the texture round trip through Chromium (Playwright) and a Vite-served page, WebGL 2 backend | core, modules, three, bake |
+| `apps/sandbox`     | Vite app: terrain course, walking creatures, actions, sliders, JSON panel, gallery, `creatures/` watch | core, modules, three, bake |
 | `examples/`        | Blueprints beside their renders; also the golden test set                                        |                                  |
 | `eval/`            | The 20-prompt agent eval: prompts, scorer and one folder per run                                  |                                  |
 | `scripts/`         | `generate.ts`: writes every generated file (pack index, catalogue, JSON Schema)                  |                                  |
@@ -136,7 +140,8 @@ pnpm spawnforge <command>     # the CLI from source: list-modules, describe-modu
                               # migrate, render, generate, mutate, crossbreed, instantiate, export, schema
                               # (`pnpm -s spawnforge …` leaves out pnpm's banner, for JSON you can pipe)
 pnpm spawnforge generate --theme reptile --seed 4 --out creatures/lizard.json   # a new creature from a theme
-pnpm spawnforge export examples/bog-troll.json --stats rpg   # a .glb with baked clips, for any engine
+pnpm spawnforge export examples/bog-troll.json --stats rpg   # a .glb with baked clips and texture maps, for any engine
+                              # (--textures 2048 for sharper maps, --textures none for vertex colours)
 pnpm spawnforge render examples/ridgeback-stalker.json --labels   # PNG contact sheet next to the file
 pnpm spawnforge render examples/grey-wolf.json --views head --jaw 0.8   # the head, mouth open (--blink 1 shuts the eyes)
 pnpm spawnforge render examples/ash-dragon.json --pose spread   # wings open (they rest folded)
@@ -144,7 +149,8 @@ pnpm spawnforge analyze examples/ridgeback-stalker.json --scenario examples/scen
                               # scripted motion (targets, a course, water, timed calls); render takes it too
 pnpm render:examples          # re-render examples/*.png after changing a blueprint or the pipeline
 pnpm fuzz [count] [quality]   # compile random blueprints from the schema (the PoC gate runs 1,000)
-pnpm budgets                  # compile time, triangles, draw calls and motion cost of the examples
+pnpm budgets                  # compile time, triangles, draw calls, .glb size and motion cost of the examples
+pnpm roundtrip [name …]       # export each example with maps, load it back and compare it with the live creature
 node scripts/theme-sheet.ts dragon --out dragon.png  # a theme across 20 seeds on one sheet
 node packages/mcp/src/bin.ts  # the MCP server over stdio
 node eval/score.ts <run>      # score an eval run from its saved attempts
