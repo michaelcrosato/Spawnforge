@@ -248,6 +248,30 @@ Work in progress toward 0.2, phase by phase (see the plan's status table).
   at full detail and corpses lying at any distance. Scenarios take `hit` and `die` calls. The
   sandbox has hit and die buttons.
 - **Examples:** `scenarios/hit-and-die.json`.
+- **Gate 10:** passed (suites A and B re-scored 20/20; suite M's ten motion tasks 10/10 meet their
+  checks and 10/10 filmstrips matched blind; all 233 clips of the 32 examples bake, and gait clips
+  loop without a seam; motion budgets met). Suite M is `eval/prompts-m.json`, checked by
+  `node eval/motion.ts check`. A blow's push grows with the square of its strength, so 1 staggers
+  nearly anything. For the budgets: leg IK searches without allocating, legless bodies take their
+  height from the trail they laid, spring floors follow the ground's slope and sample it a third as
+  often, springs no longer re-solve the pose they hang from (it is already solved), and
+  `Pose.solveSubtree` remembers each bone's descendants. Motion costs a third less (50 creatures
+  2.9 to 2.1 ms on one machine); legged bodies move exactly as before, snakes and flying tails
+  within 0.05 mm, a kraken's tentacles on rough ground within 1 cm. `pnpm budgets` times motion
+  after Chromium closes and keeps one compiled creature per example. From its feedback:
+  - Scenario results give `topSpeed`, `body` (its lowest, highest and highest above the ground)
+    and `turned`; events keep `head` and `bone`, and `arrive` says where; a `gait` call fires a
+    `gait` event, and entering the water fires one, not two; `footSlide` leaves out staggers and
+    dying; `start.y` starts a swimmer at a depth (`place` takes `y` for swimmers too).
+    `MotionController.staggering`.
+  - `analyze` lists every pair of limbs that meet at once, each where it was deepest, with the
+    splay sized by where on the leg they meet; `--summary` keeps `reach`, and each head says which
+    side it is on.
+  - Descriptions say where a layer shows ("spots on the tail"), and a countershade on one region
+    is an underside, not a belly (pattern `describe` hooks get the `region`).
+  - Docs: what a blow's strength does to each build, `fly`'s height, the views scenario
+    filmstrips use, `pnpm -s` for JSON, recipes for a horse, a big cat and a bear, and the shark's
+    and crocodile's recipes fixed.
 
 ## 0.1.0
 

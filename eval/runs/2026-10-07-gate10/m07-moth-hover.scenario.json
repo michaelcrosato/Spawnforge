@@ -1,0 +1,7 @@
+{
+  "ground": "flat",
+  "duration": 10,
+  "frames": 12,
+  "targets": { "hoverheight": [0, 1.5, 0.3] },
+  "calls": [{ "at": 0.5, "do": "fly", "height": 1.5 }]
+}

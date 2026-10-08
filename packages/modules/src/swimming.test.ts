@@ -62,6 +62,9 @@ describe('swimming (10.3)', () => {
     const gaits = events.filter((e) => e.type === 'gait').map((e) => e.gait);
     expect(gaits.some((g) => g?.startsWith('swim.'))).toBe(true);
     expect(gaits.at(-1)).toBe('walk');
+    // One gait event at a time: entering the water picks its gait once (gate 10).
+    const times = events.filter((e) => e.type === 'gait').map((e) => e.time);
+    expect(new Set(times).size).toBe(times.length);
     expect(events.some((e) => e.type === 'arrive')).toBe(true);
     expect(controller.position.z).toBeGreaterThan(15.5);
     expect(controller.feet().every((f) => f.planted)).toBe(true);

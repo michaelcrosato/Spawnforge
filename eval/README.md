@@ -88,8 +88,22 @@ node eval/motion.ts score eval/runs/<run>/motion [--threshold 8]
 A task list holds `{ id, task, blueprint, filmstrip | scenario }` entries
 ([motion-dry.json](motion-dry.json) is plan 1's gaits and actions plus two scenarios). `prepare`
 writes `mNN.png` in shuffled order, the task list in `review.md` and the key in
-`motion-key.json`; the reviewer writes `motion-answers.json` (`{ "m01": "<task id>" }`). Gate 10's
-suite M adds checks per task.
+`motion-key.json`; the reviewer writes `motion-answers.json` (`{ "m01": "<task id>" }`).
+
+Suite M ([prompts-m.json](prompts-m.json), gate 10) is ten motion tasks, each with checks of what
+its run must show. Agents save each task's attempts as usual and its scenario as
+`<id>.scenario.json` beside them; `check` validates the last attempt, runs its scenario and
+checks the result ([checks.ts](checks.ts)): a gait used (`swim.*` matches any swim), a top speed,
+an event (of an action, from a head), events in order, a snout's distance to a target (and where
+the target is), how far it turned, the media it moved through, water, and a slope's angle.
+
+```sh
+node eval/motion.ts check eval/runs/<run> [--prompts eval/prompts-m.json] [--threshold 9]
+node eval/motion.ts prepare eval/runs/<run>/motion --tasks eval/runs/<run>/motion-tasks.json
+```
+
+`check` writes `check-score.json` and `motion-tasks.json`, the task list for the blind review of
+the same runs' filmstrips.
 
 ## Dry runs
 

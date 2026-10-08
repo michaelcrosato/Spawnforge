@@ -311,12 +311,13 @@ export class MotionController {
   private readonly reachPoints: Vector3[] = [];
   /** Per arm, how far the `arms` goal turns it at 1 (radians). */
   private readonly armReach: readonly number[];
-  /** How far a spring point moves before it samples the ground under it again (m). */
+  /**
+   * How far a point moves before it samples the ground under it again (m): a dead bone after
+   * one step, a spring point after three.
+   */
   private readonly floorStep: number;
   private wingTree: number[] | undefined;
   private bodyTree: number[] | null | undefined;
-  /** The bones springs hang from: all but the springs' own past their roots (`springRoots`). */
-  private rootTree: number[] | undefined;
   private readonly trail: Vector3[] = [];
   private target: Vector3 | null = null;
   private desiredSpeed = 0;
@@ -609,7 +610,8 @@ export class MotionController {
   /**
    * Puts the creature at (x, z) facing `heading`, standing: no target, feet planted around it,
    * tail at rest. Use it to spawn or teleport a creature, or to take one back from a baked
-   * animation.
+   * animation. With `flying`, a creature with wings starts in the air; `y` is the height (its
+   * origin's, m) a flyer starts at, or a swimmer put in water.
    */
   place(
     x: number,
@@ -654,14 +656,19 @@ export class MotionController {
         plantToes(leg.roll, foot, leg.footLift, heading, (x, z) => ground(x, z).height);
       }
     }
-    // Put in water deep enough to swim, a swimmer starts afloat: at the surface if it also
-    // walks, else halfway down.
+    // Put in water deep enough to swim, a swimmer starts afloat: at the height `y` asks for,
+    // else at the surface if it also walks, else halfway down.
     const depth = this.depthAt(ground, water, x, z);
     if (this.swims && depth > this.swimDepth) {
       this.enterMedium('water', ground);
       this.events.length = 0;
       const bed = ground(x, z).height;
-      this.swimY = this.walks ? bed + depth : bed + depth / 2;
+      this.swimY =
+        options.y !== undefined && !options.flying
+          ? Math.max(bed, Math.min(bed + depth, options.y + this.restBodyY))
+          : this.walks
+            ? bed + depth
+            : bed + depth / 2;
       this.stepSwim(0, bed, bed + depth);
     }
     // Already flying (docs/design/10.4-flight.md): at cruise, at the height asked for or its own.
@@ -896,7 +903,8 @@ export class MotionController {
     });
     // The push: a velocity that friction stops over `tau`.
     const h = this.hipHeight;
-    const v0 = 0.5 * strength * Math.sqrt(G * h);
+    // Light blows barely push; a full-strength one knocks almost anything off its feet.
+    const v0 = (0.4 * strength + 0.6 * strength * strength) * Math.sqrt(G * h);
     const tau = 0.35 * this.timeScale;
     if (this.air || this.medium === 'water' || this.legs.length === 0) {
       // Flyers, swimmers and legless bodies sway with it.
@@ -1040,6 +1048,11 @@ export class MotionController {
     return this.death !== null && !this.death.rest;
   }
 
+  /** Knocked off balance by a blow, and stepping until its feet have caught up. */
+  get staggering(): boolean {
+    return this.staggerT > 0 || this.steadying;
+  }
+
   /** The torso's pitch at rest (radians): an upright biped's is high. */
   private torsoPitch(): number {
     const spine = this.compiled.rig.spine;
@@ -1113,9 +1126,20 @@ export class MotionController {
     if (this.lockedGait && this.lockedGait !== this.gait) {
       this.gait = this.lockedGait;
       this.retimeLegs();
+      this.gaitEvent(this.gait.id);
     }
   }
   private lockedGait: GaitInfo | undefined;
+
+  /**
+   * A `gait` event; one chosen again within the same step (on entering the water, the medium's
+   * first gait, then the one for its speed) replaces the first.
+   */
+  private gaitEvent(gait: string): void {
+    const last = this.events.at(-1);
+    if (last?.type === 'gait' && last.time === this.time) this.events.pop();
+    this.events.push({ type: 'gait', time: this.time, gait });
+  }
 
   /** Speed (m/s) at which a gait looks typical: mid-range of its Froude numbers, capped at 1. */
   gaitSpeed(id: string): number {
@@ -1275,7 +1299,11 @@ export class MotionController {
         this.target = null;
         wantSpeed = 0;
         this.desiredSpeed = 0;
-        this.events.push({ type: 'arrive', time: this.time });
+        this.events.push({
+          type: 'arrive',
+          time: this.time,
+          position: [this.position.x, this.position.y, this.position.z],
+        });
       } else {
         wantHeading = Math.atan2(to.x, to.z);
         wantSpeed = Math.min(wantSpeed, distance * 1.5);
@@ -1377,7 +1405,7 @@ export class MotionController {
     );
     if (best === this.gait) return;
     this.gait = best;
-    this.events.push({ type: 'gait', time: this.time, gait: best.id });
+    this.gaitEvent(best.id);
   }
 
   /** Its gaits for a medium, slowest first. */
@@ -1425,7 +1453,7 @@ export class MotionController {
     if (gait && !this.lockedGait && gait !== this.gait) {
       this.gait = gait;
       this.retimeLegs();
-      this.events.push({ type: 'gait', time: this.time, gait: gait.id });
+      this.gaitEvent(gait.id);
     }
     this.trail.length = 0;
     if (medium === 'water') {
@@ -1981,7 +2009,7 @@ export class MotionController {
     if (this.air) this.air.role = gait?.air ?? 'flapping';
     if (!gait || gait === this.gait) return;
     this.gait = gait;
-    this.events.push({ type: 'gait', time: this.time, gait: gait.id });
+    this.gaitEvent(gait.id);
   }
 
   private canRole(role: 'gliding' | 'hovering'): boolean {
@@ -2206,7 +2234,11 @@ export class MotionController {
 
     // Arrival: within reach of a target it stops and hovers, or circles round it.
     if (this.target && !plan && distance < Math.max(fl.span, 0.3 * r)) {
-      this.events.push({ type: 'arrive', time: this.time });
+      this.events.push({
+        type: 'arrive',
+        time: this.time,
+        position: [this.position.x, this.position.y, this.position.z],
+      });
       this.loiter.copy(this.target);
       this.target = null;
       this.desiredSpeed = 0;
@@ -3061,8 +3093,8 @@ export class MotionController {
 
   private stepSprings(dt: number, ground: Ground): void {
     if (this.springs.length === 0) return;
-    // The roots follow their bones; the rest feel inertia, gravity and a pull toward rest.
-    this.solveRoots();
+    // The roots follow their bones, as the last pose left them (solved throughout); the rest
+    // feel inertia, gravity and a pull toward rest.
     // Sprawlers carry the body's side-to-side wave on into the tail.
     const moving = Math.min(1, this.speed / Math.max(1e-3, this.paceSpeed()));
     const wave =
@@ -3138,11 +3170,12 @@ export class MotionController {
       }
       // Tentacles and antennae lie on the ground rather than sink, sliding with some friction:
       // a joint that would go under swings up onto the ground, keeping its segment's length.
+      // Tails only in the air and through a landing's absorb (10.4). Between samples, a few
+      // floor steps apart, the floor follows the slope of the ground where it was sampled.
       const clearance = spring.clearance;
       const floors = spring.floors;
-      // Tails only in the air and through a landing's absorb (10.4), following the slope of the
-      // ground between samples.
       const tail = spring.kind === 'tail';
+      const step = 3 * this.floorStep;
       if (
         clearance &&
         floors &&
@@ -3154,14 +3187,14 @@ export class MotionController {
           const k = i * 5;
           const moved =
             Math.abs(p.x - (floors[k] as number)) + Math.abs(p.z - (floors[k + 1] as number));
-          if (!(moved < this.floorStep)) {
+          if (!(moved < step)) {
             const sample = ground(p.x, p.z);
             const n = sample.normal;
             floors[k] = p.x;
             floors[k + 1] = p.z;
             floors[k + 2] = sample.height;
-            floors[k + 3] = n && tail ? -n[0] / Math.max(0.2, n[1]) : 0;
-            floors[k + 4] = n && tail ? -n[2] / Math.max(0.2, n[1]) : 0;
+            floors[k + 3] = n ? -n[0] / Math.max(0.2, n[1]) : 0;
+            floors[k + 4] = n ? -n[2] / Math.max(0.2, n[1]) : 0;
           }
           const floor =
             (floors[k + 2] as number) +
@@ -3515,30 +3548,6 @@ export class MotionController {
     else for (const b of this.bodyTree) this.pose.solveBone(b);
   }
 
-  /**
-   * Forward kinematics for what the springs hang from: every bone but stations and the springs'
-   * own bones past their roots (which the springs then set), and what hangs from those.
-   */
-  private solveRoots(): void {
-    if (this.rootTree === undefined) {
-      const { parents, sections } = this.compiled.bones;
-      const skip = new Uint8Array(sections.length);
-      for (const spring of this.springs) for (const b of spring.bones.slice(1)) skip[b] = 1;
-      const tree: number[] = [];
-      for (let b = 0; b < sections.length; b++) {
-        const parent = parents[b] as number;
-        if (parent >= 0 && skip[parent]) skip[b] = 1;
-        if (!skip[b] && sections[b] !== 'station') tree.push(b);
-      }
-      // A spring hanging from another spring's bone needs everything solved.
-      const nested = this.springs.some((s) => skip[s.bones[0] as number]);
-      this.rootTree = nested ? [] : tree;
-    }
-    if (this.rootTree.length === 0) this.solvePose();
-    else for (const b of this.rootTree) this.pose.solveBone(b);
-  }
-
-  /** Every bone hanging from a wing's shoulder except the stations, in solving order. */
   /** Helper bones at the wings' joints, posed again after the strokes. */
   private get wingHelpers(): readonly (readonly [number, number, number])[] {
     if (this.wingHelperList) return this.wingHelperList;
@@ -3567,6 +3576,7 @@ export class MotionController {
   }
   private pivot: Vector3 | undefined;
 
+  /** Every bone hanging from a wing's shoulder except the stations, in solving order. */
   private get wingBones(): readonly number[] {
     if (this.wingTree) return this.wingTree;
     const bones = this.compiled.bones;
@@ -3806,10 +3816,12 @@ export class MotionController {
       return;
     }
     // Place each bone joint along the trail, measured from the head.
-    // Joints at increasing distances along the trail, in one walk down it.
+    // Joints at increasing distances along the trail, in one walk down it. The trail was laid on
+    // the ground, so a joint on it takes its height; one past its end samples the ground.
     const joints = this.slitherJoints;
     while (joints.length < chain.length + 1) joints.push(new Vector3());
     const trail = this.trail;
+    const bodyY = (pose.restWorldPos[rig.spine[0] as number] as Vector3).y;
     let segment = 1;
     let acc = 0;
     let distance = 0;
@@ -3837,11 +3849,11 @@ export class MotionController {
           .subVectors(end, before)
           .setLength(distance - acc)
           .add(end);
+        out.y = ground(out.x, out.z).height;
       }
+      out.y += bodyY;
     }
     joints.length = chain.length + 1;
-    for (const j of joints)
-      j.y = ground(j.x, j.z).height + (pose.restWorldPos[rig.spine[0] as number] as Vector3).y;
     // Torso and neck bones point toward the head; tail bones away from it.
     const spine0 = rig.spine[0] as number;
     const hipIndex = lead.length + rig.spine.length;

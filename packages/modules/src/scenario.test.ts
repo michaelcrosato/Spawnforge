@@ -151,6 +151,44 @@ describe('scenarios', () => {
     expect(Math.hypot(result.end.x - 1, result.end.z - 1)).toBeLessThan(0.4);
   });
 
+  it('measures heights and turning, says where it arrived, and says when a gait is kept', () => {
+    const compiled = creature('quadruped');
+    const fastest = compiled.motion.gaits.filter((g) => (g.medium ?? 'land') === 'land').at(-1);
+    const scenario = parse({
+      duration: 9,
+      calls: [
+        { at: 0, do: 'moveTo', to: [0, 2] },
+        { at: 3, do: 'moveTo', to: [2, 2] },
+        { at: 7, do: 'gait', gait: fastest?.id },
+      ],
+    });
+    const result = new ScenarioRun(compiled, registry, scenario).run();
+    // A quarter turn to the right, and back to face it at the end: about 90° in all.
+    expect(result.turned).toBeGreaterThan(80);
+    expect(result.turned).toBeLessThan(140);
+    const arrivals = result.events.filter((e) => e.type === 'arrive').map((e) => e.position);
+    expect(arrivals).toHaveLength(2);
+    expect(Math.hypot((arrivals[0]?.[0] ?? 9) - 0, (arrivals[0]?.[2] ?? 9) - 2)).toBeLessThan(0.5);
+    expect(Math.hypot((arrivals[1]?.[0] ?? 9) - 2, (arrivals[1]?.[2] ?? 9) - 2)).toBeLessThan(0.5);
+    expect(result.events.at(-1)).toMatchObject({ type: 'gait', gait: fastest?.id });
+    expect(result.events.at(-1)?.time).toBeCloseTo(7, 1);
+    // Standing on flat ground, its middle stays at about its rest height.
+    expect(result.body.lowest).toBeGreaterThan(0);
+    expect(result.body.highest - result.body.lowest).toBeLessThan(0.2 * compiled.scale);
+    expect(result.body.aboveGround).toBeCloseTo(result.body.highest, 1);
+  });
+
+  it('starts a swimmer at the depth asked for', () => {
+    const compiled = creature('fish');
+    const depth = (start: Record<string, number>) =>
+      new ScenarioRun(compiled, registry, parse({ water: 'sea', duration: 1, start })).run().body;
+    const deep = depth({ y: -2 });
+    expect(deep.highest).toBeLessThan(-1.5);
+    expect(deep.lowest).toBeGreaterThan(-2.5);
+    // Without it, a body that only swims starts halfway down to the bed.
+    expect(depth({}).highest).toBeLessThan(deep.lowest);
+  });
+
   it('records a call the creature refuses instead of throwing', () => {
     const compiled = creature('quadruped');
     const scenario = parse({ duration: 1, calls: [{ at: 0, do: 'act', action: 'pinch' }] });

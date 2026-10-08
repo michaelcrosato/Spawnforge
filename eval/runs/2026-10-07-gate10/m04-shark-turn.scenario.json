@@ -1,0 +1,9 @@
+{
+  "water": "sea",
+  "duration": 24,
+  "frames": 12,
+  "calls": [
+    { "at": 0, "do": "moveTo", "to": [0, -1.5, 40] },
+    { "at": 9, "do": "moveTo", "to": [40, -1.5, 14] }
+  ]
+}

@@ -565,7 +565,7 @@ export function analyze(
 
 /**
  * `analyze`'s output with what needs acting on first: the verdict, warnings and description,
- * then the numbers. With `summary`, only the headline numbers follow.
+ * then the numbers. With `summary`, only the headline numbers follow: sizes, speeds and reach.
  */
 export function analysisView(result: AnalyzeResult, summary = false): unknown {
   if (!result.ok) return result;
@@ -585,6 +585,7 @@ export function analysisView(result: AnalyzeResult, summary = false): unknown {
       ...(m.wingspan !== undefined ? { wingspan: m.wingspan } : {}),
     },
     speed: result.speed,
+    reach: result.reach,
     ...(result.stats ? { stats: result.stats } : {}),
     ...(result.scenario ? { scenario: result.scenario } : {}),
   };

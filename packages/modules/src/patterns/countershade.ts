@@ -16,7 +16,9 @@ export default definePattern({
     softness: z.number().min(0.01).max(1).default(0.35).describe('Width of the blend'),
   }),
   example: { type: 'countershade', strength: 0.6 },
-  describe: (p) => `a ${colorName(p.color as string)} belly`,
+  // Over the whole body it is a belly; on one region (the limbs, the head), their undersides.
+  describe: (p, info) =>
+    `a ${colorName(p.color as string)} ${!info || info.region === 'all' ? 'belly' : 'underside'}`,
   hooks: {
     shade(k, s, p) {
       const height = k.param(p.height as number);

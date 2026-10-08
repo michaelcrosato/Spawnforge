@@ -1,0 +1,17 @@
+{
+  "phase": 10,
+  "suite": "m",
+  "kind": "gate 10: suite M (10 motion tasks, each a blueprint and a scenario), checked by eval/motion.ts check, filmstrips matched blind",
+  "date": "2026-10-07",
+  "model": "Claude Sonnet (Claude Code subagent, model alias \"sonnet\")",
+  "commit": "c9784cf",
+  "tools": "spawnforge CLI: validate, list-modules, describe-module, render (contact sheets, filmstrips, scenarios), analyze (with scenarios), patch",
+  "docs": [
+    "docs/blueprint.md",
+    "docs/scenarios.md",
+    "docs/runtime.md",
+    "docs/catalog.md",
+    "examples/"
+  ],
+  "agents": "2 independent agents, 5 tasks each, no shared context; a separate blind reviewer"
+}

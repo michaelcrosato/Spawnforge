@@ -162,7 +162,7 @@ export function createServer(): McpServer {
         summary: z
           .boolean()
           .optional()
-          .describe('Only the warnings, description, main sizes and speeds'),
+          .describe('Only the warnings, description, main sizes, speeds and reach'),
       }),
       annotations: { readOnlyHint: true },
     },

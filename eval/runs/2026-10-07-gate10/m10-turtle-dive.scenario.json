@@ -1,0 +1,13 @@
+{
+  "water": "sea",
+  "duration": 32,
+  "frames": 14,
+  "targets": {
+    "deep": [0, -3, 8],
+    "surface": [0, -0.3, 16]
+  },
+  "calls": [
+    { "at": 0, "do": "moveTo", "to": "deep" },
+    { "at": 14, "do": "moveTo", "to": "surface" }
+  ]
+}

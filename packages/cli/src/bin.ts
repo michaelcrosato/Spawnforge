@@ -49,8 +49,8 @@ Commands:
   analyze <file|-> [--summary] [--stats id] [--scenario s.json]
                                         Warnings and a description first, then measurements,
                                         mass, speeds and motion checks on flat and rough ground;
-                                        --summary keeps the warnings, description, main sizes
-                                        and speeds; --stats adds a game's numbers (e.g. rpg);
+                                        --summary keeps the warnings, description, main sizes,
+                                        speeds and reach; --stats adds a game's numbers (e.g. rpg);
                                         --scenario runs a scripted scene (targets, a course,
                                         timed calls) and reports its events, distances and slide
   migrate <file|-> [--out file] [--dry-run]

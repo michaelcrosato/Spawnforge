@@ -1,0 +1,157 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Ember Drake",
+  "seed": 6601,
+  "extends": "quadruped",
+  "scale": 1.8,
+  "body": {
+    "muscle": 0.6,
+    "torso": {
+      "radius": [0.16, 0.22, 0.21, 0.14],
+      "arch": 0.06
+    },
+    "neck": {
+      "length": 0.7,
+      "radius": [0.08, 0.13],
+      "pitch": 35,
+      "curve": 30,
+      "segments": 5
+    },
+    "head": {
+      "shape": "wedge",
+      "length": 0.4,
+      "radius": 0.11,
+      "jaw": true,
+      "brow": 0.6,
+      "pitch": -5
+    },
+    "tail": {
+      "length": 1.5,
+      "radius": [0.15, 0.02],
+      "curl": 8,
+      "segments": 12
+    }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "length": 0.5,
+      "radius": [0.095, 0.04],
+      "foot": {
+        "type": "foot.claw",
+        "toes": 4
+      },
+      "splay": 12
+    },
+    {
+      "id": "hindleg",
+      "length": 0.58,
+      "radius": [0.11, 0.05],
+      "foot": {
+        "type": "foot.claw",
+        "toes": 4
+      },
+      "attach": {
+        "angle": 92
+      }
+    },
+    {
+      "id": "wing",
+      "role": "wing",
+      "attach": {
+        "on": "torso",
+        "at": 0.14,
+        "side": "both",
+        "angle": 35
+      },
+      "length": 1.75,
+      "segments": 3,
+      "radius": [0.05, 0.015],
+      "membrane": {
+        "type": "membrane.bat",
+        "fingers": 4,
+        "span": 1.2,
+        "trailing": "body",
+        "scallop": 0.5,
+        "color": "#6a2a1e",
+        "translucency": 0.5
+      }
+    }
+  ],
+  "parts": [
+    {
+      "id": "horns",
+      "type": "horn.curved",
+      "attach": {
+        "on": "head",
+        "at": 0.85,
+        "angle": 35,
+        "side": "both"
+      },
+      "params": {
+        "length": 0.38,
+        "curve": 50,
+        "aim": "back",
+        "color": "#2a2420"
+      }
+    },
+    {
+      "id": "crest",
+      "type": "spikes.row",
+      "attach": {
+        "on": "spine",
+        "from": 0.1,
+        "to": 0.9,
+        "angle": 0
+      },
+      "params": {
+        "count": 16,
+        "height": [0.04, 0.09, 0.05, 0.02]
+      }
+    },
+    {
+      "id": "eyes",
+      "params": {
+        "pupil": "slit",
+        "irisColor": "#ffb020",
+        "squint": 0.4
+      }
+    },
+    {
+      "id": "teeth",
+      "type": "teeth.row",
+      "params": {
+        "fangs": 2
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#7a2e22",
+      "belly": "#d8b07a",
+      "accent": "#2a1410"
+    },
+    "material": "scales",
+    "layers": [
+      {
+        "type": "countershade",
+        "strength": 0.8
+      },
+      {
+        "type": "scales",
+        "size": 0.025,
+        "bump": 0.5
+      },
+      {
+        "type": "veins",
+        "color": "accent",
+        "region": "wings",
+        "strength": 0.6
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "aggressive",
+    "actions": ["bite", "roar", "look", "idle"]
+  }
+}

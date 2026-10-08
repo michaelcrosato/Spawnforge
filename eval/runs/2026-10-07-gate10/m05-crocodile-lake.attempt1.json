@@ -1,0 +1,119 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Saltwater Crocodile",
+  "seed": 4501,
+  "extends": "quadruped",
+  "scale": 1.6,
+  "body": {
+    "muscle": 0.6,
+    "torso": {
+      "radius": [0.13, 0.18, 0.18, 0.13],
+      "crossSection": "wide",
+      "arch": 0.02
+    },
+    "neck": {
+      "length": 0.14,
+      "radius": [0.12, 0.12],
+      "pitch": 3
+    },
+    "head": {
+      "shape": "wedge",
+      "length": 0.46,
+      "radius": 0.095,
+      "pitch": -3,
+      "brow": 0.4,
+      "lips": 0.1,
+      "crossSection": "wide"
+    },
+    "tail": {
+      "length": 1.4,
+      "radius": [0.12, 0.08, 0.035, 0.01],
+      "pitch": 0,
+      "crossSection": "tall"
+    }
+  },
+  "limbs": [
+    {
+      "id": "foreleg",
+      "splay": 62,
+      "length": 0.38,
+      "radius": [0.06, 0.04],
+      "foot": "foot.claw"
+    },
+    {
+      "id": "hindleg",
+      "splay": 62,
+      "length": 0.4,
+      "radius": [0.075, 0.045],
+      "foot": "foot.claw"
+    }
+  ],
+  "parts": [
+    {
+      "id": "eyes",
+      "attach": {
+        "on": "head",
+        "at": 0.62,
+        "angle": 32
+      },
+      "params": {
+        "irisColor": "#c8a828",
+        "pupil": "slit"
+      }
+    },
+    {
+      "id": "teeth",
+      "type": "teeth.row",
+      "params": {
+        "fangs": 0,
+        "scale": 1.2
+      }
+    },
+    {
+      "id": "scutes",
+      "type": "spikes.row",
+      "attach": {
+        "on": "spine",
+        "from": 0.2,
+        "to": 0.95
+      },
+      "params": {
+        "count": 26,
+        "height": [0.03, 0.055, 0.03],
+        "color": "accent"
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#58603a",
+      "belly": "#d0c8a0",
+      "accent": "#2c3220"
+    },
+    "material": "scales",
+    "layers": [
+      {
+        "type": "countershade",
+        "softness": 0.25
+      },
+      {
+        "type": "scales",
+        "size": 0.05
+      },
+      {
+        "type": "bands",
+        "color": "accent",
+        "count": 14,
+        "width": 0.3,
+        "region": "tail"
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "stalking",
+    "media": {
+      "water": true
+    },
+    "actions": ["bite", "idle"]
+  }
+}

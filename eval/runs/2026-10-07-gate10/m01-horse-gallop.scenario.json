@@ -1,0 +1,6 @@
+{
+  "ground": "flat",
+  "duration": 10,
+  "frames": 10,
+  "calls": [{ "at": 0, "do": "moveTo", "to": [0, 150], "speed": 12 }]
+}

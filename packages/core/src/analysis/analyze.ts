@@ -58,6 +58,15 @@ export interface FlightCheck {
   readonly seconds: number;
 }
 
+/** Two limbs that met, or a limb and the body: how deep (m), and where. */
+export interface LimbHit {
+  readonly worst: number;
+  readonly between?: readonly [string, string];
+  /** Which part of the first limb: its upper, middle or lower segment. */
+  readonly segment?: 'upper' | 'middle' | 'lower';
+  readonly time?: number;
+}
+
 /** One motion run: the worst of each problem, with where and when it happened. */
 export interface MotionCheck {
   /** Where it ran: on flat or rough ground, or in open water for a body that only swims. */
@@ -73,14 +82,11 @@ export interface MotionCheck {
   readonly penetration: { readonly worst: number; readonly part?: string; readonly time?: number };
   /** Share of frames a leg was stretched past its reach (its foot out of reach), worst leg. */
   readonly overstretch: { readonly worst: number; readonly leg?: string };
-  /** Deepest overlap of two limbs, or of a limb with the body (m). */
-  readonly intersection: {
-    readonly worst: number;
-    readonly between?: readonly [string, string];
-    /** Which part of the first limb: its upper, middle or lower segment. */
-    readonly segment?: 'upper' | 'middle' | 'lower';
-    readonly time?: number;
-  };
+  /**
+   * Deepest overlap of two limbs, or of a limb with the body (m); `pairs` has every pair that
+   * met, deepest first, so one pass shows them all.
+   */
+  readonly intersection: LimbHit & { readonly pairs: readonly LimbHit[] };
   /** Deepest overlap of two heads or necks (m), with several heads. */
   readonly heads: {
     readonly worst: number;
@@ -174,10 +180,10 @@ export interface Analysis {
     readonly stride: number;
     readonly steps: number;
   }[];
-  /** How far the head can lunge (m) for a bite, and the head's height. */
   /**
-   * The main head's bite reach (null without a jaw) and height, in metres; with several heads,
-   * `heads` gives each one's, the main head first.
+   * The main head's bite reach: how far it lunges out from where it holds its head (null without
+   * a jaw), and its height, in metres; with several heads, `heads` gives each one's, the main
+   * head first, and which side of the body it is on (its left is +X).
    */
   readonly reach: {
     readonly bite: number | null;
@@ -186,6 +192,7 @@ export interface Analysis {
       readonly id: string;
       readonly bite: number | null;
       readonly headHeight: number;
+      readonly side: 'left' | 'right' | 'middle';
     }[];
   };
   /** Centre of mass over the feet: `margin` is its distance inside the support area (m). */
@@ -328,10 +335,13 @@ export function analyzeCreature(
   const reachOf = (h: (typeof compiled.rig.heads)[number]) => {
     let neckLen = 0;
     for (const b of h.neck) neckLen += compiled.bones.lengths[b] ?? 0;
+    const x = compiled.bones.positions[h.head * 3] as number;
     return {
       id: h.id,
       bite: h.jaw >= 0 ? neckLen * 0.6 + 0.12 * L : null,
       headHeight: compiled.bones.positions[h.head * 3 + 1] as number,
+      side:
+        x > 0.02 * L ? ('left' as const) : x < -0.02 * L ? ('right' as const) : ('middle' as const),
     };
   };
   const main = mainHead(compiled.rig);
@@ -426,6 +436,7 @@ export function analyzeCreature(
     );
     paceRuns = 1;
   }
+  const meeting = new Map<string, { hit: LimbHit; where: string }>();
   for (const [k, check] of motion.entries()) {
     const where = WHERE[check.ground];
     // The faster gaits' runs check the feet and the ground; how limbs, heads, wings and
@@ -466,32 +477,45 @@ export function analyzeCreature(
         `fan the necks wider (body.neck.spread about ${Math.min(170, Math.round(spec.body.neck.spread + 15))}) or make them longer, or the heads smaller`,
       );
     }
-    if (paced && check.intersection.worst > 0.01 * L && check.intersection.between) {
-      const [a, b] = check.intersection.between;
-      const id = a.replace(/\.[LR]$/, '');
-      const limb = spec.limbs.find((l) => l.id === id);
-      const depth = check.intersection.worst;
-      // Splay that moves the foot sideways by the overlap, with some room to spare.
-      const splay =
-        Math.ceil((Math.atan2(depth * 1.5, (limb?.length ?? 0.5) * L) * 180) / Math.PI / 5) * 5;
-      const section = ['torso', 'neck', 'head', 'jaw', 'tail', 'spine'].includes(b);
-      const cm = (depth * 100).toFixed(0);
-      // Which remedy works depends on what meets (gate 8's agents found the old list misled):
-      // splay clears a leg from the body; two legs of a pair meet under it, where only
-      // attaching them higher or thinning them helps; front and hind legs meet in the stride.
-      const pair = !section && b.replace(/\.[LR]$/, '') === id;
-      const angle = limb?.angle;
-      warn(
-        `limbs[id=${id}]`,
-        'limb_intersection',
-        `${a} (its ${check.intersection.segment ?? 'lower'} segment) passes ${(depth * 100).toFixed(1)} cm into ${b} ${where}`,
-        section
-          ? `move it clear of the ${b} by about ${cm} cm: about ${splay}° more splay works best; or a smaller gait stride or stepHeight, or a thinner ${b === 'torso' ? 'body' : b}. On a broad body a lower attach.angle can make it worse`
-          : pair
-            ? `the pair meets under the body: attach both higher up the side (a lower attach.angle${angle !== undefined ? `, e.g. ${Math.max(0, Math.round(angle - 15))}` : ''}) or make them thinner (radius); splay barely helps here`
-            : `the front and hind legs meet in the stride: a smaller gait stride, attach.at further apart, or thinner legs, by about ${cm} cm`,
-      );
-    }
+    if (paced)
+      for (const pair of check.intersection.pairs) {
+        if (pair.worst <= 0.01 * L || !pair.between) continue;
+        // Mirror images (foreleg.L and foreleg.R into the torso) share one fix.
+        const key = pair.between.map((x) => x.replace(/\.[LR]$/, '')).join('|');
+        const seen = meeting.get(key);
+        if (!seen || pair.worst > seen.hit.worst) meeting.set(key, { hit: pair, where });
+      }
+  }
+  // Every pair of limbs that met, deepest first, each with its own fix, so one pass shows them
+  // all (gate 10's agents chased them one at a time).
+  for (const { hit, where } of [...meeting.values()].sort((x, y) => y.hit.worst - x.hit.worst)) {
+    const [a, b] = hit.between as readonly [string, string];
+    const id = a.replace(/\.[LR]$/, '');
+    const limb = spec.limbs.find((l) => l.id === id);
+    const depth = hit.worst;
+    // Splay that moves the meeting point sideways by the overlap, with some room to spare: it
+    // swings about the hip, so a meeting high on the leg needs more than one at the foot.
+    const lever = { upper: 0.3, middle: 0.6, lower: 0.9 }[hit.segment ?? 'lower'];
+    const splay =
+      Math.ceil((Math.atan2(depth * 1.5, lever * (limb?.length ?? 0.5) * L) * 180) / Math.PI / 5) *
+      5;
+    const section = ['torso', 'neck', 'head', 'jaw', 'tail', 'spine'].includes(b);
+    const cm = (depth * 100).toFixed(0);
+    // Which remedy works depends on what meets (gate 8's agents found the old list misled):
+    // splay clears a leg from the body; two legs of a pair meet under it, where only
+    // attaching them higher or thinning them helps; front and hind legs meet in the stride.
+    const pair = !section && b.replace(/\.[LR]$/, '') === id;
+    const angle = limb?.angle;
+    warn(
+      `limbs[id=${id}]`,
+      'limb_intersection',
+      `${a} (its ${hit.segment ?? 'lower'} segment) passes ${(depth * 100).toFixed(1)} cm into ${b} ${where}`,
+      section
+        ? `move it clear of the ${b} by about ${cm} cm: about ${splay}° more splay works best; or a smaller gait stride or stepHeight, or a thinner ${b === 'torso' ? 'body' : b}. On a broad body a lower attach.angle can make it worse`
+        : pair
+          ? `the pair meets under the body: attach both higher up the side (a lower attach.angle${angle !== undefined ? `, e.g. ${Math.max(0, Math.round(angle - 15))}` : ''}) or make them thinner (radius); splay barely helps here`
+          : `the front and hind legs meet in the stride: a smaller gait stride, attach.at further apart, or thinner legs, by about ${cm} cm`,
+    );
   }
 
   // --- Flight: can it, and how it flies and lands (docs/design/10.4-flight.md) ---------------
@@ -968,6 +992,19 @@ function runMotion(
     segment?: 'upper' | 'middle' | 'lower';
     time?: number;
   };
+  // Every pair that meets, at its deepest.
+  const pairs = new Map<string, LimbHit>();
+  const meet = (
+    overlap: number,
+    between: [string, string],
+    segment: 'upper' | 'middle' | 'lower',
+    time: number,
+  ) => {
+    if (overlap > hit.worst) Object.assign(hit, { worst: overlap, between, segment, time });
+    const key = between.join('|');
+    if (overlap > 0 && overlap > (pairs.get(key)?.worst ?? 0))
+      pairs.set(key, { worst: overlap, between, segment, time });
+  };
   const segmentOf = (k: number, n: number) =>
     k === 0 ? 'upper' : k === n - 1 ? 'lower' : 'middle';
   // Several heads: each one's neck past its first quarter, head and jaw, against the others'.
@@ -1054,13 +1091,12 @@ function runMotion(
             pose.tail(bj, f);
             const overlap =
               ((bones.radii[bi] ?? 0) + (bones.radii[bj] ?? 0)) * 0.8 - segmentDistance(a, b, e, f);
-            if (overlap > hit.worst)
-              Object.assign(hit, {
-                worst: overlap,
-                between: [rig.legs[i]?.id ?? '', rig.legs[j]?.id ?? ''],
-                segment: segmentOf(k, (legBones[i] as number[]).length),
-                time,
-              });
+            meet(
+              overlap,
+              [rig.legs[i]?.id ?? '', rig.legs[j]?.id ?? ''],
+              segmentOf(k, (legBones[i] as number[]).length),
+              time,
+            );
           }
         }
       }
@@ -1074,13 +1110,12 @@ function runMotion(
           pose.tail(s, f);
           const overlap =
             ((bones.radii[bi] ?? 0) + (bones.radii[s] ?? 0)) * 0.7 - segmentDistance(a, b, e, f);
-          if (overlap > hit.worst)
-            Object.assign(hit, {
-              worst: overlap,
-              between: [rig.legs[i]?.id ?? '', bones.owners[s] ?? 'body'],
-              segment: segmentOf(k, (legBones[i] as number[]).length),
-              time,
-            });
+          meet(
+            overlap,
+            [rig.legs[i]?.id ?? '', bones.owners[s] ?? 'body'],
+            segmentOf(k, (legBones[i] as number[]).length),
+            time,
+          );
         }
       }
     }
@@ -1097,7 +1132,7 @@ function runMotion(
       worst: frames > 0 ? (stretched[worstLeg] ?? 0) / frames : 0,
       ...(rig.legs[worstLeg] ? { leg: rig.legs[worstLeg].id } : {}),
     },
-    intersection: hit,
+    intersection: { ...hit, pairs: [...pairs.values()].sort((x, y) => y.worst - x.worst) },
     heads: crowd,
     wings: wingHit,
     tentacles: tentacleHit,
@@ -1455,7 +1490,8 @@ export function describeCreature(
     `${colorName(spec.skin.palette.base ?? '#808080')} ${spec.skin.material}`,
     ...spec.skin.layers.map((layer) => {
       const module = registry.get('pattern', layer.type) as PatternModule | undefined;
-      return module?.describe?.(layer.params) ?? layer.type;
+      const phrase = module?.describe?.(layer.params, { region: layer.region }) ?? layer.type;
+      return layer.region === 'all' ? phrase : `${phrase} on the ${layer.region}`;
     }),
   ];
   // Walking gaits only: swimming and flying are said apart.

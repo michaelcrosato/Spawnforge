@@ -85,7 +85,7 @@ const call = z.discriminatedUnion('do', [
       from: from.default('left'),
       strength: range(0, 1)
         .default(0.5)
-        .describe('0 a tap, 1 a heavy blow that staggers most creatures'),
+        .describe('0 a tap, 1 a heavy blow that staggers nearly anything'),
       bone: z
         .string()
         .optional()
@@ -159,6 +159,11 @@ export const ScenarioSchema = z.strictObject({
         .default(false)
         .describe('Start in the air at cruise (a creature with wings)'),
       height: range(0.5, 200).optional().describe('Metres above the ground when it starts flying'),
+      y: range(-1000, 1000)
+        .optional()
+        .describe(
+          "Metres: the height it starts at in the world, for a swimmer (the sea's surface is 0) or a flyer; overrides height",
+        ),
     })
     .default({ x: 0, z: 0, heading: 0, flying: false }),
   targets: z
@@ -294,6 +299,19 @@ export interface ScenarioResult {
   };
   /** Metres walked along the ground. */
   readonly distance: number;
+  /** The fastest it went (m/s). */
+  readonly topSpeed: number;
+  /**
+   * The middle of its torso (metres): the lowest and highest it went in the world (below 0 is
+   * under a sea's surface) and the most it rose above the ground under it (a flyer's altitude).
+   */
+  readonly body: {
+    readonly lowest: number;
+    readonly highest: number;
+    readonly aboveGround: number;
+  };
+  /** Degrees it turned in all, left and right alike. */
+  readonly turned: number;
   /** Events other than footsteps, with seconds from the start. */
   readonly events: readonly {
     readonly type: string;
@@ -301,6 +319,9 @@ export interface ScenarioResult {
     readonly action?: string;
     readonly gait?: string;
     readonly medium?: string;
+    /** The head that acted (with several), or the bone a blow landed on. */
+    readonly head?: string;
+    readonly bone?: string;
     readonly position?: readonly [number, number, number];
   }[];
   readonly footsteps: number;
@@ -314,7 +335,7 @@ export interface ScenarioResult {
     readonly reached: number;
     readonly of: number;
   }[];
-  /** Largest distance a planted foot slid (metres). */
+  /** Largest distance a planted foot slid (metres), leaving out staggers and dying. */
   readonly footSlide: number;
   /** Calls the creature refused, with why. */
   readonly failed: readonly { readonly call: number; readonly reason: string }[];
@@ -348,6 +369,12 @@ export class ScenarioRun {
   private footsteps = 0;
   private footSlide = 0;
   private distance = 0;
+  private topSpeed = 0;
+  private lowest = Infinity;
+  private highest = -Infinity;
+  private aboveGround = -Infinity;
+  private turned = 0;
+  private lastHeading = 0;
   private readonly last = new Vector3();
 
   constructor(compiled: CompiledCreature, registry: Registry, scenario: Scenario) {
@@ -373,12 +400,17 @@ export class ScenarioRun {
       this.water = undefined;
     }
     this.controller = new MotionController(compiled, { registry });
-    const { x, z, heading, flying, height } = scenario.start;
+    const { x, z, heading, flying, height, y } = scenario.start;
     this.controller.place(x, z, heading * DEG, this.ground, this.water, {
       flying,
-      ...(height === undefined ? {} : { y: this.ground(x, z).height + height }),
+      ...(y !== undefined
+        ? { y }
+        : height === undefined
+          ? {}
+          : { y: this.ground(x, z).height + height }),
     });
     this.last.copy(this.controller.position);
+    this.lastHeading = this.controller.heading;
     this.targets = new Map(
       Object.entries(scenario.targets).map(([n, p]) => [n, new Vector3(p[0], p[1], p[2])]),
     );
@@ -419,6 +451,8 @@ export class ScenarioRun {
         ...(e.action ? { action: e.action } : {}),
         ...(e.gait ? { gait: e.gait } : {}),
         ...(e.medium ? { medium: e.medium } : {}),
+        ...(e.head ? { head: e.head } : {}),
+        ...(e.bone ? { bone: e.bone } : {}),
         ...(e.position ? { position: e.position.map(round) as [number, number, number] } : {}),
       });
       if (e.type === 'arrive' && this.course) this.nextPoint();
@@ -445,6 +479,13 @@ export class ScenarioRun {
         speed: round(c.speed),
       },
       distance: round(this.distance),
+      topSpeed: round(this.topSpeed),
+      body: {
+        lowest: round(this.lowest),
+        highest: round(this.highest),
+        aboveGround: round(this.aboveGround),
+      },
+      turned: Math.round(this.turned / DEG),
       events: this.events,
       footsteps: this.footsteps,
       gaits: this.gaits,
@@ -580,20 +621,38 @@ export class ScenarioRun {
     return b === undefined ? new Vector3(x, this.ground(x, a).height, a) : new Vector3(x, a, b);
   }
 
-  /** Distance walked, foot slide, gaits used and how close each head came to each target. */
+  /**
+   * Distance walked, heights, turning, foot slide, gaits used and how close each head came to
+   * each target.
+   */
   private measure(): void {
     const c = this.controller;
     this.distance += Math.hypot(c.position.x - this.last.x, c.position.z - this.last.z);
+    this.topSpeed = Math.max(this.topSpeed, c.speed);
     this.last.copy(c.position);
+    const spine = this.compiled.rig.spine;
+    const middle = c.pose.worldPos[spine[Math.floor(spine.length / 2)] as number] as Vector3;
+    this.lowest = Math.min(this.lowest, middle.y);
+    this.highest = Math.max(this.highest, middle.y);
+    this.aboveGround = Math.max(
+      this.aboveGround,
+      middle.y - this.ground(middle.x, middle.z).height,
+    );
+    let turn = c.heading - this.lastHeading;
+    turn -= Math.round(turn / (2 * Math.PI)) * 2 * Math.PI;
+    this.turned += Math.abs(turn);
+    this.lastHeading = c.heading;
     const gait = c.gait?.id;
     if (gait && this.gaits.at(-1)?.gait !== gait) this.gaits.push({ gait, from: round(this.time) });
     const feet = c.feet();
+    // A stagger's quick steps and a death's buckling legs are not sliding feet.
+    const reeling = c.staggering || c.dead;
     this.compiled.rig.legs.forEach((leg, k) => {
       const foot = feet[k];
       if (!foot) return;
       const ankle = c.pose.tail(leg.bones.at(-1) as number);
       const anchor = this.anchors.get(k);
-      if (!foot.planted) this.anchors.delete(k);
+      if (!foot.planted || reeling) this.anchors.delete(k);
       else if (!anchor) this.anchors.set(k, ankle);
       else
         this.footSlide = Math.max(
