@@ -1,0 +1,25 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Lantern Hound",
+  "seed": 707,
+  "extends": "quadruped",
+  "scale": 0.9,
+  "parts": [{ "id": "teeth", "type": "teeth.row", "params": { "fangs": 1 } }],
+  "skin": {
+    "palette": { "base": "#14161f", "belly": "#262a3a", "accent": "#40ffd8" },
+    "material": "skin",
+    "layers": [
+      { "type": "countershade", "strength": 0.4 },
+      {
+        "type": "bioluminescence",
+        "color": "accent",
+        "shape": "spots",
+        "size": 0.035,
+        "density": 0.7,
+        "brightness": 2.5,
+        "pulse": 0.8
+      }
+    ]
+  },
+  "motion": { "temperament": "stalking", "actions": ["idle", "bite"] }
+}

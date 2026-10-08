@@ -1,0 +1,8 @@
+{
+  "phase": 11,
+  "kind": "gate 11: suites A and B re-scored, the export eval (eleven tasks, its own run folder), the texture round trip with the glTF validator, the smoke test, and the bench",
+  "date": "2026-10-08",
+  "commit": "f457a23",
+  "exportEval": "eval/runs/2026-10-08-gate11-export/",
+  "bench": "awaiting the owner's run on a laptop (docs/poc.md); CI keeps a small headless run as an artifact"
+}

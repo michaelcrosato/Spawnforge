@@ -83,8 +83,15 @@ export function bakeClips(
   const known = clipNames(compiled, registry);
   const wanted = options.clips ?? known;
   for (const name of wanted)
-    if (!known.includes(name))
-      throw new Error(`no clip "${name}" for this creature; it has ${known.join(', ')}`);
+    if (!known.includes(name)) {
+      // A module the creature lacks: say where it goes.
+      const fix = registry.get('action', name)
+        ? `; add "${name}" to motion.actions to get it`
+        : registry.get('gait', name)
+          ? `; add "${name}" to motion.gaits to get it`
+          : '';
+      throw new Error(`no clip "${name}" for this creature; it has ${known.join(', ')}${fix}`);
+    }
   const gaits = new Map(compiled.motion.gaits.map((g) => [g.id, g]));
   const actions = new MotionController(compiled, { registry }).actions();
   return wanted.map((name) => {

@@ -1,5 +1,5 @@
 {
-  "description": "Export eval (phase 6, extended in 11.1): tasks that need export, stats, texture maps and reading a .glb. Each names the files to save in the run folder; eval/export.ts checks them.",
+  "description": "Export eval (phase 6, extended in 11.1 and gate 11): tasks that need export, stats, texture maps, levels of detail, root motion and engine notes, and reading a .glb. Each names the files to save in the run folder; eval/export.ts checks them.",
   "tasks": [
     {
       "id": "x01-clip-subset",
@@ -32,6 +32,18 @@
     {
       "id": "x08-live-only",
       "task": "Export examples/sand-cheetah.json as x08.glb. Its artist asks what will look different in the game engine than in the Spawnforge sandbox. Write x08.json as { \"differences\": [ … ] }, one short string per live effect the file leaves out or approximates, and { \"furLengthMetres\": … } in the same object with the fur length the file gives for the engine's own fur."
+    },
+    {
+      "id": "x09-levels-of-detail",
+      "task": "Export examples/tusk-boar.json as x09.glb. A game shows it on a 1080-pixel-high screen with a 60° vertical field of view. Write x09.json as { \"skinTriangles\": [full, level 1, level 2, level 3], \"lowestFromMetres\": … } with the skin's triangle count at each level, read from the file, and the distance in metres from which the coarsest level's error stays under one pixel."
+    },
+    {
+      "id": "x10-root-motion",
+      "task": "A game needs a big cat that pounces. Give examples/sand-cheetah.json a pounce, export it as x10.glb and write x10.json as { \"clip\": …, \"forwardMetres\": … }: the name of the clip that moves the creature by itself, and how far forward (+Z) its root ends up at the clip's end, read from the file."
+    },
+    {
+      "id": "x11-engine-import",
+      "task": "A Godot developer imports examples/grey-wolf.json as an export. Export it as x11.glb and write x11.json as { \"loop\": [ … ], \"breathNode\": … }: the names of the animation clips they should set to loop, and the name of the node a fire-breath effect should be parented to."
     }
   ]
 }

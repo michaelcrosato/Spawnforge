@@ -500,7 +500,7 @@ function texturedNotes(compiled: CompiledCreature, maps: BakedTextures, glow: nu
     );
   if (glow > 0 && glowLayers(compiled).glow)
     notes.push(
-      "glow is baked as it is at time 0; its pulse is live-only (extras.glow gives each layer's pulses a second)",
+      "glow is baked as it is at time 0; its pulse is live-only (extras.glow gives each layer's pulse in hertz)",
     );
   if (MATERIAL_LOOK[compiled.material.material].wrap > 0 || compiled.material.fur)
     notes.push(
@@ -510,6 +510,11 @@ function texturedNotes(compiled: CompiledCreature, maps: BakedTextures, glow: nu
     notes.push(
       'membranes are double-sided; the light through them is baked into their emissive map',
     );
+  if (compiled.motion.actions.some((a) => a.id === 'idle'))
+    notes.push('breathing (a 1% swell of the chest while idle) is live-only');
+  notes.push(
+    "detail finer than a texel is baked at the texel's size, where the live skin fades it with distance; mipmaps fade it further away",
+  );
   notes.push(...maps.notes);
   return notes;
 }

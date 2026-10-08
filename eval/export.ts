@@ -39,9 +39,20 @@ const materialOf = (json: Json, name: string) => {
   if (!mesh) throw new Error(`no ${name} mesh`);
   const primitive = (mesh.primitives as Json[])[0] as Json;
   return {
+    primitive,
     attributes: primitive.attributes as Json,
     material: ((json.materials as Json[]) ?? [])[primitive.material as number] as Json,
   };
+};
+/** An accessor's floats (a tightly packed float accessor, as the exporter writes them). */
+const floats = (json: Json, bin: Buffer, accessor: number) => {
+  const a = (json.accessors as Json[])[accessor] as Json;
+  const view = (json.bufferViews as Json[])[a.bufferView as number] as Json;
+  const size = { SCALAR: 1, VEC2: 2, VEC3: 3, VEC4: 4 }[a.type as string] ?? 1;
+  const start = ((view.byteOffset as number | undefined) ?? 0) + ((a.byteOffset as number) ?? 0);
+  const out: number[] = [];
+  for (let i = 0; i < (a.count as number) * size; i++) out.push(bin.readFloatLE(start + i * 4));
+  return out;
 };
 /** The width of the image a texture index points at: PNG, or JPEG (colour maps of big files). */
 const textureWidth = (json: Json, bin: Buffer, texture: number) => {
@@ -169,6 +180,71 @@ const checks: Record<string, () => string> = {
       `furLengthMetres ${String(answer.furLengthMetres)} vs ${String(fur?.length)}`,
     );
     return `${differences.length} differences, fur ${String(answer.furLengthMetres)} m`;
+  },
+  'x09-levels-of-detail': () => {
+    const { json, extras } = glb('x09.glb');
+    const answer = JSON.parse(readFileSync(join(dir, 'x09.json'), 'utf8')) as Json;
+    const expected = ['skin', 'skin_LOD1', 'skin_LOD2', 'skin_LOD3'].map((name) => {
+      const index = materialOf(json, name).primitive.indices as number;
+      return (((json.accessors as Json[])[index] as Json).count as number) / 3;
+    });
+    need(
+      JSON.stringify(answer.skinTriangles) === JSON.stringify(expected),
+      `skinTriangles ${JSON.stringify(answer.skinTriangles)} vs ${JSON.stringify(expected)}`,
+    );
+    // The coarsest level's error under a pixel: error · 1080 / (2 d tan 30°) < 1.
+    const error = ((extras.lods as Json).skin as { error: number }[])[2]?.error as number;
+    const metres = (error * 1080) / (2 * Math.tan(Math.PI / 6));
+    const given = answer.lowestFromMetres as number;
+    need(
+      Math.abs(given - metres) <= 0.02 * metres + 0.05,
+      `lowestFromMetres ${String(given)} vs ${metres.toFixed(2)}`,
+    );
+    return `skin ${expected.join(' / ')} triangles, coarsest from ${given} m`;
+  },
+  'x10-root-motion': () => {
+    const { json, bin, extras } = glb('x10.glb');
+    const answer = JSON.parse(readFileSync(join(dir, 'x10.json'), 'utf8')) as Json;
+    const clip = (extras.clips as Json[]).find((c) => c.name === answer.clip);
+    need(clip?.rootMotion === true, `${String(answer.clip)} is not a clip with root motion`);
+    need(answer.clip === 'pounce', `clip ${String(answer.clip)}, not the pounce`);
+    // The root bone's translation track: its last key's z, less its first.
+    const root = (((json.skins as Json[])[0] as Json).joints as number[])[0];
+    const animation = (json.animations as Json[]).find((a) => a.name === answer.clip) as Json;
+    const channel = (animation.channels as Json[]).find(
+      (c) => (c.target as Json).node === root && (c.target as Json).path === 'translation',
+    );
+    need(channel !== undefined, 'the pounce has no root translation track');
+    const sampler = (animation.samplers as Json[])[channel?.sampler as number] as Json;
+    const z = floats(json, bin, sampler.output as number).filter((_, i) => i % 3 === 2);
+    const forward = (z[z.length - 1] as number) - (z[0] as number);
+    const given = answer.forwardMetres as number;
+    need(
+      Math.abs(given - forward) <= 0.05 || Math.abs(given - (z[z.length - 1] as number)) <= 0.05,
+      `forwardMetres ${String(given)} vs ${forward.toFixed(2)}`,
+    );
+    const body = specOf(extras);
+    need(body.limbs.filter((l) => l.role === 'leg').length === 4, 'not the cheetah');
+    return `${String(answer.clip)} moves the root ${forward.toFixed(2)} m forward`;
+  },
+  'x11-engine-import': () => {
+    const { json, extras } = glb('x11.glb');
+    const answer = JSON.parse(readFileSync(join(dir, 'x11.json'), 'utf8')) as Json;
+    const loops = (extras.clips as Json[])
+      .filter((c) => c.loop === true)
+      .map((c) => c.name as string)
+      .sort();
+    const given = [...((answer.loop as string[] | undefined) ?? [])].sort();
+    need(
+      JSON.stringify(given) === JSON.stringify(loops),
+      `loop ${given.join(', ')} vs ${loops.join(', ')}`,
+    );
+    need(answer.breathNode === 'socket_mouth', `breathNode ${String(answer.breathNode)}`);
+    need(
+      (json.nodes as Json[]).some((n) => n.name === answer.breathNode),
+      'that node is not in the file',
+    );
+    return `loop ${given.join(', ')}; breath at ${String(answer.breathNode)}`;
   },
 };
 

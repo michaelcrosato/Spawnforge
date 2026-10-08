@@ -396,7 +396,8 @@ length on the coil, so they need a `length` of 0.5–0.75 to read from a distanc
   stripes and spots show through, though detail finer than a hair does not. `"fur": {}` is a full
   coat; `null` removes an inherited one. Fur is shorter on the face, in creases and on the feet,
   stays clear of the eyes and the mouth, and never grows on wings or fins. It is drawn as shells, from medium quality up; a 0.02–0.04 coat reads as fur, longer as
-  shaggy. `.glb` exports leave it out for now (the skin under it is exported).
+  shaggy. `.glb` exports leave the shells out: the skin's maps carry the coat's colour, and the
+  file's extras give the coat (its length in metres) for an engine's own fur.
 - **`layers`** is the pattern stack, bottom first: `countershade`, `stripes`, `spots`, `mottle`,
   `scales`, `grime`, `scars` (pale healed streaks; `rake` 3–4 for claw marks), `bioluminescence`
   (glowing spots or dotted lines that pulse), `suckers` (pale rimmed cups in a row under each
@@ -423,8 +424,8 @@ length on the coil, so they need a `length` of 0.5–0.75 to read from a distanc
 - Pattern sizes are in torso lengths, so they scale with the creature. Details smaller than a few
   pixels fade out instead of flickering, so on a small creature seen from afar, `scales`, `warts`
   and `veins` at their default sizes read as plain skin; use a larger `size` (0.08–0.15) or
-  `width` there. Glow shows live and in renders; `.glb` exports leave it out until texture maps
-  (milestone 11.1).
+  `width` there. Glow shows live, in renders and in `.glb` exports (an emissive map, as it is at
+  time 0; the file lists each layer's `pulse`, in hertz, for the game to animate).
 - **Order matters.** Each layer paints over the ones before it, so a full-strength layer late in
   the list (a `countershade` on the tail, say) hides the spots or bands under it. Put broad
   layers first and markings after them, or lower the late layer's `strength`.
@@ -683,8 +684,9 @@ proportions, optional limbs and parts, patterns, palette, fur, material and temp
 same theme and seed always give the same creature. Constraints
 narrow it further: `--body-plan biped`, `--max-height 1.2` and `--min-height 0.5` (body height in
 metres, not counting horns or spikes, the same as `analyze`'s `bodyHeight`; its `height` counts
-them; the creature is rescaled to fit, so a limit it would break is met exactly, to the
-millimetre), `--actions bite,roar` (it gets a body that can; the file
+them; the creature is rescaled to fit, so a limit it would break is met exactly as `analyze`
+measures it, though the mesh's own bounds can stand a fraction of a millimetre past it; ask for
+a millimetre less if a game checks the mesh), `--actions bite,roar` (it gets a body that can; the file
 leaves `motion.actions` out, which means every action the body allows), `--parts
 horn.curved` and `--requires air,water` (media it must move in: `air` needs wings, so only a
 theme with wings can fly; `water` picks a swimmer or turns swimming on for a walker). The blueprint's own `seed` (which places its markings) is drawn from the theme and the

@@ -112,7 +112,10 @@ species, level and mesh, skinned on the GPU from their baked clips, posed exactl
 skeletons on a frame; `pnpm bench`, whose laptop numbers await the owner;
 `docs/design/11.3-crowds.md`) and 11.4 (`docs/engines.md`: Godot 4, Unity 6, Unreal 5 and
 Blender, with an extras reader per engine; the Python reader and Blender's import are tested in
-CI). Next is gate 11.
+CI). Gate 11 passed: suites A and B re-scored 20/20, the export eval 11/11 with its new tasks
+(levels of detail, root motion, engine notes), the round trip 32/32 and the validator clean, the
+smoke test passing, the bench pending the owner's laptop (`eval/runs/2026-10-08-gate11/`). Next
+is phase 12.
 
 ## Repo map
 

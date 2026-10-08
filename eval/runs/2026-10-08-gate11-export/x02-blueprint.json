@@ -1,0 +1,53 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Vesptin",
+  "seed": 342101609,
+  "extends": "hexapod",
+  "scale": 0.713,
+  "body": {
+    "torso": {
+      "radius": [0.111, 0.138, 0.0741, 0.172, 0.144, 0.0741]
+    },
+    "head": {
+      "length": 0.279,
+      "radius": 0.104
+    }
+  },
+  "limbs": [
+    {
+      "id": "frontleg",
+      "length": 0.598
+    },
+    {
+      "id": "midleg",
+      "length": 0.769
+    },
+    {
+      "id": "hindleg",
+      "length": 0.717
+    }
+  ],
+  "parts": [
+    {
+      "id": "eyes",
+      "params": {
+        "scale": 1.96
+      }
+    },
+    {
+      "id": "mandibles",
+      "type": "mandible",
+      "params": {
+        "length": 0.146,
+        "teeth": 0
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#331a4e",
+      "belly": "#6b4887",
+      "accent": "#08050f"
+    }
+  }
+}

@@ -1,0 +1,86 @@
+{
+  "format": "spawnforge/0.2",
+  "name": "Zulvor",
+  "seed": 1279869499,
+  "extends": "biped",
+  "scale": 0.4436,
+  "body": {
+    "torso": {
+      "radius": [0.146, 0.27, 0.204, 0.155]
+    },
+    "neck": {
+      "length": 0.242,
+      "radius": [0.09, 0.12]
+    },
+    "head": {
+      "shape": "wedge",
+      "length": 0.313,
+      "radius": 0.142
+    },
+    "tail": {
+      "length": 0.587,
+      "pitch": -35,
+      "radius": [0.07, 0.012]
+    }
+  },
+  "limbs": [
+    {
+      "id": "leg",
+      "length": 1.29,
+      "radius": [0.12, 0.07],
+      "segments": 3,
+      "splay": 4,
+      "attach": {
+        "angle": 105
+      },
+      "foot": {
+        "clawLength": 0.05
+      }
+    },
+    {
+      "id": "arm",
+      "length": 1.14,
+      "radius": [0.09, 0.05]
+    }
+  ],
+  "parts": [
+    {
+      "id": "eyes",
+      "params": {
+        "scale": 1.17,
+        "pupil": "goat",
+        "irisColor": "#ffcc00"
+      }
+    },
+    {
+      "id": "teeth",
+      "type": "teeth.row",
+      "params": {
+        "fangs": 2,
+        "fangScale": 1.01,
+        "spacing": 0.0371
+      }
+    }
+  ],
+  "skin": {
+    "palette": {
+      "base": "#5b0e12",
+      "belly": "#b55a46",
+      "accent": "#0f0d0d"
+    },
+    "layers": [
+      {
+        "type": "countershade",
+        "strength": 0.5
+      },
+      {
+        "type": "stripes",
+        "count": 13,
+        "width": 0.3
+      }
+    ]
+  },
+  "motion": {
+    "temperament": "stalking"
+  }
+}

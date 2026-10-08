@@ -229,17 +229,25 @@ A `.glb` holds:
   - glow, where anything glows, with `KHR_materials_emissive_strength` when it is brighter
     than 1; on membranes this map also carries the light through them.
   Maps are 1024 texels at medium quality (512 at low, 2048 at high) for the skin, half that for
-  parts and membranes, 256 for eyes; `--textures 2048` picks the skin's size, and
-  `--textures none` writes vertex colours (`COLOR_0`, albedo only) instead, as before 11.1.
+  parts and membranes, 256 for eyes; `--textures 2048` picks the skin's size whatever the mesh's
+  quality (the two combine), and `--textures none` writes vertex colours (`COLOR_0`, albedo only)
+  instead, as before 11.1. Maps are PNG; when the file would pass 8 MB (2048 maps, or a
+  creature with many meshes) the colour and glow maps are written as JPEG instead (normal and
+  ORM maps stay PNG), and the export's `notes` say so.
 - **Levels of detail** (docs/design/11.2-lod.md): `skin_LOD1`, `skin_LOD2` and `skin_LOD3`
   (50, 25 and 10% of the triangles; `parts_LOD1` and so on likewise), the naming Unity uses for
   LOD groups. Each shares the full mesh's skeleton, vertices and maps; only its triangles
   differ. They are listed on the full mesh's node with `MSFT_lod`, with `MSFT_screencoverage`
-  (the share of the screen's height below which each level's error stays under a pixel at 1080
-  pixels) in its extras, and are not in the scene's tree, so a loader without the extension
-  (three's `GLTFLoader`, most viewers) shows only the full mesh. The extras' `lods` gives each
-  level's triangles, error in metres and node name, to set your engine's own switches;
-  `--lods none` leaves them out.
+  in its extras: one number per mesh, full first, each the share of the screen's height the
+  creature (its largest bounding-box side) covers below which the next level's error stays
+  under a pixel at 1080 pixels, ending in 0. They are not in the scene's tree, so a loader
+  without the extension (three's `GLTFLoader`, most viewers) shows only the full mesh. The
+  extras' `lods` gives levels 1 to 3 of each mesh (`skin`, `parts`: their levels are apart) with
+  their triangles, error in metres and node name, to set your engine's own switches; the full
+  mesh's triangles are its index count over three. A level's error stays under a pixel from the
+  distance `error × pixels / (2 tan(fov / 2))`, with `pixels` the viewport's height and `fov`
+  its vertical field of view: at 1080 pixels and 60°, 935 times the error (a 4.8 mm error is
+  under a pixel from 4.5 m). `--lods none` leaves them out.
 - **Wings rest folded.** The skeleton is bound with the wings spread and every node defaults to
   the rest pose, so a winged creature stands folded with no clip playing; a clip carries a track
   for every bone that leaves its rest.
@@ -275,8 +283,9 @@ A `.glb` holds:
 - **Extras** on the creature's root node, under `spawnforge`: `format`, the minimal `blueprint`
   (rebuild or edit the creature from it), `seed`, `scale`, `quality`, `sockets` (name, node and
   bone), `hitCapsules` (bone and radius), `clips` (name, duration, loop, `speed` it was baked at,
-  `distance` one cycle covers, `rootMotion` for clips whose root track moves, and `events` with
-  their times), `lods`, and `stats` when asked for.
+  `distance` one cycle covers, or for a clip with `rootMotion` (its root track moves) how far
+  forward the root ends, and `events` with their times), `lods`, `fur` (length in metres:
+  the blueprint's is in torso lengths), `glow`, and `stats` when asked for.
 
 ### What the file leaves out
 
@@ -286,7 +295,7 @@ What the live creature shows that glTF cannot carry as such, and what it becomes
 | Live | In the `.glb` |
 | --- | --- |
 | Shell fur | Left out: glTF has no shells. Under the fur the skin's maps carry the coat's mean colour and roughness, and `extras.fur` (length in metres, density, regions) describes it for an engine's own fur |
-| Glow that pulses | The glow as it is at time 0, each light at its own brightness; `extras.glow` lists each layer's `pulse` (a second) for a game that animates `emissiveIntensity` |
+| Glow that pulses | The glow as it is at time 0, each light at its own brightness; `extras.glow` lists each layer's `pulse` in hertz (pulses a second) for a game that animates `emissiveIntensity` |
 | Light wrapping round the skin (`skin`, `hide`, fur) | Left out: engines show a harder edge between light and shadow |
 | Light through membranes | Baked into the membranes' emissive map, as the live shader adds it |
 | Breathing | Left out (a 1% swell of the chest) |

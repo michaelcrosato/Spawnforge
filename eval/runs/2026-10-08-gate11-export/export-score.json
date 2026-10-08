@@ -1,0 +1,61 @@
+{
+  "passed": 11,
+  "total": 11,
+  "rows": [
+    {
+      "id": "x01-clip-subset",
+      "pass": true,
+      "note": "clips bite, tripod, low quality"
+    },
+    {
+      "id": "x02-insect-stats",
+      "pass": true,
+      "note": "rpg stats, health 45"
+    },
+    {
+      "id": "x03-small-demon",
+      "pass": true,
+      "note": "body height 1.10 m, clips idle, walk, bite, roar"
+    },
+    {
+      "id": "x04-read-export",
+      "pass": true,
+      "note": "socket_mouth, bite 0.8333 s, contact 0.275 s"
+    },
+    {
+      "id": "x05-sharp-maps",
+      "pass": true,
+      "note": "skin maps 2048 px, with a normal map"
+    },
+    {
+      "id": "x06-vertex-colours",
+      "pass": true,
+      "note": "vertex colours, no images"
+    },
+    {
+      "id": "x07-glow",
+      "pass": true,
+      "note": "emissive map, pulse 0.8 Hz"
+    },
+    {
+      "id": "x08-live-only",
+      "pass": true,
+      "note": "4 differences, fur 0.0096 m"
+    },
+    {
+      "id": "x09-levels-of-detail",
+      "pass": true,
+      "note": "skin 27186 / 13592 / 6796 / 2718 triangles, coarsest from 4.47 m"
+    },
+    {
+      "id": "x10-root-motion",
+      "pass": true,
+      "note": "pounce moves the root 2.69 m forward"
+    },
+    {
+      "id": "x11-engine-import",
+      "pass": true,
+      "note": "loop gallop, idle, trot, walk; breath at socket_mouth"
+    }
+  ]
+}
