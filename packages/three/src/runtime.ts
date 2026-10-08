@@ -11,12 +11,22 @@ import {
   MotionController,
   type MotionEvent,
   type Pack,
+  pickLevel,
   type Quality,
   type Registry,
   resolveBlueprint,
   type Water,
 } from '@spawnforge/core';
-import { type Camera, Euler, Object3D, Quaternion, Vector3 } from 'three';
+import {
+  BufferAttribute,
+  type Camera,
+  Euler,
+  Object3D,
+  type OrthographicCamera,
+  type PerspectiveCamera,
+  Quaternion,
+  Vector3,
+} from 'three';
 import { type CreatureObject, createCreatureObject } from './assemble.ts';
 import { applyPose } from './pose-sync.ts';
 import { createWorkerCompiler, type WorkerCompiler } from './worker-client.ts';
@@ -38,6 +48,20 @@ export interface BestiaryOptions {
    * 30), creatures drop foot IK and springs and play baked cycles.
    */
   readonly lodDistance?: number;
+  /**
+   * Levels of detail for the meshes (docs/design/11.2-lod.md): fewer triangles once the
+   * simplification's error projects under one pixel (default true; loads `@spawnforge/bake/lod`
+   * the first time a creature is given a camera).
+   */
+  readonly lods?: boolean;
+}
+
+/** A species' levels of detail as index buffers its creatures share. */
+export interface LiveLods {
+  readonly skin: readonly BufferAttribute[];
+  readonly parts: readonly BufferAttribute[];
+  /** Each level's error in metres: the larger of skin's and parts'. */
+  readonly levels: readonly { readonly error: number }[];
 }
 
 export interface SpawnOptions {
@@ -66,8 +90,10 @@ export interface UpdateInput {
    * Creatures that swim take to it where it is deep enough, and walk out where it is not.
    */
   readonly water?: Water;
-  /** For level of detail: distant creatures play baked cycles. */
+  /** For level of detail: distant creatures play baked cycles and draw fewer triangles. */
   readonly camera?: Camera;
+  /** The viewport's height in pixels, for the meshes' level of detail (default 1080). */
+  readonly pixels?: number;
 }
 
 /** A world-space hit volume: a capsule from `start` to `end`. */
@@ -100,6 +126,11 @@ export class Creature {
   /** "full": procedural motion with foot IK and springs. "baked": cheap cycles for the distance. */
   lod: 'full' | 'baked' = 'full';
   private readonly view: CreatureObject;
+  private level = 0;
+  private readonly full: {
+    readonly skin: BufferAttribute | null;
+    readonly parts: BufferAttribute | null;
+  };
   private readonly listeners = new Map<string, Set<Listener>>();
   /** The ground from the last update, for placing feet when switching back to full motion. */
   private ground: Ground | undefined;
@@ -123,6 +154,10 @@ export class Creature {
     this.compiled = compiled;
     this.view = createCreatureObject(compiled, registry);
     this.object = this.view.object;
+    this.full = {
+      skin: this.view.meshes.skin.geometry.index,
+      parts: this.view.meshes.parts.geometry.index,
+    };
     this.controller = new MotionController(compiled, { registry });
     this.clips = clips;
     const sockets: Record<string, Object3D> = {};
@@ -316,6 +351,28 @@ export class Creature {
     return events;
   }
 
+  /** The meshes' level of detail drawn: 0 is every triangle, 1 to 3 the simplified levels. */
+  get detail(): number {
+    return this.level;
+  }
+
+  /**
+   * Draws level `k` of a species' levels of detail, 0 for every triangle (`bestiary.update` does
+   * it by screen size). Fur shells share the skin's geometry and follow it.
+   */
+  setDetail(k: number, lods?: LiveLods): void {
+    const level = lods ? Math.max(0, Math.min(k, lods.levels.length)) : 0;
+    if (level === this.level) return;
+    const { skin, parts } = this.view.meshes;
+    skin.geometry.setIndex(
+      level === 0 ? this.full.skin : (lods?.skin[level - 1] ?? this.full.skin),
+    );
+    parts.geometry.setIndex(
+      level === 0 ? this.full.parts : (lods?.parts[level - 1] ?? this.full.parts),
+    );
+    this.level = level;
+  }
+
   /** Switches between full and baked motion (`bestiary.update` does it by camera distance). */
   setLod(lod: 'full' | 'baked', ground?: Ground): void {
     if (lod === this.lod) return;
@@ -504,8 +561,35 @@ export class Creature {
 
   dispose(): void {
     this.object.removeFromParent();
+    // Its own indices back, so disposing frees nothing the species' other creatures draw.
+    this.setDetail(0);
     this.view.dispose();
   }
+}
+
+/** A species' levels of detail, from `@spawnforge/bake/lod` (loaded the first time). */
+async function liveLods(compiled: CompiledCreature): Promise<LiveLods> {
+  const { simplifyChain } = await import('@spawnforge/bake/lod');
+  const [skin, parts] = await Promise.all([
+    simplifyChain(compiled.skin),
+    simplifyChain(compiled.parts),
+  ]);
+  return {
+    skin: skin.map((l) => new BufferAttribute(l.indices, 1)),
+    parts: parts.map((l) => new BufferAttribute(l.indices, 1)),
+    levels: skin.map((l, i) => ({ error: Math.max(l.error, parts[i]?.error ?? 0) })),
+  };
+}
+
+/** What the level of detail needs of a camera, at `distance` from it. */
+function lodView(
+  camera: Camera,
+  distance: number,
+): { fov: number; distance: number } | { height: number } {
+  const ortho = camera as OrthographicCamera;
+  if (ortho.isOrthographicCamera) return { height: (ortho.top - ortho.bottom) / ortho.zoom };
+  const persp = camera as PerspectiveCamera;
+  return { fov: persp.isPerspectiveCamera ? persp.getEffectiveFOV() : 50, distance };
 }
 
 /** Stable JSON: object keys sorted, so equal blueprints hash alike. */
@@ -566,6 +650,22 @@ export async function createBestiary(options: BestiaryOptions): Promise<Bestiary
       : undefined;
   const creatures = new Set<Creature>();
   const lodDistance = options.lodDistance ?? 30;
+  // Levels of detail per species: absent until asked for, a promise while they are made.
+  const lods = new WeakMap<CompiledCreature, LiveLods | Promise<void>>();
+  const lodsOf = (compiled: CompiledCreature): LiveLods | undefined => {
+    const known = lods.get(compiled);
+    if (known && !(known instanceof Promise)) return known;
+    if (!known)
+      lods.set(
+        compiled,
+        liveLods(compiled).then(
+          (made) => void lods.set(compiled, made),
+          // Without the simplifier (or on any failure), creatures keep every triangle.
+          () => {},
+        ),
+      );
+    return undefined;
+  };
 
   const compile = (blueprint: unknown, quality: Quality): Promise<CompiledCreature> => {
     const key = `${version}|${quality}|${stable(blueprint)}`;
@@ -614,8 +714,17 @@ export async function createBestiary(options: BestiaryOptions): Promise<Bestiary
       const eye = input.camera?.getWorldPosition(new Vector3());
       for (const creature of creatures) {
         if (eye) {
-          const far = creature.position.distanceTo(eye) > lodDistance * creature.compiled.scale;
+          const distance = creature.position.distanceTo(eye);
+          const far = distance > lodDistance * creature.compiled.scale;
           creature.setLod(far ? 'baked' : 'full', input.ground);
+          const chain = options.lods === false ? undefined : lodsOf(creature.compiled);
+          if (chain && input.camera) {
+            // From the creature's nearest point: its root less the radius of its bounds.
+            const { min, max } = creature.compiled.bounds;
+            const radius = Math.hypot(max[0] - min[0], max[1] - min[1], max[2] - min[2]) / 2;
+            const view = lodView(input.camera, Math.max(distance - radius, 1e-3));
+            creature.setDetail(pickLevel(chain.levels, view, input.pixels ?? 1080), chain);
+          }
         }
         creature.update(dt, input);
       }

@@ -106,6 +106,15 @@ export {
   srgbToLinear,
   surfaceAt,
 } from './export/bake.ts';
+export {
+  LOD_RATIOS,
+  type LodChain,
+  type LodLevel,
+  type LodView,
+  pickLevel,
+  projectedError,
+  screenCoverage,
+} from './export/lods.ts';
 export type { BakedMap, BakedTextures, TexturedMesh } from './export/textures.ts';
 export { FORMAT } from './format.ts';
 export * from './geometry/kit.ts';

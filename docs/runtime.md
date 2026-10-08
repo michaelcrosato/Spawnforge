@@ -176,6 +176,15 @@ whatever the target is doing, so test hits yourself, with sockets or hit capsule
   steps without posing, so it goes where it would have) and plays its air gait's cycle tilted to
   its pitch and bank; takeoffs and landings happen at full detail, and coming near it carries on
   flying where it is.
+- The meshes have levels of detail too (docs/design/11.2-lod.md): with a `camera`, each
+  creature draws the coarsest of four levels (100, 50, 25 and 10% of the skin's and parts'
+  triangles) whose simplification error stays under one pixel, so up close nothing changes and
+  far away a creature costs a tenth of its triangles. Pass the viewport's height as `pixels`
+  (default 1080: `bestiary.update(dt, { camera, pixels: renderer.domElement.height })`).
+  `creature.detail` reads the level (0 is full); `createBestiary({ lods: false })` keeps every
+  triangle. The levels are made once per species, the first time one of its creatures is given
+  a camera, by loading `@spawnforge/bake/lod` (meshoptimizer's simplifier, a few milliseconds
+  per mesh); creatures of a species share them. Fur shells follow the skin's level.
 - Mesh detail is per creature (`quality`). Each creature is three draw calls: the skin (with the
   mouth's inside and the eyelids), the hard parts and the eyes. Wings and fins add one for their
   membranes (double-sided). Fur adds another at medium and high quality: the skin's geometry drawn as 12 or 16 instanced shells in one call, which costs
@@ -213,6 +222,15 @@ A `.glb` holds:
   Maps are 1024 texels at medium quality (512 at low, 2048 at high) for the skin, half that for
   parts and membranes, 256 for eyes; `--textures 2048` picks the skin's size, and
   `--textures none` writes vertex colours (`COLOR_0`, albedo only) instead, as before 11.1.
+- **Levels of detail** (docs/design/11.2-lod.md): `skin_LOD1`, `skin_LOD2` and `skin_LOD3`
+  (50, 25 and 10% of the triangles; `parts_LOD1` and so on likewise), the naming Unity uses for
+  LOD groups. Each shares the full mesh's skeleton, vertices and maps; only its triangles
+  differ. They are listed on the full mesh's node with `MSFT_lod`, with `MSFT_screencoverage`
+  (the share of the screen's height below which each level's error stays under a pixel at 1080
+  pixels) in its extras, and are not in the scene's tree, so a loader without the extension
+  (three's `GLTFLoader`, most viewers) shows only the full mesh. The extras' `lods` gives each
+  level's triangles, error in metres and node name, to set your engine's own switches;
+  `--lods none` leaves them out.
 - **Wings rest folded.** The skeleton is bound with the wings spread and every node defaults to
   the rest pose, so a winged creature stands folded with no clip playing; a clip carries a track
   for every bone that leaves its rest.
@@ -249,7 +267,7 @@ A `.glb` holds:
   (rebuild or edit the creature from it), `seed`, `scale`, `quality`, `sockets` (name, node and
   bone), `hitCapsules` (bone and radius), `clips` (name, duration, loop, `speed` it was baked at,
   `distance` one cycle covers, `rootMotion` for clips whose root track moves, and `events` with
-  their times), and `stats` when asked for.
+  their times), `lods`, and `stats` when asked for.
 
 ### What the file leaves out
 

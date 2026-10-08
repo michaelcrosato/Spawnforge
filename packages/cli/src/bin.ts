@@ -77,12 +77,13 @@ Commands:
                                         base picks whose body it is built on, locked paths keep
                                         the base parent's values
   export <file|-> [--out f.glb] [--quality low|medium|high] [--clips idle,walk,bite] [--fps n]
-         [--stats id] [--textures 512|1024|2048|none]
+         [--stats id] [--textures 512|1024|2048|none] [--lods none]
                                         A .glb for game engines: skinned mesh with texture maps
                                         baked from the live material (or vertex colours with
-                                        --textures none), skeleton, baked clips (idle, gaits,
-                                        actions), sockets as nodes, the blueprint and stats as
-                                        extras
+                                        --textures none) and levels of detail (skin_LOD1 to 3;
+                                        --lods none leaves them out), skeleton, baked clips (idle,
+                                        gaits, actions), sockets as nodes, the blueprint and stats
+                                        as extras
   instantiate <species|-> [--seed n] [--out file]
                                         One individual of a species (a blueprint whose numbers
                                         may be { "min": 0.5, "max": 0.7 } ranges)
@@ -153,6 +154,7 @@ function parseOptions() {
       clips: { type: 'string' },
       fps: { type: 'string' },
       textures: { type: 'string' },
+      lods: { type: 'string' },
       summary: { type: 'boolean' },
     },
   });
@@ -485,6 +487,10 @@ const commands: Record<
       throw new CommandError(`--fps must be a whole number from 5 to 120, not ${fps}`);
     const quality = qualityOf(values.quality);
     const textures = texturesOf(values.textures);
+    if (values.lods !== undefined && values.lods !== 'none')
+      throw new CommandError(
+        `--lods takes none (to leave the levels of detail out), not "${values.lods}"`,
+      );
     const out = values.out ?? (arg === '-' ? 'creature.glb' : `${arg.replace(/\.json$/i, '')}.glb`);
     const { exportBlueprint } = await import('@spawnforge/render');
     let result: Awaited<ReturnType<typeof exportBlueprint>>;
@@ -496,6 +502,7 @@ const commands: Record<
         ...(clips ? { clips } : {}),
         ...(fps !== undefined ? { fps } : {}),
         ...(textures !== undefined ? { textures } : {}),
+        ...(values.lods === 'none' ? { lods: false } : {}),
       });
     } catch (error) {
       const message = (error as Error).message.replace(/^[\s\S]*?Error: /, '').split('\n')[0];

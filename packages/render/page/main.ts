@@ -1,4 +1,5 @@
 import { type BandJob, type BandResult, bakeTextures } from '@spawnforge/bake';
+import { simplifyChain } from '@spawnforge/bake/lod';
 import {
   applyRest,
   type BakedTextures,
@@ -8,6 +9,7 @@ import {
   createRegistry,
   fingerprint,
   formatIssue,
+  type LodChain,
   mainHead,
   Pose,
   parseScenario,
@@ -20,6 +22,7 @@ import {
   buildExportScene,
   createCreatureObject,
   createRenderer,
+  lodExporterPlugin,
   stackMaterial,
 } from '@spawnforge/three';
 import * as THREE from 'three';
@@ -171,13 +174,22 @@ async function buildGlb(
         });
   const bakeMs = performance.now() - bakeStarted;
   const maps = baked && mutate ? mutate(baked) : baked;
+  // Levels of detail over the meshes as written: the textured ones where there are maps.
+  const lods: LodChain | undefined =
+    request.lods === false
+      ? undefined
+      : {
+          skin: await simplifyChain(maps?.skin ?? compiled.skin),
+          parts: await simplifyChain(maps?.parts ?? compiled.parts),
+        };
   const write = async (colorImages: 'image/png' | 'image/jpeg') => {
     const built = buildExportScene(compiled, registry, {
       clips,
       ...(request.extras ? { extras: request.extras } : {}),
       ...(maps ? { textures: maps, colorImages } : {}),
+      ...(lods ? { lods } : {}),
     });
-    const glb = (await new GLTFExporter().parseAsync(built.scene, {
+    const glb = (await new GLTFExporter().register(lodExporterPlugin).parseAsync(built.scene, {
       binary: true,
       animations: built.animations,
     })) as ArrayBuffer;
@@ -191,7 +203,10 @@ async function buildGlb(
   }
   const { scene, notes, bytes } = written;
   const t = compiled.stats.triangles;
-  const extras = scene.userData.spawnforge as { textures?: { maps: Record<string, string[]> } };
+  const extras = scene.userData.spawnforge as {
+    textures?: { maps: Record<string, string[]> };
+    lods?: ExportInfo['lods'];
+  };
   return {
     bytes,
     compiled,
@@ -212,6 +227,7 @@ async function buildGlb(
         ...notes,
       ],
       exportMs: performance.now() - started,
+      ...(extras.lods ? { lods: extras.lods } : {}),
       ...(maps
         ? {
             textures: {

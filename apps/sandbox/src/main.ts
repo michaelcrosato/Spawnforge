@@ -333,7 +333,7 @@ async function main(): Promise<void> {
   );
 
   // Export the focused creature as a .glb, as `spawnforge export` would: baked clips, texture
-  // maps baked on workers, sockets and the blueprint in the extras.
+  // maps baked on workers, levels of detail, sockets and the blueprint in the extras.
   $<HTMLButtonElement>('#export').addEventListener('click', async () => {
     const walker = focus;
     if (!walker) return;

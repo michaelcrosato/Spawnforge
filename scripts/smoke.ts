@@ -1,6 +1,6 @@
 /**
  * Smoke test for the published packages: builds every package's dist/, packs the game-facing
- * ones (core, modules, three), installs the tarballs into a copy of scripts/smoke-game/ in a
+ * ones (core, modules, bake, three), installs the tarballs into a copy of scripts/smoke-game/ in a
  * temporary folder outside the workspace, typechecks and builds it with Vite, and runs it in
  * headless Chromium, which must spawn a creature, walk it and draw triangles.
  *
@@ -37,6 +37,7 @@ const catalog = Object.fromEntries(
   ].map((m) => [m[1] as string, m[2] as string]),
 );
 const rootPackage = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')) as {
+  packageManager: string;
   devDependencies: Record<string, string>;
 };
 
@@ -48,7 +49,7 @@ try {
   const tarballs = join(tmp, 'tarballs');
   mkdirSync(tarballs);
   const files: Record<string, string> = {};
-  for (const name of ['core', 'modules', 'three']) {
+  for (const name of ['core', 'modules', 'bake', 'three']) {
     const dir = join(root, 'packages', name);
     const { version } = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')) as {
       version: string;
@@ -68,6 +69,8 @@ try {
         name: 'spawnforge-smoke-game',
         private: true,
         type: 'module',
+        // The workspace's pnpm, so corepack does not reach for whatever version it last saw.
+        packageManager: rootPackage.packageManager,
         dependencies: { ...files, three: catalog.three },
         devDependencies: {
           '@types/three': catalog['@types/three'],

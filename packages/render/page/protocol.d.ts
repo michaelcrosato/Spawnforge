@@ -111,6 +111,8 @@ export interface ExportRequest {
    * others follow), or "none" for vertex colours only. Default: by quality.
    */
   readonly textures?: number | 'none';
+  /** Levels of detail for skin and parts (docs/design/11.2-lod.md); default true. */
+  readonly lods?: boolean;
 }
 export interface ExportInfo {
   readonly name: string;
@@ -126,6 +128,13 @@ export interface ExportInfo {
   /** Things worth knowing about the file, e.g. an idle that is only a standing pose. */
   readonly notes: readonly string[];
   readonly exportMs: number;
+  /** Each mesh's levels of detail below full: triangles, error in metres, and node name. */
+  readonly lods?: Readonly<
+    Record<
+      string,
+      readonly { readonly triangles: number; readonly error: number; readonly node: string }[]
+    >
+  >;
   /** The maps written: the skin's size, which meshes have which maps, and the bake's time. */
   readonly textures?: {
     readonly size: number;

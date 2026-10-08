@@ -21,7 +21,16 @@ const json = (glb: Buffer) =>
   JSON.parse(glb.subarray(20, 20 + glb.readUInt32LE(12)).toString('utf8')) as {
     materials: Record<string, unknown>[];
     meshes: { primitives: { attributes: Record<string, number>; material: number }[] }[];
-    nodes: { name?: string; mesh?: number; extras?: { spawnforge?: Record<string, unknown> } }[];
+    nodes: {
+      name?: string;
+      mesh?: number;
+      skin?: number;
+      children?: number[];
+      extensions?: { MSFT_lod?: { ids: number[] } };
+      extras?: { spawnforge?: Record<string, unknown>; MSFT_screencoverage?: number[] };
+    }[];
+    scenes: { nodes: number[] }[];
+    skins: { joints: number[] }[];
     images: unknown[];
     extensionsUsed?: string[];
   };
@@ -60,7 +69,48 @@ describe('textured exports', () => {
     const extras = gltf.nodes.find((n) => n.extras?.spawnforge)?.extras?.spawnforge;
     expect(extras?.textures).toMatchObject({ size: 512 });
     expect(info.notes.join(' ')).toMatch(/glow is baked/);
+
+    // Levels of detail (docs/design/11.2-lod.md): listed by MSFT_lod on the full mesh, sharing its
+    // skin and vertex accessors, and out of the scene's tree.
+    expect(gltf.extensionsUsed).toContain('MSFT_lod');
+    const skinIndex = gltf.nodes.findIndex((n) => n.name === 'skin');
+    const ids = gltf.nodes[skinIndex]?.extensions?.MSFT_lod?.ids ?? [];
+    expect(ids.map((i) => gltf.nodes[i]?.name)).toEqual(['skin_LOD1', 'skin_LOD2', 'skin_LOD3']);
+    expect(gltf.nodes[skinIndex]?.extras?.MSFT_screencoverage).toHaveLength(4);
+    const inTree = new Set<number>();
+    const walk = (i: number) => {
+      inTree.add(i);
+      for (const c of gltf.nodes[i]?.children ?? []) walk(c);
+    };
+    for (const root of gltf.scenes[0]?.nodes ?? []) walk(root);
+    expect(inTree.has(skinIndex)).toBe(true);
+    for (const id of ids) {
+      expect(inTree.has(id)).toBe(false);
+      const lod = gltf.nodes[id];
+      expect(gltf.skins[lod?.skin as number]?.joints).toEqual(
+        gltf.skins[gltf.nodes[skinIndex]?.skin as number]?.joints,
+      );
+      const a = gltf.meshes[lod?.mesh as number]?.primitives[0]?.attributes;
+      expect(a).toEqual(skin?.attributes);
+    }
+    expect(Object.keys(info.lods ?? {})).toEqual(['skin', 'parts']);
+    const levels = info.lods?.skin ?? [];
+    expect(levels.map((l) => l.node)).toEqual(['skin_LOD1', 'skin_LOD2', 'skin_LOD3']);
+    for (let k = 1; k < levels.length; k++)
+      expect(levels[k]?.triangles).toBeLessThan(levels[k - 1]?.triangles as number);
   }, 120_000);
+
+  it('leaves the levels of detail out with lods: false', async () => {
+    const { glb, info } = await renderer.export({
+      blueprint: example('grey-wolf'),
+      quality: 'low',
+      clips: ['idle'],
+      textures: 'none',
+      lods: false,
+    });
+    expect(json(glb).nodes.some((n) => n.name?.includes('_LOD'))).toBe(false);
+    expect(info.lods).toBeUndefined();
+  }, 60_000);
 
   it.each(['grey-wolf', 'ember-beetle', 'cave-bat', 'luna-moth'])(
     'round-trips %s: the loaded .glb looks as the live creature does',
