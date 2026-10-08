@@ -9,6 +9,7 @@
   },
   "scripts": {
     "dev": "pnpm --filter @spawnforge/sandbox dev",
+    "gallery": "pnpm --filter @spawnforge/gallery dev",
     "build": "pnpm -r --filter \"./apps/*\" build",
     "build:packages": "pnpm -r --filter \"./packages/*\" run build",
     "smoke": "node scripts/smoke.ts",

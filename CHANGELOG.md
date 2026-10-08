@@ -342,6 +342,15 @@ Work in progress toward 0.2, phase by phase (see the plan's status table).
   `placeOnSkin` is the placement, sharing `buildParts`' march to the skin (`marchToSurface`);
   `CompiledCreature.sections` holds the centrelines. The worker compiler takes `{ field }`. A
   Playwright test places, moves, removes and saves a horn (`apps/sandbox/src/place.test.ts`).
+- **Gallery (12.2):** `apps/gallery` (`pnpm gallery`), a static site: the 32 examples with their
+  contact sheets, every theme at six seeds (written by `pnpm generate` to
+  `apps/gallery/src/themes.json`) and the 40 creatures agents wrote for gate 9's prompt suites.
+  Thumbnails render in the page as cards come into view; a creature's page has a live viewer, its
+  actions, blueprint and `.glb` downloads, and "open in sandbox" (the sandbox now reads a
+  blueprint from `#blueprint=`). `exportGlb` moved from the sandbox into
+  `@spawnforge/three/glb`, with JPEG colour maps past 8 MB as the CLI writes them. A headless test
+  builds and serves the site and walks its pages; CI uploads the build. Publishing waits for the
+  owner.
 
 ## 0.1.0
 

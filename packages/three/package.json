@@ -18,6 +18,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./glb": "./src/glb.ts",
     "./worker": "./src/worker.ts"
   },
   "scripts": {
@@ -38,6 +39,10 @@
       ".": {
         "types": "./dist/index.d.ts",
         "default": "./dist/index.js"
+      },
+      "./glb": {
+        "types": "./dist/glb.d.ts",
+        "default": "./dist/glb.js"
       },
       "./worker": {
         "types": "./dist/worker.d.ts",

@@ -1,10 +1,12 @@
 /**
- * Regenerates every generated file: the module pack index, docs/catalog.md and
- * docs/blueprint.schema.json. `--check` fails instead of writing when any is stale (CI runs it).
+ * Regenerates every generated file: the module pack index, docs/catalog.md,
+ * docs/blueprint.schema.json and the gallery's theme creatures. `--check` fails instead of
+ * writing when any is stale (CI runs it).
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { blueprintJsonSchema, renderCatalog } from '@spawnforge/cli';
 import { renderIndex } from '../packages/modules/scripts/generate-index.ts';
+import { renderGalleryThemes } from './gallery-themes.ts';
 
 const root = new URL('../', import.meta.url);
 const check = process.argv.includes('--check');
@@ -13,6 +15,7 @@ const outputs: [string, () => string][] = [
   ['packages/modules/src/index.ts', renderIndex],
   ['docs/catalog.md', renderCatalog],
   ['docs/blueprint.schema.json', () => `${JSON.stringify(blueprintJsonSchema(), null, 2)}\n`],
+  ['apps/gallery/src/themes.json', renderGalleryThemes],
 ];
 
 let stale = 0;

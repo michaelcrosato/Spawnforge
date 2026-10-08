@@ -399,8 +399,12 @@ async function main(): Promise<void> {
     if (!walker) return;
     status.textContent = `Exporting ${walker.name}…`;
     // The exporter, the bake and the validator load on the first export, not with the page.
-    const { exportGlb } = await import('./export.ts');
-    const { glb, clips } = await exportGlb(byName.get(walker.name), walker.compiled, registry);
+    const { exportSandboxGlb } = await import('./export.ts');
+    const { glb, clips } = await exportSandboxGlb(
+      byName.get(walker.name),
+      walker.compiled,
+      registry,
+    );
     const link = document.createElement('a');
     link.href = URL.createObjectURL(new Blob([glb], { type: 'model/gltf-binary' }));
     link.download = `${walker.name}.glb`;
@@ -493,8 +497,21 @@ async function main(): Promise<void> {
     },
   });
 
+  // A blueprint in the link (`#blueprint=` and base64url JSON, the gallery's "open in sandbox"),
+  // shown under `?creature`'s name.
+  const shared = /^#blueprint=([\w-]+)$/.exec(location.hash)?.[1];
+  if (shared) {
+    try {
+      const bytes = Uint8Array.from(atob(shared.replace(/-/g, '+').replace(/_/g, '/')), (c) =>
+        c.charCodeAt(0),
+      );
+      byName.set(params.get('creature') ?? 'shared', JSON.parse(new TextDecoder().decode(bytes)));
+    } catch {
+      logEvent('the blueprint in the link could not be read');
+    }
+  }
   refreshPicker();
-  picker.value = params.get('creature') ?? 'ridgeback-stalker';
+  picker.value = params.get('creature') ?? (shared ? 'shared' : 'ridgeback-stalker');
   herd.checked = params.has('herd');
   picker.addEventListener('change', () => {
     cast = undefined;

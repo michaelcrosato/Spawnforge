@@ -43,6 +43,8 @@ All seven phases of [the plan](docs/plan.md) are done, and the proof of concept 
   theme (`spawnforge generate --theme demon --seed 3`), also in the sandbox's breed tab.
 - **Placing parts** (12.1): the sandbox's place tab puts a part where you click the creature,
   moves it where you drag it, and saves the blueprint to `creatures/`.
+- **Gallery** (12.2): `pnpm gallery` serves a static site of curated creatures with live
+  thumbnails, a viewer and downloads (`pnpm build` writes it to `apps/gallery/dist`).
 - **Into games** (phase 6): `spawnforge export` writes a `.glb` with baked clips, texture maps
   (since 11.1: colour, relief, roughness, occlusion and glow, baked from the live material),
   sockets and stats, and `createBestiary` runs creatures live in a Three.js game
@@ -90,6 +92,7 @@ packages/
   cli/       command line and headless renderer
   mcp/       MCP server over the CLI functions
 apps/
+  gallery/   static site of curated creatures: viewer, blueprint and .glb downloads
   sandbox/   viewer, sliders, JSON panel, terrain test course, gallery, breeding, placing parts
 examples/    blueprints beside their renders (also the golden test set)
 docs/        plans, architecture, blueprint format

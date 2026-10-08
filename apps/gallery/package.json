@@ -1,0 +1,25 @@
+{
+  "name": "@spawnforge/gallery",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Gallery: a static site of curated creatures with renders, a live viewer, blueprint and .glb downloads, and links into the sandbox.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.node.json"
+  },
+  "dependencies": {
+    "@spawnforge/bake": "workspace:*",
+    "@spawnforge/core": "workspace:*",
+    "@spawnforge/modules": "workspace:*",
+    "@spawnforge/three": "workspace:*",
+    "three": "catalog:"
+  },
+  "devDependencies": {
+    "@spawnforge/render": "workspace:*",
+    "@types/three": "catalog:",
+    "vite": "catalog:"
+  }
+}
